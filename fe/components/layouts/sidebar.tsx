@@ -121,6 +121,9 @@ const Sidebar = () => {
                                         <li>
                                             <Link href="/">{t('sales')}</Link>
                                         </li>
+                                        <li>
+                                            <Link href="/glue_and_butyl_issuance">{t('Glue and Butyl Issuance')}</Link>
+                                        </li>
                                     </ul>
                                 </AnimateHeight>
                             </li>

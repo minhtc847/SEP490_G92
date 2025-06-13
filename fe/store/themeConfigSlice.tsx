@@ -29,6 +29,7 @@ const initialState = {
         { code: 'sv', name: 'Swedish' },
         { code: 'tr', name: 'Turkish' },
         { code: 'ae', name: 'Arabic' },
+        { code: 'vi', name: 'Vietnamese' },
     ],
 };
 
