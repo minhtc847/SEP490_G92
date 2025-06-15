@@ -20,8 +20,19 @@ export default function ProductionPage() {
     }))
   }
 
-  const handleEdit = () => {
-    router.push("/product/product-list-details")
+  // Sửa handleEdit để chuyển đến trang chi tiết với ID cụ thể
+  const handleEdit = (productId = "001") => {
+  router.push(`/production-order/001`)
+}
+
+  // Thêm handleBack để quay về trang chính
+  const handleBack = () => {
+    router.push("/") // hoặc trang chính của bạn
+  }
+
+  // Thêm function để xem chi tiết sản phẩm
+  const handleViewDetail = (productId: string) => {
+    router.push(`/product/production-order/${productId}`)
   }
 
   return (
@@ -29,7 +40,15 @@ export default function ProductionPage() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
         {/* Page Header */}
         <div className="border-b border-gray-200 dark:border-gray-700 p-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Sản xuất tổng quan</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">📋 Sản xuất tổng quan</h1>
+            <button
+              onClick={handleBack}
+              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+            >
+              ← Trang chủ
+            </button>
+          </div>
         </div>
 
         <div className="p-6">
@@ -80,6 +99,9 @@ export default function ProductionPage() {
                   <th className="border border-gray-300 dark:border-gray-600 px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
                     Kho
                   </th>
+                  <th className="border border-gray-300 dark:border-gray-600 px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                    Thao tác
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800">
@@ -107,6 +129,14 @@ export default function ProductionPage() {
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-3 text-sm text-gray-900 dark:text-gray-300">
                     Kho A
                   </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-3 text-sm">
+                    <button
+                      onClick={() => handleViewDetail("001")}
+                      className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
+                    >
+                      👁️ Xem chi tiết
+                    </button>
+                  </td>
                 </tr>
                 <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-3 text-sm text-gray-900 dark:text-gray-300">
@@ -132,6 +162,14 @@ export default function ProductionPage() {
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-3 text-sm text-gray-900 dark:text-gray-300">
                     Kho B
                   </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-3 text-sm">
+                    <button
+                      onClick={() => handleViewDetail("002")}
+                      className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
+                    >
+                      👁️ Xem chi tiết
+                    </button>
+                  </td>
                 </tr>
                 <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-3 text-sm text-gray-900 dark:text-gray-300">
@@ -156,6 +194,14 @@ export default function ProductionPage() {
                   </td>
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-3 text-sm text-gray-900 dark:text-gray-300">
                     Kho C
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-3 text-sm">
+                    <button
+                      onClick={() => handleViewDetail("003")}
+                      className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
+                    >
+                      👁️ Xem chi tiết
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -244,25 +290,25 @@ export default function ProductionPage() {
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-3">
             <button
-              onClick={handleEdit}
+              onClick={() => handleEdit("001")}
               className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
             >
-              Sửa
+              ✏️ Sửa SP-001
             </button>
             <button className="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors">
-              Export File
+              📊 Export File
             </button>
             <button className="px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors">
-              Update Mới
+              🔄 Update Mới
             </button>
             <button className="px-4 py-2 bg-purple-600 dark:bg-purple-700 text-white rounded-lg hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors">
-              Trang chủ trang quản lý
+              🏠 Trang chủ quản lý
             </button>
             <button className="px-4 py-2 bg-orange-600 dark:bg-orange-700 text-white rounded-lg hover:bg-orange-700 dark:hover:bg-orange-600 transition-colors">
-              Xem lịch sử xuất nhập
+              📋 Xem lịch sử xuất nhập
             </button>
             <button className="px-4 py-2 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition-colors">
-              Xuất file
+              📄 Xuất file
             </button>
           </div>
         </div>

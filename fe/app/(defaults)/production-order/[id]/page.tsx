@@ -1,13 +1,14 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 
 export default function ProductListDetailsPage() {
-  const router = useRouter()
+  const { id } = useParams(); // ✅ Lấy "001" từ URL
+  const router = useRouter();
 
   const handleBack = () => {
-    router.push("/product/production")
-  }
+    router.push("/production-order");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
@@ -18,7 +19,6 @@ export default function ProductListDetailsPage() {
         </div>
 
         <div className="p-6">
-          {/* Search Bar */}
           <div className="mb-6">
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Tìm hàng</label>
             <input
