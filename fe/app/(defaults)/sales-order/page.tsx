@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Eye, RefreshCcw, Search, CalendarDays, ChevronDown, Filter, DollarSign } from 'lucide-react'; // pnpm install lucide-react
+// import { Eye, RefreshCcw, Search, CalendarDays, ChevronDown, Filter, DollarSign } from 'lucide-react'; // pnpm install lucide-react
 import PanelCodeHighlight from '@/components/panel-code-highlight';
 import { useRouter } from 'next/navigation';
 
@@ -110,7 +110,7 @@ const SalesOrderSummary = () => {
             {/* Bộ lọc */}
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="relative w-full md:w-1/3">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    {/* <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} /> */}
                     <input
                         type="text"
                         placeholder="Tìm theo tên khách hàng..."
@@ -125,7 +125,7 @@ const SalesOrderSummary = () => {
 
                 <div className="flex flex-wrap items-center gap-4">
                     <div className="relative">
-                        <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        {/* <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} /> */}
                         <input
                             type="date"
                             value={selectedDate}
@@ -138,7 +138,7 @@ const SalesOrderSummary = () => {
                     </div>
 
                     <div className="relative">
-                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        {/* <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} /> */}
                         <select
                             onChange={(e) => {
                                 const val = e.target.value;
@@ -152,11 +152,11 @@ const SalesOrderSummary = () => {
                             <option value="asc">Thấp → Cao</option>
                             <option value="desc">Cao → Thấp</option>
                         </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                        {/* <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} /> */}
                     </div>
 
                     <div className="relative">
-                        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        {/* <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} /> */}
                         <select
                             className="select select-bordered pl-10 pr-4 py-2 rounded-lg shadow-sm"
                             value={statusFilter}
@@ -218,11 +218,11 @@ const SalesOrderSummary = () => {
                                     <span className={`badge whitespace-nowrap ${order.status === 'Đã xác nhận' ? 'badge-outline-primary' : 'badge-outline-warning'}`}>{order.status}</span>
                                 </td>
                                 <td className="flex gap-2">
-                                    <button title="Chi tiết" onClick={() => router.push(`/sales-order-summary/${order.id}`)}>
-                                        <Eye className="w-5 h-5 text-blue-600 hover:text-blue-800" />
+                                    <button title="Chi tiết" onClick={() => router.push(`/sales-order/${order.id}`)}>
+                                        {/* <Eye className="w-5 h-5 text-blue-600 hover:text-blue-800" /> */}
                                     </button>
                                     <button title="Update MISA" onClick={handleUpdateMisa}>
-                                        <RefreshCcw className="w-5 h-5 text-green-600 hover:text-green-800" />
+                                        {/* <RefreshCcw className="w-5 h-5 text-green-600 hover:text-green-800" /> */}
                                     </button>
                                 </td>
                             </tr>

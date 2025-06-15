@@ -79,7 +79,7 @@ const SalesOrderSummaryPage = () => {
 
     // --- Action handlers ---
     const handleEdit = () => {
-        router.push(`/sales-order-edit/${orderId}`);
+        router.push(`/sales-order/sales-order-edit/${orderId}`);
     };
 
     const handleUpdateMisa = () => {
