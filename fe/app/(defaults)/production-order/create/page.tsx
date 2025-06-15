@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react';
 import sortBy from 'lodash/sortBy';
 import IconFile from '@/components/icon/icon-file';
 import IconPrinter from '@/components/icon/icon-printer';
-import ExcelJS from 'exceljs';
-import { Row, Cell, Workbook, Worksheet } from 'exceljs';
 
 // Thêm interface cho thông tin đơn hàng
 interface OrderInfo {
@@ -129,102 +127,8 @@ const ComponentsDatatablesExport = () => {
 
     const exportTable = (type: any) => {
         if (type === 'excel') {
-            // Tạo workbook Excel
-            const workbook: Workbook = new ExcelJS.Workbook();
-            const worksheet: Worksheet = workbook.addWorksheet('Lệnh sản xuất');
-
-            worksheet.addRow(['Thông tin đơn hàng']);
-            worksheet.addRow(['Tên khách hàng:', orderInfo.customerName]);
-            worksheet.addRow(['Mã đơn hàng:', orderInfo.orderCode]);
-            worksheet.addRow([]); // Dòng trống
-
-            worksheet.addRow(['Ghi chú:']);
-            worksheet.addRow(['- Kích thước kính được tính theo đơn vị mm']);
-            worksheet.addRow(['- Độ dày kính và butyl được tính theo đơn vị mm']);
-            worksheet.addRow(['- Số lượng keo được tính theo đơn vị kg']);
-            worksheet.addRow(['- Diện tích được tính theo đơn vị m²']);
-            worksheet.addRow([]); // Dòng trống
-
-            // Thêm header cho bảng sản phẩm
-            const headers = [
-                'STT',
-                'Mã sản phẩm',
-                'Số lượng',
-                'Độ dày (mm)',
-                'Số lớp keo',
-                'Số tấm kính',
-                'Rộng (mm)',
-                'Cao (mm)',
-                'Độ dày phôi kính',
-                'Loại Butyl (mm)'
-            ];
-            worksheet.addRow(headers);
-
-            // Thêm dữ liệu sản phẩm
-            rowData.forEach((item) => {
-                worksheet.addRow([
-                    item.id,
-                    item.productCode,
-                    item.quantity,
-                    item.thickness,
-                    item.glueLayers,
-                    item.glassLayers,
-                    item.width,
-                    item.height,
-                    item.glassThickness,
-                    item.butylType
-                ]);
-            });
-
-            // Style cho worksheet
-            worksheet.getColumn(1).width = 10; // STT
-            worksheet.getColumn(2).width = 20; // Mã sản phẩm
-            worksheet.getColumn(3).width = 15; // Số lượng
-            worksheet.getColumn(4).width = 15; // Độ dày
-            worksheet.getColumn(5).width = 15; // Số lớp keo
-            worksheet.getColumn(6).width = 15; // Số tấm kính
-            worksheet.getColumn(7).width = 15; // Rộng
-            worksheet.getColumn(8).width = 15; // Cao
-            worksheet.getColumn(9).width = 20; // Độ dày phôi kính
-            worksheet.getColumn(10).width = 20; // Loại Butyl
-
-            // Style cho header
-            worksheet.getRow(12).font = { bold: true };
-            worksheet.getRow(12).alignment = { vertical: 'middle', horizontal: 'center' };
-
-            // Style cho thông tin đơn hàng
-            worksheet.getRow(1).font = { bold: true, size: 14 };
-            worksheet.getRow(2).font = { bold: true };
-            worksheet.getRow(3).font = { bold: true };
-
-            // Style cho phần ghi chú
-            worksheet.getRow(6).font = { bold: true };
-            worksheet.getRow(6).alignment = { vertical: 'middle', horizontal: 'left' };
-            worksheet.getRow(7).alignment = { vertical: 'middle', horizontal: 'left' };
-            worksheet.getRow(8).alignment = { vertical: 'middle', horizontal: 'left' };
-            worksheet.getRow(9).alignment = { vertical: 'middle', horizontal: 'left' };
-            worksheet.getRow(10).alignment = { vertical: 'middle', horizontal: 'left' };
-
-            // Thêm border cho tất cả các ô
-            worksheet.eachRow((row: Row) => {
-                row.eachCell((cell: Cell) => {
-                    cell.border = {
-                        top: { style: 'thin' },
-                        left: { style: 'thin' },
-                        bottom: { style: 'thin' },
-                        right: { style: 'thin' }
-                    };
-                });
-            });
-
-            // Xuất file
-            workbook.xlsx.writeBuffer().then((buffer: ArrayBuffer) => {
-                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                const link = document.createElement('a');
-                link.href = window.URL.createObjectURL(blob);
-                link.download = `Lệnh sản xuất - ${orderInfo.orderCode}.xlsx`;
-                link.click();
-            });
+            // Button chỉ để hiển thị, không thực thi chức năng
+            return;
         } else if (type === 'print') {
             var rowhtml = '<p>' + 'Lệnh sản xuất' + '</p>';
             rowhtml +=
