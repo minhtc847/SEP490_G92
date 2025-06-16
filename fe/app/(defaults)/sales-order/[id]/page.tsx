@@ -42,7 +42,7 @@ const SalesOrderDetailPage = () => {
   };
 
   const handleCreateProductionOrder = () => {
-    router.push(`/production-order/create?orderId=${id}`);
+    router.push(`/production-orders/create?orderId=${id}`);
   };
 
   const handleBack = () => {
