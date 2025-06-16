@@ -122,7 +122,10 @@ const Sidebar = () => {
                                             <Link href="/">{t('sales')}</Link>
                                         </li>
                                         <li>
-                                            <Link href="/glue_and_butyl_issuance">{t('Glue and Butyl Issuance')}</Link>
+                                            <Link href="/production-orders/glue_and_butyl_issuance">{t('Glue and Butyl Issuance')}</Link>
+                                        </li>
+                                        <li>
+                                            <Link href="/production-orders/chemichal-issuance">{t('Chemichal Issuance')}</Link>
                                         </li>
                                     </ul>
                                 </AnimateHeight>
