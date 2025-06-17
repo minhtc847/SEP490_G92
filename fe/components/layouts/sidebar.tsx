@@ -91,7 +91,7 @@ const Sidebar = () => {
                     <div className="flex items-center justify-between px-4 py-3">
                         <Link href="/" className="main-logo flex shrink-0 items-center">
                             <img className="ml-[5px] w-8 flex-none" src="/assets/images/logo.svg" alt="logo" />
-                            <span className="align-middle text-2xl font-semibold ltr:ml-1.5 rtl:mr-1.5 dark:text-white-light lg:inline">VRISTO</span>
+                            <span className="align-middle text-2xl font-semibold ltr:ml-1.5 rtl:mr-1.5 dark:text-white-light lg:inline">VNG</span>
                         </Link>
 
                         <button
@@ -121,16 +121,12 @@ const Sidebar = () => {
                                         <li>
                                             <Link href="/">{t('sales')}</Link>
                                         </li>
-                                        <li>
-                                            <Link href="/production-orders/glue_and_butyl_issuance">{t('Glue and Butyl Issuance')}</Link>
-                                        </li>
-                                        <li>
-                                            <Link href="/production-orders/chemichal-issuance">{t('Chemichal Issuance')}</Link>
-                                        </li>
+                                        
                                     </ul>
                                 </AnimateHeight>
                             </li>
 
+                            {/* Đơn hàng */}
                             <li className="menu nav-item">
                                 <button type="button" className={`${currentMenu === 'order' ? 'active' : ''} nav-link group w-full`} onClick={() => toggleMenu('order')}>
                                     <div className="flex items-center">
@@ -155,14 +151,32 @@ const Sidebar = () => {
                                 </AnimateHeight>
                             </li>
 
-                            <li className="nav-item">
-                                <Link href="/production-orders" className="group">
+                            {/* Sản xuất */}
+                            <li className="menu nav-item">
+                                <button type="button" className={`${currentMenu === 'production' ? 'active' : ''} nav-link group w-full`} onClick={() => toggleMenu('production')}>
                                     <div className="flex items-center">
-                                        <IconMenuTodo className="shrink-0 group-hover:!text-primary" />
-                                        <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">Lệnh Sản Xuất</span>
+                                        <IconMenuInvoice className="shrink-0 group-hover:!text-primary" />
+                                        <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">Sản Xuất</span>
                                     </div>
-                                </Link>
+
+                                    <div className={currentMenu !== 'production' ? '-rotate-90 rtl:rotate-90' : ''}>
+                                        <IconCaretDown />
+                                    </div>
+                                </button>
+
+                                <AnimateHeight duration={300} height={currentMenu === 'production' ? 'auto' : 0}>
+                                    <ul className="sub-menu text-gray-500">
+                                        <li>
+                                            <Link href="/production-orders">Các lệnh sản xuất</Link>
+                                        </li>
+                                        <li>
+                                            <Link href="/production-orders/active">Đang sản xuất</Link>
+                                        </li>
+                                    </ul>
+                                </AnimateHeight>
                             </li>
+
+                           
                             
                         </ul>
                     </PerfectScrollbar>

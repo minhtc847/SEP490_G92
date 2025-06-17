@@ -205,7 +205,7 @@ const Header = () => {
                                 <IconSearch className="mx-auto h-4.5 w-4.5 dark:text-[#d0d2d6]" />
                             </button>
                         </div>
-                        <div>
+                        {/* <div>
                             {themeConfig.theme === 'light' ? (
                                 <button
                                     className={`${
@@ -241,7 +241,7 @@ const Header = () => {
                                     <IconLaptop />
                                 </button>
                             )}
-                        </div>
+                        </div> */}
                         {/*<div className="dropdown shrink-0">*/}
                         {/*    <Dropdown*/}
                         {/*        offset={[0, 8]}*/}
