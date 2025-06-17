@@ -1,0 +1,293 @@
+"use client"
+import { useState } from "react"
+import type React from "react"
+import { useRouter } from "next/navigation"
+import IconArrowLeft from "@/components/icon/icon-arrow-left"
+import IconRefresh from "@/components/icon/icon-refresh"
+import Link from "next/link"
+
+interface Customer {
+  id: number
+  customerCode: string
+  phone: string
+  name: string
+  customerType: "customer" | "supplier"
+  address: string
+  contactPerson: string
+  contactPhone: string
+  notes: string
+  discount: number
+  createdAt: string
+}
+
+const CustomerCreatePage = () => {
+  const router = useRouter()
+  const [formData, setFormData] = useState({
+    customerCode: "",
+    phone: "",
+    name: "",
+    customerType: "customer" as "customer" | "supplier",
+    address: "",
+    contactPerson: "",
+    contactPhone: "",
+    notes: "",
+    discount: 0,
+  })
+  const [loading, setLoading] = useState(false)
+
+  const handleInputChange = (field: string, value: string | number) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      // Lấy dữ liệu hiện tại từ localStorage
+      const stored = localStorage.getItem("customers_data")
+      const customers: Customer[] = stored ? JSON.parse(stored) : []
+
+      // Tạo ID mới
+      const newId = Math.max(...customers.map((c) => c.id), 0) + 1
+
+      // Tạo khách hàng mới
+      const newCustomer: Customer = {
+        ...formData,
+        id: newId,
+        createdAt: new Date().toISOString().split("T")[0],
+      }
+
+      // Thêm vào danh sách và lưu
+      customers.push(newCustomer)
+      localStorage.setItem("customers_data", JSON.stringify(customers))
+
+      alert(`Thêm khách hàng "${newCustomer.name}" thành công!`)
+      router.push("/customers")
+    } catch (error) {
+      alert("Có lỗi xảy ra khi thêm khách hàng!")
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const generateCustomerCode = () => {
+    // Lấy dữ liệu hiện tại để tạo mã mới
+    const stored = localStorage.getItem("customers_data")
+    const customers: Customer[] = stored ? JSON.parse(stored) : []
+
+    const prefix = formData.customerType === "customer" ? "KH" : "NCC"
+    const sameTypeCustomers = customers.filter((c) => c.customerCode.startsWith(prefix))
+
+    const maxCode = sameTypeCustomers.reduce((max, customer) => {
+      const codeNum = Number.parseInt(customer.customerCode.replace(prefix, ""))
+      return Math.max(max, codeNum || 0)
+    }, 0)
+
+    const code = `${prefix}${String(maxCode + 1).padStart(3, "0")}`
+    setFormData((prev) => ({
+      ...prev,
+      customerCode: code,
+    }))
+  }
+
+  return (
+    <div className="panel">
+      <div className="mb-5">
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Link href="/customers">
+              <button type="button" className="btn btn-outline-primary">
+                <IconArrowLeft className="mr-2" />
+                Quay lại
+              </button>
+            </Link>
+            <h2 className="text-xl font-semibold">Thông tin khách hàng</h2>
+          </div>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Row 1 */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <label htmlFor="customerCode" className="block text-sm font-medium text-gray-700 mb-1">
+                Mã khách hàng
+              </label>
+              <div className="flex gap-1">
+                <input
+                  id="customerCode"
+                  type="text"
+                  placeholder=""
+                  className="form-input flex-1"
+                  value={formData.customerCode}
+                  onChange={(e) => handleInputChange("customerCode", e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline-primary px-2"
+                  onClick={generateCustomerCode}
+                  title="Tạo mã tự động"
+                >
+                  <IconRefresh className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                Điện thoại
+              </label>
+              <input
+                id="phone"
+                type="tel"
+                placeholder=""
+                className="form-input"
+                value={formData.phone}
+                onChange={(e) => handleInputChange("phone", e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="customerType" className="block text-sm font-medium text-gray-700 mb-1">
+                Loại khách hàng
+              </label>
+              <select
+                id="customerType"
+                className="form-select"
+                value={formData.customerType}
+                onChange={(e) => handleInputChange("customerType", e.target.value)}
+              >
+                <option value="customer">Khách hàng</option>
+                <option value="supplier">Nhà cung cấp</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Row 2 */}
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              Tên khách hàng *
+            </label>
+            <input
+              id="name"
+              type="text"
+              placeholder=""
+              className="form-input"
+              value={formData.name}
+              onChange={(e) => handleInputChange("name", e.target.value)}
+              required
+            />
+          </div>
+
+          {/* Row 3 */}
+          <div>
+            <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+              Địa chỉ
+            </label>
+            <input
+              id="address"
+              type="text"
+              placeholder=""
+              className="form-input"
+              value={formData.address}
+              onChange={(e) => handleInputChange("address", e.target.value)}
+            />
+          </div>
+
+          {/* Contact Information Section */}
+          <div className="pt-4 border-t">
+            <h3 className="text-lg font-medium mb-4">Thông tin liên hệ</h3>
+
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label htmlFor="contactPerson" className="block text-sm font-medium text-gray-700 mb-1">
+                  Người liên hệ
+                </label>
+                <input
+                  id="contactPerson"
+                  type="text"
+                  placeholder=""
+                  className="form-input"
+                  value={formData.contactPerson}
+                  onChange={(e) => handleInputChange("contactPerson", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="contactPhone" className="block text-sm font-medium text-gray-700 mb-1">
+                  Số điện thoại liên hệ
+                </label>
+                <input
+                  id="contactPhone"
+                  type="tel"
+                  placeholder=""
+                  className="form-input"
+                  value={formData.contactPhone}
+                  onChange={(e) => handleInputChange("contactPhone", e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Information */}
+          <div className="pt-4 border-t">
+            <h3 className="text-lg font-medium mb-4">Thông tin bổ sung</h3>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
+                  Ghi chú
+                </label>
+                <textarea
+                  id="notes"
+                  placeholder="Nhập ghi chú về khách hàng..."
+                  className="form-textarea"
+                  rows={4}
+                  value={formData.notes}
+                  onChange={(e) => handleInputChange("notes", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="discount" className="block text-sm font-medium text-gray-700 mb-1">
+                  Chiết khấu
+                </label>
+                <input
+                  id="discount"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  placeholder="Nhập số chiết khấu"
+                  className="form-input"
+                  value={formData.discount}
+                  onChange={(e) => handleInputChange("discount", Number.parseFloat(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-4 pt-6 border-t">
+            <Link href="/customers">
+              <button type="button" className="btn btn-outline-secondary" disabled={loading}>
+                Hủy
+              </button>
+            </Link>
+            <button type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? "Đang lưu..." : "Lưu khách hàng"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+export default CustomerCreatePage
