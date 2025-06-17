@@ -226,7 +226,7 @@ const ListProductionOrders = () => {
             paginationText={({ from, to, totalRecords }) => `Showing  ${from} to ${to} of ${totalRecords} entries`}
           />
         </div>
-        {/* Popup xác nhận minh họa */}
+
         {popup.open && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
             <div className="bg-white rounded shadow-lg p-6 min-w-[300px]">
@@ -245,4 +245,9 @@ const ListProductionOrders = () => {
   );
 };
 
-export default ListProductionOrders;
+const Page = () => {
+  return <ListProductionOrders />;
+};
+
+export default Page;
+

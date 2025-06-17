@@ -1,9 +1,11 @@
+.github
+/obj
+
 # dependencies
 /node_modules
 /.pnp
 .pnp.js
 
-/obj
 
 # testing
 /coverage
