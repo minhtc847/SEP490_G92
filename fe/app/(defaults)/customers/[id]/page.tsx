@@ -3,6 +3,8 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import IconArrowLeft from "@/components/icon/icon-arrow-left"
 import IconEdit from "@/components/icon/icon-edit"
+import IconUser from "@/components/icon/icon-user"
+import IconUsers from "@/components/icon/icon-users"
 
 interface Customer {
   id: number
@@ -10,13 +12,15 @@ interface Customer {
   email: string
   phone: string
   address: string
-  website?: string
-  industry?: string
+  customerType: "customer" | "supplier"
   notes?: string
-  status: "active" | "inactive"
+  discount?: number
   createdAt: string
   customerCode: string
-  customerCardCode: string
+  contactPerson?: string
+  position?: string
+  mailbox?: string
+  contactPhone?: string
 }
 
 export default function CustomerDetailPage({ params }: { params: { id: string } }) {
@@ -57,84 +61,201 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
   }
 
   return (
-    <div className="panel">
-      <div className="mb-5">
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/customers">
-              <button className="btn btn-outline-primary">
-                <IconArrowLeft className="mr-2" />
-                Quay lại
-              </button>
-            </Link>
-            <div>
-              <h2 className="text-2xl font-bold">Chi tiết khách hàng</h2>
-              <p className="text-gray-500">Thông tin chi tiết của khách hàng #{customer.id}</p>
+    <div className="flex gap-6">
+      {/* Main Content */}
+      <div className="flex-1">
+        <div className="panel">
+          {/* Header */}
+          <div className="mb-6 flex items-center justify-between border-b pb-4">
+            <div className="flex items-center gap-4">
+              <Link href="/customers">
+                <button className="btn btn-outline-primary">
+                  <IconArrowLeft className="mr-2" />
+                  Quay lại
+                </button>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold">{customer.name}</h1>
+                <p className="text-gray-500">Chi tiết khách hàng #{customer.id}</p>
+              </div>
             </div>
-          </div>
-          <Link href={`/customers/${customer.id}/edit`}>
-            <button className="btn btn-primary">
-              <IconEdit className="mr-2" />
-              Chỉnh sửa
-            </button>
-          </Link>
-        </div>
-
-        <div className="grid gap-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">{customer.name}</h3>
-            <div className="flex gap-2">
-              <span className="badge bg-primary">{customer.customerCode}</span>
-              <span className={`badge ${customer.status === "active" ? "bg-success" : "bg-secondary"}`}>
-                {customer.status === "active" ? "Hoạt động" : "Không hoạt động"}
+            <div className="flex items-center gap-2">
+              <span className={`badge ${customer.customerType === "customer" ? "bg-info" : "bg-warning"}`}>
+                {customer.customerType === "customer" ? "Khách hàng" : "Nhà cung cấp"}
               </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column - Basic Info */}
+            <div className="space-y-6">
               <div>
-                <p className="font-medium text-gray-700">Email</p>
-                <p className="text-gray-900">{customer.email}</p>
-              </div>
+                <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center gap-2">
+                  {customer.customerType === "customer" ? (
+                    <IconUser className="w-5 h-5 text-blue-500" />
+                  ) : (
+                    <IconUsers className="w-5 h-5 text-orange-500" />
+                  )}
+                  Thông tin cơ bản
+                </h3>
 
-              <div>
-                <p className="font-medium text-gray-700">Số điện thoại</p>
-                <p className="text-gray-900">{customer.phone}</p>
-              </div>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                    <span className="text-gray-600 font-medium">Mã khách hàng:</span>
+                    <span className="col-span-2 font-semibold text-primary">{customer.customerCode}</span>
+                  </div>
 
-              <div>
-                <p className="font-medium text-gray-700">Mã thẻ khách hàng</p>
-                <p className="text-gray-900">{customer.customerCardCode}</p>
+                  <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                    <span className="text-gray-600 font-medium">Tên:</span>
+                    <span className="col-span-2 font-semibold">{customer.name}</span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                    <span className="text-gray-600 font-medium">Email:</span>
+                    <span className="col-span-2">{customer.email}</span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                    <span className="text-gray-600 font-medium">Số điện thoại:</span>
+                    <span className="col-span-2">{customer.phone}</span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                    <span className="text-gray-600 font-medium">Địa chỉ:</span>
+                    <span className="col-span-2">{customer.address}</span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                    <span className="text-gray-600 font-medium">Loại:</span>
+                    <span className="col-span-2">
+                      <div className="flex items-center gap-2">
+                        {customer.customerType === "customer" ? (
+                          <>
+                            <IconUser className="w-4 h-4 text-blue-500" />
+                            <span className="text-blue-600 font-medium">Khách hàng</span>
+                          </>
+                        ) : (
+                          <>
+                            <IconUsers className="w-4 h-4 text-orange-500" />
+                            <span className="text-orange-600 font-medium">Nhà cung cấp</span>
+                          </>
+                        )}
+                      </div>
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-4">
+            {/* Right Column - Contact & Additional Info */}
+            <div className="space-y-6">
               <div>
-                <p className="font-medium text-gray-700">Địa chỉ</p>
-                <p className="text-gray-900">{customer.address}</p>
+                <h3 className="text-lg font-semibold mb-4 text-gray-800">Thông tin liên hệ</h3>
+
+                <div className="space-y-4">
+                  {customer.contactPerson && (
+                    <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                      <span className="text-gray-600 font-medium">Người liên hệ:</span>
+                      <span className="col-span-2">{customer.contactPerson}</span>
+                    </div>
+                  )}
+
+                  {customer.position && (
+                    <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                      <span className="text-gray-600 font-medium">Chức vụ:</span>
+                      <span className="col-span-2">{customer.position}</span>
+                    </div>
+                  )}
+
+                  {customer.mailbox && (
+                    <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                      <span className="text-gray-600 font-medium">Hộp thư:</span>
+                      <span className="col-span-2">{customer.mailbox}</span>
+                    </div>
+                  )}
+
+                  {customer.contactPhone && (
+                    <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                      <span className="text-gray-600 font-medium">SĐT liên hệ:</span>
+                      <span className="col-span-2">{customer.contactPhone}</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {customer.website && (
-                <div>
-                  <p className="font-medium text-gray-700">Website</p>
-                  <p className="text-gray-900">{customer.website}</p>
-                </div>
-              )}
+              <div>
+                <h3 className="text-lg font-semibold mb-4 text-gray-800">Thông tin bổ sung</h3>
 
-              {customer.notes && (
-                <div>
-                  <p className="font-medium text-gray-700">Ghi chú</p>
-                  <p className="text-gray-900">{customer.notes}</p>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                    <span className="text-gray-600 font-medium">Chiết khấu:</span>
+                    <span className="col-span-2 font-semibold text-green-600">{customer.discount || 0}</span>
+                  </div>
+
+                  {customer.notes && (
+                    <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                      <span className="text-gray-600 font-medium">Ghi chú:</span>
+                      <span className="col-span-2">{customer.notes}</span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-3 gap-4 py-3">
+                    <span className="text-gray-600 font-medium">Ngày tạo:</span>
+                    <span className="col-span-2">{new Date(customer.createdAt).toLocaleDateString("vi-VN")}</span>
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div className="pt-4 border-t">
-            <p className="text-sm text-gray-500">
-              Ngày tạo: {new Date(customer.createdAt).toLocaleDateString("vi-VN")}
-            </p>
+      {/* Sidebar */}
+      <div className="w-80">
+        <div className="panel">
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Thông tin tóm tắt</h3>
+              <div className="space-y-3">
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="text-sm text-gray-600">Mã khách hàng</div>
+                  <div className="font-bold text-lg text-primary">{customer.customerCode}</div>
+                </div>
+
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="text-sm text-gray-600">Loại khách hàng</div>
+                  <div className="font-medium">
+                    {customer.customerType === "customer" ? "Khách hàng" : "Nhà cung cấp"}
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="text-sm text-gray-600">Chiết khấu</div>
+                  <div className="font-bold text-green-600">{customer.discount || 0}</div>
+                </div>
+
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="text-sm text-gray-600">Ngày tạo</div>
+                  <div className="font-medium">{new Date(customer.createdAt).toLocaleDateString("vi-VN")}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-semibold mb-3">Thao tác</h3>
+              <div className="space-y-2">
+                <Link href={`/customers/${customer.id}/edit`} className="block">
+                  <button className="btn btn-primary w-full">
+                    <IconEdit className="mr-2" />
+                    Chỉnh sửa
+                  </button>
+                </Link>
+
+                <Link href="/customers" className="block">
+                  <button className="btn btn-outline-secondary w-full">Quay lại danh sách</button>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>

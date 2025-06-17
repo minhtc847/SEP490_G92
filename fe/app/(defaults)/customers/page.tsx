@@ -4,6 +4,8 @@ import IconTrashLines from "@/components/icon/icon-trash-lines"
 import IconEdit from "@/components/icon/icon-edit"
 import IconEye from "@/components/icon/icon-eye"
 import IconPlus from "@/components/icon/icon-plus"
+import IconUser from "@/components/icon/icon-user"
+import IconUsers from "@/components/icon/icon-users"
 import Tippy from "@tippyjs/react"
 import "tippy.js/dist/tippy.css"
 import Link from "next/link"
@@ -14,13 +16,11 @@ interface Customer {
   email: string
   phone: string
   address: string
-  website?: string
-  industry?: string
+  customerType: "customer" | "supplier"
   notes?: string
-  status: "active" | "inactive"
+  discount?: number
   createdAt: string
   customerCode: string
-  customerCardCode: string
 }
 
 const CustomersListPage = () => {
@@ -36,27 +36,23 @@ const CustomersListPage = () => {
       email: "nguyenvana@email.com",
       phone: "0123456789",
       address: "123 Đường ABC, Quận 1, Hà Nội",
-      website: "https://example.com",
-      industry: "technology",
-      notes: "Khách hàng VIP",
-      status: "active",
+      customerType: "customer",
+      notes: "Khách hàng VIP, ưu tiên phục vụ",
+      discount: 10,
       createdAt: "2024-01-15",
       customerCode: "KH001",
-      customerCardCode: "CC001",
     },
     {
       id: 2,
-      name: "Trần Thị B",
-      email: "tranthib@email.com",
+      name: "Công ty TNHH ABC",
+      email: "contact@abc.com",
       phone: "0987654321",
       address: "456 Đường XYZ, Quận 3, TP.HCM",
-      website: "https://tranthib.com",
-      industry: "retail",
-      notes: "Khách hàng thường xuyên",
-      status: "active",
+      customerType: "supplier",
+      notes: "Nhà cung cấp nguyên liệu chính",
+      discount: 5,
       createdAt: "2024-02-20",
-      customerCode: "KH002",
-      customerCardCode: "CC002",
+      customerCode: "NCC001",
     },
     {
       id: 3,
@@ -64,13 +60,11 @@ const CustomersListPage = () => {
       email: "levanc@email.com",
       phone: "0369852147",
       address: "789 Đường DEF, Hải Châu, Đà Nẵng",
-      website: "",
-      industry: "manufacturing",
+      customerType: "customer",
       notes: "",
-      status: "inactive",
+      discount: 0,
       createdAt: "2024-03-10",
-      customerCode: "KH003",
-      customerCardCode: "CC003",
+      customerCode: "KH002",
     },
   ]
 
@@ -142,9 +136,13 @@ const CustomersListPage = () => {
         {/* Filter Tags */}
         <div className="mb-4 flex gap-2">
           <span className="badge bg-primary">Tất cả ({customers.length})</span>
-          <span className="badge bg-success">Hoạt động ({customers.filter((c) => c.status === "active").length})</span>
-          <span className="badge bg-secondary">
-            Không hoạt động ({customers.filter((c) => c.status === "inactive").length})
+          <span className="badge bg-info">
+            <IconUser className="w-3 h-3 mr-1" />
+            Khách hàng ({customers.filter((c) => c.customerType === "customer").length})
+          </span>
+          <span className="badge bg-warning">
+            <IconUsers className="w-3 h-3 mr-1" />
+            Nhà cung cấp ({customers.filter((c) => c.customerType === "supplier").length})
           </span>
         </div>
 
@@ -156,13 +154,13 @@ const CustomersListPage = () => {
                 <th>
                   <input type="checkbox" className="form-checkbox" />
                 </th>
-                <th>Mã KH</th>
+                <th>Mã</th>
                 <th>Tên khách hàng</th>
                 <th>Email</th>
                 <th>Số điện thoại</th>
                 <th>Địa chỉ</th>
-                <th>Trạng thái</th>
-                <th>Ngày tạo</th>
+                <th>Loại</th>
+                <th>Chiết khấu</th>
                 <th className="text-center">Thao tác</th>
               </tr>
             </thead>
@@ -177,16 +175,29 @@ const CustomersListPage = () => {
                   </td>
                   <td>
                     <div className="whitespace-nowrap font-semibold">{customer.name}</div>
+                    {customer.notes && <div className="text-xs text-gray-500 mt-1">{customer.notes}</div>}
                   </td>
                   <td>{customer.email}</td>
                   <td>{customer.phone}</td>
                   <td className="max-w-xs truncate">{customer.address}</td>
                   <td>
-                    <span className={`badge ${customer.status === "active" ? "bg-success" : "bg-secondary"}`}>
-                      {customer.status === "active" ? "Hoạt động" : "Không hoạt động"}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      {customer.customerType === "customer" ? (
+                        <>
+                          <IconUser className="w-4 h-4 text-blue-500" />
+                          <span className="text-blue-600 font-medium">Khách hàng</span>
+                        </>
+                      ) : (
+                        <>
+                          <IconUsers className="w-4 h-4 text-orange-500" />
+                          <span className="text-orange-600 font-medium">Nhà cung cấp</span>
+                        </>
+                      )}
+                    </div>
                   </td>
-                  <td>{new Date(customer.createdAt).toLocaleDateString("vi-VN")}</td>
+                  <td>
+                    <span className="font-semibold text-green-600">{customer.discount || 0}</span>
+                  </td>
                   <td className="text-center">
                     <div className="flex items-center justify-center gap-2">
                       <Tippy content="Xem chi tiết">

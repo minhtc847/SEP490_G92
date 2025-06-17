@@ -1,13 +1,13 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import IconSave from "@/components/icon/icon-save"
 import IconArrowLeft from "@/components/icon/icon-arrow-left"
+import IconSave from "@/components/icon/icon-save"
 import IconTrashLines from "@/components/icon/icon-trash-lines"
+import IconRefresh from "@/components/icon/icon-refresh"
 
 interface Customer {
   id: number
@@ -15,13 +15,15 @@ interface Customer {
   email: string
   phone: string
   address: string
-  website?: string
-  industry?: string
+  customerType: "customer" | "supplier"
   notes?: string
-  status: "active" | "inactive"
+  discount?: number
   createdAt: string
   customerCode: string
-  customerCardCode: string
+  contactPerson: string
+  position: string
+  mailbox: string
+  contactPhone: string
 }
 
 export default function EditCustomerPage({ params }: { params: { id: string } }) {
@@ -32,14 +34,27 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
     email: "",
     phone: "",
     address: "",
-    website: "",
-    industry: "",
+    customerType: "customer" as "customer" | "supplier",
     notes: "",
-    status: "active" as "active" | "inactive",
+    discount: 0,
     customerCode: "",
-    customerCardCode: "",
+    contactPerson: "",
+    position: "",
+    mailbox: "",
+    contactPhone: "",
   })
   const [loading, setLoading] = useState(false)
+
+  const positionOptions = [
+    "Giám đốc",
+    "Phó giám đốc",
+    "Trưởng phòng",
+    "Phó phòng",
+    "Nhân viên",
+    "Kế toán",
+    "Thư ký",
+    "Khác",
+  ]
 
   useEffect(() => {
     const loadCustomer = () => {
@@ -55,12 +70,14 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
               email: foundCustomer.email,
               phone: foundCustomer.phone,
               address: foundCustomer.address,
-              website: foundCustomer.website || "",
-              industry: foundCustomer.industry || "",
+              customerType: foundCustomer.customerType,
               notes: foundCustomer.notes || "",
-              status: foundCustomer.status,
+              discount: foundCustomer.discount || 0,
               customerCode: foundCustomer.customerCode,
-              customerCardCode: foundCustomer.customerCardCode,
+              contactPerson: foundCustomer.contactPerson || "",
+              position: foundCustomer.position || "",
+              mailbox: foundCustomer.mailbox || "",
+              contactPhone: foundCustomer.contactPhone || "",
             })
           }
         }
@@ -119,10 +136,30 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: name === "discount" ? Number.parseFloat(value) || 0 : value,
     })
+  }
+
+  const generateCustomerCode = () => {
+    const stored = localStorage.getItem("customers_data")
+    const customers: Customer[] = stored ? JSON.parse(stored) : []
+
+    const prefix = formData.customerType === "customer" ? "KH" : "NCC"
+    const sameTypeCustomers = customers.filter((c) => c.customerCode.startsWith(prefix))
+
+    const maxCode = sameTypeCustomers.reduce((max, customer) => {
+      const codeNum = Number.parseInt(customer.customerCode.replace(prefix, ""))
+      return Math.max(max, codeNum || 0)
+    }, 0)
+
+    const code = `${prefix}${String(maxCode + 1).padStart(3, "0")}`
+    setFormData((prev) => ({
+      ...prev,
+      customerCode: code,
+    }))
   }
 
   if (!customer) {
@@ -140,177 +177,273 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
   }
 
   return (
-    <div className="panel">
-      <div className="mb-5">
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link href={`/customers/${params.id}`}>
-              <button type="button" className="btn btn-outline-primary">
-                <IconArrowLeft className="mr-2" />
-                Quay lại
-              </button>
-            </Link>
-            <h2 className="text-xl font-semibold">Chỉnh sửa khách hàng #{params.id}</h2>
+    <div className="flex gap-6">
+      {/* Main Content */}
+      <div className="flex-1">
+        <div className="panel">
+          {/* Header */}
+          <div className="mb-6 flex items-center justify-between border-b pb-4">
+            <div className="flex items-center gap-4">
+              <Link href={`/customers/${params.id}`}>
+                <button type="button" className="btn btn-outline-primary">
+                  <IconArrowLeft className="mr-2" />
+                  Quay lại
+                </button>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold">Chỉnh sửa khách hàng</h1>
+                <p className="text-gray-500">Cập nhật thông tin khách hàng #{params.id}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`badge ${formData.customerType === "customer" ? "bg-info" : "bg-warning"}`}>
+                {formData.customerType === "customer" ? "Khách hàng" : "Nhà cung cấp"}
+              </span>
+            </div>
           </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left Column - Basic Info */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-800">Thông tin cơ bản</h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Mã khách hàng</label>
+                      <div className="flex gap-2">
+                        <input
+                          name="customerCode"
+                          type="text"
+                          value={formData.customerCode}
+                          onChange={handleChange}
+                          className="form-input flex-1"
+                        />
+                        <button
+                          type="button"
+                          onClick={generateCustomerCode}
+                          className="btn btn-outline-primary px-3"
+                          title="Tạo mã tự động"
+                        >
+                          <IconRefresh className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tên khách hàng *</label>
+                      <input
+                        name="name"
+                        type="text"
+                        value={formData.name}
+                        onChange={handleChange}
+                        className="form-input"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="form-input"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                      <input
+                        name="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        className="form-input"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
+                      <textarea
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        className="form-textarea"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Loại khách hàng</label>
+                      <select
+                        name="customerType"
+                        value={formData.customerType}
+                        onChange={handleChange}
+                        className="form-select"
+                      >
+                        <option value="customer">Khách hàng</option>
+                        <option value="supplier">Nhà cung cấp</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column - Contact & Additional Info */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-800">Thông tin liên hệ</h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Người liên hệ</label>
+                      <input
+                        name="contactPerson"
+                        type="text"
+                        value={formData.contactPerson}
+                        onChange={handleChange}
+                        className="form-input"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Chức vụ</label>
+                      <select name="position" value={formData.position} onChange={handleChange} className="form-select">
+                        <option value="">Chọn chức vụ</option>
+                        {positionOptions.map((pos) => (
+                          <option key={pos} value={pos}>
+                            {pos}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Hộp thư điện tử</label>
+                      <input
+                        name="mailbox"
+                        type="text"
+                        value={formData.mailbox}
+                        onChange={handleChange}
+                        className="form-input"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">SĐT liên hệ</label>
+                      <input
+                        name="contactPhone"
+                        type="tel"
+                        value={formData.contactPhone}
+                        onChange={handleChange}
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-800">Thông tin bổ sung</h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Chiết khấu</label>
+                      <input
+                        name="discount"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={formData.discount}
+                        onChange={handleChange}
+                        className="form-input"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
+                      <textarea
+                        name="notes"
+                        value={formData.notes}
+                        onChange={handleChange}
+                        className="form-textarea"
+                        rows={4}
+                        placeholder="Nhập ghi chú về khách hàng..."
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Left Column */}
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Tên khách hàng *
-                </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Nhập tên khách hàng"
-                  className="form-input"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email *
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Nhập email"
-                  className="form-input"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                  Số điện thoại
-                </label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="Nhập số điện thoại"
-                  className="form-input"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="customerCode" className="block text-sm font-medium text-gray-700 mb-1">
-                  Mã khách hàng
-                </label>
-                <input
-                  id="customerCode"
-                  name="customerCode"
-                  type="text"
-                  value={formData.customerCode}
-                  onChange={handleChange}
-                  placeholder="Nhập mã khách hàng"
-                  className="form-input"
-                />
-              </div>
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                  Địa chỉ
-                </label>
-                <textarea
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  placeholder="Nhập địa chỉ"
-                  className="form-textarea"
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-1">
-                  Website
-                </label>
-                <input
-                  id="website"
-                  name="website"
-                  type="url"
-                  value={formData.website}
-                  onChange={handleChange}
-                  placeholder="Nhập website"
-                  className="form-input"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-                  Ghi chú
-                </label>
-                <textarea
-                  id="notes"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleChange}
-                  placeholder="Nhập ghi chú"
-                  className="form-textarea"
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                  Trạng thái
-                </label>
-                <select
-                  id="status"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  className="form-select"
-                >
-                  <option value="active">Hoạt động</option>
-                  <option value="inactive">Không hoạt động</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-4 pt-6 border-t">
-            <Link href={`/customers/${params.id}`}>
-              <button type="button" className="btn btn-outline-secondary" disabled={loading}>
-                Hủy
-              </button>
-            </Link>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              <IconSave className="mr-2" />
-              {loading ? "Đang lưu..." : "Cập nhật"}
-            </button>
-          </div>
-        </form>
-
-        {/* Delete Section */}
-        <div className="mt-8 pt-6 border-t">
-          <div className="flex items-center justify-between">
+      {/* Sidebar */}
+      <div className="w-80">
+        <div className="panel">
+          <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-medium text-red-600">Xóa khách hàng</h3>
-              <p className="text-sm text-gray-500">Hành động này không thể hoàn tác. Khách hàng sẽ bị xóa vĩnh viễn.</p>
+              <h3 className="text-lg font-semibold mb-3">Thông tin khách hàng</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Mã KH:</span>
+                  <span className="font-medium">{formData.customerCode}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Ngày tạo:</span>
+                  <span className="font-medium">{new Date(customer.createdAt).toLocaleDateString("vi-VN")}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Loại:</span>
+                  <span className={`badge ${formData.customerType === "customer" ? "bg-info" : "bg-warning"}`}>
+                    {formData.customerType === "customer" ? "Khách hàng" : "Nhà cung cấp"}
+                  </span>
+                </div>
+              </div>
             </div>
-            <button type="button" onClick={handleDelete} className="btn btn-outline-danger" disabled={loading}>
-              <IconTrashLines className="mr-2" />
-              Xóa khách hàng
-            </button>
+
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-semibold mb-3">Thao tác</h3>
+              <div className="space-y-2">
+                <button
+                  type="submit"
+                  form="edit-form"
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="btn btn-success w-full"
+                >
+                  <IconSave className="mr-2" />
+                  {loading ? "Đang lưu..." : "Lưu thay đổi"}
+                </button>
+
+                <Link href={`/customers/${params.id}`} className="block">
+                  <button type="button" className="btn btn-outline-primary w-full">
+                    Xem chi tiết
+                  </button>
+                </Link>
+
+                <Link href="/customers" className="block">
+                  <button type="button" className="btn btn-outline-secondary w-full">
+                    Quay lại danh sách
+                  </button>
+                </Link>
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-semibold mb-3 text-red-600">Vùng nguy hiểm</h3>
+              <button type="button" onClick={handleDelete} disabled={loading} className="btn btn-outline-danger w-full">
+                <IconTrashLines className="mr-2" />
+                Xóa khách hàng
+              </button>
+              <p className="text-xs text-gray-500 mt-2">
+                Hành động này không thể hoàn tác. Khách hàng sẽ bị xóa vĩnh viễn.
+              </p>
+            </div>
           </div>
         </div>
       </div>

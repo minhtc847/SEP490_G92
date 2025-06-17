@@ -8,40 +8,36 @@ import Link from "next/link"
 
 interface Customer {
   id: number
-  taxCode: string
-  businessRegCode: string
   customerCode: string
   phone: string
-  website: string
   name: string
-  isSupplier: boolean
+  customerType: "customer" | "supplier"
   address: string
   contactPerson: string
   position: string
   mailbox: string
   email: string
   contactPhone: string
-  status: "active" | "inactive"
+  notes: string
+  discount: number
   createdAt: string
 }
 
 const CustomerCreatePage = () => {
   const router = useRouter()
   const [formData, setFormData] = useState({
-    taxCode: "",
-    businessRegCode: "",
     customerCode: "",
     phone: "",
-    website: "",
     name: "",
-    isSupplier: false,
+    customerType: "customer" as "customer" | "supplier",
     address: "",
     contactPerson: "",
     position: "",
     mailbox: "",
     email: "",
     contactPhone: "",
-    status: "active" as "active" | "inactive",
+    notes: "",
+    discount: 0,
   })
   const [loading, setLoading] = useState(false)
 
@@ -56,7 +52,7 @@ const CustomerCreatePage = () => {
     "Khác",
   ]
 
-  const handleInputChange = (field: string, value: string | boolean) => {
+  const handleInputChange = (field: string, value: string | number) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -101,12 +97,15 @@ const CustomerCreatePage = () => {
     const stored = localStorage.getItem("customers_data")
     const customers: Customer[] = stored ? JSON.parse(stored) : []
 
-    const maxCode = customers.reduce((max, customer) => {
-      const codeNum = Number.parseInt(customer.customerCode.replace("KH", ""))
+    const prefix = formData.customerType === "customer" ? "KH" : "NCC"
+    const sameTypeCustomers = customers.filter((c) => c.customerCode.startsWith(prefix))
+
+    const maxCode = sameTypeCustomers.reduce((max, customer) => {
+      const codeNum = Number.parseInt(customer.customerCode.replace(prefix, ""))
       return Math.max(max, codeNum || 0)
     }, 0)
 
-    const code = `KH${String(maxCode + 1).padStart(3, "0")}`
+    const code = `${prefix}${String(maxCode + 1).padStart(3, "0")}`
     setFormData((prev) => ({
       ...prev,
       customerCode: code,
@@ -132,35 +131,7 @@ const CustomerCreatePage = () => {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Row 1 */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">
-            <div>
-              <label htmlFor="taxCode" className="block text-sm font-medium text-gray-700 mb-1">
-                Mã số thuế
-              </label>
-              <input
-                id="taxCode"
-                type="text"
-                placeholder=""
-                className="form-input"
-                value={formData.taxCode}
-                onChange={(e) => handleInputChange("taxCode", e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="businessRegCode" className="block text-sm font-medium text-gray-700 mb-1">
-                Mã số ĐKKD/ĐT
-              </label>
-              <input
-                id="businessRegCode"
-                type="text"
-                placeholder=""
-                className="form-input"
-                value={formData.businessRegCode}
-                onChange={(e) => handleInputChange("businessRegCode", e.target.value)}
-              />
-            </div>
-
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label htmlFor="customerCode" className="block text-sm font-medium text-gray-700 mb-1">
                 Mã khách hàng
@@ -200,48 +171,35 @@ const CustomerCreatePage = () => {
             </div>
 
             <div>
-              <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-1">
-                Website
+              <label htmlFor="customerType" className="block text-sm font-medium text-gray-700 mb-1">
+                Loại khách hàng
               </label>
-              <input
-                id="website"
-                type="url"
-                placeholder=""
-                className="form-input"
-                value={formData.website}
-                onChange={(e) => handleInputChange("website", e.target.value)}
-              />
+              <select
+                id="customerType"
+                className="form-select"
+                value={formData.customerType}
+                onChange={(e) => handleInputChange("customerType", e.target.value)}
+              >
+                <option value="customer">Khách hàng</option>
+                <option value="supplier">Nhà cung cấp</option>
+              </select>
             </div>
           </div>
 
           {/* Row 2 */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Tên khách hàng
-              </label>
-              <input
-                id="name"
-                type="text"
-                placeholder=""
-                className="form-input"
-                value={formData.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="flex items-end">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="form-checkbox mr-2"
-                  checked={formData.isSupplier}
-                  onChange={(e) => handleInputChange("isSupplier", e.target.checked)}
-                />
-                <span className="text-sm font-medium text-gray-700">Nhà cung cấp</span>
-              </label>
-            </div>
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              Tên khách hàng *
+            </label>
+            <input
+              id="name"
+              type="text"
+              placeholder=""
+              className="form-input"
+              value={formData.name}
+              onChange={(e) => handleInputChange("name", e.target.value)}
+              required
+            />
           </div>
 
           {/* Row 3 */}
@@ -261,6 +219,8 @@ const CustomerCreatePage = () => {
 
           {/* Contact Information Section */}
           <div className="pt-4 border-t">
+            <h3 className="text-lg font-medium mb-4">Thông tin liên hệ</h3>
+
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label htmlFor="contactPerson" className="block text-sm font-medium text-gray-700 mb-1">
@@ -327,7 +287,7 @@ const CustomerCreatePage = () => {
 
               <div>
                 <label htmlFor="contactPhone" className="block text-sm font-medium text-gray-700 mb-1">
-                  Số điện thoại
+                  Số điện thoại liên hệ
                 </label>
                 <input
                   id="contactPhone"
@@ -341,6 +301,44 @@ const CustomerCreatePage = () => {
             </div>
           </div>
 
+          {/* Additional Information */}
+          <div className="pt-4 border-t">
+            <h3 className="text-lg font-medium mb-4">Thông tin bổ sung</h3>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
+                  Ghi chú
+                </label>
+                <textarea
+                  id="notes"
+                  placeholder="Nhập ghi chú về khách hàng..."
+                  className="form-textarea"
+                  rows={4}
+                  value={formData.notes}
+                  onChange={(e) => handleInputChange("notes", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="discount" className="block text-sm font-medium text-gray-700 mb-1">
+                  Chiết khấu
+                </label>
+                <input
+                  id="discount"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  placeholder="Nhập số chiết khấu"
+                  className="form-input"
+                  value={formData.discount}
+                  onChange={(e) => handleInputChange("discount", Number.parseFloat(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Action Buttons */}
           <div className="flex justify-end gap-4 pt-6 border-t">
             <Link href="/customers">
@@ -349,7 +347,7 @@ const CustomerCreatePage = () => {
               </button>
             </Link>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? "Đang lưu..." : "OK"}
+              {loading ? "Đang lưu..." : "Lưu khách hàng"}
             </button>
           </div>
         </form>

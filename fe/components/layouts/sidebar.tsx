@@ -164,29 +164,29 @@ const Sidebar = () => {
                                 </Link>
                             </li>
                             <li className="menu nav-item">
-                    <button type="button" className={`${currentMenu === "customers" ? "active" : ""} nav-link group w-full`} onClick={() => toggleMenu("customers")}>
-                  <div className="flex items-center">
-                    <IconMenuUsers className="shrink-0 group-hover:!text-primary" />
-                    <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
-                      Khách Hàng
-                    </span>
-                  </div>
+                            <button type="button" className={`${currentMenu === "customers" ? "active" : ""} nav-link group w-full`} onClick={() => toggleMenu("customers")}>
+                                <div className="flex items-center">
+                                    <IconMenuUsers className="shrink-0 group-hover:!text-primary" />
+                                    <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                    Khách Hàng
+                                    </span>
+                                </div>
 
-                  <div className={currentMenu !== "customers" ? "-rotate-90 rtl:rotate-90" : ""}>
-                    <IconCaretDown />
-                  </div>
-                </button>
+                                <div className={currentMenu !== "customers" ? "-rotate-90 rtl:rotate-90" : ""}>
+                                    <IconCaretDown />
+                                </div>
+                            </button>
 
-                <AnimateHeight duration={300} height={currentMenu === "customers" ? "auto" : 0}>
-                  <ul className="sub-menu text-gray-500">
-                            <li>
-                      <Link href="/customers">Danh Sách Khách Hàng</Link>
-                            </li>
-                            <li>
-                      <Link href="/customers/create">Thêm Khách Hàng</Link>
-                            </li>
-                        </ul>
-                </AnimateHeight>
+                                <AnimateHeight duration={300} height={currentMenu === "customers" ? "auto" : 0}>
+                                <ul className="sub-menu text-gray-500">
+                                    <li>
+                                        <Link href="/customers">Danh Sách Khách Hàng</Link>
+                                    </li>
+                                    <li>
+                                        <Link href="/customers/create">Thêm Khách Hàng</Link>
+                                    </li>
+                                </ul>
+                                </AnimateHeight>
                             </li>
                         </ul>
                     </PerfectScrollbar>
