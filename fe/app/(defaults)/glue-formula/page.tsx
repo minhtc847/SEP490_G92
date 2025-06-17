@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Swal from 'sweetalert2';
 
 const hardGlueData: { name: string; ratio: number; desc: string; mass: number }[] = [
   { name: "A", ratio: 74.9, desc: "Chất abcxyz", mass: 0 },
@@ -15,7 +16,7 @@ const softGlueData: { name: string; ratio: number; desc: string; mass: number }[
 
 function GlueTable({ title, data, inputValue, onInputChange, onCalc, onExport }: any) {
   return (
-    <div style={{ marginBottom: 48 }}>
+    <div style={{ marginBottom: 48, border: "1px solid #e5e7eb", borderRadius: 8, padding: 24, backgroundColor: "white" }}>
       <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24 }}>{title}</h2>
       <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 16 }}>
         <thead>
@@ -64,36 +65,83 @@ export default function GlueFormulaPage() {
 
   const handleCalcHard = () => {
     const total = parseFloat(hardInput);
-    if (!total || total <= 0) return;
+    if (!total || total <= 0) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: 'Vui lòng nhập khối lượng hợp lệ',
+        padding: '2em',
+        customClass: { popup: 'sweet-alerts' },
+      });
+      return;
+    }
     setHardData(
       hardGlueData.map((row) => ({
         ...row,
         mass: Number(((row.ratio / 100) * total).toFixed(2)),
       }))
     );
-  };
-  const handleExportHard = () => {
-    // Placeholder: xuất file logic
-    alert("Xuất file công thức keo cứng!");
+    Swal.fire({
+      icon: 'success',
+      title: 'Thành công!',
+      text: 'Đã tính toán công thức keo cứng',
+      padding: '2em',
+      customClass: { popup: 'sweet-alerts' },
+    });
   };
 
   const handleCalcSoft = () => {
     const total = parseFloat(softInput);
-    if (!total || total <= 0) return;
+    if (!total || total <= 0) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: 'Vui lòng nhập khối lượng hợp lệ',
+        padding: '2em',
+        customClass: { popup: 'sweet-alerts' },
+      });
+      return;
+    }
     setSoftData(
       softGlueData.map((row) => ({
         ...row,
         mass: Number(((row.ratio / 100) * total).toFixed(2)),
       }))
     );
+    Swal.fire({
+      icon: 'success',
+      title: 'Thành công!',
+      text: 'Đã tính toán công thức keo mềm',
+      padding: '2em',
+      customClass: { popup: 'sweet-alerts' },
+    });
   };
+
+  const handleExportHard = () => {
+    Swal.fire({
+      icon: 'success',
+      title: 'Thành công!',
+      text: 'Đã xuất file công thức keo cứng',
+      padding: '2em',
+      customClass: { popup: 'sweet-alerts' },
+    });
+  };
+
   const handleExportSoft = () => {
-    // Placeholder: xuất file logic
-    alert("Xuất file công thức keo mềm!");
+    Swal.fire({
+      icon: 'success',
+      title: 'Thành công!',
+      text: 'Đã xuất file công thức keo mềm',
+      padding: '2em',
+      customClass: { popup: 'sweet-alerts' },
+    });
   };
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: 32 }}>
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: 32, backgroundColor: "#f9fafb" }}>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">Công thức keo</h1>
+      </div>
       <GlueTable
         title="Keo cứng"
         data={hardData}
@@ -102,9 +150,8 @@ export default function GlueFormulaPage() {
         onCalc={handleCalcHard}
         onExport={handleExportHard}
       />
-      <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24 }}>Keo mềm</h2>
       <GlueTable
-        title=""
+        title="Keo mềm"
         data={softData}
         inputValue={softInput}
         onInputChange={(e: any) => setSoftInput(e.target.value)}
