@@ -142,6 +142,13 @@ const GlueStructurePage = () => {
           : record
       );
       setRecords(updatedRecords);
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: 'Đã cập nhật cấu tạo keo thành công',
+        padding: '2em',
+        customClass: { popup: 'sweet-alerts' },
+      });
     } else {
       // Add new record
       const newRecord = {
@@ -155,6 +162,13 @@ const GlueStructurePage = () => {
         glueLayerThickness: Number(formData.glueLayerThickness),
       };
       setRecords([...records, newRecord]);
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: 'Đã thêm mới cấu tạo keo thành công',
+        padding: '2em',
+        customClass: { popup: 'sweet-alerts' },
+      });
     }
     setModalOpen(false);
   };
