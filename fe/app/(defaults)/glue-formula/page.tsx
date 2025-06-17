@@ -15,7 +15,7 @@ const softGlueData: { name: string; ratio: number; desc: string; mass: number }[
 
 function GlueTable({ title, data, inputValue, onInputChange, onCalc, onExport }: any) {
   return (
-    <div style={{ marginBottom: 48 }}>
+    <div style={{ marginBottom: 48, border: "1px solid #e5e7eb", borderRadius: 8, padding: 24, backgroundColor: "white" }}>
       <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24 }}>{title}</h2>
       <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 16 }}>
         <thead>
@@ -73,7 +73,6 @@ export default function GlueFormulaPage() {
     );
   };
   const handleExportHard = () => {
-    // Placeholder: xuất file logic
     alert("Xuất file công thức keo cứng!");
   };
 
@@ -88,12 +87,14 @@ export default function GlueFormulaPage() {
     );
   };
   const handleExportSoft = () => {
-    // Placeholder: xuất file logic
     alert("Xuất file công thức keo mềm!");
   };
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: 32 }}>
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: 32, backgroundColor: "#f9fafb" }}>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">Công thức keo</h1>
+      </div>
       <GlueTable
         title="Keo cứng"
         data={hardData}
@@ -102,9 +103,8 @@ export default function GlueFormulaPage() {
         onCalc={handleCalcHard}
         onExport={handleExportHard}
       />
-      <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24 }}>Keo mềm</h2>
       <GlueTable
-        title=""
+        title="Keo mềm"
         data={softData}
         inputValue={softInput}
         onInputChange={(e: any) => setSoftInput(e.target.value)}
