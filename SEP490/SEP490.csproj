@@ -21,8 +21,7 @@
 
   <ItemGroup>
     <Folder Include="DB\Migrations\" />
-    <Folder Include="Modules\Products\" />
-    <Folder Include="Modules\SalesOrder\ManageSalesOrder\DTO\" />
+    <Folder Include="Modules\TestModule\ManageSalesOrder\DTO\" />
   </ItemGroup>
 
 </Project>
