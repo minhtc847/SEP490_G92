@@ -138,8 +138,8 @@ export const mockOrders = [
         ],
     },
     {
-        id: 'Công ty Cổ phần Kính Việt Nhật (VFG)',
-        customerName: 'Hoàng Văn E',
+        id: 'DH00004',
+        customerName: 'Công ty Cổ phần Kính Việt Nhật (VFG)',
         customerAddress: '654 Đường MNO, Quận 5, TP.HCM',
         customerPhone: '0933 567 890',
         orderDate: '2025-06-09',
