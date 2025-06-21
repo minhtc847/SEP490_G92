@@ -4,7 +4,7 @@ using SEP490.Modules.SalesOrder.ManageSalesOrder.Services;
 
 namespace SEP490.Modules.SalesOrder.ManageSalesOrder.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/test-table")]
     [ApiController]
     public class TestTableController : ControllerBase
     {

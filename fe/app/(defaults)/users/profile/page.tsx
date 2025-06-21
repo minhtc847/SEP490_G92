@@ -1,3 +1,4 @@
+'use client';
 import IconCalendar from '@/components/icon/icon-calendar';
 import IconClock from '@/components/icon/icon-clock';
 import IconCoffee from '@/components/icon/icon-coffee';
@@ -12,15 +13,26 @@ import IconShoppingBag from '@/components/icon/icon-shopping-bag';
 import IconTag from '@/components/icon/icon-tag';
 import IconTwitter from '@/components/icon/icon-twitter';
 import ComponentsUsersProfilePaymentHistory from '@/components/users/profile/components-users-profile-payment-history';
-import { Metadata } from 'next';
 import Link from 'next/link';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { TestTable, getTestTableArray } from '../service';
 
-export const metadata: Metadata = {
-    title: 'Profile',
-};
 
 const Profile = () => {
+    const [data, setData] = useState<TestTable[]>([]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const result = await getTestTableArray();
+                setData(result);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
+
+        fetchData();
+    }, []);
     return (
         <div>
             <ul className="flex space-x-2 rtl:space-x-reverse">
@@ -45,7 +57,7 @@ const Profile = () => {
                         <div className="mb-5">
                             <div className="flex flex-col items-center justify-center">
                                 <img src="/assets/images/profile-34.jpeg" alt="img" className="mb-5 h-24 w-24 rounded-full  object-cover" />
-                                <p className="text-xl font-semibold text-primary">Jimmy Turner</p>
+                                <p className="text-xl font-semibold text-primary"> {data.length > 0 && data[0]?.name ? data[0].name : 'No data available'}</p>
                             </div>
                             <ul className="m-auto mt-5 flex max-w-[160px] flex-col space-y-4 font-semibold text-white-dark">
                                 <li className="flex items-center gap-2">
