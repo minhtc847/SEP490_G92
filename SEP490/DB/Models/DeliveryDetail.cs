@@ -6,7 +6,7 @@ public class DeliveryDetail
     public DateTime DeliveryDate { get; set; }
     public string? ProductCode { get; set; }
     public int ProductId { get; set; }
-    public int Quantity { get; set; }
+    public int? Quantity { get; set; }
     public decimal? Height { get; set; }
     public decimal? Width { get; set; }
     public decimal? Thickness { get; set; }

@@ -6,14 +6,14 @@ public class InventoryTransaction
     public int ProductId { get; set; }
     public string? ProductName { get; set; }
     public string? Warehouse { get; set; }
-    public string? Unit { get; set; }
-    public int Quantity { get; set; }
+    public string? UOM { get; set; }
+    public int? Quantity { get; set; }
     public decimal? UnitPrice { get; set; }
     public decimal? TotalAmount { get; set; }
     public string? ProductionOrderCode { get; set; }
     public int? ProductionOrderId { get; set; }
     public string? CostObject { get; set; }
-    public string? DocumentCode { get; set; }
+    public string? CodeItem { get; set; }
     public int? WarehouseReceiptId { get; set; }
     public int? WarehouseIssueId { get; set; }
 

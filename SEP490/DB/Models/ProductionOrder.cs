@@ -5,9 +5,7 @@ public class ProductionOrder
     public string? ProductionOrderCode { get; set; }
     public DateTime OrderDate { get; set; }
     public string? Description { get; set; }
-    public string? ReceiptCode { get; set; }
-    public string? IssueCode { get; set; }
-    public string? Status { get; set; }
+    public string? ProductionStatus { get; set; }
     public string? ProductionPlanCode { get; set; }
     public int ProductionPlanId { get; set; }
 

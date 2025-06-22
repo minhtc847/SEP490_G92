@@ -12,5 +12,5 @@ public class Customer
     public decimal? Discount { get; set; }
     public bool IsSupplier { get; set; }
 
-    public ICollection<PurchaseOrder> PurchaseOrders { get; set; } = new List<PurchaseOrder>();
+    public ICollection<SaleOrder> SaleOrders { get; set; } = new List<SaleOrder>();
 }

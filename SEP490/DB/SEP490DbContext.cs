@@ -24,7 +24,7 @@ namespace SEP490.DB
         public DbSet<Customer> Customers { get; set; }
         public DbSet<GlassStructure> GlassStructures { get; set; }
         public DbSet<Product> Products { get; set; }
-        public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
+        public DbSet<SaleOrder> SaleOrders { get; set; }
         public DbSet<OrderDetail> OrderDetails { get; set; }
         public DbSet<OrderDetailProduct> OrderDetailProducts { get; set; }
         public DbSet<Delivery> Deliveries { get; set; }
@@ -34,6 +34,8 @@ namespace SEP490.DB
         public DbSet<WarehouseReceipt> WarehouseReceipts { get; set; }
         public DbSet<WarehouseIssue> WarehouseIssues { get; set; }
         public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
+        public DbSet<ProductionOutput> ProductionOutputs { get; set; }
+        public DbSet<ProductionMaterial> ProductionMaterials { get; set; }
 
     }
 }

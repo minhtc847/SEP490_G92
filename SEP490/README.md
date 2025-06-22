@@ -9,10 +9,10 @@ dotnet ef database update
 
 For migrate
 ```bash
-./Scripts/migrate.sh AddTestTable
+./Scripts/migrate.bat AddTestTable
 ```
 
-For rollback
+For rollback (Remove to this migration):
 ```bash
-./Scripts/migrate.sh RemoveTestTable
+./Scripts/rollback.bat AddTestTable
 ```

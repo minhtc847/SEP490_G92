@@ -9,6 +9,5 @@ public class WarehouseReceipt
     public string? Deliverer { get; set; }
     public string? ProductionOrderCode { get; set; }
     public int? ProductionOrderId { get; set; }
-
     public ProductionOrder? ProductionOrder { get; set; }
 }

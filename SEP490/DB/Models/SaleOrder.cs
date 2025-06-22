@@ -1,5 +1,5 @@
 namespace SEP490.DB.Models;
-public class PurchaseOrder
+public class SaleOrder
 {
     public int Id { get; set; }
     public string? OrderCode { get; set; }
@@ -9,6 +9,5 @@ public class PurchaseOrder
     public decimal? OrderValue { get; set; }
     public string? Status { get; set; }
     public string? DeliveryStatus { get; set; }
-
     public Customer Customer { get; set; } = null!;
 }
