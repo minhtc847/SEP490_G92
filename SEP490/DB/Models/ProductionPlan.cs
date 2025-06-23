@@ -3,7 +3,6 @@ public class ProductionPlan
 {
     public int Id { get; set; }
     public DateTime PlanDate { get; set; }
-    public string? OrderCode { get; set; }
     public int SaleOrderId { get; set; }
     public string? CustomerCode { get; set; }
     public int CustomerId { get; set; }
