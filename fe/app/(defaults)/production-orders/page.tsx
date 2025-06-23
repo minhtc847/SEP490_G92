@@ -4,74 +4,78 @@ import { useEffect, useState } from 'react';
 import sortBy from 'lodash/sortBy';
 import Swal from 'sweetalert2';
 import { useRouter } from 'next/navigation';
+import { getProductionPlansArray, ProductionPlan } from './service';
 
 const PAGE_SIZES = [5, 10, 20, 50];
 
-const productionOrders = [
-  {
-    id: 'LSX0001',
-    date: '09/06/2025',
-    orderCode: 'DH00001',
-    customer: 'Hoàng',
-    totalQuantity: 20,
-    status: 'Chờ phê duyệt',
-    note: '',
-  },
-  {
-    id: 'LSX0002',
-    date: '09/06/2025',
-    orderCode: 'DH00002',
-    customer: 'Minh',
-    totalQuantity: 10,
-    status: 'Đang sản xuất',
-    note: '',
-  },
-  {
-    id: 'LSX0003',
-    date: '09/06/2025',
-    orderCode: 'DH00003',
-    customer: 'Hiếu',
-    totalQuantity: 11,
-    status: 'Đang sản xuất',
-    note: '',
-  },
-  {
-    id: 'LSX0004',
-    date: '09/06/2025',
-    orderCode: 'DH00004',
-    customer: 'Kiên',
-    totalQuantity: 2,
-    status: 'Đã hoàn tất',
-    note: '',
-  },
-  {
-    id: 'LSX0005',
-    date: '09/06/2025',
-    orderCode: 'DH00005',
-    customer: 'Tuấn',
-    totalQuantity: 5,
-    status: 'Đã hoàn tất',
-    note: '',
-  },
-  {
-    id: 'LSX0006',
-    date: '09/06/2025',
-    orderCode: 'DH00006',
-    customer: 'Tú',
-    totalQuantity: 30,
-    status: 'Đã hoàn tất',
-    note: '',
-  },
-  {
-    id: 'LSX0007',
-    date: '09/06/2025',
-    orderCode: 'DH00007',
-    customer: 'Nhật',
-    totalQuantity: 15,
-    status: 'Đã hoàn tất',
-    note: '',
-  },
-];
+// const productionOrders = [
+//   {
+//     id: 'LSX0001',
+//     date: '09/06/2025',
+//     orderCode: 'DH00001',
+//     customer: 'Hoàng',
+//     totalQuantity: 20,
+//     status: 'Chờ phê duyệt',
+//     note: '',
+//   },
+//   {
+//     id: 'LSX0002',
+//     date: '09/06/2025',
+//     orderCode: 'DH00002',
+//     customer: 'Minh',
+//     totalQuantity: 10,
+//     status: 'Đang sản xuất',
+//     note: '',
+//   },
+//   {
+//     id: 'LSX0003',
+//     date: '09/06/2025',
+//     orderCode: 'DH00003',
+//     customer: 'Hiếu',
+//     totalQuantity: 11,
+//     status: 'Đang sản xuất',
+//     note: '',
+//   },
+//   {
+//     id: 'LSX0004',
+//     date: '09/06/2025',
+//     orderCode: 'DH00004',
+//     customer: 'Kiên',
+//     totalQuantity: 2,
+//     status: 'Đã hoàn tất',
+//     note: '',
+//   },
+//   {
+//     id: 'LSX0005',
+//     date: '09/06/2025',
+//     orderCode: 'DH00005',
+//     customer: 'Tuấn',
+//     totalQuantity: 5,
+//     status: 'Đã hoàn tất',
+//     note: '',
+//   },
+//   {
+//     id: 'LSX0006',
+//     date: '09/06/2025',
+//     orderCode: 'DH00006',
+//     customer: 'Tú',
+//     totalQuantity: 30,
+//     status: 'Đã hoàn tất',
+//     note: '',
+//   },
+//   {
+//     id: 'LSX0007',
+//     date: '09/06/2025',
+//     orderCode: 'DH00007',
+//     customer: 'Nhật',
+//     totalQuantity: 15,
+//     status: 'Đã hoàn tất',
+//     note: '',
+//   },
+// ];
+
+
+
 
 const statusColor = (status: string) => {
   switch (status) {
@@ -87,6 +91,20 @@ const statusColor = (status: string) => {
 };
 
 const ListProductionOrders = () => {
+  const [productionOrders,setproductionOrders] = useState<ProductionPlan[]>([]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const result = await getProductionPlansArray();
+                setproductionOrders(result);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
+
+        fetchData();
+    }, []);
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
@@ -102,6 +120,8 @@ const ListProductionOrders = () => {
     setPage(1);
   }, [pageSize]);
 
+  
+
   useEffect(() => {
     const from = (page - 1) * pageSize;
     const to = from + pageSize;
@@ -113,6 +133,11 @@ const ListProductionOrders = () => {
     setInitialRecords(sortStatus.direction === 'desc' ? data.reverse() : data);
     setPage(1);
   }, [sortStatus]);
+
+  useEffect(() => {
+  const sorted = sortBy(productionOrders, sortStatus.columnAccessor);
+  setInitialRecords(sortStatus.direction === 'desc' ? sorted.reverse() : sorted);
+}, [productionOrders]);
 
   const handleView = (record: any) => {
     router.push(`/production-orders/${record.id}`);
@@ -173,11 +198,11 @@ const ListProductionOrders = () => {
             className="table-hover whitespace-nowrap"
             records={recordsData}
             columns={[
-              { accessor: 'id', title: 'Mã LXS', sortable: true },
-              { accessor: 'date', title: 'Thời gian', sortable: true },
-              { accessor: 'orderCode', title: 'Mã ĐH', sortable: true },
-              { accessor: 'customer', title: 'KHÁCH HÀNG', sortable: true },
-              { accessor: 'totalQuantity', title: 'Tổng Số lượng', sortable: true },
+                    { accessor: 'id', title: 'Mã LXS', sortable: true },
+                    { accessor: 'planDate', title: 'Thời gian', sortable: true }, 
+                    { accessor: 'orderCode', title: 'Mã ĐH', sortable: true }, 
+                    { accessor: 'customerName', title: 'KHÁCH HÀNG', sortable: true }, 
+                    { accessor: 'quantity', title: 'Tổng Số lượng', sortable: true }, 
               {
                 accessor: 'status',
                 title: 'Trạng thái',
@@ -250,4 +275,3 @@ const Page = () => {
 };
 
 export default Page;
-

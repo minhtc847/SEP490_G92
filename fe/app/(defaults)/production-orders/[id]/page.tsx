@@ -154,9 +154,6 @@ const ProductionOrderDetailPage = () => {
               <th className="border p-2">Độ dày (mm)</th>
               <th className="border p-2">Rộng (mm)</th>
               <th className="border p-2">Cao (mm)</th>
-              <th className="border p-2">Số lớp keo</th>
-              <th className="border p-2">Số tấm kính</th>
-              <th className="border p-2">Loại Butyl (mm)</th>
               <th className="border p-2">Số lượng</th>
               <th className="border p-2">Đang sản xuất</th>
               <th className="border p-2">Đã hoàn thành</th>
@@ -170,16 +167,13 @@ const ProductionOrderDetailPage = () => {
                 <td className="border p-2 text-right">{item.thickness}</td>
                 <td className="border p-2 text-right">{item.width}</td>
                 <td className="border p-2 text-right">{item.height}</td>
-                <td className="border p-2 text-right">{item.glueLayers}</td>
-                <td className="border p-2 text-right">{item.glassPanels}</td>
-                <td className="border p-2 text-right">{item.butylType}</td>
                 <td className="border p-2 text-right">{item.quantity}</td>
                 <td className="border p-2 text-right">{item.inProgress}</td>
                 <td className="border p-2 text-right">{item.completed}</td>
               </tr>
             ))}
             <tr className="bg-gray-50 font-bold">
-              <td colSpan={8} className="border p-2 text-right">Tổng cộng:</td>
+              <td colSpan={5} className="border p-2 text-right">Tổng cộng:</td>
               <td className="border p-2 text-right">{totals.quantity}</td>
               <td className="border p-2 text-right">{totals.inProgress}</td>
               <td className="border p-2 text-right">{totals.completed}</td>
