@@ -12,9 +12,9 @@ export interface ProductionPlanDetail{
     completed: string
 }
 
-export const getProductionPlanDetailsArray = async (): Promise<ProductionPlanDetail[]> => {
+export const getProductionPlanDetailsArray = async (id:string): Promise<ProductionPlanDetail[]> => {
     try {
-        const response = await axios.get<ProductionPlanDetailsArray[]>("/api/ProductionPlan/Details", {
+        const response = await axios.get<ProductionPlanDetail[]>("/api/ProductionPlan/Details/" + id, {
         })
         return response.data
     } catch (error) {

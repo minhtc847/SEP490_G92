@@ -1,70 +1,45 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-
-// Mock data for production order
-const mockProductionOrder = {
-  id: 'PO001',
-  orderDate: '2024-03-20',
-  status: 'Đang sản xuất',
-  items: [
-    {
-      id: 1,
-      productCode: 'SP001',
-      thickness: 6,
-      width: 1000,
-      height: 2000,
-      glueLayers: 2,
-      glassPanels: 3,
-      butylType: 0.5,
-      quantity: 10,
-      inProgress: 5,
-      completed: 2
-    },
-    {
-      id: 2,
-      productCode: 'SP002',
-      thickness: 8,
-      width: 1200,
-      height: 1800,
-      glueLayers: 1,
-      glassPanels: 2,
-      butylType: 0.4,
-      quantity: 8,
-      inProgress: 3,
-      completed: 1
-    }
-  ],
-  productionStatus: [
-    {
-      id: 1,
-      date: '2024-03-20 09:00',
-      productCode: 'SP001',
-      quantity: 5,
-      status: 'Đang sản xuất',
-      action: 'Xem chi tiết'
-    }
-  ]
-};
+import { getProductionPlanDetailsArray, ProductionPlanDetail } from './service';
 
 const ProductionOrderDetailPage = () => {
   const { id } = useParams();
   const router = useRouter();
-  const [showPopup, setShowPopup] = useState(false);
-  const [productionItems, setProductionItems] = useState(mockProductionOrder.items);
-  const [productionStatus, setProductionStatus] = useState(mockProductionOrder.productionStatus);
+
+  const [productionItems, setProductionItems] = useState<ProductionPlanDetail[]>([]);
+  const [productionStatus, setProductionStatus] = useState<any[]>([]);
   const [popupQuantities, setPopupQuantities] = useState<Record<number, number>>({});
+  const [showPopup, setShowPopup] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch data from API
+  useEffect(() => {
+  const fetchData = async () => {
+    if (!id) return; // tránh gọi khi chưa có id
+    try {
+      const data = await getProductionPlanDetailsArray(id as string); // 👈 truyền id vào đây
+      setProductionItems(data);
+    } catch (error) {
+      console.error('Lỗi khi tải dữ liệu:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, [id]);
+
 
   const handleEdit = () => {
     router.push(`/production-orders/edit/${id}`);
   };
 
   const handleStartProduction = () => {
-    // Initialize popup quantities with current quantities
     const initialQuantities = productionItems.reduce((acc, item) => ({
       ...acc,
-      [item.id]: item.quantity
+      [parseInt(item.id)]: Number(item.quantity)
     }), {});
     setPopupQuantities(initialQuantities);
     setShowPopup(true);
@@ -75,14 +50,13 @@ const ProductionOrderDetailPage = () => {
   };
 
   const handlePopupConfirm = () => {
-    // Filter out items with quantity > 0 and create new status entries
     const newStatus = productionItems
-      .filter(item => popupQuantities[item.id] > 0)
+      .filter(item => popupQuantities[parseInt(item.id)] > 0)
       .map(item => ({
         id: Date.now() + Math.random(),
         date: new Date().toLocaleString(),
         productCode: item.productCode,
-        quantity: popupQuantities[item.id],
+        quantity: popupQuantities[parseInt(item.id)],
         status: 'Đang sản xuất',
         action: 'Xem chi tiết'
       }));
@@ -103,20 +77,22 @@ const ProductionOrderDetailPage = () => {
   };
 
   const handleViewDetail = (statusId: number) => {
-    // Ensure we're using the correct ID format
     const formattedStatusId = `PS${String(statusId).padStart(3, '0')}`;
     router.push(`/production-orders/${id}/production-status-detail/${formattedStatusId}`);
   };
 
-  // Calculate totals
   const totals = productionItems.reduce(
     (acc, item) => ({
-      quantity: acc.quantity + item.quantity,
-      inProgress: acc.inProgress + item.inProgress,
-      completed: acc.completed + item.completed
+      quantity: acc.quantity + Number(item.quantity),
+      inProgress: acc.inProgress + Number(item.inProgressQuantity),
+      completed: acc.completed + Number(item.completed)
     }),
     { quantity: 0, inProgress: 0, completed: 0 }
   );
+
+  if (loading) {
+    return <p className="p-6">Đang tải dữ liệu...</p>;
+  }
 
   return (
     <div className="p-6">
@@ -133,19 +109,13 @@ const ProductionOrderDetailPage = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-sm">
-        <div>
-          <strong>Mã lệnh sản xuất:</strong> {id}
-        </div>
-        <div>
-          <strong>Ngày tạo:</strong> {mockProductionOrder.orderDate}
-        </div>
-        <div>
-          <strong>Trạng thái:</strong> {mockProductionOrder.status}
-        </div>
+        <div><strong>Mã lệnh sản xuất:</strong> {id}</div>
+        <div><strong>Ngày tạo:</strong> Không có dữ liệu</div>
+        <div><strong>Trạng thái:</strong> Không có dữ liệu</div>
       </div>
 
       <h2 className="text-xl font-semibold mb-4">Chi tiết lệnh sản xuất</h2>
-      <div className="table-responsive mb-6 overflow-x-auto">
+      <div className="overflow-x-auto mb-6">
         <table className="w-full border-collapse border text-sm">
           <thead className="bg-gray-100">
             <tr>
@@ -168,7 +138,7 @@ const ProductionOrderDetailPage = () => {
                 <td className="border p-2 text-right">{item.width}</td>
                 <td className="border p-2 text-right">{item.height}</td>
                 <td className="border p-2 text-right">{item.quantity}</td>
-                <td className="border p-2 text-right">{item.inProgress}</td>
+                <td className="border p-2 text-right">{item.inProgressQuantity}</td>
                 <td className="border p-2 text-right">{item.completed}</td>
               </tr>
             ))}
@@ -183,7 +153,7 @@ const ProductionOrderDetailPage = () => {
       </div>
 
       <h2 className="text-xl font-semibold mb-4">Trạng thái sản xuất</h2>
-      <div className="table-responsive mb-6 overflow-x-auto">
+      <div className="overflow-x-auto mb-6">
         <table className="w-full border-collapse border text-sm">
           <thead className="bg-gray-100">
             <tr>
@@ -204,10 +174,7 @@ const ProductionOrderDetailPage = () => {
                 <td className="border p-2 text-right">{status.quantity}</td>
                 <td className="border p-2">{status.status}</td>
                 <td className="border p-2">
-                  <button 
-                    onClick={() => handleViewDetail(status.id)} 
-                    className="text-blue-600 hover:underline"
-                  >
+                  <button onClick={() => handleViewDetail(status.id)} className="text-blue-600 hover:underline">
                     {status.action}
                   </button>
                 </td>
@@ -227,8 +194,10 @@ const ProductionOrderDetailPage = () => {
                   <span>{item.productCode}</span>
                   <input
                     type="number"
-                    value={popupQuantities[item.id] || 0}
-                    onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 0)}
+                    value={popupQuantities[parseInt(item.id)] || 0}
+                    onChange={(e) =>
+                      handleQuantityChange(parseInt(item.id), parseInt(e.target.value) || 0)
+                    }
                     className="border p-1 w-24 text-right"
                     min="0"
                   />
@@ -236,26 +205,14 @@ const ProductionOrderDetailPage = () => {
               ))}
             </div>
             <div className="flex justify-end space-x-2 mt-6">
-              <button
-                onClick={handlePopupClose}
-                className="px-4 py-1 bg-gray-300 text-black rounded"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handlePopupConfirm}
-                className="px-4 py-1 bg-blue-500 text-white rounded"
-              >
-                OK
-              </button>
+              <button onClick={handlePopupClose} className="px-4 py-1 bg-gray-300 text-black rounded">Hủy</button>
+              <button onClick={handlePopupConfirm} className="px-4 py-1 bg-blue-500 text-white rounded">OK</button>
             </div>
           </div>
         </div>
       )}
 
-      <button onClick={handleBack} className="px-3 py-1 bg-gray-300 text-black rounded mt-4">
-        ◀ Quay lại
-      </button>
+      <button onClick={handleBack} className="px-3 py-1 bg-gray-300 text-black rounded mt-4">◀ Quay lại</button>
     </div>
   );
 };
