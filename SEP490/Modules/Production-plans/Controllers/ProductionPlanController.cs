@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SEP490.DB.Models;
+using SEP490.Modules.Production_plans.DTO;
 using SEP490.Modules.Production_plans.Services;
 
 namespace SEP490.Modules.Production_plans.Controllers
@@ -35,5 +36,13 @@ namespace SEP490.Modules.Production_plans.Controllers
             var data = await _productionPlanService.GetProductionPlanDetailsAsync(planId);
             return Ok(data);
         }
+
+        [HttpPost("create")]
+        public async Task<IActionResult> CreatePlan(string orderCode, [FromBody] CreateProductionPlanInputDTO dto)
+        {
+            await _productionPlanService.CreateProductionPlanAsync(dto);
+            return Ok(new { message = "Tạo kế hoạch sản xuất thành công!" });
+        }
+
     }
 }

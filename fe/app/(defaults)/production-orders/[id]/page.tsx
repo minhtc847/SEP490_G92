@@ -97,7 +97,7 @@ const ProductionOrderDetailPage = () => {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Chi tiết lệnh sản xuất: {id}</h1>
+        <h1 className="text-2xl font-bold">Chi tiết kế hoạch sản xuất: {id}</h1>
         <div className="space-x-2">
           <button onClick={handleEdit} className="px-4 py-1 bg-blue-500 text-white rounded">
             📝 Sửa
@@ -114,7 +114,7 @@ const ProductionOrderDetailPage = () => {
         <div><strong>Trạng thái:</strong> Không có dữ liệu</div>
       </div>
 
-      <h2 className="text-xl font-semibold mb-4">Chi tiết lệnh sản xuất</h2>
+      <h2 className="text-xl font-semibold mb-4">Chi tiết kế hoạch sản xuất</h2>
       <div className="overflow-x-auto mb-6">
         <table className="w-full border-collapse border text-sm">
           <thead className="bg-gray-100">

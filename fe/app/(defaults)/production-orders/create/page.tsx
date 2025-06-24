@@ -36,6 +36,7 @@ const rowData = [
         height: 2135,
         glassThickness: 5,
         butylType: 5,
+        
     },
     {
         id: 2,
@@ -267,14 +268,12 @@ const ComponentsDatatablesExport = () => {
                         columns={[
                             { accessor: 'id', title: 'STT', sortable: true },
                             { accessor: 'productCode', title: 'Mã sản phẩm', sortable: true },
+                            { accessor: 'orderCode', title: 'Mã đơn hàng', sortable: true },
                             { accessor: 'quantity', title: 'Số lượng', sortable: true },
                             { accessor: 'thickness', title: 'Độ dày (mm)', sortable: true },
-                            { accessor: 'glueLayers', title: 'Số lớp keo', sortable: true },
-                            { accessor: 'glassLayers', title: 'Số tấm kính', sortable: true },
                             { accessor: 'width', title: 'Rộng (mm)', sortable: true },
                             { accessor: 'height', title: 'Cao (mm)', sortable: true },
-                            { accessor: 'glassThickness', title: 'Độ dày phôi kính', sortable: true },
-                            { accessor: 'butylType', title: 'Loại Butyl (mm)', sortable: true },
+                            
                         ]}
                         totalRecords={initialRecords.length}
                         recordsPerPage={pageSize}

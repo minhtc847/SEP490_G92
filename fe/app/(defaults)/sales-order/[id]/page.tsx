@@ -42,8 +42,24 @@ const SalesOrderDetailPage = () => {
   };
 
   const handleCreateProductionOrder = () => {
-    router.push(`/production-orders/create?orderId=${id}`);
-  };
+  const confirmed = confirm('Bạn có chắc chắn muốn tạo kế hoạch sản xuất cho đơn hàng này không?');
+  if (!confirmed) return;
+
+  const productionPlans = orderItems.map((item) => ({
+    saleOrderId: id,
+    productCode: item.productCode,
+    productName: item.productName,
+    quantity: item.quantity,
+    width: item.width,
+    height: item.height,
+    thickness: item.thickness,
+  }));
+
+  console.log('📦 Kế hoạch sản xuất đã tạo:', productionPlans);
+  alert('✅ Đã tạo kế hoạch sản xuất cho đơn hàng!');
+};
+
+
 
   const handleBack = () => {
     router.push('/sales-order');
@@ -64,7 +80,7 @@ const SalesOrderDetailPage = () => {
             🧾 Xuất PDF
           </button>
           <button onClick={handleCreateProductionOrder} className="px-4 py-1 bg-yellow-500 text-black rounded">
-            🏭 Tạo lệnh sản xuất
+            🏭 Tạo kế hoạch sản xuất
           </button>
         </div>
       </div>
