@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SEP490.DB;
 
@@ -10,9 +11,10 @@ using SEP490.DB;
 namespace SEP490.DB.Migrations
 {
     [DbContext(typeof(SEP490DbContext))]
-    partial class SEP490DbContextModelSnapshot : ModelSnapshot
+    [Migration("20250624045249_AddUnitPriceTotalAmountToOrderDetailProduct")]
+    partial class AddUnitPriceTotalAmountToOrderDetailProduct
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -328,6 +330,10 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("decimal(65,30)")
                         .HasColumnName("total_amount");
 
+                    b.Property<decimal?>("UnitPrice")
+                        .HasColumnType("decimal(65,30)")
+                        .HasColumnName("unit_price");
+
                     b.HasKey("Id")
                         .HasName("pk_order_details");
 
@@ -354,6 +360,10 @@ namespace SEP490.DB.Migrations
                     b.Property<decimal?>("TotalAmount")
                         .HasColumnType("decimal(65,30)")
                         .HasColumnName("total_amount");
+
+                    b.Property<decimal?>("UnitPrice")
+                        .HasColumnType("decimal(65,30)")
+                        .HasColumnName("unit_price");
 
                     b.HasKey("OrderDetailId", "ProductId")
                         .HasName("pk_order_detail_products");

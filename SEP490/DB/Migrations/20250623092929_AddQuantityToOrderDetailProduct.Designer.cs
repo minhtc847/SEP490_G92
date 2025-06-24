@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SEP490.DB;
 
@@ -10,9 +11,10 @@ using SEP490.DB;
 namespace SEP490.DB.Migrations
 {
     [DbContext(typeof(SEP490DbContext))]
-    partial class SEP490DbContextModelSnapshot : ModelSnapshot
+    [Migration("20250623092929_AddQuantityToOrderDetailProduct")]
+    partial class AddQuantityToOrderDetailProduct
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -328,6 +330,10 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("decimal(65,30)")
                         .HasColumnName("total_amount");
 
+                    b.Property<decimal?>("UnitPrice")
+                        .HasColumnType("decimal(65,30)")
+                        .HasColumnName("unit_price");
+
                     b.HasKey("Id")
                         .HasName("pk_order_details");
 
@@ -350,10 +356,6 @@ namespace SEP490.DB.Migrations
                     b.Property<int?>("Quantity")
                         .HasColumnType("int")
                         .HasColumnName("quantity");
-
-                    b.Property<decimal?>("TotalAmount")
-                        .HasColumnType("decimal(65,30)")
-                        .HasColumnName("total_amount");
 
                     b.HasKey("OrderDetailId", "ProductId")
                         .HasName("pk_order_detail_products");
@@ -836,7 +838,7 @@ namespace SEP490.DB.Migrations
             modelBuilder.Entity("SEP490.DB.Models.OrderDetail", b =>
                 {
                     b.HasOne("SEP490.DB.Models.SaleOrder", "SaleOrder")
-                        .WithMany("OrderDetails")
+                        .WithMany()
                         .HasForeignKey("SaleOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
@@ -848,7 +850,7 @@ namespace SEP490.DB.Migrations
             modelBuilder.Entity("SEP490.DB.Models.OrderDetailProduct", b =>
                 {
                     b.HasOne("SEP490.DB.Models.OrderDetail", "OrderDetail")
-                        .WithMany("OrderDetailProducts")
+                        .WithMany()
                         .HasForeignKey("OrderDetailId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
@@ -988,16 +990,6 @@ namespace SEP490.DB.Migrations
             modelBuilder.Entity("SEP490.DB.Models.Customer", b =>
                 {
                     b.Navigation("SaleOrders");
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.OrderDetail", b =>
-                {
-                    b.Navigation("OrderDetailProducts");
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.SaleOrder", b =>
-                {
-                    b.Navigation("OrderDetails");
                 });
 #pragma warning restore 612, 618
         }

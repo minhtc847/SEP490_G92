@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-// import { Eye, RefreshCcw, Search, CalendarDays, ChevronDown, Filter, DollarSign } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { mockOrders } from '@/app/data/mock-orders';
+import { getOrders, OrderDto } from '@/app/(defaults)/sales-order/service';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -44,15 +43,33 @@ const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: nu
 };
 
 const SalesOrderSummary = () => {
+    const router = useRouter();
+
+    const [orders, setOrders] = useState<OrderDto[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedDate, setSelectedDate] = useState('');
     const [sortAmount, setSortAmount] = useState<'asc' | 'desc' | null>(null);
     const [statusFilter, setStatusFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
-    const router = useRouter();
+    const [loading, setLoading] = useState(true);
 
-    const filteredOrders = mockOrders
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const data = await getOrders();
+                setOrders(data);
+            } catch (error) {
+                console.error('Lỗi khi tải đơn hàng:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    const filteredOrders = orders
         .filter((order) => order.customerName.toLowerCase().includes(searchTerm.toLowerCase()))
         .filter((order) => (selectedDate ? order.orderDate === selectedDate : true))
         .filter((order) => (statusFilter ? order.status === statusFilter : true))
@@ -70,83 +87,76 @@ const SalesOrderSummary = () => {
         alert('Đồng bộ thành công vào MISA!');
     };
 
+    if (loading) {
+        return <div className="p-6">Đang tải đơn hàng...</div>;
+    }
+
     return (
         <div className="p-6 bg-white rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">Tóm tắt đơn hàng</h2>
 
             {/* Bộ lọc */}
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="relative w-full md:w-1/3">
-                    {/* <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} /> */}
-                    <input
-                        type="text"
-                        placeholder="Tìm theo tên khách hàng..."
-                        value={searchTerm}
-                        onChange={(e) => {
-                            setSearchTerm(e.target.value);
-                            setCurrentPage(1);
-                        }}
-                        className="input input-bordered w-full pl-10 pr-4 py-2 rounded-lg shadow-sm"
-                    />
-                </div>
+                <input
+                    type="text"
+                    placeholder="Tìm theo tên khách hàng..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1);
+                    }}
+                    className="input input-bordered w-full md:w-1/3 py-2 px-4 rounded-lg shadow-sm"
+                />
 
                 <div className="flex flex-wrap items-center gap-4">
-                    <div className="relative">
-                        {/* <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} /> */}
-                        <input
-                            type="date"
-                            value={selectedDate}
-                            onChange={(e) => {
-                                setSelectedDate(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                            className="input input-bordered pl-10 pr-4 py-2 rounded-lg shadow-sm"
-                        />
-                    </div>
+                    <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => {
+                            setSelectedDate(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        className="input input-bordered py-2 px-4 rounded-lg shadow-sm"
+                    />
 
-                    <div className="relative">
-                        {/* <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} /> */}
-                        <select
-                            onChange={(e) => {
-                                const val = e.target.value;
-                                setSortAmount(val === 'asc' ? 'asc' : val === 'desc' ? 'desc' : null);
-                                setCurrentPage(1);
-                            }}
-                            className="select select-bordered pl-10 pr-10 py-2 rounded-lg shadow-sm"
-                            defaultValue=""
-                        >
-                            <option value="">Thành tiền</option>
-                            <option value="asc">Thấp → Cao</option>
-                            <option value="desc">Cao → Thấp</option>
-                        </select>
-                        {/* <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} /> */}
-                    </div>
+                    <select
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setSortAmount(val === 'asc' ? 'asc' : val === 'desc' ? 'desc' : null);
+                            setCurrentPage(1);
+                        }}
+                        className="select select-bordered py-2 px-4 rounded-lg shadow-sm"
+                        defaultValue=""
+                    >
+                        <option value="">Thành tiền</option>
+                        <option value="asc">Thấp → Cao</option>
+                        <option value="desc">Cao → Thấp</option>
+                    </select>
 
-                    <div className="relative">
-                        {/* <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} /> */}
-                        <select
-                            className="select select-bordered pl-10 pr-4 py-2 rounded-lg shadow-sm"
-                            value={statusFilter}
-                            onChange={(e) => {
-                                setStatusFilter(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                        >
-                            <option value="">Tất cả trạng thái</option>
-                            <option value="Đã xác nhận">Đã xác nhận</option>
-                            <option value="Đang xử lý">Đang xử lý</option>
-                        </select>
-                    </div>
+                    <select
+                        className="select select-bordered py-2 px-4 rounded-lg shadow-sm"
+                        value={statusFilter}
+                        onChange={(e) => {
+                            setStatusFilter(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                    >
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="Chưa thực hiện">Chưa thực hiện</option>
+                        <option value="Đang thực hiện">Đang thực hiện</option>
+                        <option value="Hoàn thành">Hoàn thành</option>
+                        <option value="Đã huỷ">Đã huỷ</option>
+                    </select>
                 </div>
             </div>
 
-            {/* Hiển thị thông tin và chọn số dòng */}
-            <div className="flex flex-wrap items-center gap-2 mb-3 text-sm text-gray-600">
+            {/* Thông tin hiển thị */}
+            <div className="flex items-center gap-2 mb-3 text-sm text-gray-600">
                 <span>
                     Hiển thị {startIndex + 1} đến {Math.min(startIndex + itemsPerPage, filteredOrders.length)} trong tổng {filteredOrders.length} đơn hàng.
                 </span>
                 <select
-                    className="select select-bordered border-gray-300 pl-4 pr-4 py-2 rounded-lg shadow-sm"
+                    className="select select-bordered py-2 px-4 rounded-lg shadow-sm"
                     value={itemsPerPage}
                     onChange={(e) => {
                         setItemsPerPage(Number(e.target.value));
@@ -178,24 +188,25 @@ const SalesOrderSummary = () => {
                             <tr key={order.id}>
                                 <td>{order.customerName}</td>
                                 <td>{order.orderDate}</td>
-                                <td>{order.id}</td>
+                                <td>{order.orderCode}</td>
                                 <td>{order.totalAmount.toLocaleString()}₫</td>
                                 <td>
-                                    <span className={`badge whitespace-nowrap ${order.status === 'Đã xác nhận' ? 'badge-outline-primary' : 'badge-outline-warning'}`}>{order.status}</span>
+                                    <span className={`badge ${order.status === 'Đã xác nhận' ? 'badge-outline-primary' : 'badge-outline-warning'}`}>{order.status}</span>
                                 </td>
                                 <td className="flex gap-2">
                                     <button
-                                        className="px-2 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-800 transition"
-                                        title="Chi tiết"
-                                        onClick={() => router.push(`/sales-order/${order.id}`)}>
-                                        {/* <Eye className="w-5 h-5 text-blue-600 hover:text-blue-800" /> */}
+                                        className="px-2 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-800"
+                                        onClick={() => {
+                                            if (order.id) {
+                                                router.push(`/sales-order/${order.id}`);
+                                            } else {
+                                                alert('Không tìm thấy ID đơn hàng!');
+                                            }
+                                        }}
+                                    >
                                         Chi tiết
                                     </button>
-                                    <button 
-                                        className="px-2 py-1 text-sm text-white bg-green-600 rounded hover:bg-green-800 transition" 
-                                        title="Update MISA" 
-                                        onClick={handleUpdateMisa}>
-                                        {/* <RefreshCcw className="w-5 h-5 text-green-600 hover:text-green-800" /> */}
+                                    <button className="px-2 py-1 text-sm text-white bg-green-600 rounded hover:bg-green-800" onClick={handleUpdateMisa}>
                                         Update MISA
                                     </button>
                                 </td>
