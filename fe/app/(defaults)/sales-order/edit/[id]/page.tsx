@@ -2,11 +2,18 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getOrderDetailById, updateOrderDetailById, OrderItem, OrderDetailDto } from './service';
+import { getOrderDetailById, updateOrderDetailById, getGlassStructures, OrderItem, OrderDetailDto } from '@/app/(defaults)/sales-order/edit/[id]/service';
+
+type GlassStructure = {
+    id: number;
+    category: string;
+};
 
 const SalesOrderEditPage = () => {
     const { id } = useParams();
     const router = useRouter();
+
+    const [glassStructures, setGlassStructures] = useState<{ id: number; category: string }[]>([]);
 
     const [form, setForm] = useState<{
         customer: string;
@@ -42,6 +49,8 @@ const SalesOrderEditPage = () => {
                 status: data.status,
                 orderItems: data.products,
             });
+            const glassList = await getGlassStructures();
+            setGlassStructures(glassList);
         };
         fetchData();
     }, [id]);
@@ -100,6 +109,7 @@ const SalesOrderEditPage = () => {
                     thickness: item.thickness,
                     unitPrice: item.unitPrice,
                     quantity: item.quantity,
+                    glassStructureId: item.glassStructureId,
                 })),
             };
 
@@ -181,6 +191,7 @@ const SalesOrderEditPage = () => {
                             <th>Đơn giá</th>
                             <th>Diện tích (m²)</th>
                             <th>Thành tiền</th>
+                            <th>Cấu trúc kính</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -192,7 +203,7 @@ const SalesOrderEditPage = () => {
                             return (
                                 <tr key={index}>
                                     <td>{index + 1}</td>
-                                     <td>
+                                    <td>
                                         <input type="text" value={item.productCode} onChange={(e) => handleItemChange(index, 'productCode', e.target.value)} className="input input-sm" />
                                     </td>
                                     <td>
@@ -215,6 +226,16 @@ const SalesOrderEditPage = () => {
                                     </td>
                                     <td>{area.toFixed(2)}</td>
                                     <td>{total.toLocaleString()} đ</td>
+                                    <td>
+                                        <select className="select select-sm" value={item.glassStructureId || ''} onChange={(e) => handleItemChange(index, 'glassStructureId', +e.target.value)}>
+                                            <option value="">-- Chọn --</option>
+                                            {glassStructures.map((gs) => (
+                                                <option key={gs.id} value={gs.id}>
+                                                    {gs.category}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </td>
                                     <td>
                                         <button onClick={() => removeItem(index)} className="btn btn-sm btn-error">
                                             Xoá

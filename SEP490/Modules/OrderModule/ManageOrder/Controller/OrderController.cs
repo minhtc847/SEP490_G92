@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SEP490.Modules.OrderModule.ManageOrder.Services;
+using Microsoft.EntityFrameworkCore;
 using SEP490.Modules.OrderModule.ManageOrder.DTO;
+using SEP490.Modules.OrderModule.ManageOrder.Services;
+using SEP490.DB.Models;
+using SEP490.DB;
 
 namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
 {
@@ -8,10 +11,12 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
     [ApiController]
     public class OrderController : ControllerBase
     {
+        private readonly SEP490DbContext _context;
         private readonly IOrderService _orderService;
 
-        public OrderController(IOrderService orderService)
+        public OrderController(SEP490DbContext context, IOrderService orderService)
         {
+            _context = context;
             _orderService = orderService;
         }
 
@@ -25,6 +30,20 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
                 return NotFound("No orders found.");
             }
             return Ok(orders);
+        }
+
+        [HttpGet("/api/glass-structures")]
+        public async Task<IActionResult> GetAllStructures()
+        {
+            var structures = await _context.GlassStructures
+                .Select(x => new GlassStructureDto
+                {
+                    Id = x.Id,
+                    ProductCode = x.ProductCode,
+                    Category = x.Category,
+                }).ToListAsync();
+
+            return Ok(structures);
         }
 
         // GET: api/orders/{id}
@@ -49,7 +68,6 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
 
             return Ok("Order updated successfully.");
         }
-
 
         [HttpDelete("{id}")]
         public IActionResult DeleteOrder(int id)

@@ -73,8 +73,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 .Include(o => o.Customer)
                 .FirstOrDefault(o => o.Id == saleOrderId);
 
-            if (order == null)
-                return null;
+            if (order == null) return null;
 
             var orderDetails = _context.OrderDetails
                 .Where(od => od.SaleOrderId == saleOrderId)
@@ -88,9 +87,13 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
 
             var products = _context.Products.ToList();
 
+            var glassStructures = _context.GlassStructures.ToList(); 
+
             var productDtos = (from od in orderDetails
                                join dp in detailProducts on od.Id equals dp.OrderDetailId
                                join p in products on dp.ProductId equals p.Id
+                               join g in glassStructures on p.GlassStructureId equals g.Id into gs
+                               from g in gs.DefaultIfEmpty() 
                                select new ProductInOrderDto
                                {
                                    ProductId = p.Id,
@@ -102,7 +105,18 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                                    AreaM2 = Math.Round(((decimal.TryParse(p.Height, out var h) ? h : 0) * (decimal.TryParse(p.Width, out var w) ? w : 0)) / 1_000_000, 4),
                                    UnitPrice = p.UnitPrice ?? 0,
                                    Quantity = dp.Quantity ?? 0,
-                                   TotalAmount = (p.UnitPrice ?? 0) * (dp.Quantity ?? 0)
+                                   TotalAmount = (p.UnitPrice ?? 0) * (dp.Quantity ?? 0),
+
+                                   GlassStructureId = g?.Id,
+                                   GlassStructureCode = g?.ProductCode,
+                                   GlassCategory = g?.Category,
+                                   EdgeType = g?.EdgeType,
+                                   AdhesiveType = g?.AdhesiveType,
+                                   GlassLayers = g?.GlassLayers,
+                                   AdhesiveLayers = g?.AdhesiveLayers,
+                                   AdhesiveThickness = g?.AdhesiveThickness,
+                                   GlassUnitPrice = g?.UnitPrice,
+                                   Composition = g?.Composition
                                }).ToList();
 
             var totalQuantity = productDtos.Sum(p => p.Quantity);
@@ -124,6 +138,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 TotalAmount = Math.Round(totalAmount, 2)
             };
         }
+
 
 
         public bool UpdateOrderDetailById(int orderId, UpdateOrderDetailDto dto)
@@ -160,6 +175,19 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 order.OrderDetails.Add(orderDetail);
             }
 
+            var updatedProductIds = dto.Products
+                .Where(p => p.ProductId != 0)
+                .Select(p => p.ProductId)
+                .ToList();
+
+            var productsToRemove = orderDetail.OrderDetailProducts
+                .Where(odp => !updatedProductIds.Contains(odp.ProductId))
+                .ToList();
+
+            foreach (var odp in productsToRemove)
+            {
+                _context.OrderDetailProducts.Remove(odp);
+            }
             foreach (var pDto in dto.Products)
             {
                 Product product;
@@ -176,6 +204,8 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                         Thickness = pDto.Thickness,
                         UnitPrice = pDto.UnitPrice,
                         GlassStructureId = (int)(pDto.GlassStructureId ?? null),
+                        UOM = "Tấm",
+                        ProductType = "Thành Phẩm"
                     };
                     _context.Products.Add(product);
                     _context.SaveChanges();
@@ -240,7 +270,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             _context.SaveChanges();
         }
 
-        public void UpdateOrder(UpdateOrderDetailDto dto)
+        public List<GlassStructureDto> GetAllGlassStructures()
         {
             throw new NotImplementedException();
         }

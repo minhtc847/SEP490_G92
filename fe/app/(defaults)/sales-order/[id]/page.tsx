@@ -92,6 +92,7 @@ const SalesOrderDetailPage = () => {
                         <th className="border p-2">Đơn giá (₫)</th>
                         <th className="border p-2">Diện tích (m²)</th>
                         <th className="border p-2">Thành tiền (₫)</th>
+                        <th className="border p-2">Cấu trúc kính</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -107,6 +108,7 @@ const SalesOrderDetailPage = () => {
                             <td className="border p-2 text-right">{item.unitPrice.toLocaleString()}</td>
                             <td className="border p-2 text-right">{item.areaM2}</td>
                             <td className="border p-2 text-right">{item.totalAmount.toLocaleString()}</td>
+                            <td className="border p-2">{item.glassCategory || '—'}</td>
                         </tr>
                     ))}
                 </tbody>
