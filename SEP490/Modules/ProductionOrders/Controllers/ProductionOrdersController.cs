@@ -22,5 +22,19 @@ namespace SEP490.Modules.ProductionOrders.Controllers
             var result = _productionOrdersService.GetAll();
             return Ok(result);
         }
+
+        [HttpGet("{productionOrderCode}")]
+        public ActionResult<List<ProductionOrderDetailDto>> GetDetails(string productionOrderCode)
+        {
+            var result = _productionOrdersService.GetDetailsByProductionOrderCode(productionOrderCode);
+            return Ok(result);
+        }
+
+        [HttpGet("{productionOrderCode}/calculate/{productId}")]
+        public ActionResult<ProductCalculationDto> CalculateProduct(string productionOrderCode, int productId)
+        {
+            var result = _productionOrdersService.CalculateProduct(productionOrderCode, productId);
+            return Ok(result);
+        }
     }
 }
