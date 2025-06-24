@@ -140,7 +140,7 @@ const ListProductionOrders = () => {
 }, [productionOrders]);
 
   const handleView = (record: any) => {
-    router.push(`/production-orders/${record.id}`);
+    router.push(`/production-plans/${record.id}`);
   };
   const handleApprove = (record: any) => {
     setPopup({ open: true, action: 'approve', record });
