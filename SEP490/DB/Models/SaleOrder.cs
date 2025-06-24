@@ -10,4 +10,6 @@ public class SaleOrder
     public string? Status { get; set; }
     public string? DeliveryStatus { get; set; }
     public Customer Customer { get; set; } = null!;
+    //Added for OrderDetail
+    public ICollection<OrderDetail> OrderDetails { get; set; }
 }

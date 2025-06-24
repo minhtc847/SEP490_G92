@@ -44,6 +44,12 @@ importers:
       '@types/node':
         specifier: ^22.4.0
         version: 22.15.31
+      '@types/react':
+        specifier: ^18.0.27
+        version: 18.3.23
+      '@types/react-dom':
+        specifier: ^18.3.0
+        version: 18.3.7(@types/react@18.3.23)
       '@x1mrdonut1x/nouislider-react':
         specifier: ^3.4.3
         version: 3.4.3(nouislider@15.8.1)(react@18.3.1)
@@ -71,11 +77,11 @@ importers:
       i18next:
         specifier: ^23.13.0
         version: 23.16.8
-      lucide-react:
-        specifier: ^0.515.0
-        version: 0.515.0(react@18.3.1)
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       mantine-datatable:
-        specifier: ^1.7.35
+        specifier: ^1.8.8
         version: 1.8.8(@mantine/core@5.10.5(@emotion/react@11.14.0(@types/react@18.3.23)(react@18.3.1))(@mantine/hooks@5.10.5(react@18.3.1))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@mantine/hooks@5.10.5(react@18.3.1))(react@18.3.1)
       next:
         specifier: 14.2.13
@@ -84,7 +90,7 @@ importers:
         specifier: ^1.0.5
         version: 1.1.0(i18next@23.16.8)(next@14.2.13(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-i18next@15.5.3(i18next@23.16.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3))(react@18.3.1)
       react:
-        specifier: 18.3.1
+        specifier: ^18.3.1
         version: 18.3.1
       react-animate-height:
         specifier: ^3.1.0
@@ -102,7 +108,7 @@ importers:
         specifier: ^6.4.1
         version: 6.5.3(react@18.3.1)
       react-dom:
-        specifier: 18.3.1
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       react-flatpickr:
         specifier: ^3.10.13
@@ -137,14 +143,11 @@ importers:
       react-text-mask:
         specifier: ^5.5.0
         version: 5.5.0(react@18.3.1)
-      react-toastify:
-        specifier: ^11.0.5
-        version: 11.0.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       sortablejs:
         specifier: ^1.15.0
         version: 1.15.6
       sweetalert2:
-        specifier: ^11.7.1
+        specifier: ^11.22.0
         version: 11.22.0
       sweetalert2-react-content:
         specifier: ^5.0.7
@@ -174,15 +177,9 @@ importers:
       '@types/lodash':
         specifier: ^4.17.10
         version: 4.17.17
-      '@types/react':
-        specifier: ^18.0.27
-        version: 18.3.23
       '@types/react-copy-to-clipboard':
         specifier: ^5.0.4
         version: 5.0.7
-      '@types/react-dom':
-        specifier: ^18.3.0
-        version: 18.3.7(@types/react@18.3.23)
       '@types/react-flatpickr':
         specifier: ^3.8.8
         version: 3.8.11
@@ -1882,11 +1879,6 @@ packages:
   lru-cache@10.4.3:
     resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
 
-  lucide-react@0.515.0:
-    resolution: {integrity: sha512-Sy7bY0MeicRm2pzrnoHm2h6C1iVoeHyBU2fjdQDsXGP51fhkhau1/ZV/dzrcxEmAKsxYb6bGaIsMnGHuQ5s0dw==}
-    peerDependencies:
-      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
   mantine-datatable@1.8.8:
     resolution: {integrity: sha512-qy5zY0pwPreIXpam95HoJRfNqVx1FRU4/RlXT+l4k1u1s0CP3o7XB2qY4tYMG1MozuYxzo53QwOW4UM1S6a4iA==}
     peerDependencies:
@@ -2403,12 +2395,6 @@ packages:
     engines: {node: '>=10'}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
-
-  react-toastify@11.0.5:
-    resolution: {integrity: sha512-EpqHBGvnSTtHYhCPLxML05NLY2ZX0JURbAdNYa6BUkk+amz4wbKBQvoKQAB0ardvSarUBuY4Q4s1sluAzZwkmA==}
-    peerDependencies:
-      react: ^18 || ^19
-      react-dom: ^18 || ^19
 
   react-transition-group@4.4.5:
     resolution: {integrity: sha512-pZcd1MCJoiKiBR2NRxeCRg13uCXbydPnmB4EOeRrY7480qNWO8IIgQG6zlDkm6uRMsURXPuKq0GWtiM59a5Q6g==}
@@ -4853,10 +4839,6 @@ snapshots:
 
   lru-cache@10.4.3: {}
 
-  lucide-react@0.515.0(react@18.3.1):
-    dependencies:
-      react: 18.3.1
-
   mantine-datatable@1.8.8(@mantine/core@5.10.5(@emotion/react@11.14.0(@types/react@18.3.23)(react@18.3.1))(@mantine/hooks@5.10.5(react@18.3.1))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@mantine/hooks@5.10.5(react@18.3.1))(react@18.3.1):
     dependencies:
       '@mantine/core': 5.10.5(@emotion/react@11.14.0(@types/react@18.3.23)(react@18.3.1))(@mantine/hooks@5.10.5(react@18.3.1))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -5303,12 +5285,6 @@ snapshots:
       use-latest: 1.3.0(@types/react@18.3.23)(react@18.3.1)
     transitivePeerDependencies:
       - '@types/react'
-
-  react-toastify@11.0.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
-    dependencies:
-      clsx: 2.1.1
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
 
   react-transition-group@4.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SEP490.Common.Services;
 using SEP490.DB;
+using SEP490.Modules.OrderModule.ManageOrder.Services;
 using System;
 using System.Reflection;
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +14,8 @@ builder.Services.AddDbContext<SEP490DbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection"),
         mysqlVersion).UseSnakeCaseNamingConvention());
 // Add services to the container.
+builder.Services.AddScoped<IOrderService, OrderService>();
+
 
 builder.Services.AddControllers();
 

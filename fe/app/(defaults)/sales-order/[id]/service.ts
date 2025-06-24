@@ -1,23 +1,31 @@
-import axios from "../../../../setup/axios";
+import axios from "@/setup/axios";
 
-
-export interface createProductonPlan{
-    id: string,
-    productCode: string,
-    thickness: string,
-    height: string,
-    width: string,
-    quantity: string,
-    inProgressQuantity: string,
-    completed: string
+export interface ProductInOrderDto {
+  productCode: string;
+  productName: string;
+  height: number;
+  width: number;
+  thickness: number;
+  areaM2: number;
+  unitPrice: number;
+  quantity: number;
+  totalAmount: number;
 }
 
-export const createProductonPlan = async (id:string): Promise<createProductonPlan[]> => {
-    try {
-        const response = await axios.get<createProductonPlan[]>("/api/ProductionPlan/Details/" + id, {
-        })
-        return response.data
-    } catch (error) {
-        throw error
-    }
+export interface OrderDetailDto {
+  orderCode: string;
+  orderDate: string;
+  customerName: string;
+  address: string;
+  phone: string;
+  discount: number;
+  products: ProductInOrderDto[];
+  totalQuantity: number;
+  totalAmount: number;
+  status: string;
 }
+
+export const getOrderDetailById = async (id: number): Promise<OrderDetailDto> => {
+  const response = await axios.get(`/api/orders/${id}`);
+  return response.data;
+};
