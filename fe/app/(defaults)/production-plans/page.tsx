@@ -151,37 +151,82 @@ const ListProductionOrders = () => {
   const handleReject = (record: any) => {
     alert('Reject: ' + record.id);
   };
-  const handleDelete = (record: any) => {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Bạn có chắc chắn?',
-      text: "Bạn sẽ không thể hoàn tác hành động này!",
-      showCancelButton: true,
-      confirmButtonText: 'Xóa',
-      cancelButtonText: 'Hủy',
-      padding: '2em',
-      customClass: { popup: 'sweet-alerts' },
-    }).then((result) => {
-      if (result.value) {
-        // Xử lý xóa ở đây
-        Swal.fire({ 
-          title: 'Đã xóa!', 
-          text: `Lệnh sản xuất ${record.id} đã được xóa.`, 
-          icon: 'success', 
-          customClass: { popup: 'sweet-alerts' } 
-        });
-      }
-    });
-  };
+  // const handleDelete = (record: any) => {
+  //   Swal.fire({
+  //     icon: 'warning',
+  //     title: 'Bạn có chắc chắn?',
+  //     text: "Bạn sẽ không thể hoàn tác hành động này!",
+  //     showCancelButton: true,
+  //     confirmButtonText: 'Xóa',
+  //     cancelButtonText: 'Hủy',
+  //     padding: '2em',
+  //     customClass: { popup: 'sweet-alerts' },
+  //   }).then((result) => {
+  //     if (result.value) {
+  //       // Xử lý xóa ở đây
+  //       Swal.fire({ 
+  //         title: 'Đã xóa!', 
+  //         text: `Lệnh sản xuất ${record.id} đã được xóa.`, 
+  //         icon: 'success', 
+  //         customClass: { popup: 'sweet-alerts' } 
+  //       });
+  //     }
+  //   });
+  // };
   const handlePopupYes = () => {
-    // Chỉ minh họa, chưa gọi API
-    setPopup({ open: false, action: '', record: null });
-    alert(
+  if (!popup.record) return;
+
+  setproductionOrders((prevOrders) =>
+    prevOrders.map((order) =>
+      order.id === popup.record.id
+        ? {
+            ...order,
+            status:
+              popup.action === 'approve'
+                ? 'Đang sản xuất'
+                : popup.action === 'complete'
+                ? 'Đã hoàn tất'
+                : order.status,
+          }
+        : order
+    )
+  );
+
+  setPopup({ open: false, action: '', record: null });
+
+  Swal.fire({
+    title: 'Thành công!',
+    text:
       popup.action === 'approve'
-        ? `Đã phê duyệt LSX: ${popup.record.id}`
-        : `Đã hoàn tất LSX: ${popup.record.id}`
-    );
-  };
+        ? `Lệnh sản xuất ${popup.record.id} đã được phê duyệt!`
+        : `Lệnh sản xuất ${popup.record.id} đã hoàn tất!`,
+    icon: 'success',
+  });
+};
+const handleCancel = (record: any) => {
+  Swal.fire({
+    icon: 'warning',
+    title: 'Bạn có chắc muốn hủy lệnh này?',
+    showCancelButton: true,
+    confirmButtonText: 'Hủy lệnh',
+    cancelButtonText: 'Không',
+  }).then((result) => {
+    if (result.isConfirmed) {
+      setproductionOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.id === record.id ? { ...order, status: 'Đã hủy' } : order
+        )
+      );
+
+      Swal.fire({
+        title: 'Đã hủy!',
+        text: `Lệnh sản xuất ${record.id} đã chuyển sang trạng thái "Đã hủy".`,
+        icon: 'success',
+      });
+    }
+  });
+};
+
   const handlePopupNo = () => {
     setPopup({ open: false, action: '', record: null });
   };
@@ -232,8 +277,8 @@ const ListProductionOrders = () => {
                         Hoàn tất
                       </button>
                     )}
-                    <button className="btn btn-danger btn-xs" onClick={() => handleDelete(record)}>
-                      Delete
+                    <button className="btn btn-danger btn-xs" onClick={() => handleCancel(record)}>
+                      Hủy
                     </button>
                   </div>
                 ),
