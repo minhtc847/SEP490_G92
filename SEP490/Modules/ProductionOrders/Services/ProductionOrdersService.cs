@@ -20,11 +20,11 @@ namespace SEP490.Modules.ProductionOrders.Services
                 .Include(po => po.ProductionPlan)
                     .ThenInclude(pp => pp.Customer)
                 .Include(po => po.ProductionPlan)
-                    .ThenInclude(pp => pp.PurchaseOrder)
+                    .ThenInclude(pp => pp.SaleOrder)
                 .Select(po => new ProductionOrderListDto
                 {
                     ProductionOrderCode = po.ProductionOrderCode,
-                    OrderCode = po.ProductionPlan.PurchaseOrder.OrderCode,
+                    OrderCode = po.ProductionPlan.SaleOrder.OrderCode,
                     CustomerName = po.ProductionPlan.Customer.CustomerName,
                     TotalAmount = _context.ProductionOutputs
                         .Where(poOut => poOut.ProductionOrderId == po.Id)

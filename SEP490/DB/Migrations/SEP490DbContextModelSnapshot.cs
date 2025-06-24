@@ -972,7 +972,7 @@ namespace SEP490.DB.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_production_plans_customers_customer_id");
 
-                    b.HasOne("SEP490.DB.Models.SaleOrder", "PurchaseOrder")
+                    b.HasOne("SEP490.DB.Models.SaleOrder", "SaleOrder")
                         .WithMany()
                         .HasForeignKey("SaleOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -981,7 +981,7 @@ namespace SEP490.DB.Migrations
 
                     b.Navigation("Customer");
 
-                    b.Navigation("PurchaseOrder");
+                    b.Navigation("SaleOrder");
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.ProductionPlanDetail", b =>

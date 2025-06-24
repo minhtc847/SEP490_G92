@@ -23,7 +23,7 @@ namespace SEP490.Modules.Production_plans.Services
                 {
                     Id = p.Id,                                         // Mã LXS
                     PlanDate = p.PlanDate.ToString("dd/MM/yyyy"),
-                    OrderCode = p.OrderCode,                           // Mã ĐH
+                    //OrderCode = p.OrderCode,                           // Mã ĐH
                     CustomerName = p.Customer.ContactPerson,
                     Quantity = p.Quantity,
                     Status = p.Status
@@ -117,7 +117,7 @@ namespace SEP490.Modules.Production_plans.Services
             var plan = new ProductionPlan
             {
                 PlanDate = DateTime.Now,
-                OrderCode = dto.OrderCode,
+                //OrderCode = dto.OrderCode,
                 SaleOrderId = saleOrder.Id,
                 CustomerId = dto.CustomerId,
                 CustomerCode = saleOrder.CustomerCode,
