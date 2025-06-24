@@ -46,6 +46,37 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
             return Ok(structures);
         }
 
+        [HttpGet("search")]
+        public IActionResult SearchProducts(string query)
+        {
+            var result = _context.Products
+                .Where(p =>
+                    (p.ProductCode.Contains(query) || p.ProductName.Contains(query)) &&
+                    p.ProductType == "Thành phẩm")
+                .Select(p => new
+                {
+                    p.Id,
+                    p.ProductCode,
+                    p.ProductName,
+                    p.Height,
+                    p.Width,
+                    p.Thickness,
+                    p.UnitPrice,
+                    p.GlassStructureId
+                })
+                .ToList();
+
+            return Ok(result);
+        }
+
+        [HttpGet("check-code")]
+        public IActionResult CheckProductCode(string code)
+        {
+            var exists = _context.Products.Any(p => p.ProductCode == code);
+            return Ok(new { exists });
+        }
+
+
         // GET: api/orders/{id}
         [HttpGet("{id}")]
         public ActionResult<OrderDetailDto> GetOrderDetail(int id)

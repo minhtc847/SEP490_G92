@@ -42,6 +42,21 @@ const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: nu
     );
 };
 
+const getStatusClass = (status: string) => {
+    switch (status) {
+        case 'Chưa thực hiện':
+            return 'bg-gray-200 text-gray-800';
+        case 'Đang thực hiện':
+            return 'bg-yellow-200 text-yellow-800';
+        case 'Hoàn thành':
+            return 'bg-green-200 text-green-800';
+        case 'Đã huỷ':
+            return 'bg-red-200 text-red-800';
+        default:
+            return 'bg-blue-200 text-blue-800';
+    }
+};
+
 const SalesOrderSummary = () => {
     const router = useRouter();
 
@@ -71,7 +86,12 @@ const SalesOrderSummary = () => {
 
     const filteredOrders = orders
         .filter((order) => order.customerName.toLowerCase().includes(searchTerm.toLowerCase()))
-        .filter((order) => (selectedDate ? order.orderDate === selectedDate : true))
+        .filter((order) => {
+            if (!selectedDate) return true;
+            const orderDate = new Date(order.orderDate);
+            const selected = new Date(selectedDate);
+            return orderDate.getFullYear() === selected.getFullYear() && orderDate.getMonth() === selected.getMonth() && orderDate.getDate() === selected.getDate();
+        })
         .filter((order) => (statusFilter ? order.status === statusFilter : true))
         .sort((a, b) => {
             if (sortAmount === 'asc') return a.totalAmount - b.totalAmount;
@@ -175,7 +195,7 @@ const SalesOrderSummary = () => {
                 <table className="table w-full">
                     <thead>
                         <tr>
-                            <th>Tên Khách Hàng</th>
+                            <th className="w-[500px]">Tên Khách Hàng</th>
                             <th>Ngày Đặt</th>
                             <th>Mã Đơn Hàng</th>
                             <th>Thành Tiền</th>
@@ -187,12 +207,27 @@ const SalesOrderSummary = () => {
                         {paginatedOrders.map((order) => (
                             <tr key={order.id}>
                                 <td>{order.customerName}</td>
-                                <td>{order.orderDate}</td>
+                                <td>{new Date(order.orderDate).toLocaleDateString('vi-VN')}</td>
                                 <td>{order.orderCode}</td>
                                 <td>{order.totalAmount.toLocaleString()}₫</td>
                                 <td>
-                                    <span className={`badge ${order.status === 'Đã xác nhận' ? 'badge-outline-primary' : 'badge-outline-warning'}`}>{order.status}</span>
+                                    <span
+                                        className={`badge ${
+                                            order.status === 'Chưa thực hiện'
+                                                ? 'badge-outline-warning'
+                                                : order.status === 'Đang thực hiện'
+                                                  ? 'badge-outline-info'
+                                                  : order.status === 'Hoàn thành'
+                                                    ? 'badge-outline-success'
+                                                    : order.status === 'Đã huỷ'
+                                                      ? 'badge-outline-danger'
+                                                      : 'badge-outline-default'
+                                        }`}
+                                    >
+                                        {order.status}
+                                    </span>
                                 </td>
+
                                 <td className="flex gap-2">
                                     <button
                                         className="px-2 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-800"

@@ -139,7 +139,7 @@ const SalesOrderDetailPage = () => {
                 })()}
             </div>
 
-            <button onClick={handleBack} className="px-3 py-1 bg-gray-300 text-black rounded mt-4">
+            <button onClick={handleBack} className="btn btn-status-secondary">
                 ◀ Quay lại
             </button>
         </div>

@@ -151,7 +151,6 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
 
             if (order == null) return false;
 
-            // Cập nhật thông tin khách hàng
             if (order.Customer != null)
             {
                 order.Customer.CustomerName = dto.CustomerName;
@@ -160,10 +159,8 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 order.Customer.Discount = dto.Discount;
             }
 
-            // Cập nhật trạng thái đơn hàng
             order.Status = dto.Status;
 
-            // Lấy OrderDetail đầu tiên (giả sử mỗi đơn hàng chỉ có 1 detail)
             var orderDetail = order.OrderDetails.FirstOrDefault();
             if (orderDetail == null)
             {

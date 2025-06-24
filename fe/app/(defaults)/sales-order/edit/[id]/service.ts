@@ -71,41 +71,24 @@ export type ProductOption = {
     data: OrderItem;
 };
 
-export const loadProductOptions = (inputValue: string, callback: (options: ProductOption[]) => void) => {
-    axios
-        .get(`/api/search?query=${inputValue}`)
-        .then((res) => {
-            const options = res.data.map((p: any) => ({
-                label: `${p.productName} (${p.productCode})`,
-                value: p.id,
-                data: {
-                    id: p.id,
-                    productId: p.id,
-                    productCode: p.productCode,
-                    productName: p.productName,
-                    width: p.width,
-                    height: p.height,
-                    thickness: p.thickness,
-                    quantity: 1,
-                    unitPrice: p.unitPrice,
-                    glassStructureId: undefined,
-                } as OrderItem,
-            }));
-            callback(options);
-            console.log('Tìm kiếm:', inputValue);
-            console.log('Kết quả API:', res.data);
-        })
-        .catch((err) => {
-            console.error('Lỗi load options:', err);
-            callback([]);
-        });
+export const loadOptions = async (inputValue: string) => {
+    const result = await searchProducts(inputValue);
+    return result.map(p => ({
+        label: `${p.productCode} - ${p.productName}`,
+        value: p.id,
+        product: p
+    }));
 };
 
-export const searchProducts = async (query: string): Promise<ProductSuggestion[]> => {
-    const res = await axios.get(`/api/search`, {
-        params: { query },
-    });
-    return res.data;
+export const checkProductCodeExists = async (code: string): Promise<boolean> => {
+  const res = await axios.get(`/api/orders/check-code`, { params: { code } });
+  return res.data.exists;
+};
+
+
+export const searchProducts = async (query: string): Promise<OrderItem[]> => {
+  const res = await axios.get(`/api/orders/search?query=${query}`);
+  return res.data;
 };
 
 export const getGlassStructures = async (): Promise<GlassStructure[]> => {

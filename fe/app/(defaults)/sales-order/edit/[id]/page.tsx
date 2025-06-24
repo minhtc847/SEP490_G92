@@ -1,8 +1,9 @@
 'use client';
 
+import AsyncSelect from 'react-select/async';
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getOrderDetailById, updateOrderDetailById, getGlassStructures, OrderItem, OrderDetailDto } from '@/app/(defaults)/sales-order/edit/[id]/service';
+import { getOrderDetailById, updateOrderDetailById, getGlassStructures, OrderItem, OrderDetailDto, loadOptions, checkProductCodeExists } from '@/app/(defaults)/sales-order/edit/[id]/service';
 
 type GlassStructure = {
     id: number;
@@ -12,7 +13,7 @@ type GlassStructure = {
 const SalesOrderEditPage = () => {
     const { id } = useParams();
     const router = useRouter();
-
+    const [selectedProduct, setSelectedProduct] = useState<any>(null);
     const [glassStructures, setGlassStructures] = useState<{ id: number; category: string }[]>([]);
 
     const [form, setForm] = useState<{
@@ -94,6 +95,16 @@ const SalesOrderEditPage = () => {
 
     const handleSave = async () => {
         try {
+            for (const item of form.orderItems) {
+                if (item.productId === 0) {
+                    const exists = await checkProductCodeExists(item.productCode);
+                    if (exists) {
+                        alert(`Mã sản phẩm "${item.productCode}" đã tồn tại. Vui lòng sửa lại mã hoặc tạo mã tự động.`);
+                        return;
+                    }
+                }
+            }
+
             const payload = {
                 customerName: form.customer,
                 address: form.address,
@@ -203,9 +214,41 @@ const SalesOrderEditPage = () => {
                             return (
                                 <tr key={index}>
                                     <td>{index + 1}</td>
-                                    <td>
-                                        <input type="text" value={item.productCode} onChange={(e) => handleItemChange(index, 'productCode', e.target.value)} className="input input-sm" />
+                                    <td className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={item.productCode}
+                                            onChange={async (e) => {
+                                                const value = e.target.value;
+                                                handleItemChange(index, 'productCode', value);
+
+                                                if (item.productId === 0) {
+                                                    const exists = await checkProductCodeExists(value);
+                                                    if (exists) {
+                                                        alert(`Mã sản phẩm "${value}" đã tồn tại. Hãy nhập mã khác hoặc bấm tạo tự động.`);
+                                                    }
+                                                }
+                                            }}
+                                            className="input input-sm w-32"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const generated = `VT${Date.now().toString().slice(-5)}`;
+                                                handleItemChange(index, 'productCode', generated);
+                                            }}
+                                            className="btn btn-ghost btn-xs p-1"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+                                                />
+                                            </svg>
+                                        </button>
                                     </td>
+
                                     <td>
                                         <input type="text" value={item.productName} onChange={(e) => handleItemChange(index, 'productName', e.target.value)} className="input input-sm" />
                                     </td>
@@ -248,9 +291,44 @@ const SalesOrderEditPage = () => {
                 </table>
             </div>
 
-            <button onClick={addItem} className="btn btn-outline btn-sm mb-6">
-                + Thêm sản phẩm
-            </button>
+            <div className="flex gap-4 mb-4">
+                <div className="w-1/2">
+                    <AsyncSelect
+                        cacheOptions
+                        defaultOptions
+                        value={selectedProduct}
+                        loadOptions={loadOptions}
+                        placeholder="Thêm sản phẩm theo mã hoặc tên"
+                        onChange={(option) => {
+                            if (!option) return;
+                            const p = option.product;
+                            const newItem: OrderItem = {
+                                id: Date.now(),
+                                productId: p.id,
+                                productCode: p.productCode,
+                                productName: p.productName,
+                                height: Number(p.height),
+                                width: Number(p.width),
+                                thickness: Number(p.thickness),
+                                quantity: 1,
+                                unitPrice: Number(p.unitPrice),
+                                glassStructureId: p.glassStructureId,
+                            };
+
+                            setForm((prev) => ({
+                                ...prev,
+                                orderItems: [...prev.orderItems, newItem],
+                            }));
+                            setSelectedProduct(null);
+                        }}
+                    />
+                </div>
+                <div>
+                    <button onClick={addItem} className="btn btn-outline btn-sm mb-6">
+                        + Thêm sản phẩm
+                    </button>
+                </div>
+            </div>
 
             <div className="text-end text-sm space-y-1">
                 <p>
