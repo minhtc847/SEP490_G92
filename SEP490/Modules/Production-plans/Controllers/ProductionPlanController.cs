@@ -38,9 +38,9 @@ namespace SEP490.Modules.Production_plans.Controllers
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> CreatePlan(string orderCode, [FromBody] CreateProductionPlanInputDTO dto)
+        public async Task<IActionResult> CreatePlan(string orderCode,[FromBody] CreateProductionPlanInputDTO dto)
         {
-            await _productionPlanService.CreateProductionPlanAsync(dto);
+            await _productionPlanService.CreateProductionPlanAsync(orderCode, dto);
             return Ok(new { message = "Tạo kế hoạch sản xuất thành công!" });
         }
 
