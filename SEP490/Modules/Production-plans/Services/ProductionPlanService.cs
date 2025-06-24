@@ -126,7 +126,7 @@ namespace SEP490.Modules.Production_plans.Services
             };
 
             _context.ProductionPlans.Add(plan);
-            await _context.SaveChangesAsync(); 
+            await _context.SaveChangesAsync();
 
             int totalQuantity = 0;
 
@@ -158,6 +158,7 @@ namespace SEP490.Modules.Production_plans.Services
             await _context.SaveChangesAsync();
 
         }
+
 
     }
 }
