@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SEP490.DB;
 
@@ -10,9 +11,10 @@ using SEP490.DB;
 namespace SEP490.DB.Migrations
 {
     [DbContext(typeof(SEP490DbContext))]
-    partial class SEP490DbContextModelSnapshot : ModelSnapshot
+    [Migration("20250622184349_RemoveOrderCodeFromProductionPlan")]
+    partial class RemoveOrderCodeFromProductionPlan
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -601,41 +603,6 @@ namespace SEP490.DB.Migrations
                     b.ToTable("production_plans", (string)null);
                 });
 
-            modelBuilder.Entity("SEP490.DB.Models.ProductionPlanDetail", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    b.Property<int>("Done")
-                        .HasColumnType("int")
-                        .HasColumnName("done");
-
-                    b.Property<int>("Producing")
-                        .HasColumnType("int")
-                        .HasColumnName("producing");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int")
-                        .HasColumnName("product_id");
-
-                    b.Property<int>("ProductionPlanId")
-                        .HasColumnType("int")
-                        .HasColumnName("production_plan_id");
-
-                    b.HasKey("Id")
-                        .HasName("pk_production_plan_details");
-
-                    b.HasIndex("ProductId")
-                        .HasDatabaseName("ix_production_plan_details_product_id");
-
-                    b.HasIndex("ProductionPlanId")
-                        .HasDatabaseName("ix_production_plan_details_production_plan_id");
-
-                    b.ToTable("production_plan_details", (string)null);
-                });
-
             modelBuilder.Entity("SEP490.DB.Models.SaleOrder", b =>
                 {
                     b.Property<int>("Id")
@@ -982,27 +949,6 @@ namespace SEP490.DB.Migrations
                     b.Navigation("Customer");
 
                     b.Navigation("PurchaseOrder");
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.ProductionPlanDetail", b =>
-                {
-                    b.HasOne("SEP490.DB.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_production_plan_details_products_product_id");
-
-                    b.HasOne("SEP490.DB.Models.ProductionPlan", "ProductionPlan")
-                        .WithMany()
-                        .HasForeignKey("ProductionPlanId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_production_plan_details_production_plans_production_plan_id");
-
-                    b.Navigation("Product");
-
-                    b.Navigation("ProductionPlan");
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.SaleOrder", b =>
