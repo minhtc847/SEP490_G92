@@ -149,11 +149,13 @@ export const loadCustomerOptions = async (inputValue: string): Promise<CustomerO
     }));
 };
 
-export const loadOptions = async (inputValue: string): Promise<ProductOption[]> => {
+export const loadOptions = async (inputValue: string, selectedProductIds: number[] = []): Promise<ProductOption[]> => {
     const result = await searchProducts(inputValue);
+
     return result.map((p) => ({
         label: `${p.productCode} - ${p.productName}`,
         value: p.id,
+        isDisabled: selectedProductIds.includes(p.id), // 🚫 disable nếu đã chọn
         product: {
             id: p.id,
             productCode: p.productCode,

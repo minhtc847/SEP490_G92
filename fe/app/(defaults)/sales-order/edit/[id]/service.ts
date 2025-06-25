@@ -71,14 +71,16 @@ export type ProductOption = {
     data: OrderItem;
 };
 
-export const loadOptions = async (inputValue: string) => {
+export const loadOptions = async (inputValue: string, existingProductCodes: string[]) => {
     const result = await searchProducts(inputValue);
-    return result.map(p => ({
+    const filtered = result.filter(p => !existingProductCodes.includes(p.productCode));
+    return filtered.map(p => ({
         label: `${p.productCode} - ${p.productName}`,
         value: p.id,
-        product: p
+        product: p,
     }));
 };
+
 
 export const checkProductCodeExists = async (code: string): Promise<boolean> => {
   const res = await axios.get(`/api/orders/check-code`, { params: { code } });

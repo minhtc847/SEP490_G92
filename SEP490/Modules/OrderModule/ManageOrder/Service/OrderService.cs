@@ -1,7 +1,8 @@
-﻿using SEP490.DB;
-using SEP490.Modules.OrderModule.ManageOrder.DTO;
+﻿using Microsoft.EntityFrameworkCore;
+using SEP490.DB;
 using SEP490.DB.Models;
-using Microsoft.EntityFrameworkCore;
+using SEP490.Modules.OrderModule.ManageOrder.DTO;
+using System.Text.RegularExpressions;
 
 namespace SEP490.Modules.OrderModule.ManageOrder.Services
 {
@@ -356,6 +357,30 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 .Take(20)
                 .ToList();
         }
+
+        public string GetNextOrderCode()
+        {
+            var orderCodes = _context.SaleOrders
+                .Where(o => EF.Functions.Like(o.OrderCode, "ĐH%"))
+                .Select(o => o.OrderCode)
+                .ToList();
+
+            int maxNumber = 0;
+
+            foreach (var code in orderCodes)
+            {
+                var match = Regex.Match(code, @"ĐH(\d+)");
+                if (match.Success && int.TryParse(match.Groups[1].Value, out int number))
+                {
+                    if (number > maxNumber)
+                        maxNumber = number;
+                }
+            }
+
+            int nextNumber = maxNumber + 1;
+            return $"ĐH{nextNumber:D5}";
+        }
+
 
         public List<GlassStructureDto> GetAllGlassStructures()
         {

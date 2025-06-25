@@ -92,6 +92,7 @@ const SalesOrderEditPage = () => {
     };
 
     const handleBack = () => router.back();
+    const existingProductIds = new Set(form.orderItems.map((item) => item.productId));
 
     const handleSave = async () => {
         try {
@@ -216,6 +217,7 @@ const SalesOrderEditPage = () => {
                                     <td>{index + 1}</td>
                                     <td className="flex items-center gap-2">
                                         <input
+                                            disabled={item.productId !== 0}
                                             type="text"
                                             value={item.productCode}
                                             onChange={async (e) => {
@@ -232,6 +234,7 @@ const SalesOrderEditPage = () => {
                                             className="input input-sm w-32"
                                         />
                                         <button
+                                            disabled={item.productId !== 0}
                                             type="button"
                                             onClick={() => {
                                                 const generated = `VT${Date.now().toString().slice(-5)}`;
@@ -250,22 +253,52 @@ const SalesOrderEditPage = () => {
                                     </td>
 
                                     <td>
-                                        <input type="text" value={item.productName} onChange={(e) => handleItemChange(index, 'productName', e.target.value)} className="input input-sm" />
+                                        <input
+                                            disabled={item.productId !== 0}
+                                            type="text"
+                                            value={item.productName}
+                                            onChange={(e) => handleItemChange(index, 'productName', e.target.value)}
+                                            className="input input-sm"
+                                        />
                                     </td>
                                     <td>
-                                        <input type="number" value={item.width} onChange={(e) => handleItemChange(index, 'width', +e.target.value)} className="input input-sm" />
+                                        <input
+                                            disabled={item.productId !== 0}
+                                            type="number"
+                                            value={item.width}
+                                            onChange={(e) => handleItemChange(index, 'width', +e.target.value)}
+                                            className="input input-sm"
+                                        />
                                     </td>
                                     <td>
-                                        <input type="number" value={item.height} onChange={(e) => handleItemChange(index, 'height', +e.target.value)} className="input input-sm" />
+                                        <input
+                                            disabled={item.productId !== 0}
+                                            type="number"
+                                            value={item.height}
+                                            onChange={(e) => handleItemChange(index, 'height', +e.target.value)}
+                                            className="input input-sm"
+                                        />
                                     </td>
                                     <td>
-                                        <input type="number" value={item.thickness} onChange={(e) => handleItemChange(index, 'thickness', +e.target.value)} className="input input-sm" />
+                                        <input
+                                            disabled={item.productId !== 0}
+                                            type="number"
+                                            value={item.thickness}
+                                            onChange={(e) => handleItemChange(index, 'thickness', +e.target.value)}
+                                            className="input input-sm"
+                                        />
                                     </td>
                                     <td>
                                         <input type="number" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', +e.target.value)} className="input input-sm" />
                                     </td>
                                     <td>
-                                        <input type="number" value={item.unitPrice} onChange={(e) => handleItemChange(index, 'unitPrice', +e.target.value)} className="input input-sm" />
+                                        <input
+                                            disabled={item.productId !== 0}
+                                            type="number"
+                                            value={item.unitPrice}
+                                            onChange={(e) => handleItemChange(index, 'unitPrice', +e.target.value)}
+                                            className="input input-sm"
+                                        />
                                     </td>
                                     <td>{area.toFixed(2)}</td>
                                     <td>{total.toLocaleString()} đ</td>
@@ -297,11 +330,17 @@ const SalesOrderEditPage = () => {
                         cacheOptions
                         defaultOptions
                         value={selectedProduct}
-                        loadOptions={loadOptions}
+                        loadOptions={(inputValue) =>
+                            loadOptions(
+                                inputValue,
+                                form.orderItems.map((i) => i.productCode),
+                            )
+                        }
                         placeholder="Thêm sản phẩm theo mã hoặc tên"
                         onChange={(option) => {
                             if (!option) return;
                             const p = option.product;
+
                             const newItem: OrderItem = {
                                 id: Date.now(),
                                 productId: p.id,

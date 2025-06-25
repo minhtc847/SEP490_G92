@@ -11,6 +11,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
         List<GlassStructureDto> GetAllGlassStructures();
         List<CustomerSearchResultDto> SearchCustomers(string keyword);
         int CreateOrder(CreateOrderDto dto);
+        string GetNextOrderCode();
     }
 
 }

@@ -95,7 +95,7 @@ const SalesOrderCreatePage = () => {
     const handleSave = async () => {
         try {
             for (const item of form.orderItems) {
-                if (!item.productId || item.productId === 0){
+                if (!item.productId || item.productId === 0) {
                     const exists = await checkProductCodeExists(item.productCode);
                     if (exists) {
                         alert(`Mã sản phẩm "${item.productCode}" đã tồn tại. Vui lòng sửa lại mã hoặc tạo mã tự động.`);
@@ -141,6 +141,7 @@ const SalesOrderCreatePage = () => {
     const finalAmount = totalAmount - discountAmount;
     const [selectedProduct, setSelectedProduct] = useState<ProductOption | null>(null);
     const [glassStructures, setGlassStructures] = useState<GlassStructure[]>([]);
+    const [isCustomerLocked, setIsCustomerLocked] = useState(false);
 
     return (
         <div className="max-w-6xl mx-auto p-6">
@@ -149,23 +150,23 @@ const SalesOrderCreatePage = () => {
             <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
                     <label className="block mb-1 font-medium">Tên khách hàng</label>
-                    <input style={{ height: '35px' }} className="input input-bordered w-full" value={form.customer} onChange={(e) => setForm((prev) => ({ ...prev, customer: e.target.value }))} />
+                    <input disabled={isCustomerLocked} style={{ height: '35px' }} className="input input-bordered w-full" value={form.customer} onChange={(e) => setForm((prev) => ({ ...prev, customer: e.target.value }))} />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Địa chỉ</label>
-                    <input style={{ height: '35px' }} className="input input-bordered w-full" value={form.address} onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))} />
+                    <input disabled={isCustomerLocked} style={{ height: '35px' }} className="input input-bordered w-full" value={form.address} onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))} />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Số điện thoại</label>
-                    <input style={{ height: '35px' }} className="input input-bordered w-full" value={form.phone} onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))} />
+                    <input disabled={isCustomerLocked} style={{ height: '35px' }} className="input input-bordered w-full" value={form.phone} onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))} />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Ngày đặt</label>
-                    <input style={{ height: '35px' }} className="input input-bordered w-full bg-gray-100" type="text" value={new Date(form.orderDate).toLocaleDateString('en-US')} readOnly />
+                    <input disabled={isCustomerLocked} style={{ height: '35px' }} className="input input-bordered w-full bg-gray-100" type="text" value={new Date(form.orderDate).toLocaleDateString('en-US')} readOnly />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Mã đơn hàng</label>
-                    <input style={{ height: '35px' }} className="input input-bordered w-full" value={form.orderCode} onChange={(e) => setForm((prev) => ({ ...prev, orderCode: e.target.value }))} />
+                    <input disabled={isCustomerLocked} style={{ height: '35px' }} className="input input-bordered w-full" value={form.orderCode} onChange={(e) => setForm((prev) => ({ ...prev, orderCode: e.target.value }))} />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Chiết khấu (%)</label>
@@ -188,6 +189,7 @@ const SalesOrderCreatePage = () => {
                         onChange={(option: CustomerOption | null) => {
                             if (!option) return;
                             const c = option.customer;
+
                             setForm((prev) => ({
                                 ...prev,
                                 customer: c.customerName,
@@ -195,6 +197,8 @@ const SalesOrderCreatePage = () => {
                                 phone: c.phone,
                                 discount: c.discount * 100,
                             }));
+
+                            setIsCustomerLocked(true);
                         }}
                     />
                 </div>
@@ -316,11 +320,15 @@ const SalesOrderCreatePage = () => {
                         cacheOptions
                         defaultOptions
                         value={selectedProduct}
-                        loadOptions={loadOptions}
+                        loadOptions={(inputValue) =>
+                            loadOptions(
+                                inputValue,
+                                form.orderItems.map((item) => item.productId),
+                            )
+                        }
                         placeholder="Thêm sản phẩm theo mã hoặc tên"
                         onChange={(option: ProductOption | null) => {
                             if (!option) return;
-
                             const p = option.product;
 
                             const newItem: OrderItem = {

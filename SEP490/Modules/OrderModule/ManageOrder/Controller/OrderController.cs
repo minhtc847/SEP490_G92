@@ -70,22 +70,8 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
         [HttpGet("next-order-code")]
         public IActionResult GetNextOrderCode()
         {
-            var lastOrderCode = _context.SaleOrders
-                .OrderByDescending(o => o.OrderCode)
-                .Select(o => o.OrderCode)
-                .FirstOrDefault();
-
-            int nextNumber = 1;
-
-            if (!string.IsNullOrEmpty(lastOrderCode) && Regex.IsMatch(lastOrderCode, @"SO\d+"))
-            {
-                var numberPart = Regex.Match(lastOrderCode, @"\d+").Value;
-                nextNumber = int.Parse(numberPart) + 1;
-            }
-
-            var nextOrderCode = $"ĐH{nextNumber:D5}";
-
-            return Ok(new { nextOrderCode });
+            var nextCode = _orderService.GetNextOrderCode();
+            return Ok(new { nextOrderCode = nextCode });
         }
 
         [HttpPost]

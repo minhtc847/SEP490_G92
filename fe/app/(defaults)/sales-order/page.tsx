@@ -73,6 +73,7 @@ const SalesOrderSummary = () => {
         const fetchData = async () => {
             try {
                 const data = await getOrders();
+                const sortedData = data.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
                 setOrders(data);
             } catch (error) {
                 console.error('Lỗi khi tải đơn hàng:', error);
