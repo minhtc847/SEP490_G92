@@ -1,30 +1,26 @@
 'use client';
-import IconFacebook from '@/components/icon/icon-facebook';
-import IconInstagram from '@/components/icon/icon-instagram';
-import IconLayoutGrid from '@/components/icon/icon-layout-grid';
-import IconLinkedin from '@/components/icon/icon-linkedin';
-import IconListCheck from '@/components/icon/icon-list-check';
-import IconTwitter from '@/components/icon/icon-twitter';
-import IconUser from '@/components/icon/icon-user';
-import IconUserPlus from '@/components/icon/icon-user-plus';
-import IconX from '@/components/icon/icon-x';
 import { Transition, Dialog, TransitionChild, DialogPanel } from '@headlessui/react';
 import React, { Fragment, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
+import { useParams } from 'next/navigation';
+import { getProductionOutputs, ProductionOutputDto, getProductionOrderById, ProductionOrderDto } from './services';
 
 const ChemicalIssuancePage = () => {
+    const { id } = useParams();
     const [addProductModal, setAddProductModal] = useState<any>(false);
     const [addMaterialModal, setAddMaterialModal] = useState<any>(false);
+    const [loading, setLoading] = useState(false);
+    const [productionOrderLoading, setProductionOrderLoading] = useState(false);
 
     const [value, setValue] = useState<any>('list');
     const [defaultProductParams] = useState({
         id: null,
-        productCode: '',
-        thickness: '',
-        width: '',
-        height: '',
-        quantity: '',
-        note: '',
+        productId: '',
+        productName: '',
+        uom: '',
+        amount: '',
+        orderId: '',
+        costObject: '',
     });
 
     const [defaultMaterialParams] = useState({
@@ -38,6 +34,54 @@ const ChemicalIssuancePage = () => {
     const [productParams, setProductParams] = useState<any>(JSON.parse(JSON.stringify(defaultProductParams)));
     const [materialParams, setMaterialParams] = useState<any>(JSON.parse(JSON.stringify(defaultMaterialParams)));
 
+    // Replace hardcoded product list with API data
+    const [productionOutputs, setProductionOutputs] = useState<ProductionOutputDto[]>([]);
+    const [filteredProducts, setFilteredProducts] = useState<ProductionOutputDto[]>([]);
+
+    // Add production order state
+    const [productionOrder, setProductionOrder] = useState<ProductionOrderDto | null>(null);
+
+    // Fetch production order details
+    useEffect(() => {
+        if (!id) return;
+        
+        const fetchProductionOrder = async () => {
+            setProductionOrderLoading(true);
+            try {
+                const order = await getProductionOrderById(Number(id));
+                setProductionOrder(order);
+            } catch (error) {
+                console.error('Error fetching production order:', error);
+                showMessage('Không thể tải thông tin lệnh sản xuất', 'error');
+            } finally {
+                setProductionOrderLoading(false);
+            }
+        };
+
+        fetchProductionOrder();
+    }, [id]);
+
+    // Fetch production outputs on component mount
+    useEffect(() => {
+        if (!id) return;
+        
+        const fetchProductionOutputs = async () => {
+            setLoading(true);
+            try {
+                const outputs = await getProductionOutputs(Number(id));
+                setProductionOutputs(outputs);
+                setFilteredProducts(outputs);
+            } catch (error) {
+                console.error('Error fetching production outputs:', error);
+                showMessage('Không thể tải danh sách thành phẩm', 'error');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProductionOutputs();
+    }, [id]);
+
     const changeProductValue = (e: any) => {
         const { value, id } = e.target;
         setProductParams({ ...productParams, [id]: value });
@@ -48,107 +92,48 @@ const ChemicalIssuancePage = () => {
         setMaterialParams({ ...materialParams, [id]: value });
     };
 
-   
-    const [productList] = useState<any>([
-        {
-            id: 1,
-            productCode: 'SP001',
-            thickness: 10,
-            width: 100,
-            height: 200,
-            quantity: 50,
-            note: 'Sản phẩm đặc biệt',
-        },
-        {
-            id: 2,
-            productCode: 'SP002',
-            thickness: 12,
-            width: 120,
-            height: 180,
-            quantity: 30,
-            note: 'Yêu cầu xử lý cẩn thận',
-        },
-        {
-            id: 3,
-            productCode: 'SP003',
-            thickness: 8,
-            width: 150,
-            height: 250,
-            quantity: 20,
-            note: 'Sản phẩm mẫu',
-        },
-    ]);
-
-    const [materialList] = useState<any>([
-        {
-            id: 1,
-            materialType: 'Chất A',
-            quantity: 5,
-            unit: 'Lít',
-            note: 'Hóa chất',
-        },
-        {
-            id: 2,
-            materialType: 'KOH',
-            quantity: 3,
-            unit: 'Lít',
-            note: 'Butyl đen',
-        },
-        {
-            id: 3,
-            materialType: 'Spacer',
-            quantity: 100,
-            unit: 'Mét',
-            note: 'Spacer 12mm',
-        },
-    ]);
-
-    const [filteredProducts, setFilteredProducts] = useState<any>(productList);
-    const [filteredMaterials, setFilteredMaterials] = useState<any>(materialList);
+    // Remove hardcoded material list - start with empty array
+    const [filteredMaterials, setFilteredMaterials] = useState<any[]>([]);
 
     const saveProduct = () => {
-        if (!productParams.productCode) {
-            showMessage('Product Code is required.', 'error');
+        if (!productParams.productId) {
+            showMessage('Product ID is required.', 'error');
             return true;
         }
-        if (!productParams.thickness) {
-            showMessage('thickness is required.', 'error');
+        if (!productParams.productName) {
+            showMessage('Product Name is required.', 'error');
             return true;
         }
-        if (!productParams.width) {
-            showMessage('width is required.', 'error');
+        if (!productParams.uom) {
+            showMessage('UOM is required.', 'error');
             return true;
         }
-        if (!productParams.height) {
-            showMessage('height is required.', 'error');
-            return true;
-        }
-        if (!productParams.quantity) {
-            showMessage('quantity is required.', 'error');
+        if (!productParams.amount) {
+            showMessage('Amount is required.', 'error');
             return true;
         }
 
         if (productParams.id) {
             //update product
-            let product: any = filteredProducts.find((d: any) => d.id === productParams.id);
-            product.productCode = productParams.productCode;
-            product.thickness = productParams.thickness;
-            product.width = productParams.width;
-            product.height = productParams.height;
-            product.quantity = productParams.quantity;
-            product.note = productParams.note;
+            let product: any = filteredProducts.find((d: ProductionOutputDto) => d.productId === productParams.productId);
+            if (product) {
+                product.productName = productParams.productName;
+                product.uom = productParams.uom;
+                product.amount = productParams.amount;
+                product.orderId = productParams.orderId;
+                product.costObject = productParams.costObject;
+            }
         } else {
             //add product
-            let maxProductId = filteredProducts.length ? filteredProducts.reduce((max: any, character: any) => (character.id > max ? character.id : max), filteredProducts[0].id) : 0;
+            let maxProductId = filteredProducts.length ? Math.max(...filteredProducts.map((p: ProductionOutputDto) => p.productId)) : 0;
 
-            let product = {
-                id: maxProductId + 1,
-                productCode: productParams.productCode,
-                thickness: productParams.thickness,
-                width: productParams.width,
-                height: productParams.height,
-                quantity: productParams.quantity,
-                note: productParams.note,
+            let product: ProductionOutputDto = {
+                productId: maxProductId + 1,
+                productName: productParams.productName,
+                uom: productParams.uom,
+                amount: productParams.amount,
+                orderId: productParams.orderId,
+                costObject: productParams.costObject,
             };
             filteredProducts.splice(0, 0, product);
         }
@@ -196,7 +181,7 @@ const ChemicalIssuancePage = () => {
         setAddMaterialModal(false);
     };
 
-    const editProduct = (product: any = null) => {
+    const editProduct = (product: ProductionOutputDto | null = null) => {
         const json = JSON.parse(JSON.stringify(defaultProductParams));
         setProductParams(json);
         if (product) {
@@ -216,9 +201,11 @@ const ChemicalIssuancePage = () => {
         setAddMaterialModal(true);
     };
 
-    const deleteProduct = (product: any = null) => {
-        setFilteredProducts(filteredProducts.filter((d: any) => d.id !== product.id));
-        showMessage('Product has been deleted successfully.');
+    const deleteProduct = (product: ProductionOutputDto | null = null) => {
+        if (product) {
+            setFilteredProducts(filteredProducts.filter((d: ProductionOutputDto) => d.productId !== product.productId));
+            showMessage('Product has been deleted successfully.');
+        }
     };
 
     const deleteMaterial = (material: any = null) => {
@@ -244,35 +231,26 @@ const ChemicalIssuancePage = () => {
     return (
         <div className="p-6">
             <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl font-bold">Xuất hóa chất</h1>
-                <div className="space-x-2">
-                    <button onClick={() => editProduct()} className="px-4 py-1 bg-blue-500 text-white rounded">
-                        📝 Thêm sản phẩm
-                    </button>
-                    <button onClick={() => editMaterial()} className="px-4 py-1 bg-green-600 text-white rounded">
-                        🧪 Thêm vật tư
-                    </button>
-                </div>
+                <h1 className="text-2xl font-bold">Nguyên vật liệu sản xuất</h1>
+
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-sm">
                 <div>
-                    <strong>Mã lệnh sản xuất:</strong> LSX0001
+                    <strong>Mã lệnh sản xuất:</strong> {productionOrderLoading ? 'Đang tải...' : productionOrder?.productionOrderCode || 'N/A'}
                 </div>
                 <div>
-                    <strong>Ngày xuất:</strong> {new Date().toLocaleDateString()}
+                    <strong>Ngày xuất:</strong> {productionOrderLoading ? 'Đang tải...' : productionOrder?.orderDate ? new Date(productionOrder.orderDate).toLocaleDateString('vi-VN') : 'N/A'}
+                </div>
+
+                <div>
+                    <strong>Trạng thái:</strong> {productionOrderLoading ? 'Đang tải...' : productionOrder?.productionStatus || 'N/A'}
                 </div>
                 <div>
-                    <strong>Người xuất:</strong> Nguyễn Văn A
+                    <strong>Diễn giải:</strong> {productionOrderLoading ? 'Đang tải...' : productionOrder?.description || 'N/A'}
                 </div>
                 <div>
-                    <strong>Trạng thái:</strong> Đang xử lý
-                </div>
-                <div>
-                    <strong>Ghi chú:</strong> Xuất hóa chất cho đơn hàng
-                </div>
-                <div>
-                    <strong>Người duyệt:</strong> Trần Văn B
+                    <strong>Tham chiếu:</strong> XK102,NK123,..
                 </div>
             </div>
 
@@ -280,81 +258,91 @@ const ChemicalIssuancePage = () => {
                 
 
                 <div className="table-responsive mb-6 overflow-x-auto">
-                    <h2 className="text-xl font-semibold mb-4">Danh sách sản phẩm</h2>
-                    <table className="w-full border-collapse border text-sm">
-                        <thead className="bg-gray-100">
-                            <tr>
-                                <th className="border p-2">STT</th>
-                                <th className="border p-2">Mã sản phẩm</th>
-                                <th className="border p-2">Độ dày (mm)</th>
-                                <th className="border p-2">Rộng (mm)</th>
-                                <th className="border p-2">Cao (mm)</th>
-                                <th className="border p-2">Số lượng</th>
-                                <th className="border p-2">Ghi chú</th>
-                                <th className="border p-2">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredProducts.map((product: any, idx: number) => (
-                                <tr key={product.id}>
-                                    <td className="border p-2 text-center">{idx + 1}</td>
-                                    <td className="border p-2">{product.productCode}</td>
-                                    <td className="border p-2 text-right">{product.thickness}</td>
-                                    <td className="border p-2 text-right">{product.width}</td>
-                                    <td className="border p-2 text-right">{product.height}</td>
-                                    <td className="border p-2 text-right">{product.quantity}</td>
-                                    <td className="border p-2">{product.note}</td>
-                                    <td className="border p-2">
-                                        <div className="flex justify-center gap-2">
-                                            <button onClick={() => editProduct(product)} className="px-3 py-1 bg-blue-500 text-white rounded text-sm">
-                                                Sửa
-                                            </button>
-                                            <button onClick={() => deleteProduct(product)} className="px-3 py-1 bg-red-500 text-white rounded text-sm">
-                                                Xóa
-                                            </button>
-                                        </div>
-                                    </td>
+                    <h2 className="text-xl font-semibold mb-4">Danh sách thành phẩm</h2>
+                    {loading ? (
+                        <div className="text-center py-4">Đang tải dữ liệu...</div>
+                    ) : (
+                        <table className="w-full border-collapse border text-sm">
+                            <thead className="bg-gray-100">
+                                <tr>
+                                    <th className="border p-2">STT</th>
+                                    <th className="border p-2">Mã thành phẩm</th>
+                                    <th className="border p-2">Tên thành phẩm</th>
+                                    <th className="border p-2">Đơn vị tính</th>
+                                    <th className="border p-2">Số lượng</th>
+                                    <th className="border p-2">Đơn đặt hàng</th>
+                                    <th className="border p-2">Đối tượng THCP</th>
+                                    <th className="border p-2">Thao tác</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {filteredProducts.map((product: ProductionOutputDto, idx: number) => (
+                                    <tr key={product.productId}>
+                                        <td className="border p-2 text-center">{idx + 1}</td>
+                                        <td className="border p-2">{product.productId}</td>
+                                        <td className="border p-2">{product.productName}</td>
+                                        <td className="border p-2">{product.uom}</td>
+                                        <td className="border p-2 text-right">{product.amount}</td>
+                                        <td className="border p-2">{product.orderId}</td>
+                                        <td className="border p-2">{product.costObject}</td>
+                                        <td className="border p-2">
+                                            <div className="flex justify-center gap-2">
+                                                <button onClick={() => editProduct(product)} className="px-3 py-1 bg-blue-500 text-white rounded text-sm">
+                                                    Sửa
+                                                </button>
+                                                <button onClick={() => deleteProduct(product)} className="px-3 py-1 bg-red-500 text-white rounded text-sm">
+                                                    Xóa
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
 
                 <div className="table-responsive mb-6 overflow-x-auto">
-                    <h2 className="text-xl font-semibold mb-4">Danh sách hóa chất</h2>
-                    <table className="w-full border-collapse border text-sm">
-                        <thead className="bg-gray-100">
-                            <tr>
-                                <th className="border p-2">STT</th>
-                                <th className="border p-2">Loại vật tư</th>
-                                <th className="border p-2">Số lượng</th>
-                                <th className="border p-2">Đơn vị</th>
-                                <th className="border p-2">Ghi chú</th>
-                                <th className="border p-2">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredMaterials.map((material: any, idx: number) => (
-                                <tr key={material.id}>
-                                    <td className="border p-2 text-center">{idx + 1}</td>
-                                    <td className="border p-2">{material.materialType}</td>
-                                    <td className="border p-2 text-right">{material.quantity}</td>
-                                    <td className="border p-2">{material.unit}</td>
-                                    <td className="border p-2">{material.note}</td>
-                                    <td className="border p-2">
-                                        <div className="flex justify-center gap-2">
-                                            <button onClick={() => editMaterial(material)} className="px-3 py-1 bg-blue-500 text-white rounded text-sm">
-                                                Sửa
-                                            </button>
-                                            <button onClick={() => deleteMaterial(material)} className="px-3 py-1 bg-red-500 text-white rounded text-sm">
-                                                Xóa
-                                            </button>
-                                        </div>
-                                    </td>
+                    <h2 className="text-xl font-semibold mb-4">Định mức xuất NVL cho: productID</h2>
+                    {filteredMaterials.length === 0 ? (
+                        <div className="text-center py-4 text-gray-500">Chưa có dữ liệu nguyên vật liệu</div>
+                    ) : (
+                        <table className="w-full border-collapse border text-sm">
+                            <thead className="bg-gray-100">
+                                <tr>
+                                    <th className="border p-2">STT</th>
+                                    <th className="border p-2">Mã NVL</th>
+                                    <th className="border p-2">Tên NVL</th>
+                                    <th className="border p-2">Đơn vị</th>
+                                    <th className="border p-2">Số lượng</th>
+                                    <th className="border p-2">Đối tượng THCP</th>
+                                    <th className="border p-2">Thao tác</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {filteredMaterials.map((material: any, idx: number) => (
+                                    <tr key={material.id}>
+                                        <td className="border p-2 text-center">{idx + 1}</td>
+                                        <td className="border p-2">{material.materialType}</td>
+                                        <td className="border p-2 text-right">{material.quantity}</td>
+                                        <td className="border p-2">{material.unit}</td>
+                                        <td className="border p-2">{material.note}</td>
+                                        <td className="border p-2">{material.note}</td>
+                                        <td className="border p-2">
+                                            <div className="flex justify-center gap-2">
+                                                <button onClick={() => editMaterial(material)} className="px-3 py-1 bg-blue-500 text-white rounded text-sm">
+                                                    Sửa
+                                                </button>
+                                                <button onClick={() => deleteMaterial(material)} className="px-3 py-1 bg-red-500 text-white rounded text-sm">
+                                                    Xóa
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             </div>
 
@@ -392,38 +380,28 @@ const ChemicalIssuancePage = () => {
                                             <label className="block text-sm font-medium text-gray-700">Mã sản phẩm</label>
                                             <input
                                                 type="text"
-                                                id="productCode"
-                                                value={productParams.productCode}
+                                                id="productId"
+                                                value={productParams.productId}
                                                 onChange={changeProductValue}
                                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                                             />
                                         </div>
                                         <div className="mb-4">
-                                            <label className="block text-sm font-medium text-gray-700">Độ dày (mm)</label>
+                                            <label className="block text-sm font-medium text-gray-700">Tên sản phẩm</label>
                                             <input
-                                                type="number"
-                                                id="thickness"
-                                                value={productParams.thickness}
+                                                type="text"
+                                                id="productName"
+                                                value={productParams.productName}
                                                 onChange={changeProductValue}
                                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                                             />
                                         </div>
                                         <div className="mb-4">
-                                            <label className="block text-sm font-medium text-gray-700">Rộng (mm)</label>
+                                            <label className="block text-sm font-medium text-gray-700">Đơn vị tính</label>
                                             <input
-                                                type="number"
-                                                id="width"
-                                                value={productParams.width}
-                                                onChange={changeProductValue}
-                                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                                            />
-                                        </div>
-                                        <div className="mb-4">
-                                            <label className="block text-sm font-medium text-gray-700">Cao (mm)</label>
-                                            <input
-                                                type="number"
-                                                id="height"
-                                                value={productParams.height}
+                                                type="text"
+                                                id="uom"
+                                                value={productParams.uom}
                                                 onChange={changeProductValue}
                                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                                             />
@@ -432,17 +410,28 @@ const ChemicalIssuancePage = () => {
                                             <label className="block text-sm font-medium text-gray-700">Số lượng</label>
                                             <input
                                                 type="number"
-                                                id="quantity"
-                                                value={productParams.quantity}
+                                                id="amount"
+                                                value={productParams.amount}
                                                 onChange={changeProductValue}
                                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                                             />
                                         </div>
                                         <div className="mb-4">
-                                            <label className="block text-sm font-medium text-gray-700">Ghi chú</label>
-                                            <textarea
-                                                id="note"
-                                                value={productParams.note}
+                                            <label className="block text-sm font-medium text-gray-700">Đơn đặt hàng</label>
+                                            <input
+                                                type="number"
+                                                id="orderId"
+                                                value={productParams.orderId}
+                                                onChange={changeProductValue}
+                                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                            />
+                                        </div>
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700">Đối tượng THCP</label>
+                                            <input
+                                                type="text"
+                                                id="costObject"
+                                                value={productParams.costObject}
                                                 onChange={changeProductValue}
                                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                                             />

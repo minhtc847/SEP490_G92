@@ -2,6 +2,7 @@ namespace SEP490.Modules.ProductionOrders.DTO
 {
     public class ProductionOrderDetailDto
     {
+        public int ProductionOrderId { get; set; }
         public string? ProductionOrderCode { get; set; }
         public string? ProductName { get; set; }
         public int ProductId { get; set; } 

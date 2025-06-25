@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { DataTable } from "mantine-datatable";
 
 const columns = [
@@ -45,7 +46,7 @@ const ProductionOrderDetailPage = () => {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    fetch(`https://localhost:7075/api/ProductionOrders/${id}`)
+    fetch(`https://localhost:7075/api/ProductionOrders/by-code/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setData(data);
@@ -59,7 +60,7 @@ const ProductionOrderDetailPage = () => {
       console.error('ProductId not found in record:', record);
       return;
     }
-    
+
     setCalculationLoading(true);
     fetch(`https://localhost:7075/api/ProductionOrders/${id}/calculate/${record.productId}`)
       .then((res) => res.json())
@@ -83,6 +84,36 @@ const ProductionOrderDetailPage = () => {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Chi tiết lệnh sản xuất: {id}</h1>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-sm">
+        <div>
+          <strong>Mã lệnh sản xuất:</strong> LSX0001
+        </div>
+        <div>
+          <strong>Ngày xuất:</strong> {new Date().toLocaleDateString()}
+        </div>
+
+        <div>
+          <strong>Trạng thái:</strong> Đang xử lý
+        </div>
+        <div>
+          <strong>Diễn giải:</strong> Xuất hóa chất cho đơn hàng
+        </div>
+        <div>
+          <strong>Tham chiếu:</strong> XK102,NK123,..
+        </div>
+      </div>
+      
+      <div className="flex justify-between items-center mb-4">
+        <div className="space-x-2">
+          <Link href={`/production-orders/${id}/materials`}>
+            <button className="px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+              📝 Xem nguyên vật liệu
+            </button>
+          </Link>
+        </div>
+      </div>
+
       <div className="panel mb-6">
         <DataTable
           highlightOnHover
@@ -119,7 +150,7 @@ const ProductionOrderDetailPage = () => {
             />
             <span className="ml-2">Xuất hóa chất</span>
           </label>
-          
+
           <label className="flex items-center cursor-pointer">
             <input
               type="checkbox"
@@ -129,7 +160,7 @@ const ProductionOrderDetailPage = () => {
             />
             <span className="ml-2">Trộn keo</span>
           </label>
-          
+
           <label className="flex items-center cursor-pointer">
             <input
               type="checkbox"
@@ -139,7 +170,7 @@ const ProductionOrderDetailPage = () => {
             />
             <span className="ml-2">Cắt kính</span>
           </label>
-          
+
           <label className="flex items-center cursor-pointer">
             <input
               type="checkbox"
@@ -149,7 +180,7 @@ const ProductionOrderDetailPage = () => {
             />
             <span className="ml-2">Xuất keo butyl</span>
           </label>
-          
+
           <label className="flex items-center cursor-pointer">
             <input
               type="checkbox"

@@ -166,7 +166,7 @@ const handleCancel = (record: any) => {
   return (
     <div>
       <div className="mb-5">
-        <h1 className="text-2xl font-bold">Danh sách lệnh sản xuất</h1>
+        <h1 className="text-2xl font-bold">Danh sách kế hoạch sản xuất</h1>
       </div>
       <div className="panel mt-6">
         <div className="datatables">
@@ -175,7 +175,7 @@ const handleCancel = (record: any) => {
             className="table-hover whitespace-nowrap"
             records={recordsData}
             columns={[
-                    { accessor: 'id', title: 'Mã LXS', sortable: true },
+                    { accessor: 'id', title: 'Mã KHSX', sortable: true },
                     { accessor: 'planDate', title: 'Thời gian', sortable: true }, 
                     { accessor: 'orderCode', title: 'Mã ĐH', sortable: true }, 
                     { accessor: 'customerName', title: 'KHÁCH HÀNG', sortable: true }, 
