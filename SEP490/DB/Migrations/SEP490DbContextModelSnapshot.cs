@@ -1002,7 +1002,7 @@ namespace SEP490.DB.Migrations
                         .HasConstraintName("fk_production_plan_details_products_product_id");
 
                     b.HasOne("SEP490.DB.Models.ProductionPlan", "ProductionPlan")
-                        .WithMany()
+                        .WithMany("ProductionPlanDetails")
                         .HasForeignKey("ProductionPlanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
@@ -1048,6 +1048,11 @@ namespace SEP490.DB.Migrations
             modelBuilder.Entity("SEP490.DB.Models.Customer", b =>
                 {
                     b.Navigation("SaleOrders");
+                });
+
+            modelBuilder.Entity("SEP490.DB.Models.ProductionPlan", b =>
+                {
+                    b.Navigation("ProductionPlanDetails");
                 });
 #pragma warning restore 612, 618
         }
