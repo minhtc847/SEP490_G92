@@ -43,7 +43,7 @@ const SalesOrderCreatePage = () => {
         orderCode: string;
         discount: number;
         status: string;
-        orderItems: OrderItem[];
+        orderItems: OrderItemWithFlag[];
     }>({
         customer: '',
         address: '',
@@ -57,10 +57,18 @@ const SalesOrderCreatePage = () => {
 
     const handleItemChange = (index: number, field: keyof OrderItem, value: string | number) => {
         const updatedItems = [...form.orderItems];
+
+        const currentItem = updatedItems[index];
+
+        if (currentItem.isFromDatabase && ['productCode', 'productName', 'width', 'height', 'thickness', 'unitPrice'].includes(field)) {
+            return;
+        }
+
         updatedItems[index] = {
-            ...updatedItems[index],
+            ...currentItem,
             [field]: field === 'productName' || field === 'productCode' ? value.toString() : +value,
         };
+
         setForm((prev) => ({ ...prev, orderItems: updatedItems }));
     };
 
@@ -142,6 +150,7 @@ const SalesOrderCreatePage = () => {
     const [selectedProduct, setSelectedProduct] = useState<ProductOption | null>(null);
     const [glassStructures, setGlassStructures] = useState<GlassStructure[]>([]);
     const [isCustomerLocked, setIsCustomerLocked] = useState(false);
+    type OrderItemWithFlag = OrderItem & { isFromDatabase?: boolean };
 
     return (
         <div className="max-w-6xl mx-auto p-6">
@@ -150,23 +159,54 @@ const SalesOrderCreatePage = () => {
             <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
                     <label className="block mb-1 font-medium">Tên khách hàng</label>
-                    <input disabled={isCustomerLocked} style={{ height: '35px' }} className="input input-bordered w-full" value={form.customer} onChange={(e) => setForm((prev) => ({ ...prev, customer: e.target.value }))} />
+                    <input
+                        disabled={isCustomerLocked}
+                        style={{ height: '35px' }}
+                        className="input input-bordered w-full"
+                        value={form.customer}
+                        onChange={(e) => setForm((prev) => ({ ...prev, customer: e.target.value }))}
+                    />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Địa chỉ</label>
-                    <input disabled={isCustomerLocked} style={{ height: '35px' }} className="input input-bordered w-full" value={form.address} onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))} />
+                    <input
+                        disabled={isCustomerLocked}
+                        style={{ height: '35px' }}
+                        className="input input-bordered w-full"
+                        value={form.address}
+                        onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
+                    />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Số điện thoại</label>
-                    <input disabled={isCustomerLocked} style={{ height: '35px' }} className="input input-bordered w-full" value={form.phone} onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))} />
+                    <input
+                        disabled={isCustomerLocked}
+                        style={{ height: '35px' }}
+                        className="input input-bordered w-full"
+                        value={form.phone}
+                        onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
+                    />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Ngày đặt</label>
-                    <input disabled={isCustomerLocked} style={{ height: '35px' }} className="input input-bordered w-full bg-gray-100" type="text" value={new Date(form.orderDate).toLocaleDateString('en-US')} readOnly />
+                    <input
+                        disabled={isCustomerLocked}
+                        style={{ height: '35px' }}
+                        className="input input-bordered w-full bg-gray-100"
+                        type="text"
+                        value={new Date(form.orderDate).toLocaleDateString('en-US')}
+                        readOnly
+                    />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Mã đơn hàng</label>
-                    <input disabled={isCustomerLocked} style={{ height: '35px' }} className="input input-bordered w-full" value={form.orderCode} onChange={(e) => setForm((prev) => ({ ...prev, orderCode: e.target.value }))} />
+                    <input
+                        disabled={isCustomerLocked}
+                        style={{ height: '35px' }}
+                        className="input input-bordered w-full"
+                        value={form.orderCode}
+                        onChange={(e) => setForm((prev) => ({ ...prev, orderCode: e.target.value }))}
+                    />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Chiết khấu (%)</label>
@@ -181,26 +221,48 @@ const SalesOrderCreatePage = () => {
                     />
                 </div>
                 <div>
-                    <AsyncSelect
-                        cacheOptions
-                        defaultOptions
-                        loadOptions={loadCustomerOptions}
-                        placeholder="Thêm theo mã hoặc tên khách hàng"
-                        onChange={(option: CustomerOption | null) => {
-                            if (!option) return;
-                            const c = option.customer;
+                    <div className="flex items-center gap-2">
+                        <div className="w-[470px]">
+                            <AsyncSelect
+                                cacheOptions
+                                defaultOptions
+                                loadOptions={loadCustomerOptions}
+                                placeholder="Thêm theo mã hoặc tên khách hàng"
+                                onChange={(option: CustomerOption | null) => {
+                                    if (!option) return;
+                                    const c = option.customer;
 
-                            setForm((prev) => ({
-                                ...prev,
-                                customer: c.customerName,
-                                address: c.address,
-                                phone: c.phone,
-                                discount: c.discount * 100,
-                            }));
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        customer: c.customerName,
+                                        address: c.address,
+                                        phone: c.phone,
+                                        discount: c.discount * 100,
+                                    }));
 
-                            setIsCustomerLocked(true);
-                        }}
-                    />
+                                    setIsCustomerLocked(true);
+                                }}
+                            />
+                        </div>
+                        {isCustomerLocked && (
+                            <button
+                                onClick={() => {
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        customer: '',
+                                        address: '',
+                                        phone: '',
+                                        discount: 0,
+                                    }));
+                                    setIsCustomerLocked(false);
+                                }}
+                                className="btn btn-sm btn-outline text-red-500"
+                                type="button"
+                            >
+                                Đặt lại
+                            </button>
+                        )}
+                    </div>
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Trạng thái</label>
@@ -243,6 +305,7 @@ const SalesOrderCreatePage = () => {
                                     <td>
                                         <div className="flex items-center gap-1">
                                             <input
+                                                disabled={item.isFromDatabase}
                                                 type="text"
                                                 value={item.productCode}
                                                 onChange={async (e) => {
@@ -271,28 +334,62 @@ const SalesOrderCreatePage = () => {
                                         </div>
                                     </td>
                                     <td>
-                                        <input value={item.productName} onChange={(e) => handleItemChange(index, 'productName', e.target.value)} className="input input-sm" />
+                                        <input
+                                            disabled={item.isFromDatabase}
+                                            value={item.productName}
+                                            onChange={(e) => handleItemChange(index, 'productName', e.target.value)}
+                                            className="input input-sm"
+                                        />
                                     </td>
                                     <td>
-                                        <input type="number" value={item.width} onChange={(e) => handleItemChange(index, 'width', +e.target.value)} className="input input-sm" />
+                                        <input
+                                            disabled={item.isFromDatabase}
+                                            type="number"
+                                            value={item.width}
+                                            onChange={(e) => handleItemChange(index, 'width', +e.target.value)}
+                                            className="input input-sm"
+                                        />
                                     </td>
                                     <td>
-                                        <input type="number" value={item.height} onChange={(e) => handleItemChange(index, 'height', +e.target.value)} className="input input-sm" />
+                                        <input
+                                            disabled={item.isFromDatabase}
+                                            type="number"
+                                            value={item.height}
+                                            onChange={(e) => handleItemChange(index, 'height', +e.target.value)}
+                                            className="input input-sm"
+                                        />
                                     </td>
                                     <td>
-                                        <input type="number" value={item.thickness} onChange={(e) => handleItemChange(index, 'thickness', +e.target.value)} className="input input-sm" />
+                                        <input
+                                            disabled={item.isFromDatabase}
+                                            type="number"
+                                            value={item.thickness}
+                                            onChange={(e) => handleItemChange(index, 'thickness', +e.target.value)}
+                                            className="input input-sm"
+                                        />
                                     </td>
                                     <td>
                                         <input type="number" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', +e.target.value)} className="input input-sm" />
                                     </td>
                                     <td>
-                                        <input type="number" value={item.unitPrice} onChange={(e) => handleItemChange(index, 'unitPrice', +e.target.value)} className="input input-sm" />
+                                        <input
+                                            disabled={item.isFromDatabase}
+                                            type="number"
+                                            value={item.unitPrice}
+                                            onChange={(e) => handleItemChange(index, 'unitPrice', +e.target.value)}
+                                            className="input input-sm"
+                                        />
                                     </td>
                                     <td>{area.toFixed(2)}</td>
                                     <td>{total.toLocaleString()} đ</td>
                                     <td>
                                         <td>
-                                            <select className="select select-sm" value={item.glassStructureId || ''} onChange={(e) => handleItemChange(index, 'glassStructureId', +e.target.value)}>
+                                            <select
+                                                disabled={item.isFromDatabase}
+                                                className="select select-sm"
+                                                value={item.glassStructureId || ''}
+                                                onChange={(e) => handleItemChange(index, 'glassStructureId', +e.target.value)}
+                                            >
                                                 <option value="">-- Chọn --</option>
                                                 {glassStructures.map((gs) => (
                                                     <option key={gs.id} value={gs.id}>
@@ -331,7 +428,7 @@ const SalesOrderCreatePage = () => {
                             if (!option) return;
                             const p = option.product;
 
-                            const newItem: OrderItem = {
+                            const newItem: OrderItemWithFlag = {
                                 id: Date.now(),
                                 productId: p.id,
                                 productCode: p.productCode,
@@ -342,6 +439,7 @@ const SalesOrderCreatePage = () => {
                                 quantity: 1,
                                 unitPrice: Number(p.unitPrice),
                                 glassStructureId: p.glassStructureId,
+                                isFromDatabase: true,
                             };
 
                             setForm((prev) => ({
