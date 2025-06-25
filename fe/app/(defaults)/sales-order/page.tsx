@@ -113,7 +113,12 @@ const SalesOrderSummary = () => {
 
     return (
         <div className="p-6 bg-white rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">Tóm tắt đơn hàng</h2>
+            <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Tóm tắt đơn hàng</h2>
+                <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800" onClick={() => router.push('/sales-order/create')}>
+                    + Thêm đơn hàng
+                </button>
+            </div>
 
             {/* Bộ lọc */}
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

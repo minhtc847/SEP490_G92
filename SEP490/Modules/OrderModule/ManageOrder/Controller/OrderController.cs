@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SEP490.DB;
+using SEP490.DB.Models;
 using SEP490.Modules.OrderModule.ManageOrder.DTO;
 using SEP490.Modules.OrderModule.ManageOrder.Services;
-using SEP490.DB.Models;
-using SEP490.DB;
+using System.Text.RegularExpressions;
 
 namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
 {
@@ -13,11 +14,13 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
     {
         private readonly SEP490DbContext _context;
         private readonly IOrderService _orderService;
+        private readonly IOrderService _customerService;
 
-        public OrderController(SEP490DbContext context, IOrderService orderService)
+        public OrderController(SEP490DbContext context, IOrderService orderService, IOrderService customerService)
         {
             _context = context;
             _orderService = orderService;
+            _customerService = customerService;
         }
 
         // GET: api/orders
@@ -45,6 +48,64 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
 
             return Ok(structures);
         }
+
+        [HttpGet("search-customer")]
+        public IActionResult SearchCustomer(string query)
+        {
+            var result = _context.Customers
+                .Where(c => c.CustomerCode.Contains(query) || c.CustomerName.Contains(query))
+                .Select(c => new {
+                    c.Id,
+                    c.CustomerCode,
+                    c.CustomerName,
+                    c.Address,
+                    c.Phone,
+                    c.Discount
+                })
+                .ToList();
+
+            return Ok(result);
+        }
+
+        [HttpGet("next-order-code")]
+        public IActionResult GetNextOrderCode()
+        {
+            var lastOrderCode = _context.SaleOrders
+                .OrderByDescending(o => o.OrderCode)
+                .Select(o => o.OrderCode)
+                .FirstOrDefault();
+
+            int nextNumber = 1;
+
+            if (!string.IsNullOrEmpty(lastOrderCode) && Regex.IsMatch(lastOrderCode, @"SO\d+"))
+            {
+                var numberPart = Regex.Match(lastOrderCode, @"\d+").Value;
+                nextNumber = int.Parse(numberPart) + 1;
+            }
+
+            var nextOrderCode = $"ĐH{nextNumber:D5}";
+
+            return Ok(new { nextOrderCode });
+        }
+
+        [HttpPost]
+        public IActionResult CreateOrder([FromBody] CreateOrderDto dto)
+        {
+            try
+            {
+                var orderId = _orderService.CreateOrder(dto); 
+                if (orderId <= 0) 
+                {
+                    return BadRequest("Tạo đơn hàng thất bại.");
+                }
+                return Ok(new { message = "Tạo đơn hàng thành công.", id = orderId });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { title = ex.Message });
+            }
+        }
+
 
         [HttpGet("search")]
         public IActionResult SearchProducts(string query)
@@ -84,7 +145,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
             var orderDetail = _orderService.GetOrderDetailById(id);
             if (orderDetail == null)
             {
-                return NotFound($"Order with ID {id} not found.");
+                return NotFound($"Không tìm thấy đơn hàng với ID {id}.");
             }
 
             return Ok(orderDetail);
@@ -95,9 +156,9 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
         {
             var success = _orderService.UpdateOrderDetailById(id, dto);
             if (!success)
-                return NotFound($"Order with ID {id} not found.");
+                return NotFound($"Không tìm thấy đơn hàng với ID {id}.");
 
-            return Ok("Order updated successfully.");
+            return Ok("Đơn hàng đã được cập nhật thành công.");
         }
 
         [HttpDelete("{id}")]
@@ -106,7 +167,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
             try
             {
                 _orderService.DeleteOrder(id);
-                return Ok("Order deleted successfully.");
+                return Ok("Đã xoá đơn hàng thành công.");
             }
             catch (Exception ex)
             {

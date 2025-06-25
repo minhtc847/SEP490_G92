@@ -139,8 +139,81 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             };
         }
 
+        public int CreateOrder(CreateOrderDto dto)
+        {
+            var customer = _context.Customers
+                .FirstOrDefault(c => c.CustomerName == dto.CustomerName && c.Phone == dto.Phone);
 
+            if (customer == null)
+            {
+                customer = new Customer
+                {
+                    CustomerName = dto.CustomerName,
+                    Address = dto.Address,
+                    Phone = dto.Phone,
+                    Discount = dto.Discount
+                };
+                _context.Customers.Add(customer);
+                _context.SaveChanges();
+            }
 
+            var order = new SaleOrder
+            {
+                CustomerId = customer.Id,
+                OrderCode = dto.OrderCode,
+                OrderDate = dto.OrderDate,
+                Status = dto.Status
+            };
+            _context.SaleOrders.Add(order);
+            _context.SaveChanges();
+
+            var detail = new OrderDetail
+            {
+                SaleOrderId = order.Id
+            };
+            _context.OrderDetails.Add(detail);
+            _context.SaveChanges();
+
+            foreach (var p in dto.Products)
+            {
+                if (p.ProductId == 0)
+                {
+                    if (_context.Products.Any(pr => pr.ProductCode == p.ProductCode))
+                    {
+                        throw new Exception($"Mã sản phẩm '{p.ProductCode}' đã tồn tại.");
+                    }
+
+                    var newProduct = new Product
+                    {
+                        ProductCode = p.ProductCode,
+                        ProductName = p.ProductName,
+                        Width = p.Width,
+                        Height = p.Height,
+                        Thickness = p.Thickness,
+                        UnitPrice = p.UnitPrice,
+                        ProductType = "Thành phẩm",
+                        GlassStructureId = (int)(p.GlassStructureId ?? null),
+                        UOM = "Tấm"
+                    };
+                    _context.Products.Add(newProduct);
+                    _context.SaveChanges();
+
+                    p.ProductId = newProduct.Id;
+                }
+
+                var odp = new OrderDetailProduct
+                {
+                    OrderDetailId = detail.Id,
+                    ProductId = p.ProductId,
+                    Quantity = p.Quantity,
+                    TotalAmount = p.Quantity * p.UnitPrice
+                };
+                _context.OrderDetailProducts.Add(odp);
+            }
+
+            _context.SaveChanges();
+            return order.Id;
+        }
         public bool UpdateOrderDetailById(int orderId, UpdateOrderDetailDto dto)
         {
             var order = _context.SaleOrders
@@ -220,18 +293,15 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                     product.UnitPrice = pDto.UnitPrice;
                 }
 
-                // Tìm xem đã có OrderDetailProduct với product này chưa
                 var existingOrderDetailProduct = orderDetail.OrderDetailProducts
                     .FirstOrDefault(odp => odp.ProductId == product.Id);
 
                 if (existingOrderDetailProduct != null)
                 {
-                    // Nếu có rồi thì cập nhật số lượng
                     existingOrderDetailProduct.Quantity = pDto.Quantity;
                 }
                 else
                 {
-                    // Nếu chưa có thì thêm mới
                     orderDetail.OrderDetailProducts.Add(new OrderDetailProduct
                     {
                         ProductId = product.Id,
@@ -267,9 +337,31 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             _context.SaveChanges();
         }
 
+        public List<CustomerSearchResultDto> SearchCustomers(string keyword)
+        {
+            return _context.Customers
+                .Where(c => !c.IsSupplier && (
+                    c.CustomerCode.Contains(keyword) ||
+                    c.CustomerName.Contains(keyword)
+                ))
+                .Select(c => new CustomerSearchResultDto
+                {
+                    Id = c.Id,
+                    CustomerCode = c.CustomerCode,
+                    CustomerName = c.CustomerName,
+                    Address = c.Address,
+                    Phone = c.Phone,
+                    Discount = c.Discount
+                })
+                .Take(20)
+                .ToList();
+        }
+
         public List<GlassStructureDto> GetAllGlassStructures()
         {
             throw new NotImplementedException();
         }
+
+
     }
 }
