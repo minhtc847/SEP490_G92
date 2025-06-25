@@ -9,4 +9,20 @@
         public int? InProgressQuantity { get; set; }
         public int? Completed { get; set; }
     }
+
+    public class UpdateProductionPlanDetailsByProductDTO
+    {
+        public int ProductionPlanId { get; set; }
+        public List<UpdateDetailByProductItemDTO> Details { get; set; } = new();
+    }
+
+    public class UpdateDetailByProductItemDTO
+    {
+        public int ProductId { get; set; }
+        public int Producing { get; set; }
+        public int Done { get; set; }
+        public string ProductCode { get; set; } = string.Empty;
+        public string ProductName { get; set; } = string.Empty;
+    }
+
 }

@@ -12,4 +12,5 @@ public class ProductionPlan
 
     public SaleOrder PurchaseOrder { get; set; } = null!;
     public Customer Customer { get; set; } = null!;
+    public ICollection<ProductionPlanDetail> ProductionPlanDetails { get; set; } = new List<ProductionPlanDetail>();
 }

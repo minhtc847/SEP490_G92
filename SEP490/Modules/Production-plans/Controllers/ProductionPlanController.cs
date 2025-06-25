@@ -37,6 +37,20 @@ namespace SEP490.Modules.Production_plans.Controllers
             return Ok(data);
         }
 
+        [HttpPut("details/by-product")]
+        public async Task<IActionResult> UpdateDetailsByProduct([FromBody] UpdateProductionPlanDetailsByProductDTO dto)
+        {
+            try
+            {
+                await _productionPlanService.UpdateProductionPlanDetailsByProductAsync(dto);
+                return Ok(new { message = "Cập nhật chi tiết theo ProductId thành công." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpPost("create")]
         public async Task<IActionResult> CreatePlan(string orderCode,[FromBody] CreateProductionPlanInputDTO dto)
         {
