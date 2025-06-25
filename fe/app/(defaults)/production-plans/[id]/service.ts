@@ -4,9 +4,7 @@ import axios from "../../../../setup/axios";
 export interface ProductionPlanDetail{
     id: string,
     productCode: string,
-    thickness: string,
-    height: string,
-    width: string,
+    productName:string,
     quantity: string,
     inProgressQuantity: string,
     completed: string

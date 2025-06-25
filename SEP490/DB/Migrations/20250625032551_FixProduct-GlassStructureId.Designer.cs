@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SEP490.DB;
 
@@ -10,9 +11,10 @@ using SEP490.DB;
 namespace SEP490.DB.Migrations
 {
     [DbContext(typeof(SEP490DbContext))]
-    partial class SEP490DbContextModelSnapshot : ModelSnapshot
+    [Migration("20250625032551_FixProduct-GlassStructureId")]
+    partial class FixProductGlassStructureId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -217,10 +219,6 @@ namespace SEP490.DB.Migrations
                     b.Property<string>("ProductCode")
                         .HasColumnType("longtext")
                         .HasColumnName("product_code");
-
-                    b.Property<string>("ProductName")
-                        .HasColumnType("longtext")
-                        .HasColumnName("product_name");
 
                     b.Property<int?>("UnitPrice")
                         .HasColumnType("int")

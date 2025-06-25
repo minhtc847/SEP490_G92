@@ -21,3 +21,18 @@ export const createProductonPlan = async (id:string): Promise<createProductonPla
         throw error
     }
 }
+
+export interface UpdateStatusRequest {
+    status: string;
+}
+
+export const updateProductionPlanStatus = async (id: string, status: string): Promise<void> => {
+    try {
+      await axios.put(`/api/ProductionPlan/${id}/status`, {
+        status: status
+      } as UpdateStatusRequest);
+    } catch (error) {
+      throw error;
+    }
+};
+  

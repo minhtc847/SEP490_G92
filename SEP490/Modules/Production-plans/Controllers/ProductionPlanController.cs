@@ -43,6 +43,19 @@ namespace SEP490.Modules.Production_plans.Controllers
             await _productionPlanService.CreateProductionPlanAsync(orderCode, dto);
             return Ok(new { message = "Tạo kế hoạch sản xuất thành công!" });
         }
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateProductionPlanStatusDTO dto)
+        {
+            try
+            {
+                await _productionPlanService.UpdateStatusAsync(id, dto.Status);
+                return Ok(new { message = "Cập nhật trạng thái thành công" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
     }
 }
