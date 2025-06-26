@@ -37,11 +37,38 @@ namespace SEP490.Modules.Production_plans.Controllers
             return Ok(data);
         }
 
-        [HttpPost("create")]
+        [HttpPut("EditPlans/by-product")]
+        public async Task<IActionResult> UpdateDetailsByProduct([FromBody] UpdateProductionPlanDetailsByProductDTO dto)
+        {
+            try
+            {
+                await _productionPlanService.UpdateProductionPlanDetailsByProductAsync(dto);
+                return Ok(new { message = "Cập nhật chi tiết theo ProductId thành công." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("CreatePlans")]
         public async Task<IActionResult> CreatePlan(string orderCode,[FromBody] CreateProductionPlanInputDTO dto)
         {
             await _productionPlanService.CreateProductionPlanAsync(orderCode, dto);
             return Ok(new { message = "Tạo kế hoạch sản xuất thành công!" });
+        }
+        [HttpPut("{id}/ChangeStatus")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateProductionPlanStatusDTO dto)
+        {
+            try
+            {
+                await _productionPlanService.UpdateStatusAsync(id, dto.Status);
+                return Ok(new { message = "Cập nhật trạng thái thành công" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
     }

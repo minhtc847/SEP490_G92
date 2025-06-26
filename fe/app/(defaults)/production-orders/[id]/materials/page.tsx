@@ -248,8 +248,13 @@ const ChemicalIssuancePage = () => {
     };
 
     const handleProductSelect = async (product: ProductionOutputDto) => {
+        console.log('🔍 Selected product:', product);
+        console.log('📊 Product ID:', product.productId);
+        console.log('🆔 Production Output ID:', product.productionOutputId);
+        
         // Validate that product.productionOutputId exists
         if (!product.productionOutputId) {
+            console.error('❌ Production Output ID is missing!');
             showMessage('Sản phẩm không có ID hợp lệ', 'error');
             return;
         }
@@ -257,10 +262,18 @@ const ChemicalIssuancePage = () => {
         setSelectedProduct(product);
         setMaterialsLoading(true);
         try {
+            console.log('🚀 Calling getMaterialsByProductId with:', { 
+                productId: product.productId, 
+                productionOutputId: product.productionOutputId 
+            });
             const materials = await getMaterialsByProductId(product.productId, product.productionOutputId);
+            console.log('✅ Materials received:', materials);
+            console.log('📦 Materials count:', materials.length);
+            console.log('🔍 Materials structure:', materials[0]);
             setFilteredMaterials(materials);
+            console.log('💾 Filtered materials state updated');
         } catch (error) {
-            console.error('Error fetching materials:', error);
+            console.error('❌ Error fetching materials:', error);
             showMessage('Không thể tải danh sách nguyên vật liệu', 'error');
             setFilteredMaterials([]);
         } finally {

@@ -66,11 +66,24 @@ export const getProductionOutputs = async (productionOrderId: number): Promise<P
  * @returns Promise<MaterialDto[]> - Danh sách materials
  */
 export const getMaterialsByProductId = async (productId: number, productOutputId: number): Promise<MaterialDto[]> => {
+    console.log('🌐 API Call - URL:', `/api/Materials/by-product/${productId}?productOutputId=${productOutputId}`);
+    console.log('📋 Parameters:', { productId, productOutputId });
+    
     try {
         const response = await axios.get<MaterialDto[]>(`/api/Materials/by-product/${productId}?productOutputId=${productOutputId}`);
+        console.log('📡 API Response status:', response.status);
+        console.log('📄 Response data:', response.data);
+        console.log('📊 Response data type:', typeof response.data);
+        console.log('📦 Response data length:', Array.isArray(response.data) ? response.data.length : 'Not an array');
         return response.data;
     } catch (error) {
-        console.error('Error fetching materials by product:', error);
+        console.error('💥 API Error:', error);
+        console.error('🚨 Error details:', {
+            message: (error as any).message,
+            status: (error as any).response?.status,
+            statusText: (error as any).response?.statusText,
+            data: (error as any).response?.data
+        });
         throw new Error('Không thể lấy danh sách materials');
     }
 };

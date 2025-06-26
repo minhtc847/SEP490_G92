@@ -120,6 +120,7 @@ const ProductionOrderDetailPage = () => {
           className="table-hover whitespace-nowrap"
           columns={columns}
           records={data}
+          idAccessor="productId"
           minHeight={200}
           fetching={loading}
           onRowClick={handleRowClick}
@@ -133,6 +134,7 @@ const ProductionOrderDetailPage = () => {
           className="table-hover whitespace-nowrap max-h-40 overflow-auto"
           columns={calculationColumns}
           records={calculationData}
+          idAccessor="glassArea"
           minHeight={100}
           fetching={calculationLoading}
         />

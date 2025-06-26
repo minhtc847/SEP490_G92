@@ -43,7 +43,7 @@ const ProductionOrderDetailPage = () => {
   }, [id]);
 
   const handleEdit = () => {
-    router.push(`/production-orders/edit/${id}`);
+    router.push(`/production-plans/edit/${id}`);
   };
 
   const handleBack = () => {
@@ -127,9 +127,7 @@ const ProductionOrderDetailPage = () => {
             <tr>
               <th className="border p-2">STT</th>
               <th className="border p-2">Mã SP</th>
-              <th className="border p-2">Độ dày (mm)</th>
-              <th className="border p-2">Rộng (mm)</th>
-              <th className="border p-2">Cao (mm)</th>
+              <th className="border p-2">Tên SP</th>
               <th className="border p-2">Số lượng</th>
               <th className="border p-2">Đang sản xuất</th>
               <th className="border p-2">Đã hoàn thành</th>
@@ -140,16 +138,14 @@ const ProductionOrderDetailPage = () => {
               <tr key={`plan-detail-${idx}`}>
                 <td className="border p-2 text-center">{idx + 1}</td>
                 <td className="border p-2">{item.productCode}</td>
-                <td className="border p-2 text-right">{item.thickness}</td>
-                <td className="border p-2 text-right">{item.width}</td>
-                <td className="border p-2 text-right">{item.height}</td>
+                <td className="border p-2 text-right">{item.productName}</td>
                 <td className="border p-2 text-right">{item.quantity}</td>
                 <td className="border p-2 text-right">{item.inProgressQuantity}</td>
                 <td className="border p-2 text-right">{item.completed}</td>
               </tr>
             ))}
             <tr className="bg-gray-50 font-bold">
-              <td colSpan={5} className="border p-2 text-right">Tổng cộng:</td>
+              <td colSpan={3} className="border p-2 text-right">Tổng cộng:</td>
               <td className="border p-2 text-right">{totals.quantity}</td>
               <td className="border p-2 text-right">{totals.inProgress}</td>
               <td className="border p-2 text-right">{totals.completed}</td>

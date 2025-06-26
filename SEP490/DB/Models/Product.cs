@@ -12,5 +12,5 @@ public class Product
     public decimal? Weight { get; set; }
     public decimal? UnitPrice { get; set; }
     public int? GlassStructureId { get; set; }
-    public GlassStructure? GlassStructure { get; set; } = null!;
+    public GlassStructure? GlassStructure { get; set; } 
 }
