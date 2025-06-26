@@ -140,7 +140,7 @@ namespace SEP490.Modules.Production_plans.Services
             if (plan == null)
                 throw new Exception("Không tìm thấy kế hoạch sản xuất.");
 
-            int totalQuantity = 0;
+            int totalQuantity = dto.Details.Sum(x => x.Producing + x.Done);
 
             foreach (var item in dto.Details)
             {
@@ -151,7 +151,6 @@ namespace SEP490.Modules.Production_plans.Services
                 {
                     detail.Producing = item.Producing;
                     detail.Done = item.Done;
-                    totalQuantity += item.Producing + item.Done;
 
                     var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == item.ProductId);
                     if (product != null)

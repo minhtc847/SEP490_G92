@@ -24,7 +24,7 @@ const statusColor = (status: string) => {
 };
 
 const ListProductionOrders = () => {
-  const [productionOrders, setproductionOrders] = useState<ProductionPlan[]>([]);
+  const [productionDetails, setproductionDetails] = useState<ProductionPlan[]>([]);
   const [popup, setPopup] = useState<{ open: boolean; action: string; record: any | null }>({
     open: false,
     action: '',
@@ -45,7 +45,7 @@ const ListProductionOrders = () => {
     const fetchData = async () => {
       try {
         const result = await getProductionPlansArray();
-        setproductionOrders(result);
+        setproductionDetails(result);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -55,9 +55,9 @@ const ListProductionOrders = () => {
   }, []);
 
   useEffect(() => {
-    const sorted = sortBy(productionOrders, sortStatus.columnAccessor);
+    const sorted = sortBy(productionDetails, sortStatus.columnAccessor);
     setInitialRecords(sortStatus.direction === 'desc' ? sorted.reverse() : sorted);
-  }, [productionOrders, sortStatus]);
+  }, [productionDetails, sortStatus]);
 
   useEffect(() => {
     const from = (page - 1) * pageSize;
@@ -90,7 +90,7 @@ const ListProductionOrders = () => {
       try {
         await updateProductionPlanStatus(record.id, 'Đã hủy');
         const updated = await getProductionPlansArray();
-        setproductionOrders(updated);
+        setproductionDetails(updated);
 
         Swal.fire('Đã hủy!', `Lệnh sản xuất ${record.id} đã chuyển sang trạng thái "Đã hủy".`, 'success');
       } catch (err) {
@@ -112,7 +112,7 @@ const ListProductionOrders = () => {
     try {
       await updateProductionPlanStatus(popup.record.id, newStatus);
       const updated = await getProductionPlansArray();
-      setproductionOrders(updated);
+      setproductionDetails(updated);
 
       Swal.fire({
         title: 'Thành công!',
