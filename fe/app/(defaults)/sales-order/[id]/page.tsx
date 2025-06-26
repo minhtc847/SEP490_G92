@@ -1,17 +1,33 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { mockOrders } from '@/app/data/mock-orders';
+import { createProductonPlan, ProductonPlan  } from './service';
 
 const SalesOrderDetailPage = () => {
   const { id } = useParams();
   const router = useRouter();
+  const [productionPlans, setProductionPlans] = useState<ProductonPlan[]>([]);
+  
+  useEffect(() => {
+     const fetchData = async () => {
+       try {
+         const result = await createProductonPlan(id as string);
+         setProductionPlans(result);
+       } catch (error) {
+         console.error('Error fetching data:', error);
+       }
+     };
+ 
+     fetchData();
+   }, [id]);
 
   const order = mockOrders.find((o) => o.id === id);
   if (!order) {
     return <div className="p-6 text-red-600">Không tìm thấy đơn hàng với mã: {id}</div>;
   }
+  
 
   const {
     customerName,
@@ -53,7 +69,8 @@ const SalesOrderDetailPage = () => {
     width: item.width,
     height: item.height,
     thickness: item.thickness,
-  }));
+  })
+);
 
   console.log('📦 Kế hoạch sản xuất đã tạo:', productionPlans);
   alert('✅ Đã tạo kế hoạch sản xuất cho đơn hàng!');

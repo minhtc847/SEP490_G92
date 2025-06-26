@@ -19,7 +19,7 @@ const ProductionOrderDetailPage = () => {
   const fetchData = async () => {
     if (!id) return; // tránh gọi khi chưa có id
     try {
-      const data = await getProductionPlanDetailsArray(id as string); // 👈 truyền id vào đây
+      const data = await getProductionPlanDetailsArray(id as string);
       setProductionItems(data);
     } catch (error) {
       console.error('Lỗi khi tải dữ liệu:', error);

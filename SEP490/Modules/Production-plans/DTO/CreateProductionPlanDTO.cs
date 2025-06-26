@@ -7,7 +7,7 @@
         //public string CustomerName { get; set; } = string.Empty;
         public DateTime PlanDate { get; set; }
         public string? OrderCode { get; set; } 
-        public string Status { get; set; } = "Chưa xử lý";
+        public string Status { get; set; } = "Chờ phê duyệt";
         public List<CreateProductionPlanDetailInputDTO> Details { get; set; } = new();
     }
 

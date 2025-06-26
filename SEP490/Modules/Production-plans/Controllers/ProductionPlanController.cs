@@ -51,10 +51,10 @@ namespace SEP490.Modules.Production_plans.Controllers
             }
         }
 
-        [HttpPost("CreatePlans")]
-        public async Task<IActionResult> CreatePlan(string orderCode,[FromBody] CreateProductionPlanInputDTO dto)
+        [HttpPost("CreatePlans/{saleOrderId}")]
+        public async Task<IActionResult> CreatePlan([FromBody] CreateProductionPlanInputDTO dto)
         {
-            await _productionPlanService.CreateProductionPlanAsync(orderCode, dto);
+            await _productionPlanService.CreateProductionPlanAsync(dto.SaleOrderId.ToString(), dto);
             return Ok(new { message = "Tạo kế hoạch sản xuất thành công!" });
         }
         [HttpPut("{id}/ChangeStatus")]
