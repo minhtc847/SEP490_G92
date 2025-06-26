@@ -19,6 +19,7 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 
 builder.Services.AddHttpClient<ZaloChatService>();
 builder.Services.AddControllers();
+builder.Services.AddHttpClient();
 
 // Register all services that inherit from BaseService
 var baseType = typeof(BaseService);
