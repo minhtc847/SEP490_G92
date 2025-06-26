@@ -49,7 +49,7 @@ const ProductionOrderDetailPage = () => {
     fetch(`https://localhost:7075/api/ProductionOrders/by-code/${id}`)
       .then((res) => res.json())
       .then((data) => {
-        setData(data);
+        setData(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -65,7 +65,7 @@ const ProductionOrderDetailPage = () => {
     fetch(`https://localhost:7075/api/ProductionOrders/${id}/calculate/${record.productId}`)
       .then((res) => res.json())
       .then((calculationResult) => {
-        setCalculationData([calculationResult]);
+        setCalculationData(Array.isArray(calculationResult) ? calculationResult : [calculationResult]);
         setCalculationLoading(false);
       })
       .catch((error) => {
@@ -130,10 +130,10 @@ const ProductionOrderDetailPage = () => {
       <div className="panel mb-6">
         <DataTable
           highlightOnHover
-          className="table-hover whitespace-nowrap"
+          className="table-hover whitespace-nowrap max-h-40 overflow-auto"
           columns={calculationColumns}
           records={calculationData}
-          minHeight={200}
+          minHeight={100}
           fetching={calculationLoading}
         />
       </div>

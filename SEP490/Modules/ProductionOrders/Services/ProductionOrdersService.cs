@@ -16,41 +16,94 @@ namespace SEP490.Modules.ProductionOrders.Services
             _context = context;
         }
 
+        public async Task<List<ProductionOutputDto>> CreateProductionOutputsFromOrderAsync(int productionOrderId)
+        {
+            var order = await _context.ProductionOrders
+                .Include(po => po.ProductionPlan)
+                .FirstOrDefaultAsync(po => po.Id == productionOrderId);
+
+            if (order == null)
+                throw new ArgumentException("ProductionOrder not found", nameof(productionOrderId));
+
+            // Get all products from ProductionPlanDetail for this plan
+            var planDetails = await _context.ProductionPlanDetails
+                .Where(d => d.ProductionPlanId == order.ProductionPlanId)
+                .ToListAsync();
+
+            var outputs = new List<ProductionOutputDto>();
+
+            foreach (var detail in planDetails)
+            {
+                // Check if output already exists for this product and order
+                var exists = await _context.ProductionOutputs
+                    .AnyAsync(po => po.ProductionOrderId == productionOrderId && po.ProductId == detail.ProductId);
+
+                if (!exists)
+                {
+                    var output = new ProductionOutput
+                    {
+                        ProductionOrderId = productionOrderId,
+                        ProductId = detail.ProductId,
+                        ProductName = detail.Product?.ProductName,
+                        UOM = detail.Product?.UOM,
+                        Amount = detail.Producing + detail.Done,
+                        OrderId = order.Id,
+                        CostObject = null // Set as needed
+                    };
+                    _context.ProductionOutputs.Add(output);
+
+                    outputs.Add(new ProductionOutputDto
+                    {
+                        ProductId = output.ProductId,
+                        ProductName = output.ProductName,
+                        ProductCode = output.Product?.ProductCode,
+                        UOM = output.UOM,
+                        Amount = output.Amount,
+                        OrderId = output.OrderId,
+                        CostObject = output.CostObject
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return outputs;
+        }
+
+        public async Task<ProductionOrder?> CreateProductionOrderAsync(int planId)
+        {
+            var plan = await _context.ProductionPlans.FindAsync(planId);
+            if (plan == null) return null;
+
+            var newOrder = new ProductionOrder
+            {
+                ProductionPlanId = planId,
+                OrderDate = DateTime.Now,
+                ProductionOrderCode = $"LSX-{planId}",
+                Description = $"Lệnh sản xuất hàng ... ",
+                ProductionStatus = "Đang thực hiện"
+                // Set other properties as needed
+            };
+
+            _context.ProductionOrders.Add(newOrder);
+            await _context.SaveChangesAsync();
+            return newOrder;
+        }
+
         public async Task<List<ProductionOrdersByPlanDto>> GetProductionOrdersByPlanIdAsync(int productionPlanId)
         {
             var productionOrders = await _context.ProductionOrders
                 .Where(po => po.ProductionPlanId == productionPlanId)
-                .ToListAsync();
-
-            var result = new List<ProductionOrdersByPlanDto>();
-
-            foreach (var po in productionOrders)
-            {
-                var outputs = await _context.ProductionOutputs
-                    .Where(output => output.ProductionOrderId == po.Id)
-                    .ToListAsync();
-
-                var productCodes = new List<string>();
-                foreach (var output in outputs)
+                .Select(po => new ProductionOrdersByPlanDto
                 {
-                    var glassTypes = await ExtractGlassTypesAsync(output.ProductId);
-                    // Nối các glassTypes thành một chuỗi, nếu không có thì để chuỗi rỗng
-                    var joined = string.Join(" ", glassTypes);
-                    productCodes.Add(joined);
-                }
-
-                result.Add(new ProductionOrdersByPlanDto
-                {
+                    ProductionOrderId = po.Id,
                     ProductionOrderCode = po.ProductionOrderCode,
                     OrderDate = po.OrderDate,
                     Description = po.Description,
-                    ProductionStatus = po.ProductionStatus,
-                    TotalAmount = (int)outputs.Sum(o => o.Amount ?? 0),
-                    ProductCodes = productCodes
-                });
-            }
+                    ProductionStatus = po.ProductionStatus
+                })
+                .ToListAsync();
 
-            return result;
+            return productionOrders;
         }
 
         public async Task<ProductionOrder?> GetProductionOrderByIdAsync(int productionOrderId)
@@ -64,137 +117,24 @@ namespace SEP490.Modules.ProductionOrders.Services
         {
             var outputs = await _context.ProductionOutputs
                 .Where(po => po.ProductionOrderId == productionOrderId)
+                .Include(po => po.ProductionOrder)
+                    .ThenInclude(order => order.ProductionPlan)
                 .Select(po => new ProductionOutputDto
                 {
+                    ProductionOutputId = po.Id, // Map the Id here
                     ProductId = po.ProductId,
                     ProductName = po.ProductName,
+                    ProductCode = po.Product.ProductCode,
                     UOM = po.UOM,
                     Amount = po.Amount,
-                    OrderId = po.OrderId,
+                    OrderId = po.ProductionOrder.ProductionPlan.SaleOrderId,
                     CostObject = po.CostObject
-
                 })
                 .ToListAsync();
 
             return outputs;
         }
 
-        public async Task<ProductionOrder> CreateProductionOrderAsync(ProductionOrderCreateRequest request)
-        {
-            var productionOrder = new ProductionOrder
-            {
-                ProductionOrderCode = $"PO-{DateTime.UtcNow.Ticks}",
-                OrderDate = DateTime.UtcNow,
-                Description = request.Description,
-                ProductionStatus = "New",
-                ProductionPlanId = request.ProductionPlanId
-            };
-
-            _context.ProductionOrders.Add(productionOrder);
-            await _context.SaveChangesAsync();
-
-            foreach (var item in request.Products)
-            {
-                var product = await _context.Products.FindAsync(item.ProductId);
-                if (product == null) continue;
-
-                var output = new ProductionOutput
-                {
-                    ProductId = item.ProductId,
-                    ProductName = product.ProductName,
-                    UOM = product.UOM,
-                    Amount = item.Quantity,
-                    ProductionOrderId = productionOrder.Id
-                };
-                _context.ProductionOutputs.Add(output);
-            }
-
-            await _context.SaveChangesAsync();
-            return productionOrder;
-        }
-
-        /// <summary>
-        /// Lấy số lớp kính (GlassLayers) từ GlassStructure của sản phẩm theo productId.
-        /// </summary>
-        public async Task<int?> GetGlassLayersByProductIdAsync(int productId)
-        {
-            var product = await _context.Products
-                .Include(p => p.GlassStructure)
-                .FirstOrDefaultAsync(p => p.Id == productId);
-
-            return product?.GlassStructure?.GlassLayers;
-        }
-
-        public async Task<List<string>> ExtractGlassTypesAsync(int productId)
-        {
-            var product = await _context.Products
-                .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == productId);
-
-            if (product == null || string.IsNullOrWhiteSpace(product.ProductName))
-                return new List<string>();
-
-            var results = new List<string>();
-            var name = product.ProductName;
-
-            // Regex để tìm EI## (ví dụ EI90, EI60)
-            var eiMatch = Regex.Match(name, @"\bEI\d{2}\b", RegexOptions.IgnoreCase);
-            if (eiMatch.Success)
-            {
-                results.Add(eiMatch.Value.ToUpper());
-            }
-
-            // Regex để tìm VNG-XXX (ví dụ VNG-N, VNG-MK, VNG-MB)
-            var vngMatch = Regex.Match(name, @"\bVNG-[A-Z]+\b", RegexOptions.IgnoreCase);
-            if (vngMatch.Success)
-            {
-                results.Add(vngMatch.Value.ToUpper());
-            }
-
-            return results;
-        }
-
-        public async Task<List<ProductionMaterial>> AddMaterialsByGlassTypeAsync(int productId, int productOutputId)
-        {
-            var glassTypes = await ExtractGlassTypesAsync(productId);
-
-            // Kiểm tra điều kiện: có ít nhất 2 phần tử và phần tử thứ 2 là "VNG-N"
-            if (glassTypes.Count >= 2 && glassTypes[1] == "VNG-N")
-            {
-                var materials = new List<ProductionMaterial>();
-
-                // Tạo ProductionMaterial cho productId 23
-                var material1 = new ProductionMaterial
-                {
-                    ProductionId = productId,
-                    ProductionOutputId = productOutputId,
-                    ProductionName = "Keo Trung tính màu đen (Silicone Sealant)",
-                    UOM = "gói",
-                    Product = await _context.Products.FindAsync(23)
-                };
-                materials.Add(material1);
-
-                // Tạo ProductionMaterial cho productId 3
-                var material2 = new ProductionMaterial
-                {
-                    ProductionId = productId,
-                    ProductionOutputId = productOutputId,
-                    ProductionName = "Keo Nano",
-                    UOM = "kg",
-                    Product = await _context.Products.FindAsync(3)
-                };
-                materials.Add(material2);
-
-                // Thêm vào DbContext và lưu thay đổi
-                _context.ProductionMaterials.AddRange(materials);
-                await _context.SaveChangesAsync();
-
-                return materials;
-            }
-
-            // Nếu không thỏa điều kiện, trả về list rỗng
-            return new List<ProductionMaterial>();
-        }
 
         public List<ProductionOrderListDto> GetAll()
         {

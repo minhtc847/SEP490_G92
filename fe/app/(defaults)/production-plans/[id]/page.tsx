@@ -2,7 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getProductionPlanDetailsArray, ProductionPlanDetail, getProductionOrdersByPlanId, ProductionOrdersByPlanDto, createProductionOrder, ProductionOrderCreateRequest } from './service';
+import { 
+  getProductionPlanDetailsArray, 
+  ProductionPlanDetail, 
+  getProductionOrdersByPlanId, 
+  ProductionOrdersByPlanDto, 
+  createProductionOrderByPlanId, 
+  ProductionOrder 
+} from './service';
 
 const ProductionOrderDetailPage = () => {
   const { id } = useParams();
@@ -10,95 +17,68 @@ const ProductionOrderDetailPage = () => {
 
   const [productionItems, setProductionItems] = useState<ProductionPlanDetail[]>([]);
   const [productionOrders, setProductionOrders] = useState<ProductionOrdersByPlanDto[]>([]);
-  const [popupQuantities, setPopupQuantities] = useState<Record<number, number>>({});
-  const [showPopup, setShowPopup] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Fetch data from API
   useEffect(() => {
-  const fetchData = async () => {
-    if (!id) return; // tránh gọi khi chưa có id
-    try {
-      const [planDetails, ordersData] = await Promise.all([
-        getProductionPlanDetailsArray(id as string),
-        getProductionOrdersByPlanId(parseInt(id as string))
-      ]);
-      setProductionItems(planDetails);
-      setProductionOrders(ordersData);
-    } catch (error) {
-      console.error('Lỗi khi tải dữ liệu:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const fetchData = async () => {
+      if (!id) return;
+      
+      try {
+        const [planDetails, ordersData] = await Promise.all([
+          getProductionPlanDetailsArray(id as string),
+          getProductionOrdersByPlanId(parseInt(id as string))
+        ]);
+        
+        setProductionItems(planDetails);
+        setProductionOrders(Array.isArray(ordersData) ? ordersData : []);
+      } catch (error) {
+        console.error('Lỗi khi tải dữ liệu:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchData();
-}, [id]);
-
+    fetchData();
+  }, [id]);
 
   const handleEdit = () => {
     router.push(`/production-orders/edit/${id}`);
-  };
-
-  const handleStartProduction = () => {
-    const initialQuantities = productionItems.reduce((acc, item) => ({
-      ...acc,
-      [parseInt(item.id)]: Number(item.quantity)
-    }), {});
-    setPopupQuantities(initialQuantities);
-    setShowPopup(true);
-  };
-
-  const handlePopupClose = () => {
-    setShowPopup(false);
-  };
-
-  const handlePopupConfirm = async () => {
-    try {
-      // Tạo request để gọi API
-      const request: ProductionOrderCreateRequest = {
-        productionPlanId: parseInt(id as string),
-        description: `Production order for plan ${id}`,
-        products: productionItems
-          .filter(item => popupQuantities[parseInt(item.id)] > 0) // Chỉ lấy những sản phẩm có số lượng > 0
-          .map(item => ({
-            productId: parseInt(item.id),
-            quantity: popupQuantities[parseInt(item.id)]
-          }))
-      };
-
-      // Gọi API tạo production order
-      const result = await createProductionOrder(request);
-      console.log('Production order created:', result);
-
-      // Refresh danh sách production orders
-      const updatedOrders = await getProductionOrdersByPlanId(parseInt(id as string));
-      setProductionOrders(updatedOrders);
-
-      // Đóng popup
-      setShowPopup(false);
-
-      // Hiển thị thông báo thành công (có thể thêm toast notification)
-      alert('Tạo lệnh sản xuất thành công!');
-    } catch (error) {
-      console.error('Lỗi khi tạo lệnh sản xuất:', error);
-      alert('Có lỗi xảy ra khi tạo lệnh sản xuất. Vui lòng thử lại!');
-    }
-  };
-
-  const handleQuantityChange = (itemId: number, newQuantity: number) => {
-    setPopupQuantities(prev => ({
-      ...prev,
-      [itemId]: newQuantity
-    }));
   };
 
   const handleBack = () => {
     router.push('/production-plans');
   };
 
-  const handleViewDetail = (record: any) => {
-    router.push(`/production-orders/${record.productionOrderId}`);
+  const handleViewDetail = (orderId: number) => {
+    router.push(`/production-orders/${orderId}`);
+  };
+
+  const handleCreateProductionOrder = async () => {
+    if (!id) return;
+    
+    try {
+      setLoading(true);
+      const newOrder = await createProductionOrderByPlanId(Number(id));
+      
+      setProductionOrders(prev => [
+        {
+          productionOrderId: newOrder.id,
+          productionOrderCode: newOrder.productionOrderCode,
+          orderDate: newOrder.orderDate,
+          description: newOrder.description,
+          productionStatus: newOrder.productionStatus,
+          productionPlanId: newOrder.productionPlanId,
+          productCodes: [],
+          totalAmount: 0
+        } as ProductionOrdersByPlanDto,
+        ...prev
+      ]);
+    } catch (error) {
+      alert('Tạo lệnh sản xuất thất bại!');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const totals = productionItems.reduce(
@@ -116,24 +96,30 @@ const ProductionOrderDetailPage = () => {
 
   return (
     <div className="p-6">
+      {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Chi tiết kế hoạch sản xuất: {id}</h1>
         <div className="space-x-2">
           <button onClick={handleEdit} className="px-4 py-1 bg-blue-500 text-white rounded">
             📝 Sửa
           </button>
-          <button onClick={handleStartProduction} className="px-4 py-1 bg-green-600 text-white rounded">
+          <button 
+            className="px-4 py-1 bg-green-600 text-white rounded" 
+            onClick={handleCreateProductionOrder}
+          >
             🏭 Sản xuất
           </button>
         </div>
       </div>
 
+      {/* Plan Info */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-sm">
         <div><strong>Mã lệnh sản xuất:</strong> {id}</div>
         <div><strong>Ngày tạo:</strong> Không có dữ liệu</div>
         <div><strong>Trạng thái:</strong> Không có dữ liệu</div>
       </div>
 
+      {/* Production Plan Details Table */}
       <h2 className="text-xl font-semibold mb-4">Chi tiết kế hoạch sản xuất</h2>
       <div className="overflow-x-auto mb-6">
         <table className="w-full border-collapse border text-sm">
@@ -151,7 +137,7 @@ const ProductionOrderDetailPage = () => {
           </thead>
           <tbody>
             {productionItems.map((item, idx) => (
-              <tr key={item.id}>
+              <tr key={`plan-detail-${idx}`}>
                 <td className="border p-2 text-center">{idx + 1}</td>
                 <td className="border p-2">{item.productCode}</td>
                 <td className="border p-2 text-right">{item.thickness}</td>
@@ -172,6 +158,7 @@ const ProductionOrderDetailPage = () => {
         </table>
       </div>
 
+      {/* Production Orders Table */}
       <h2 className="text-xl font-semibold mb-4">Lệnh sản xuất</h2>
       <div className="overflow-x-auto mb-6">
         <table className="w-full border-collapse border text-sm">
@@ -180,33 +167,25 @@ const ProductionOrderDetailPage = () => {
               <th className="border p-2">STT</th>
               <th className="border p-2">Mã lệnh sản xuất</th>
               <th className="border p-2">Ngày tạo</th>
-              <th className="border p-2">Mã SP</th>
-              <th className="border p-2">Số lượng</th>
+              <th className="border p-2">Mô tả</th>
               <th className="border p-2">Trạng thái</th>
               <th className="border p-2">Hành động</th>
             </tr>
           </thead>
           <tbody>
-            {productionOrders.length > 0 ? (
+            {Array.isArray(productionOrders) && productionOrders.length > 0 ? (
               productionOrders.map((order, idx) => (
-                <tr key={order.productionOrderCode}>
+                <tr key={`production-order-${order.productionOrderCode}`}>
                   <td className="border p-2 text-center">{idx + 1}</td>
                   <td className="border p-2">{order.productionOrderCode}</td>
-                  <td className="border p-2">{new Date(order.orderDate).toLocaleDateString('vi-VN')}</td>
                   <td className="border p-2">
-                    {order.productCodes && order.productCodes.length > 0 ? (
-                      <div className="text-xs">
-                        {order.productCodes.map((code, codeIdx) => (
-                          <div key={codeIdx} className="mb-1">
-                            {code || 'Không có mã SP'}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      'Không có mã SP'
-                    )}
+                    {order.orderDate ? new Date(order.orderDate).toLocaleDateString('vi-VN') : 'Không có ngày'}
                   </td>
-                  <td className="border p-2 text-right">{order.totalAmount}</td>
+                  <td className="border p-2 max-w-md break-words whitespace-normal min-w-48">
+                    <div className="max-h-20 overflow-y-auto">
+                      {order.description || 'Không có mô tả'}
+                    </div>
+                  </td>
                   <td className="border p-2">
                     <span className={`px-2 py-1 rounded text-xs ${
                       order.productionStatus === 'Completed' ? 'bg-green-100 text-green-800' :
@@ -222,7 +201,7 @@ const ProductionOrderDetailPage = () => {
                   </td>
                   <td className="border p-2">
                     <button 
-                      onClick={() => handleViewDetail(order.productionOrderCode)} 
+                      onClick={() => handleViewDetail(order.productionOrderId)} 
                       className="text-blue-600 hover:underline"
                     >
                       Xem chi tiết
@@ -232,7 +211,7 @@ const ProductionOrderDetailPage = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={7} className="border p-4 text-center text-gray-500">
+                <td colSpan={6} className="border p-4 text-center text-gray-500">
                   Chưa có lệnh sản xuất nào cho kế hoạch này
                 </td>
               </tr>
@@ -241,35 +220,10 @@ const ProductionOrderDetailPage = () => {
         </table>
       </div>
 
-      {showPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h3 className="text-lg font-semibold mb-4">Bắt đầu sản xuất</h3>
-            <div className="space-y-4">
-              {productionItems.map(item => (
-                <div key={item.id} className="flex items-center justify-between">
-                  <span>{item.productCode}</span>
-                  <input
-                    type="number"
-                    value={popupQuantities[parseInt(item.id)] || 0}
-                    onChange={(e) =>
-                      handleQuantityChange(parseInt(item.id), parseInt(e.target.value) || 0)
-                    }
-                    className="border p-1 w-24 text-right"
-                    min="0"
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-end space-x-2 mt-6">
-              <button onClick={handlePopupClose} className="px-4 py-1 bg-gray-300 text-black rounded">Hủy</button>
-              <button onClick={handlePopupConfirm} className="px-4 py-1 bg-blue-500 text-white rounded">OK</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <button onClick={handleBack} className="px-3 py-1 bg-gray-300 text-black rounded mt-4">◀ Quay lại</button>
+      {/* Back Button */}
+      <button onClick={handleBack} className="px-3 py-1 bg-gray-300 text-black rounded mt-4">
+        ◀ Quay lại
+      </button>
     </div>
   );
 };

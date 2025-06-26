@@ -2,6 +2,7 @@
 {
     public class ProductionOrdersByPlanDto
     {
+        public int ProductionOrderId { get; set; }
         public string? ProductionOrderCode { get; set; }
         public DateTime OrderDate { get; set; }
 

@@ -40,17 +40,23 @@ namespace SEP490.Modules.ProductionOrders.Controllers
             return Ok(order);
         }
 
-        /// <summary>
-        /// Tạo mới ProductionOrder với nhiều sản phẩm và số lượng tương ứng.
-        /// </summary>
-        [HttpPost]
-        public async Task<IActionResult> CreateProductionOrder([FromBody] ProductionOrderCreateRequest request)
+        [HttpPost("create/{planId}")]
+        public async Task<IActionResult> CreateProductionOrderForPlan(int planId)
         {
-            if (request.Products == null || request.Products.Count == 0)
-                return BadRequest("Danh sách sản phẩm không được rỗng.");
+            var order = await _productionOrdersService.CreateProductionOrderAsync(planId);
+            if (order == null)
+                return NotFound($"Không tìm thấy kế hoạch sản xuất với Id {planId}");
 
-            var result = await _productionOrdersService.CreateProductionOrderAsync(request);
-            return Ok(result);
+            return Ok(order);
+        }
+
+        [HttpPost("{productionOrderId}/create-outputs")]
+        public async Task<IActionResult> CreateProductionOutputs(int productionOrderId)
+        {
+            var outputs = await _productionOrdersService.CreateProductionOutputsFromOrderAsync(productionOrderId);
+            if (outputs == null || !outputs.Any())
+                return NotFound("No products found to create outputs.");
+            return Ok(outputs);
         }
 
         /// <summary>
