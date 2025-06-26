@@ -1,7 +1,8 @@
-﻿using SEP490.DB;
-using SEP490.Modules.OrderModule.ManageOrder.DTO;
+﻿using Microsoft.EntityFrameworkCore;
+using SEP490.DB;
 using SEP490.DB.Models;
-using Microsoft.EntityFrameworkCore;
+using SEP490.Modules.OrderModule.ManageOrder.DTO;
+using System.Text.RegularExpressions;
 
 namespace SEP490.Modules.OrderModule.ManageOrder.Services
 {
@@ -73,8 +74,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 .Include(o => o.Customer)
                 .FirstOrDefault(o => o.Id == saleOrderId);
 
-            if (order == null)
-                return null;
+            if (order == null) return null;
 
             var orderDetails = _context.OrderDetails
                 .Where(od => od.SaleOrderId == saleOrderId)
@@ -88,9 +88,13 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
 
             var products = _context.Products.ToList();
 
+            var glassStructures = _context.GlassStructures.ToList(); 
+
             var productDtos = (from od in orderDetails
                                join dp in detailProducts on od.Id equals dp.OrderDetailId
                                join p in products on dp.ProductId equals p.Id
+                               join g in glassStructures on p.GlassStructureId equals g.Id into gs
+                               from g in gs.DefaultIfEmpty() 
                                select new ProductInOrderDto
                                {
                                    ProductId = p.Id,
@@ -102,7 +106,18 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                                    AreaM2 = Math.Round(((decimal.TryParse(p.Height, out var h) ? h : 0) * (decimal.TryParse(p.Width, out var w) ? w : 0)) / 1_000_000, 4),
                                    UnitPrice = p.UnitPrice ?? 0,
                                    Quantity = dp.Quantity ?? 0,
-                                   TotalAmount = (p.UnitPrice ?? 0) * (dp.Quantity ?? 0)
+                                   TotalAmount = (p.UnitPrice ?? 0) * (dp.Quantity ?? 0),
+
+                                   GlassStructureId = g?.Id,
+                                   GlassStructureCode = g?.ProductCode,
+                                   GlassCategory = g?.Category,
+                                   EdgeType = g?.EdgeType,
+                                   AdhesiveType = g?.AdhesiveType,
+                                   GlassLayers = g?.GlassLayers,
+                                   AdhesiveLayers = g?.AdhesiveLayers,
+                                   AdhesiveThickness = g?.AdhesiveThickness,
+                                   GlassUnitPrice = g?.UnitPrice,
+                                   Composition = g?.Composition
                                }).ToList();
 
             var totalQuantity = productDtos.Sum(p => p.Quantity);
@@ -125,7 +140,81 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             };
         }
 
+        public int CreateOrder(CreateOrderDto dto)
+        {
+            var customer = _context.Customers
+                .FirstOrDefault(c => c.CustomerName == dto.CustomerName && c.Phone == dto.Phone);
 
+            if (customer == null)
+            {
+                customer = new Customer
+                {
+                    CustomerName = dto.CustomerName,
+                    Address = dto.Address,
+                    Phone = dto.Phone,
+                    Discount = dto.Discount
+                };
+                _context.Customers.Add(customer);
+                _context.SaveChanges();
+            }
+
+            var order = new SaleOrder
+            {
+                CustomerId = customer.Id,
+                OrderCode = dto.OrderCode,
+                OrderDate = dto.OrderDate,
+                Status = dto.Status
+            };
+            _context.SaleOrders.Add(order);
+            _context.SaveChanges();
+
+            var detail = new OrderDetail
+            {
+                SaleOrderId = order.Id
+            };
+            _context.OrderDetails.Add(detail);
+            _context.SaveChanges();
+
+            foreach (var p in dto.Products)
+            {
+                if (p.ProductId == 0)
+                {
+                    if (_context.Products.Any(pr => pr.ProductCode == p.ProductCode))
+                    {
+                        throw new Exception($"Mã sản phẩm '{p.ProductCode}' đã tồn tại.");
+                    }
+
+                    var newProduct = new Product
+                    {
+                        ProductCode = p.ProductCode,
+                        ProductName = p.ProductName,
+                        Width = p.Width,
+                        Height = p.Height,
+                        Thickness = p.Thickness,
+                        UnitPrice = p.UnitPrice,
+                        ProductType = "Thành phẩm",
+                        GlassStructureId = (int)(p.GlassStructureId ?? null),
+                        UOM = "Tấm"
+                    };
+                    _context.Products.Add(newProduct);
+                    _context.SaveChanges();
+
+                    p.ProductId = newProduct.Id;
+                }
+
+                var odp = new OrderDetailProduct
+                {
+                    OrderDetailId = detail.Id,
+                    ProductId = p.ProductId,
+                    Quantity = p.Quantity,
+                    TotalAmount = p.Quantity * p.UnitPrice
+                };
+                _context.OrderDetailProducts.Add(odp);
+            }
+
+            _context.SaveChanges();
+            return order.Id;
+        }
         public bool UpdateOrderDetailById(int orderId, UpdateOrderDetailDto dto)
         {
             var order = _context.SaleOrders
@@ -136,7 +225,6 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
 
             if (order == null) return false;
 
-            // Cập nhật thông tin khách hàng
             if (order.Customer != null)
             {
                 order.Customer.CustomerName = dto.CustomerName;
@@ -145,10 +233,8 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 order.Customer.Discount = dto.Discount;
             }
 
-            // Cập nhật trạng thái đơn hàng
             order.Status = dto.Status;
 
-            // Lấy OrderDetail đầu tiên (giả sử mỗi đơn hàng chỉ có 1 detail)
             var orderDetail = order.OrderDetails.FirstOrDefault();
             if (orderDetail == null)
             {
@@ -160,6 +246,19 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 order.OrderDetails.Add(orderDetail);
             }
 
+            var updatedProductIds = dto.Products
+                .Where(p => p.ProductId != 0)
+                .Select(p => p.ProductId)
+                .ToList();
+
+            var productsToRemove = orderDetail.OrderDetailProducts
+                .Where(odp => !updatedProductIds.Contains(odp.ProductId))
+                .ToList();
+
+            foreach (var odp in productsToRemove)
+            {
+                _context.OrderDetailProducts.Remove(odp);
+            }
             foreach (var pDto in dto.Products)
             {
                 Product product;
@@ -176,6 +275,8 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                         Thickness = pDto.Thickness,
                         UnitPrice = pDto.UnitPrice,
                         GlassStructureId = (int)(pDto.GlassStructureId ?? null),
+                        UOM = "Tấm",
+                        ProductType = "Thành Phẩm"
                     };
                     _context.Products.Add(product);
                     _context.SaveChanges();
@@ -193,18 +294,15 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                     product.UnitPrice = pDto.UnitPrice;
                 }
 
-                // Tìm xem đã có OrderDetailProduct với product này chưa
                 var existingOrderDetailProduct = orderDetail.OrderDetailProducts
                     .FirstOrDefault(odp => odp.ProductId == product.Id);
 
                 if (existingOrderDetailProduct != null)
                 {
-                    // Nếu có rồi thì cập nhật số lượng
                     existingOrderDetailProduct.Quantity = pDto.Quantity;
                 }
                 else
                 {
-                    // Nếu chưa có thì thêm mới
                     orderDetail.OrderDetailProducts.Add(new OrderDetailProduct
                     {
                         ProductId = product.Id,
@@ -240,9 +338,55 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             _context.SaveChanges();
         }
 
-        public void UpdateOrder(UpdateOrderDetailDto dto)
+        public List<CustomerSearchResultDto> SearchCustomers(string keyword)
+        {
+            return _context.Customers
+                .Where(c => !c.IsSupplier && (
+                    c.CustomerCode.Contains(keyword) ||
+                    c.CustomerName.Contains(keyword)
+                ))
+                .Select(c => new CustomerSearchResultDto
+                {
+                    Id = c.Id,
+                    CustomerCode = c.CustomerCode,
+                    CustomerName = c.CustomerName,
+                    Address = c.Address,
+                    Phone = c.Phone,
+                    Discount = c.Discount
+                })
+                .Take(20)
+                .ToList();
+        }
+
+        public string GetNextOrderCode()
+        {
+            var orderCodes = _context.SaleOrders
+                .Where(o => EF.Functions.Like(o.OrderCode, "ĐH%"))
+                .Select(o => o.OrderCode)
+                .ToList();
+
+            int maxNumber = 0;
+
+            foreach (var code in orderCodes)
+            {
+                var match = Regex.Match(code, @"ĐH(\d+)");
+                if (match.Success && int.TryParse(match.Groups[1].Value, out int number))
+                {
+                    if (number > maxNumber)
+                        maxNumber = number;
+                }
+            }
+
+            int nextNumber = maxNumber + 1;
+            return $"ĐH{nextNumber:D5}";
+        }
+
+
+        public List<GlassStructureDto> GetAllGlassStructures()
         {
             throw new NotImplementedException();
         }
+
+
     }
 }

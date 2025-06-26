@@ -1,20 +1,39 @@
 'use client';
 
-import AsyncSelect from 'react-select/async';
+import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { getOrderDetailById, updateOrderDetailById, getGlassStructures, OrderItem, OrderDetailDto, loadOptions, checkProductCodeExists } from '@/app/(defaults)/sales-order/edit/[id]/service';
+import {
+    CustomerOption,
+    searchCustomers,
+    createOrderDetail,
+    OrderItem,
+    checkProductCodeExists,
+    getGlassStructures,
+    loadOptions,
+    ProductOption,
+    GlassStructure,
+    loadCustomerOptions,
+    getNextOrderCode,
+} from '@/app/(defaults)/sales-order/create/service';
+import AsyncSelect from 'react-select/async';
 
-type GlassStructure = {
-    id: number;
-    category: string;
-};
-
-const SalesOrderEditPage = () => {
-    const { id } = useParams();
+const SalesOrderCreatePage = () => {
     const router = useRouter();
-    const [selectedProduct, setSelectedProduct] = useState<any>(null);
-    const [glassStructures, setGlassStructures] = useState<{ id: number; category: string }[]>([]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            const structures = await getGlassStructures();
+            setGlassStructures(structures);
+
+            const nextCode = await getNextOrderCode();
+            setForm((prev) => ({
+                ...prev,
+                orderCode: nextCode,
+            }));
+        };
+
+        fetchData();
+    }, []);
 
     const [form, setForm] = useState<{
         customer: string;
@@ -24,44 +43,32 @@ const SalesOrderEditPage = () => {
         orderCode: string;
         discount: number;
         status: string;
-        orderItems: OrderItem[];
+        orderItems: OrderItemWithFlag[];
     }>({
         customer: '',
         address: '',
         phone: '',
-        orderDate: '',
+        orderDate: new Date().toISOString().split('T')[0],
         orderCode: '',
         discount: 0,
-        status: '',
+        status: 'Chưa thực hiện',
         orderItems: [],
     });
 
-    useEffect(() => {
-        const fetchData = async () => {
-            if (!id) return;
-            const data: OrderDetailDto = await getOrderDetailById(Number(id));
-            setForm({
-                customer: data.customerName,
-                address: data.address,
-                phone: data.phone,
-                orderDate: new Date(data.orderDate).toLocaleDateString(),
-                orderCode: data.orderCode,
-                discount: data.discount * 100,
-                status: data.status,
-                orderItems: data.products,
-            });
-            const glassList = await getGlassStructures();
-            setGlassStructures(glassList);
-        };
-        fetchData();
-    }, [id]);
-
     const handleItemChange = (index: number, field: keyof OrderItem, value: string | number) => {
         const updatedItems = [...form.orderItems];
+
+        const currentItem = updatedItems[index];
+
+        if (currentItem.isFromDatabase && ['productCode', 'productName', 'width', 'height', 'thickness', 'unitPrice'].includes(field)) {
+            return;
+        }
+
         updatedItems[index] = {
-            ...updatedItems[index],
+            ...currentItem,
             [field]: field === 'productName' || field === 'productCode' ? value.toString() : +value,
         };
+
         setForm((prev) => ({ ...prev, orderItems: updatedItems }));
     };
 
@@ -92,12 +99,11 @@ const SalesOrderEditPage = () => {
     };
 
     const handleBack = () => router.back();
-    const existingProductIds = new Set(form.orderItems.map((item) => item.productId));
 
     const handleSave = async () => {
         try {
             for (const item of form.orderItems) {
-                if (item.productId === 0) {
+                if (!item.productId || item.productId === 0) {
                     const exists = await checkProductCodeExists(item.productCode);
                     if (exists) {
                         alert(`Mã sản phẩm "${item.productCode}" đã tồn tại. Vui lòng sửa lại mã hoặc tạo mã tự động.`);
@@ -110,6 +116,8 @@ const SalesOrderEditPage = () => {
                 customerName: form.customer,
                 address: form.address,
                 phone: form.phone,
+                orderCode: form.orderCode,
+                orderDate: form.orderDate,
                 discount: form.discount / 100,
                 status: form.status,
                 products: form.orderItems.map((item) => ({
@@ -125,12 +133,13 @@ const SalesOrderEditPage = () => {
                 })),
             };
 
-            await updateOrderDetailById(Number(id), payload);
-            alert('Cập nhật thành công!');
-            router.push(`/sales-order/${id}`);
+            const res = await createOrderDetail(payload);
+
+            alert('Tạo đơn hàng thành công!');
+            router.push(`/sales-order/${res.id}`);
         } catch (err: any) {
-            console.error('Lỗi cập nhật:', err.response?.data || err.message);
-            alert('Cập nhật thất bại! ' + (err.response?.data?.title || err.message));
+            console.error('Lỗi tạo đơn hàng:', err.response?.data || err.message);
+            alert('Tạo đơn hàng thất bại! ' + (err.response?.data?.title || err.message));
         }
     };
 
@@ -138,47 +147,126 @@ const SalesOrderEditPage = () => {
     const totalAmount = form.orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
     const discountAmount = (form.discount / 100) * totalAmount;
     const finalAmount = totalAmount - discountAmount;
+    const [selectedProduct, setSelectedProduct] = useState<ProductOption | null>(null);
+    const [glassStructures, setGlassStructures] = useState<GlassStructure[]>([]);
+    const [isCustomerLocked, setIsCustomerLocked] = useState(false);
+    type OrderItemWithFlag = OrderItem & { isFromDatabase?: boolean };
 
     return (
         <div className="max-w-6xl mx-auto p-6">
-            <h2 className="text-2xl font-bold mb-4">Chỉnh sửa Đơn Hàng: {id}</h2>
+            <h2 className="text-2xl font-bold mb-4">Tạo đơn hàng mới</h2>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
                     <label className="block mb-1 font-medium">Tên khách hàng</label>
-                    <div className="p-2 bg-gray-100 rounded">{form.customer}</div>
+                    <input
+                        disabled={isCustomerLocked}
+                        style={{ height: '35px' }}
+                        className="input input-bordered w-full"
+                        value={form.customer}
+                        onChange={(e) => setForm((prev) => ({ ...prev, customer: e.target.value }))}
+                    />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Địa chỉ</label>
-                    <div className="p-2 bg-gray-100 rounded">{form.address}</div>
+                    <input
+                        disabled={isCustomerLocked}
+                        style={{ height: '35px' }}
+                        className="input input-bordered w-full"
+                        value={form.address}
+                        onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
+                    />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Số điện thoại</label>
-                    <div className="p-2 bg-gray-100 rounded">{form.phone}</div>
+                    <input
+                        disabled={isCustomerLocked}
+                        style={{ height: '35px' }}
+                        className="input input-bordered w-full"
+                        value={form.phone}
+                        onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
+                    />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Ngày đặt</label>
-                    <div className="p-2 bg-gray-100 rounded">{form.orderDate}</div>
+                    <input
+                        disabled={isCustomerLocked}
+                        style={{ height: '35px' }}
+                        className="input input-bordered w-full bg-gray-100"
+                        type="text"
+                        value={new Date(form.orderDate).toLocaleDateString('en-US')}
+                        readOnly
+                    />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Mã đơn hàng</label>
-                    <div className="p-2 bg-gray-100 rounded">{form.orderCode}</div>
+                    <input
+                        disabled={isCustomerLocked}
+                        style={{ height: '35px' }}
+                        className="input input-bordered w-full"
+                        value={form.orderCode}
+                        onChange={(e) => setForm((prev) => ({ ...prev, orderCode: e.target.value }))}
+                    />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Chiết khấu (%)</label>
                     <input
                         style={{ height: '35px' }}
                         type="number"
-                        value={form.discount}
-                        onChange={(e) => setForm((prev) => ({ ...prev, discount: parseFloat(e.target.value) }))}
                         className="input input-bordered w-full"
                         min={0}
                         max={100}
+                        value={form.discount}
+                        onChange={(e) => setForm((prev) => ({ ...prev, discount: parseFloat(e.target.value) }))}
                     />
                 </div>
                 <div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-[470px]">
+                            <AsyncSelect
+                                cacheOptions
+                                defaultOptions
+                                loadOptions={loadCustomerOptions}
+                                placeholder="Thêm theo mã hoặc tên khách hàng"
+                                onChange={(option: CustomerOption | null) => {
+                                    if (!option) return;
+                                    const c = option.customer;
+
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        customer: c.customerName,
+                                        address: c.address,
+                                        phone: c.phone,
+                                        discount: c.discount * 100,
+                                    }));
+
+                                    setIsCustomerLocked(true);
+                                }}
+                            />
+                        </div>
+                        {isCustomerLocked && (
+                            <button
+                                onClick={() => {
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        customer: '',
+                                        address: '',
+                                        phone: '',
+                                        discount: 0,
+                                    }));
+                                    setIsCustomerLocked(false);
+                                }}
+                                className="btn btn-sm btn-outline text-red-500"
+                                type="button"
+                            >
+                                Đặt lại
+                            </button>
+                        )}
+                    </div>
+                </div>
+                <div>
                     <label className="block mb-1 font-medium">Trạng thái</label>
-                    <select className="select select-bordered w-full" value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}>
+                    <select style={{ height: '35px' }} className="select select-bordered w-full" value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}>
                         <option value="Chưa thực hiện">Chưa thực hiện</option>
                         <option value="Đang thực hiện">Đang thực hiện</option>
                         <option value="Hoàn thành">Hoàn thành</option>
@@ -209,53 +297,45 @@ const SalesOrderEditPage = () => {
                     </thead>
                     <tbody>
                         {form.orderItems.map((item, index) => {
-                            const area = (Number(item.width) * Number(item.height)) / 1_000_000;
+                            const area = (item.width * item.height) / 1_000_000;
                             const total = item.quantity * item.unitPrice;
-
                             return (
                                 <tr key={index}>
                                     <td>{index + 1}</td>
-                                    <td className="flex items-center gap-2">
-                                        <input
-                                            disabled={item.productId !== 0}
-                                            type="text"
-                                            value={item.productCode}
-                                            onChange={async (e) => {
-                                                const value = e.target.value;
-                                                handleItemChange(index, 'productCode', value);
-
-                                                if (item.productId === 0) {
-                                                    const exists = await checkProductCodeExists(value);
-                                                    if (exists) {
-                                                        alert(`Mã sản phẩm "${value}" đã tồn tại. Hãy nhập mã khác hoặc bấm tạo tự động.`);
-                                                    }
-                                                }
-                                            }}
-                                            className="input input-sm w-32"
-                                        />
-                                        <button
-                                            disabled={item.productId !== 0}
-                                            type="button"
-                                            onClick={() => {
-                                                const generated = `VT${Date.now().toString().slice(-5)}`;
-                                                handleItemChange(index, 'productCode', generated);
-                                            }}
-                                            className="btn btn-ghost btn-xs p-1"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
-                                                />
-                                            </svg>
-                                        </button>
+                                    <td>
+                                        <div className="flex items-center gap-1">
+                                            <input
+                                                disabled={item.isFromDatabase}
+                                                type="text"
+                                                value={item.productCode}
+                                                onChange={async (e) => {
+                                                    const value = e.target.value;
+                                                    handleItemChange(index, 'productCode', value);
+                                                }}
+                                                className="input input-sm w-32"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const generated = `VT${Date.now().toString().slice(-5)}`;
+                                                    handleItemChange(index, 'productCode', generated);
+                                                }}
+                                                className="btn btn-ghost btn-xs p-1"
+                                                title="Tạo mã tự động"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4">
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        d="M16.023 9.348h4.992M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                                                    />
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </td>
-
                                     <td>
                                         <input
-                                            disabled={item.productId !== 0}
-                                            type="text"
+                                            disabled={item.isFromDatabase}
                                             value={item.productName}
                                             onChange={(e) => handleItemChange(index, 'productName', e.target.value)}
                                             className="input input-sm"
@@ -263,7 +343,7 @@ const SalesOrderEditPage = () => {
                                     </td>
                                     <td>
                                         <input
-                                            disabled={item.productId !== 0}
+                                            disabled={item.isFromDatabase}
                                             type="number"
                                             value={item.width}
                                             onChange={(e) => handleItemChange(index, 'width', +e.target.value)}
@@ -272,7 +352,7 @@ const SalesOrderEditPage = () => {
                                     </td>
                                     <td>
                                         <input
-                                            disabled={item.productId !== 0}
+                                            disabled={item.isFromDatabase}
                                             type="number"
                                             value={item.height}
                                             onChange={(e) => handleItemChange(index, 'height', +e.target.value)}
@@ -281,7 +361,7 @@ const SalesOrderEditPage = () => {
                                     </td>
                                     <td>
                                         <input
-                                            disabled={item.productId !== 0}
+                                            disabled={item.isFromDatabase}
                                             type="number"
                                             value={item.thickness}
                                             onChange={(e) => handleItemChange(index, 'thickness', +e.target.value)}
@@ -293,7 +373,7 @@ const SalesOrderEditPage = () => {
                                     </td>
                                     <td>
                                         <input
-                                            disabled={item.productId !== 0}
+                                            disabled={item.isFromDatabase}
                                             type="number"
                                             value={item.unitPrice}
                                             onChange={(e) => handleItemChange(index, 'unitPrice', +e.target.value)}
@@ -303,14 +383,21 @@ const SalesOrderEditPage = () => {
                                     <td>{area.toFixed(2)}</td>
                                     <td>{total.toLocaleString()} đ</td>
                                     <td>
-                                        <select className="select select-sm" value={item.glassStructureId || ''} onChange={(e) => handleItemChange(index, 'glassStructureId', +e.target.value)}>
-                                            <option value="">-- Chọn --</option>
-                                            {glassStructures.map((gs) => (
-                                                <option key={gs.id} value={gs.id}>
-                                                    {gs.category}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        <td>
+                                            <select
+                                                disabled={item.isFromDatabase}
+                                                className="select select-sm"
+                                                value={item.glassStructureId || ''}
+                                                onChange={(e) => handleItemChange(index, 'glassStructureId', +e.target.value)}
+                                            >
+                                                <option value="">-- Chọn --</option>
+                                                {glassStructures.map((gs) => (
+                                                    <option key={gs.id} value={gs.id}>
+                                                        {gs.category}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </td>
                                     </td>
                                     <td>
                                         <button onClick={() => removeItem(index)} className="btn btn-sm btn-error">
@@ -333,15 +420,15 @@ const SalesOrderEditPage = () => {
                         loadOptions={(inputValue) =>
                             loadOptions(
                                 inputValue,
-                                form.orderItems.map((i) => i.productCode),
+                                form.orderItems.map((item) => item.productId),
                             )
                         }
                         placeholder="Thêm sản phẩm theo mã hoặc tên"
-                        onChange={(option) => {
+                        onChange={(option: ProductOption | null) => {
                             if (!option) return;
                             const p = option.product;
 
-                            const newItem: OrderItem = {
+                            const newItem: OrderItemWithFlag = {
                                 id: Date.now(),
                                 productId: p.id,
                                 productCode: p.productCode,
@@ -352,12 +439,14 @@ const SalesOrderEditPage = () => {
                                 quantity: 1,
                                 unitPrice: Number(p.unitPrice),
                                 glassStructureId: p.glassStructureId,
+                                isFromDatabase: true,
                             };
 
                             setForm((prev) => ({
                                 ...prev,
                                 orderItems: [...prev.orderItems, newItem],
                             }));
+
                             setSelectedProduct(null);
                         }}
                     />
@@ -389,11 +478,11 @@ const SalesOrderEditPage = () => {
                     ◀ Quay lại
                 </button>
                 <button onClick={handleSave} className="btn btn-primary">
-                    Lưu thay đổi
+                    Tạo đơn hàng
                 </button>
             </div>
         </div>
     );
 };
 
-export default SalesOrderEditPage;
+export default SalesOrderCreatePage;

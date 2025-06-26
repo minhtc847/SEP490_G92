@@ -10,6 +10,7 @@ export interface ProductInOrderDto {
   unitPrice: number;
   quantity: number;
   totalAmount: number;
+  glassCategory?: string;
 }
 
 export interface OrderDetailDto {

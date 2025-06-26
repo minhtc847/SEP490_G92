@@ -12,6 +12,17 @@
         public decimal UnitPrice { get; set; }
         public int Quantity { get; set; }
         public decimal TotalAmount { get; set; }
+
+        public int? GlassStructureId { get; set; }
+        public string? GlassStructureCode { get; set; }
+        public string? GlassCategory { get; set; }
+        public string? EdgeType { get; set; }
+        public string? AdhesiveType { get; set; }
+        public int? GlassLayers { get; set; }
+        public int? AdhesiveLayers { get; set; }
+        public decimal? AdhesiveThickness { get; set; }
+        public int? GlassUnitPrice { get; set; }
+        public string? Composition { get; set; }
     }
 
     public class OrderDetailDto

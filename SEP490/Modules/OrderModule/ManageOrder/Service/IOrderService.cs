@@ -8,6 +8,10 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
         OrderDetailDto? GetOrderDetailById(int orderId);
         bool UpdateOrderDetailById(int orderId, UpdateOrderDetailDto dto);
         void DeleteOrder(int orderId);
+        List<GlassStructureDto> GetAllGlassStructures();
+        List<CustomerSearchResultDto> SearchCustomers(string keyword);
+        int CreateOrder(CreateOrderDto dto);
+        string GetNextOrderCode();
     }
 
 }
