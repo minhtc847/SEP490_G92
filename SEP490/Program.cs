@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.Modules.OrderModule.ManageOrder.Services;
+using SEP490.Selenium.SaleOrder;
 using System;
 using System.Reflection;
 var builder = WebApplication.CreateBuilder(args);
@@ -55,6 +56,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
