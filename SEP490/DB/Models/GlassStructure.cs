@@ -3,6 +3,7 @@ public class GlassStructure
 {
     public int Id { get; set; }
     public string? ProductName { get; set; }
+    public string? ProductCode { get; set; }
     public string? Category { get; set; }
     public string? EdgeType { get; set; }
     public string? AdhesiveType { get; set; }
