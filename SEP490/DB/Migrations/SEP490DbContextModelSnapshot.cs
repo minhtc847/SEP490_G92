@@ -214,10 +214,6 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("glass_layers");
 
-                    b.Property<string>("ProductCode")
-                        .HasColumnType("longtext")
-                        .HasColumnName("product_code");
-
                     b.Property<string>("ProductName")
                         .HasColumnType("longtext")
                         .HasColumnName("product_name");
@@ -324,10 +320,6 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("order_code");
 
-                    b.Property<int?>("Quantity")
-                        .HasColumnType("int")
-                        .HasColumnName("quantity");
-
                     b.Property<int>("SaleOrderId")
                         .HasColumnType("int")
                         .HasColumnName("sale_order_id");
@@ -335,10 +327,6 @@ namespace SEP490.DB.Migrations
                     b.Property<decimal?>("TotalAmount")
                         .HasColumnType("decimal(65,30)")
                         .HasColumnName("total_amount");
-
-                    b.Property<decimal?>("UnitPrice")
-                        .HasColumnType("decimal(65,30)")
-                        .HasColumnName("unit_price");
 
                     b.HasKey("Id")
                         .HasName("pk_order_details");
@@ -358,6 +346,14 @@ namespace SEP490.DB.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("int")
                         .HasColumnName("product_id");
+
+                    b.Property<int?>("Quantity")
+                        .HasColumnType("int")
+                        .HasColumnName("quantity");
+
+                    b.Property<decimal?>("TotalAmount")
+                        .HasColumnType("decimal(65,30)")
+                        .HasColumnName("total_amount");
 
                     b.HasKey("OrderDetailId", "ProductId")
                         .HasName("pk_order_detail_products");
@@ -576,10 +572,6 @@ namespace SEP490.DB.Migrations
                     b.Property<int>("CustomerId")
                         .HasColumnType("int")
                         .HasColumnName("customer_id");
-
-                    b.Property<string>("OrderCode")
-                        .HasColumnType("longtext")
-                        .HasColumnName("order_code");
 
                     b.Property<DateTime>("PlanDate")
                         .HasColumnType("datetime(6)")
@@ -806,6 +798,37 @@ namespace SEP490.DB.Migrations
                     b.ToTable("warehouse_receipts", (string)null);
                 });
 
+            modelBuilder.Entity("SEP490.DB.Models.ZaloToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccessToken")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("access_token");
+
+                    b.Property<DateTime>("AccessTokenExpiresAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("access_token_expires_at");
+
+                    b.Property<string>("RefreshToken")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("refresh_token");
+
+                    b.Property<DateTime>("RefreshTokenExpiresAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("refresh_token_expires_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_zalo_tokens");
+
+                    b.ToTable("zalo_tokens", (string)null);
+                });
+
             modelBuilder.Entity("SEP490.DB.Models.Delivery", b =>
                 {
                     b.HasOne("SEP490.DB.Models.SaleOrder", "SaleOrder")
@@ -875,7 +898,7 @@ namespace SEP490.DB.Migrations
             modelBuilder.Entity("SEP490.DB.Models.OrderDetail", b =>
                 {
                     b.HasOne("SEP490.DB.Models.SaleOrder", "SaleOrder")
-                        .WithMany()
+                        .WithMany("OrderDetails")
                         .HasForeignKey("SaleOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
@@ -887,7 +910,7 @@ namespace SEP490.DB.Migrations
             modelBuilder.Entity("SEP490.DB.Models.OrderDetailProduct", b =>
                 {
                     b.HasOne("SEP490.DB.Models.OrderDetail", "OrderDetail")
-                        .WithMany()
+                        .WithMany("OrderDetailProducts")
                         .HasForeignKey("OrderDetailId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
@@ -980,7 +1003,7 @@ namespace SEP490.DB.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_production_plans_customers_customer_id");
 
-                    b.HasOne("SEP490.DB.Models.SaleOrder", "PurchaseOrder")
+                    b.HasOne("SEP490.DB.Models.SaleOrder", "SaleOrder")
                         .WithMany()
                         .HasForeignKey("SaleOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -989,7 +1012,7 @@ namespace SEP490.DB.Migrations
 
                     b.Navigation("Customer");
 
-                    b.Navigation("PurchaseOrder");
+                    b.Navigation("SaleOrder");
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.ProductionPlanDetail", b =>
@@ -1002,7 +1025,7 @@ namespace SEP490.DB.Migrations
                         .HasConstraintName("fk_production_plan_details_products_product_id");
 
                     b.HasOne("SEP490.DB.Models.ProductionPlan", "ProductionPlan")
-                        .WithMany("ProductionPlanDetails")
+                        .WithMany()
                         .HasForeignKey("ProductionPlanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
@@ -1050,9 +1073,14 @@ namespace SEP490.DB.Migrations
                     b.Navigation("SaleOrders");
                 });
 
-            modelBuilder.Entity("SEP490.DB.Models.ProductionPlan", b =>
+            modelBuilder.Entity("SEP490.DB.Models.OrderDetail", b =>
                 {
-                    b.Navigation("ProductionPlanDetails");
+                    b.Navigation("OrderDetailProducts");
+                });
+
+            modelBuilder.Entity("SEP490.DB.Models.SaleOrder", b =>
+                {
+                    b.Navigation("OrderDetails");
                 });
 #pragma warning restore 612, 618
         }

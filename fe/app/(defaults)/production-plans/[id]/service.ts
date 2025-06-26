@@ -19,3 +19,43 @@ export const getProductionPlanDetailsArray = async (id:string): Promise<Producti
         throw error
     }
 }
+
+export interface ProductionOrdersByPlanDto {
+    productionOrderId: number;
+    productionOrderCode: string;
+    orderDate: string;
+    description?: string;
+    productionStatus: string;
+    productionPlanId: number;
+    productCodes: string[];
+    totalAmount: number;
+}
+
+export interface ProductionOrder {
+    id: number;
+    productionOrderCode: string;
+    orderDate: string;
+    description?: string;
+    productionStatus: string;
+    productionPlanId: number;
+}
+
+
+
+export const getProductionOrdersByPlanId = async (productionPlanId: number): Promise<ProductionOrdersByPlanDto[]> => {
+    try {
+        const response = await axios.get<ProductionOrdersByPlanDto[]>(`/api/ProductionOrders/by-plan/${productionPlanId}`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const createProductionOrderByPlanId = async (planId: number): Promise<ProductionOrder> => {
+    try {
+        const response = await axios.post<ProductionOrder>(`/api/ProductionOrders/create/${planId}`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};

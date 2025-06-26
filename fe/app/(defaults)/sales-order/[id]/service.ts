@@ -1,5 +1,17 @@
-import axios from "../../../../setup/axios";
+import axios from "@/setup/axios";
 
+export interface ProductInOrderDto {
+  productCode: string;
+  productName: string;
+  height: number;
+  width: number;
+  thickness: number;
+  areaM2: number;
+  unitPrice: number;
+  quantity: number;
+  totalAmount: number;
+  glassCategory?: string;
+}
 
 export interface ProductonPlan{
     id: string,
@@ -12,6 +24,24 @@ export interface ProductonPlan{
     completed: string
 }
 
+export interface OrderDetailDto {
+  orderCode: string;
+  orderDate: string;
+  customerName: string;
+  address: string;
+  phone: string;
+  discount: number;
+  products: ProductInOrderDto[];
+  totalQuantity: number;
+  totalAmount: number;
+  status: string;
+}
+
+export const getOrderDetailById = async (id: number): Promise<OrderDetailDto> => {
+  const response = await axios.get(`/api/orders/${id}`);
+  return response.data;
+};
+
 export const createProductonPlan = async (id:string,): Promise<ProductonPlan[]> => {
     try {
         const response = await axios.post<ProductonPlan[]>("/api/ProductionPlan/CreatePlans/${id}", {
@@ -21,8 +51,3 @@ export const createProductonPlan = async (id:string,): Promise<ProductonPlan[]> 
         throw error
     }
 }
-
-
-
-
-  

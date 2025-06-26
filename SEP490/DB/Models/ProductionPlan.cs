@@ -3,14 +3,13 @@ public class ProductionPlan
 {
     public int Id { get; set; }
     public DateTime PlanDate { get; set; }
-    public string? OrderCode { get; set; }
     public int SaleOrderId { get; set; }
     public string? CustomerCode { get; set; }
     public int CustomerId { get; set; }
     public int? Quantity { get; set; }
     public string? Status { get; set; }
 
-    public SaleOrder PurchaseOrder { get; set; } = null!;
+    public SaleOrder SaleOrder { get; set; } = null!;
     public Customer Customer { get; set; } = null!;
     public ICollection<ProductionPlanDetail> ProductionPlanDetails { get; set; } = new List<ProductionPlanDetail>();
 }

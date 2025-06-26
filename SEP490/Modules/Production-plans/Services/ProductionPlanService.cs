@@ -14,6 +14,40 @@ namespace SEP490.Modules.Production_plans.Services
             _context = context;
         }
 
+        /// <summary>
+        /// Lấy số lượng sản phẩm đang sản xuất (Producing) theo ProductionPlanId và ProductId.
+        /// </summary>
+        /// <param name="productionPlanId">Id của kế hoạch sản xuất.</param>
+        /// <param name="productId">Id của sản phẩm.</param>
+        /// <returns>
+        /// Số lượng sản phẩm đang sản xuất (Producing) nếu tìm thấy, ngược lại trả về null.
+        /// </returns>
+        public async Task<int?> GetProducingQuantityAsync(int productionPlanId, int productId)
+        {
+            var detail = await _context.ProductionPlanDetails
+                .FirstOrDefaultAsync(ppd =>
+                    ppd.ProductionPlanId == productionPlanId &&
+                    ppd.ProductId == productId);
+
+            return detail?.Producing;
+        }
+
+        /// <summary>
+        /// Lấy số lượng sản phẩm đã hoàn thành (Done) theo ProductionPlanId và ProductId.
+        /// </summary>
+        /// <param name="productionPlanId">Id của kế hoạch sản xuất.</param>
+        /// <param name="productId">Id của sản phẩm.</param>
+        /// <returns>
+        /// Số lượng sản phẩm đã hoàn thành (Done) nếu tìm thấy, ngược lại trả về null.
+        /// </returns>
+        public async Task<int?> GetDoneAsync(int productionPlanId, int productId)
+        {
+            var detail = await _context.ProductionPlanDetails
+                .FirstOrDefaultAsync(x => x.ProductionPlanId == productionPlanId && x.ProductId == productId);
+
+            return detail?.Done;
+        }
+
         public async Task<List<ProductionPlanDTO>> GetAllAsync()
         {
             return await _context.ProductionPlans
@@ -23,7 +57,7 @@ namespace SEP490.Modules.Production_plans.Services
                 {
                     Id = p.Id,                                         // Mã LXS
                     PlanDate = p.PlanDate.ToString("dd/MM/yyyy"),
-                    OrderCode = p.OrderCode,                           // Mã ĐH
+                    //OrderCode = p.OrderCode,                           // Mã ĐH
                     CustomerName = p.Customer.ContactPerson,
                     Quantity = p.Quantity,
                     Status = p.Status
@@ -77,7 +111,7 @@ namespace SEP490.Modules.Production_plans.Services
             var plan = new ProductionPlan
             {
                 PlanDate = DateTime.Now,
-                OrderCode = dto.OrderCode,
+                //OrderCode = dto.OrderCode,
                 SaleOrderId = saleOrder.Id,
                 CustomerId = dto.CustomerId,
                 CustomerCode = saleOrder.CustomerCode,
