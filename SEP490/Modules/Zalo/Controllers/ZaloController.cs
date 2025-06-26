@@ -18,10 +18,12 @@ namespace SEP490.Modules.Zalo.Controllers
     public class ZaloController : ControllerBase
     {
         private readonly IZaloAuthService zaloAuthService;
+        private readonly IZaloChatForwardService zaloChatForwardService;
 
-        public ZaloController(IZaloAuthService _zaloAuthService)
+        public ZaloController(IZaloAuthService _zaloAuthService, IZaloChatForwardService _zaloChatForwardService)
         {
             zaloAuthService = _zaloAuthService;
+            zaloChatForwardService = _zaloChatForwardService;
         }
         [HttpPost]
         public ActionResult<string> StoreDevelopedZaloToken([FromBody]DevTokenRequest devTokenRequest)
@@ -38,12 +40,15 @@ namespace SEP490.Modules.Zalo.Controllers
 
             return Ok("Token stored successfully.");
         }
+
         [HttpGet("get-message")]
         public async Task<IActionResult> GetMessages(string userId)
         {
             var messages = await zaloAuthService.getListMessageFromUser(userId);
+            var forwarded = await zaloChatForwardService.ForwardMessagesAsync(messages);
+            if (!forwarded)
+                return StatusCode(500, "Failed to forward messages.");
             return Ok(messages);
         }
-
     }
 }
