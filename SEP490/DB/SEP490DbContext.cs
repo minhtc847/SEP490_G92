@@ -36,6 +36,6 @@ namespace SEP490.DB
         public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
         public DbSet<ProductionOutput> ProductionOutputs { get; set; }
         public DbSet<ProductionMaterial> ProductionMaterials { get; set; }
-
+        public DbSet<ZaloToken> ZaloTokens { get; set; }
     }
 }

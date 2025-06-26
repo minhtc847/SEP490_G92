@@ -15,6 +15,7 @@ builder.Services.AddDbContext<SEP490DbContext>(options =>
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddHttpClient();
 
 // Register all services that inherit from BaseService
 var baseType = typeof(BaseService);
