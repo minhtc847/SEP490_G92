@@ -214,6 +214,10 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("glass_layers");
 
+                    b.Property<string>("ProductCode")
+                        .HasColumnType("longtext")
+                        .HasColumnName("product_code");
+
                     b.Property<string>("ProductName")
                         .HasColumnType("longtext")
                         .HasColumnName("product_name");
@@ -371,7 +375,7 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("id");
 
-                    b.Property<int>("GlassStructureId")
+                    b.Property<int?>("GlassStructureId")
                         .HasColumnType("int")
                         .HasColumnName("glass_structure_id");
 
@@ -902,8 +906,6 @@ namespace SEP490.DB.Migrations
                     b.HasOne("SEP490.DB.Models.GlassStructure", "GlassStructure")
                         .WithMany()
                         .HasForeignKey("GlassStructureId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_products_glass_structures_glass_structure_id");
 
                     b.Navigation("GlassStructure");
@@ -994,7 +996,7 @@ namespace SEP490.DB.Migrations
                         .HasConstraintName("fk_production_plan_details_products_product_id");
 
                     b.HasOne("SEP490.DB.Models.ProductionPlan", "ProductionPlan")
-                        .WithMany()
+                        .WithMany("ProductionPlanDetails")
                         .HasForeignKey("ProductionPlanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
@@ -1045,6 +1047,11 @@ namespace SEP490.DB.Migrations
             modelBuilder.Entity("SEP490.DB.Models.OrderDetail", b =>
                 {
                     b.Navigation("OrderDetailProducts");
+                });
+
+            modelBuilder.Entity("SEP490.DB.Models.ProductionPlan", b =>
+                {
+                    b.Navigation("ProductionPlanDetails");
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.SaleOrder", b =>
