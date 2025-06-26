@@ -176,6 +176,9 @@ namespace SEP490.Modules.Production_plans.Services
 
             int totalQuantity = dto.Details.Sum(x => x.Producing + x.Done);
 
+            if (totalQuantity != plan.Quantity)
+                throw new Exception($"Tổng số lượng đang làm + đã hoàn thành ({totalQuantity}) phải đúng bằng số lượng kế hoạch ({plan.Quantity}).");
+
             foreach (var item in dto.Details)
             {
                 var detail = plan.ProductionPlanDetails
@@ -196,7 +199,6 @@ namespace SEP490.Modules.Production_plans.Services
                 }
             }
 
-            plan.Quantity = totalQuantity;
             _context.ProductionPlans.Update(plan);
             await _context.SaveChangesAsync();
         }

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getOrderDetailById, OrderDetailDto } from '@/app/(defaults)/sales-order/[id]/service';
+import { createProductonPlan, ProductonPlan  } from './service';
 
 const SalesOrderDetailPage = () => {
     const params = useParams();
@@ -10,9 +11,24 @@ const SalesOrderDetailPage = () => {
     const router = useRouter();
     const [order, setOrder] = useState<OrderDetailDto | null>(null);
     const [loading, setLoading] = useState(true);
+  const [productionPlans, setProductionPlans] = useState<ProductonPlan[]>([]);
+  
+  useEffect(() => {
+     const fetchData = async () => {
+       try {
+         const result = await createProductonPlan(id as string);
+         setProductionPlans(result);
+       } catch (error) {
+         console.error('Error fetching data:', error);
+       }
+     };
+ 
+     fetchData();
+   }, [id]);
 
     useEffect(() => {
         if (!id || isNaN(Number(id))) return;
+  
 
         const fetchData = async () => {
             try {

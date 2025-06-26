@@ -21,23 +21,18 @@ const ProductionOrderDetailPage = () => {
 
   // Fetch data from API
   useEffect(() => {
-    const fetchData = async () => {
-      if (!id) return;
-      
-      try {
-        const [planDetails, ordersData] = await Promise.all([
-          getProductionPlanDetailsArray(id as string),
-          getProductionOrdersByPlanId(parseInt(id as string))
-        ]);
-        
-        setProductionItems(planDetails);
-        setProductionOrders(Array.isArray(ordersData) ? ordersData : []);
-      } catch (error) {
-        console.error('Lỗi khi tải dữ liệu:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    
+  const fetchData = async () => {
+    if (!id) return; // tránh gọi khi chưa có id
+    try {
+      const data = await getProductionPlanDetailsArray(id as string);
+      setProductionItems(data);
+    } catch (error) {
+      console.error('Lỗi khi tải dữ liệu:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
     fetchData();
   }, [id]);

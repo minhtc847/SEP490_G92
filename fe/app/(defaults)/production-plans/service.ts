@@ -26,7 +26,7 @@ export interface UpdateStatusRequest {
 
 export const updateProductionPlanStatus = async (id: string, status: string): Promise<void> => {
     try {
-      await axios.put(`/api/ProductionPlan/${id}/status`, {
+      await axios.put(`/api/ProductionPlan/${id}/ChangeStatus`, {
         status: status
       } as UpdateStatusRequest);
     } catch (error) {

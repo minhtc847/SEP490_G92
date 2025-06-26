@@ -13,6 +13,17 @@ export interface ProductInOrderDto {
   glassCategory?: string;
 }
 
+export interface ProductonPlan{
+    id: string,
+    planDate: string,
+    ordercode: string,
+    customername: string,
+    status: string,
+    quantity: string,  
+    inProgressQuantity: string,
+    completed: string
+}
+
 export interface OrderDetailDto {
   orderCode: string;
   orderDate: string;
@@ -30,3 +41,13 @@ export const getOrderDetailById = async (id: number): Promise<OrderDetailDto> =>
   const response = await axios.get(`/api/orders/${id}`);
   return response.data;
 };
+
+export const createProductonPlan = async (id:string,): Promise<ProductonPlan[]> => {
+    try {
+        const response = await axios.post<ProductonPlan[]>("/api/ProductionPlan/CreatePlans/${id}", {
+        })
+        return response.data
+    } catch (error) {
+        throw error
+    }
+}
