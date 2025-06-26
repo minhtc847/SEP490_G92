@@ -2,18 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { mockOrders } from '@/app/data/mock-orders';
-
-interface OrderItem {
-    id?: number;
-    productName: string;
-    productCode: string;
-    width: number;
-    height: number;
-    thickness: number;
-    quantity: number;
-    unitPrice: number;
-}
+import { getOrderDetailById, updateOrderDetailById, OrderItem, OrderDetailDto } from './service';
 
 const SalesOrderEditPage = () => {
     const { id } = useParams();
@@ -26,6 +15,7 @@ const SalesOrderEditPage = () => {
         orderDate: string;
         orderCode: string;
         discount: number;
+        status: string;
         orderItems: OrderItem[];
     }>({
         customer: '',
@@ -34,25 +24,26 @@ const SalesOrderEditPage = () => {
         orderDate: '',
         orderCode: '',
         discount: 0,
+        status: '',
         orderItems: [],
     });
 
     useEffect(() => {
-        if (!id) return;
-
-        const order = mockOrders.find((o) => o.id === id);
-
-        if (order) {
+        const fetchData = async () => {
+            if (!id) return;
+            const data: OrderDetailDto = await getOrderDetailById(Number(id));
             setForm({
-                customer: order.customerName,
-                address: order.customerAddress,
-                phone: order.customerPhone,
-                orderDate: order.orderDate,
-                orderCode: order.id,
-                discount: order.discountPercent,
-                orderItems: order.orderItems,
+                customer: data.customerName,
+                address: data.address,
+                phone: data.phone,
+                orderDate: new Date(data.orderDate).toLocaleDateString(),
+                orderCode: data.orderCode,
+                discount: data.discount * 100,
+                status: data.status,
+                orderItems: data.products,
             });
-        }
+        };
+        fetchData();
     }, [id]);
 
     const handleItemChange = (index: number, field: keyof OrderItem, value: string | number) => {
@@ -70,6 +61,8 @@ const SalesOrderEditPage = () => {
             orderItems: [
                 ...prev.orderItems,
                 {
+                    id: Date.now(),
+                    productId: 0,
                     productName: '',
                     productCode: '',
                     width: 0,
@@ -88,13 +81,35 @@ const SalesOrderEditPage = () => {
         setForm((prev) => ({ ...prev, orderItems: updatedItems }));
     };
 
-    const handleBack = () => {
-        router.back();
-    };
+    const handleBack = () => router.back();
 
-    const handleSave = () => {
-        alert('Cập nhật thành công!');
-        router.push(`/sales-order-summary/${form.orderCode}`);
+    const handleSave = async () => {
+        try {
+            const payload = {
+                customerName: form.customer,
+                address: form.address,
+                phone: form.phone,
+                discount: form.discount / 100,
+                status: form.status,
+                products: form.orderItems.map((item) => ({
+                    productId: item.productId,
+                    productCode: item.productCode,
+                    productName: item.productName,
+                    height: item.height.toString(),
+                    width: item.width.toString(),
+                    thickness: item.thickness,
+                    unitPrice: item.unitPrice,
+                    quantity: item.quantity,
+                })),
+            };
+
+            await updateOrderDetailById(Number(id), payload);
+            alert('Cập nhật thành công!');
+            router.push(`/sales-order/${id}`);
+        } catch (err: any) {
+            console.error('Lỗi cập nhật:', err.response?.data || err.message);
+            alert('Cập nhật thất bại! ' + (err.response?.data?.title || err.message));
+        }
     };
 
     const totalQuantity = form.orderItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -139,6 +154,15 @@ const SalesOrderEditPage = () => {
                         max={100}
                     />
                 </div>
+                <div>
+                    <label className="block mb-1 font-medium">Trạng thái</label>
+                    <select className="select select-bordered w-full" value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}>
+                        <option value="Chưa thực hiện">Chưa thực hiện</option>
+                        <option value="Đang thực hiện">Đang thực hiện</option>
+                        <option value="Hoàn thành">Hoàn thành</option>
+                        <option value="Đã huỷ">Đã huỷ</option>
+                    </select>
+                </div>
             </div>
 
             <h3 className="text-xl font-semibold mb-3">Chi tiết đơn hàng</h3>
@@ -148,11 +172,11 @@ const SalesOrderEditPage = () => {
                     <thead>
                         <tr>
                             <th>STT</th>
-                            <th>Tên SP</th>
                             <th>Mã SP</th>
-                            <th>Rộng (mm)</th>
-                            <th>Cao (mm)</th>
-                            <th>Dày (mm)</th>
+                            <th>Tên SP</th>
+                            <th>Rộng</th>
+                            <th>Cao</th>
+                            <th>Dày</th>
                             <th>Số lượng</th>
                             <th>Đơn giá</th>
                             <th>Diện tích (m²)</th>
@@ -162,17 +186,17 @@ const SalesOrderEditPage = () => {
                     </thead>
                     <tbody>
                         {form.orderItems.map((item, index) => {
-                            const area = (item.width * item.height) / 1_000_000;
+                            const area = (Number(item.width) * Number(item.height)) / 1_000_000;
                             const total = item.quantity * item.unitPrice;
 
                             return (
                                 <tr key={index}>
                                     <td>{index + 1}</td>
-                                    <td>
-                                        <input type="text" value={item.productName} onChange={(e) => handleItemChange(index, 'productName', e.target.value)} className="input input-sm" />
+                                     <td>
+                                        <input type="text" value={item.productCode} onChange={(e) => handleItemChange(index, 'productCode', e.target.value)} className="input input-sm" />
                                     </td>
                                     <td>
-                                        <input type="text" value={item.productCode} onChange={(e) => handleItemChange(index, 'productCode', e.target.value)} className="input input-sm" />
+                                        <input type="text" value={item.productName} onChange={(e) => handleItemChange(index, 'productName', e.target.value)} className="input input-sm" />
                                     </td>
                                     <td>
                                         <input type="number" value={item.width} onChange={(e) => handleItemChange(index, 'width', +e.target.value)} className="input input-sm" />
@@ -192,7 +216,9 @@ const SalesOrderEditPage = () => {
                                     <td>{area.toFixed(2)}</td>
                                     <td>{total.toLocaleString()} đ</td>
                                     <td>
-                                        <button onClick={() => removeItem(index)} className="btn btn-sm btn-error">Xoá</button>
+                                        <button onClick={() => removeItem(index)} className="btn btn-sm btn-error">
+                                            Xoá
+                                        </button>
                                     </td>
                                 </tr>
                             );
@@ -201,18 +227,32 @@ const SalesOrderEditPage = () => {
                 </table>
             </div>
 
-            <button onClick={addItem} className="btn btn-outline btn-sm mb-6">+ Thêm sản phẩm</button>
+            <button onClick={addItem} className="btn btn-outline btn-sm mb-6">
+                + Thêm sản phẩm
+            </button>
 
             <div className="text-end text-sm space-y-1">
-                <p><strong>Tổng số lượng:</strong> {totalQuantity}</p>
-                <p><strong>Tổng tiền hàng:</strong> {totalAmount.toLocaleString()} ₫</p>
-                <p><strong>Chiết khấu:</strong> {discountAmount.toLocaleString()} ₫ ({form.discount}%)</p>
-                <p className="text-base font-bold">Thành tiền sau chiết khấu: <span className="text-green-600">{finalAmount.toLocaleString()} ₫</span></p>
+                <p>
+                    <strong>Tổng số lượng:</strong> {totalQuantity}
+                </p>
+                <p>
+                    <strong>Tổng tiền hàng:</strong> {totalAmount.toLocaleString()} ₫
+                </p>
+                <p>
+                    <strong>Chiết khấu:</strong> {discountAmount.toLocaleString()} ₫ ({form.discount}%)
+                </p>
+                <p className="text-base font-bold">
+                    Thành tiền sau chiết khấu: <span className="text-green-600">{finalAmount.toLocaleString()} ₫</span>
+                </p>
             </div>
 
             <div className="flex items-center gap-4 mt-4">
-                <button onClick={handleBack} className="btn btn-status-secondary">◀ Quay lại</button>
-                <button onClick={handleSave} className="btn btn-primary">Lưu thay đổi</button>
+                <button onClick={handleBack} className="btn btn-status-secondary">
+                    ◀ Quay lại
+                </button>
+                <button onClick={handleSave} className="btn btn-primary">
+                    Lưu thay đổi
+                </button>
             </div>
         </div>
     );

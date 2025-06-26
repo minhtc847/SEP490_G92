@@ -31,6 +31,7 @@ namespace SEP490.DB
         public DbSet<DeliveryDetail> DeliveryDetails { get; set; }
         public DbSet<ProductionPlan> ProductionPlans { get; set; }
         public DbSet<ProductionOrder> ProductionOrders { get; set; }
+        public DbSet<ProductionPlanDetail> ProductionPlanDetails { get; set; }
         public DbSet<WarehouseReceipt> WarehouseReceipts { get; set; }
         public DbSet<WarehouseIssue> WarehouseIssues { get; set; }
         public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
