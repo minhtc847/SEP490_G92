@@ -1,6 +1,7 @@
 import AsyncSelect from 'react-select/async';
 import axios from '@/setup/axios';
 
+
 export interface UpdateProductDto {
     productId: number;
     productCode?: string;
@@ -13,6 +14,7 @@ export interface UpdateProductDto {
     glassStructureId?: number;
 }
 
+
 export interface UpdateOrderPayload {
     customerName: string;
     address: string;
@@ -21,6 +23,7 @@ export interface UpdateOrderPayload {
     status: string;
     products: UpdateProductDto[];
 }
+
 
 export interface OrderItem {
     id: number;
@@ -46,14 +49,16 @@ export interface OrderDetailDto {
     products: OrderItem[];
 }
 
+
 export interface GlassStructure {
     id: number;
     productCode: string;
-    category: string;
+    productName: string;
     edgeType?: string;
     adhesiveType?: string;
     composition?: string;
 }
+
 
 export interface ProductSuggestion {
     id: number;
@@ -65,11 +70,13 @@ export interface ProductSuggestion {
     unitPrice: number;
 }
 
+
 export type ProductOption = {
     label: string;
     value: number;
     data: OrderItem;
 };
+
 
 export const loadOptions = async (inputValue: string, existingProductCodes: string[]) => {
     const result = await searchProducts(inputValue);
@@ -82,10 +89,14 @@ export const loadOptions = async (inputValue: string, existingProductCodes: stri
 };
 
 
+
+
 export const checkProductCodeExists = async (code: string): Promise<boolean> => {
   const res = await axios.get(`/api/orders/check-code`, { params: { code } });
   return res.data.exists;
 };
+
+
 
 
 export const searchProducts = async (query: string): Promise<OrderItem[]> => {
@@ -93,15 +104,18 @@ export const searchProducts = async (query: string): Promise<OrderItem[]> => {
   return res.data;
 };
 
+
 export const getGlassStructures = async (): Promise<GlassStructure[]> => {
     const res = await axios.get('/api/glass-structures');
     return res.data;
 };
 
+
 export const getOrderDetailById = async (id: number): Promise<OrderDetailDto> => {
     const res = await axios.get(`/api/orders/${id}`);
     return res.data;
 };
+
 
 export const updateOrderDetailById = async (id: number, payload: UpdateOrderPayload): Promise<void> => {
     await axios.put(`/api/orders/${id}`, payload);

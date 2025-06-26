@@ -38,5 +38,6 @@ namespace SEP490.DB
         public DbSet<ProductionOutput> ProductionOutputs { get; set; }
         public DbSet<ProductionMaterial> ProductionMaterials { get; set; }
         public DbSet<ZaloToken> ZaloTokens { get; set; }
+        public DbSet<HistoryMessage> HistoryMessages { get; set; }
     }
 }

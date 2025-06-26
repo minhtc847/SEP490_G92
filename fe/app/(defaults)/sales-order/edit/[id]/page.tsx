@@ -1,20 +1,24 @@
 'use client';
 
+
 import AsyncSelect from 'react-select/async';
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getOrderDetailById, updateOrderDetailById, getGlassStructures, OrderItem, OrderDetailDto, loadOptions, checkProductCodeExists } from '@/app/(defaults)/sales-order/edit/[id]/service';
+
 
 type GlassStructure = {
     id: number;
     category: string;
 };
 
+
 const SalesOrderEditPage = () => {
     const { id } = useParams();
     const router = useRouter();
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
-    const [glassStructures, setGlassStructures] = useState<{ id: number; category: string }[]>([]);
+    const [glassStructures, setGlassStructures] = useState<{ id: number; productName: string }[]>([]);
+
 
     const [form, setForm] = useState<{
         customer: string;
@@ -36,6 +40,7 @@ const SalesOrderEditPage = () => {
         orderItems: [],
     });
 
+
     useEffect(() => {
         const fetchData = async () => {
             if (!id) return;
@@ -56,6 +61,7 @@ const SalesOrderEditPage = () => {
         fetchData();
     }, [id]);
 
+
     const handleItemChange = (index: number, field: keyof OrderItem, value: string | number) => {
         const updatedItems = [...form.orderItems];
         updatedItems[index] = {
@@ -64,6 +70,7 @@ const SalesOrderEditPage = () => {
         };
         setForm((prev) => ({ ...prev, orderItems: updatedItems }));
     };
+
 
     const addItem = () => {
         setForm((prev) => ({
@@ -85,14 +92,17 @@ const SalesOrderEditPage = () => {
         }));
     };
 
+
     const removeItem = (index: number) => {
         const updatedItems = [...form.orderItems];
         updatedItems.splice(index, 1);
         setForm((prev) => ({ ...prev, orderItems: updatedItems }));
     };
 
+
     const handleBack = () => router.back();
     const existingProductIds = new Set(form.orderItems.map((item) => item.productId));
+
 
     const handleSave = async () => {
         try {
@@ -105,6 +115,7 @@ const SalesOrderEditPage = () => {
                     }
                 }
             }
+
 
             const payload = {
                 customerName: form.customer,
@@ -125,6 +136,7 @@ const SalesOrderEditPage = () => {
                 })),
             };
 
+
             await updateOrderDetailById(Number(id), payload);
             alert('Cập nhật thành công!');
             router.push(`/sales-order/${id}`);
@@ -134,14 +146,17 @@ const SalesOrderEditPage = () => {
         }
     };
 
+
     const totalQuantity = form.orderItems.reduce((sum, item) => sum + item.quantity, 0);
     const totalAmount = form.orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
     const discountAmount = (form.discount / 100) * totalAmount;
     const finalAmount = totalAmount - discountAmount;
 
+
     return (
         <div className="max-w-6xl mx-auto p-6">
             <h2 className="text-2xl font-bold mb-4">Chỉnh sửa Đơn Hàng: {id}</h2>
+
 
             <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
@@ -187,7 +202,9 @@ const SalesOrderEditPage = () => {
                 </div>
             </div>
 
+
             <h3 className="text-xl font-semibold mb-3">Chi tiết đơn hàng</h3>
+
 
             <div className="overflow-x-auto mb-4">
                 <table className="table table-zebra min-w-[1000px]">
@@ -212,6 +229,7 @@ const SalesOrderEditPage = () => {
                             const area = (Number(item.width) * Number(item.height)) / 1_000_000;
                             const total = item.quantity * item.unitPrice;
 
+
                             return (
                                 <tr key={index}>
                                     <td>{index + 1}</td>
@@ -224,6 +242,7 @@ const SalesOrderEditPage = () => {
                                                 const value = e.target.value;
                                                 handleItemChange(index, 'productCode', value);
 
+
                                                 if (item.productId === 0) {
                                                     const exists = await checkProductCodeExists(value);
                                                     if (exists) {
@@ -233,25 +252,7 @@ const SalesOrderEditPage = () => {
                                             }}
                                             className="input input-sm w-32"
                                         />
-                                        <button
-                                            disabled={item.productId !== 0}
-                                            type="button"
-                                            onClick={() => {
-                                                const generated = `VT${Date.now().toString().slice(-5)}`;
-                                                handleItemChange(index, 'productCode', generated);
-                                            }}
-                                            className="btn btn-ghost btn-xs p-1"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
-                                                />
-                                            </svg>
-                                        </button>
                                     </td>
-
                                     <td>
                                         <input
                                             disabled={item.productId !== 0}
@@ -303,11 +304,11 @@ const SalesOrderEditPage = () => {
                                     <td>{area.toFixed(2)}</td>
                                     <td>{total.toLocaleString()} đ</td>
                                     <td>
-                                        <select className="select select-sm" value={item.glassStructureId || ''} onChange={(e) => handleItemChange(index, 'glassStructureId', +e.target.value)}>
+                                        <select className="select select-sm" value={item.glassStructureId || ''} onChange={(e) => handleItemChange(index, 'glassStructureId', +e.target.value)} disabled={item.productId !== 0}>
                                             <option value="">-- Chọn --</option>
                                             {glassStructures.map((gs) => (
                                                 <option key={gs.id} value={gs.id}>
-                                                    {gs.category}
+                                                    {gs.productName}
                                                 </option>
                                             ))}
                                         </select>
@@ -323,6 +324,7 @@ const SalesOrderEditPage = () => {
                     </tbody>
                 </table>
             </div>
+
 
             <div className="flex gap-4 mb-4">
                 <div className="w-1/2">
@@ -341,6 +343,7 @@ const SalesOrderEditPage = () => {
                             if (!option) return;
                             const p = option.product;
 
+
                             const newItem: OrderItem = {
                                 id: Date.now(),
                                 productId: p.id,
@@ -353,6 +356,7 @@ const SalesOrderEditPage = () => {
                                 unitPrice: Number(p.unitPrice),
                                 glassStructureId: p.glassStructureId,
                             };
+
 
                             setForm((prev) => ({
                                 ...prev,
@@ -369,6 +373,7 @@ const SalesOrderEditPage = () => {
                 </div>
             </div>
 
+
             <div className="text-end text-sm space-y-1">
                 <p>
                     <strong>Tổng số lượng:</strong> {totalQuantity}
@@ -384,6 +389,7 @@ const SalesOrderEditPage = () => {
                 </p>
             </div>
 
+
             <div className="flex items-center gap-4 mt-4">
                 <button onClick={handleBack} className="btn btn-status-secondary">
                     ◀ Quay lại
@@ -395,5 +401,6 @@ const SalesOrderEditPage = () => {
         </div>
     );
 };
+
 
 export default SalesOrderEditPage;
