@@ -2,7 +2,7 @@
 SET ROLLBACK_FILE_NAME=%1
 SET OUTPUT_DIR=DB/Migrations
 IF "%ROLLBACK_FILE_NAME%"=="" (
-    echo ❌ Please provide rollback file name. Ex: ./Scipts/rollback.bat AddUserTable
+    echo ❌ Please provide rollback file name. Ex: ./Scipts/rollback.bat AddUserAddTable
     exit /b 1
 )
 

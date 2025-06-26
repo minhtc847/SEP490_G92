@@ -110,7 +110,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
 
                                    GlassStructureId = g?.Id,
                                    GlassStructureCode = g?.ProductCode,
-                                   GlassCategory = g?.Category,
+                                   GlassCategory = g?.ProductName,
                                    EdgeType = g?.EdgeType,
                                    AdhesiveType = g?.AdhesiveType,
                                    GlassLayers = g?.GlassLayers,

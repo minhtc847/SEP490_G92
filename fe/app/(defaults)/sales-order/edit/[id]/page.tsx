@@ -14,7 +14,7 @@ const SalesOrderEditPage = () => {
     const { id } = useParams();
     const router = useRouter();
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
-    const [glassStructures, setGlassStructures] = useState<{ id: number; category: string }[]>([]);
+    const [glassStructures, setGlassStructures] = useState<{ id: number; productName: string }[]>([]);
 
     const [form, setForm] = useState<{
         customer: string;
@@ -303,11 +303,11 @@ const SalesOrderEditPage = () => {
                                     <td>{area.toFixed(2)}</td>
                                     <td>{total.toLocaleString()} đ</td>
                                     <td>
-                                        <select className="select select-sm" value={item.glassStructureId || ''} onChange={(e) => handleItemChange(index, 'glassStructureId', +e.target.value)}>
+                                        <select className="select select-sm" value={item.glassStructureId || ''} onChange={(e) => handleItemChange(index, 'glassStructureId', +e.target.value)} disabled={item.productId !== 0}>
                                             <option value="">-- Chọn --</option>
                                             {glassStructures.map((gs) => (
                                                 <option key={gs.id} value={gs.id}>
-                                                    {gs.category}
+                                                    {gs.productName}
                                                 </option>
                                             ))}
                                         </select>

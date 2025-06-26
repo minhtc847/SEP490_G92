@@ -393,7 +393,7 @@ const SalesOrderCreatePage = () => {
                                                 <option value="">-- Chọn --</option>
                                                 {glassStructures.map((gs) => (
                                                     <option key={gs.id} value={gs.id}>
-                                                        {gs.category}
+                                                        {gs.productName}
                                                     </option>
                                                 ))}
                                             </select>
