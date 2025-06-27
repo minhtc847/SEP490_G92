@@ -4,6 +4,7 @@ using SEP490.DB;
 using SEP490.Modules.CustomerModule.ManageCustomer.Service;
 using SEP490.Modules.GlassStructureModule.ManageGlassStructure.Service;
 using SEP490.Modules.OrderModule.ManageOrder.Services;
+using SEP490.Modules.ProductModule.ManageProduct.Service;
 using System;
 using System.Reflection;
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,8 @@ builder.Services.AddDbContext<SEP490DbContext>(options =>
 builder.Services.AddScoped<IOrderService, SEP490.Modules.OrderModule.ManageOrder.Services.OrderService>();
 builder.Services.AddScoped<ICustomerService, SEP490.Modules.CustomerModule.ManageCustomer.Service.CustomerService>();
 builder.Services.AddScoped<IGlassStructureService, SEP490.Modules.GlassStructureModule.ManageGlassStructure.Service.GlassStructureService>();
+builder.Services.AddScoped<IProductService, SEP490.Modules.ProductModule.ManageProduct.Service.ProductService>();
+
 
 builder.Services.AddControllers();
 
@@ -62,6 +65,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI();
 }

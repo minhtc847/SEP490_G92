@@ -14,13 +14,11 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
     {
         private readonly SEP490DbContext _context;
         private readonly IOrderService _orderService;
-        private readonly IOrderService _customerService;
 
-        public OrderController(SEP490DbContext context, IOrderService orderService, IOrderService customerService)
+        public OrderController(SEP490DbContext context, IOrderService orderService)
         {
             _context = context;
             _orderService = orderService;
-            _customerService = customerService;
         }
 
         // GET: api/orders

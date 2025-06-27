@@ -92,15 +92,15 @@ const PriceQuoteCreatePage = () => {
                     </div>
                     <div>
                         <label className="block font-medium text-gray-700 mb-1">Cạnh</label>
-                        <input type="text" name="edgeType" value={formData.edgeType} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
+                        <input type="text" name="edgeType" value={formData.edgeType} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" required />
                     </div>
                     <div>
                         <label className="block font-medium text-gray-700 mb-1">Keo</label>
-                        <input type="text" name="adhesiveType" value={formData.adhesiveType} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
+                        <input type="text" name="adhesiveType" value={formData.adhesiveType} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" required />
                     </div>
                     <div>
                         <label className="block font-medium text-gray-700 mb-1">Cấu tạo</label>
-                        <input type="text" name="composition" value={formData.composition} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
+                        <input type="text" name="composition" value={formData.composition} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" required />
                     </div>
                 </div>
 
