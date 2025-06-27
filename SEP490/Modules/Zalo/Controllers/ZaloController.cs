@@ -97,7 +97,7 @@ namespace SEP490.Modules.Zalo.Controllers
             // Build CreateOrderDto
             var createOrderDto = new CreateOrderDto
             {
-                CustomerName = forwardResponse.CustomerName ?? "Unknown",
+                CustomerName = "Nguyễn Trường Tây",
                 Address = "", // Fill with actual address if available
                 Phone = "",   // Fill with actual phone if available
                 OrderCode = null, // Or use your own order code generation logic
