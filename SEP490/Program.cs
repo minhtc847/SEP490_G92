@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.Modules.CustomerModule.ManageCustomer.Service;
+using SEP490.Modules.GlassStructureModule.ManageGlassStructure.Service;
 using SEP490.Modules.OrderModule.ManageOrder.Services;
 using System;
 using System.Reflection;
@@ -16,7 +17,8 @@ builder.Services.AddDbContext<SEP490DbContext>(options =>
         mysqlVersion).UseSnakeCaseNamingConvention());
 // Add services to the container.
 builder.Services.AddScoped<IOrderService, SEP490.Modules.OrderModule.ManageOrder.Services.OrderService>();
-builder.Services.AddScoped<ICustomerService, SEP490.Modules.CustomerModule.ManageCustomer.Service.OrderService>();
+builder.Services.AddScoped<ICustomerService, SEP490.Modules.CustomerModule.ManageCustomer.Service.CustomerService>();
+builder.Services.AddScoped<IGlassStructureService, SEP490.Modules.GlassStructureModule.ManageGlassStructure.Service.GlassStructureService>();
 
 builder.Services.AddControllers();
 

@@ -5,11 +5,11 @@ using SEP490.Modules.CustomerModule.ManageCustomer.DTO;
 
 namespace SEP490.Modules.CustomerModule.ManageCustomer.Service
 {
-    public class OrderService : ICustomerService
+    public class CustomerService : ICustomerService
     {
         private readonly SEP490DbContext _context;
 
-        public OrderService(SEP490DbContext context)
+        public CustomerService(SEP490DbContext context)
         {
             _context = context;
         }
