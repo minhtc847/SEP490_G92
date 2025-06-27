@@ -49,7 +49,7 @@ export interface OrderDetailDto {
 export interface GlassStructure {
     id: number;
     productCode: string;
-    category: string;
+    productName: string;
     edgeType?: string;
     adhesiveType?: string;
     composition?: string;
