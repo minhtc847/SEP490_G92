@@ -2,6 +2,7 @@
 {
     public class ProductionOrderDetail
     {
+        public int Id { get; set; }
         public int ProductId { get; set; }
         public int Quantity { get; set; }
         public string TrangThai { get; set; } = string.Empty;
