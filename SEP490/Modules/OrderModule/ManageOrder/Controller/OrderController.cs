@@ -43,7 +43,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
                 {
                     Id = x.Id,
                     ProductCode = x.ProductCode,
-                    Category = x.Category,
+                    ProductName = x.ProductName,
                 }).ToListAsync();
 
             return Ok(structures);
@@ -79,8 +79,8 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
         {
             try
             {
-                var orderId = _orderService.CreateOrder(dto); 
-                if (orderId <= 0) 
+                var orderId = _orderService.CreateOrder(dto);
+                if (orderId <= 0)
                 {
                     return BadRequest("Tạo đơn hàng thất bại.");
                 }
@@ -162,3 +162,5 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
         }
     }
 }
+
+

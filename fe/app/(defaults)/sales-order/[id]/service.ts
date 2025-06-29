@@ -42,6 +42,11 @@ export const getOrderDetailById = async (id: number): Promise<OrderDetailDto> =>
   return response.data;
 };
 
+export const updateSelenium = async (): Promise<any> => {
+  const response = await axios.get('api/test-table');
+  return response.data;
+}
+
 export const createProductonPlan = async (id:string,): Promise<ProductonPlan[]> => {
     try {
         const response = await axios.post<ProductonPlan[]>("/api/ProductionPlan/CreatePlans/${id}", {

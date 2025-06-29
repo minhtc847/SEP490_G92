@@ -12,5 +12,8 @@ public class Customer
     public decimal? Discount { get; set; }
     public bool IsSupplier { get; set; }
 
+    public string? ZaloId { get; set; }
+    public string? ZaloName { get; set; }
+    public string? TagName { get; set; }
     public ICollection<SaleOrder> SaleOrders { get; set; } = new List<SaleOrder>();
 }

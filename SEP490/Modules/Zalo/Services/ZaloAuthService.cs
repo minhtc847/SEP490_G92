@@ -147,5 +147,47 @@ namespace SEP490.Modules.Zalo.Services
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<ZaloUserDetailResponse> GetUserDetailByIdAsync(string userId)
+        {
+            var token = await _context.ZaloTokens.FirstOrDefaultAsync();
+            if (token == null)
+                throw new Exception("No Zalo access token found.");
+
+            // Refresh access token if expired
+            if (token.AccessTokenExpiresAt <= DateTime.UtcNow)
+            {
+                var refreshed = await RefreshZaloTokenAsync(token);
+                if (!refreshed)
+                    throw new Exception("Failed to refresh Zalo access token.");
+            }
+
+            var client = _httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Add("access_token", token.AccessToken);
+
+            var requestData = new { user_id = userId };
+            var json = JsonSerializer.Serialize(requestData);
+            var encodedData = Uri.EscapeDataString(json);
+
+            var url = $"https://openapi.zalo.me/v3.0/oa/user/detail?data={encodedData}";
+            var response = await client.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+                throw new Exception("Failed to get user detail from Zalo API.");
+
+            var content = await response.Content.ReadAsStringAsync();
+            using var jsonDoc = JsonDocument.Parse(content);
+
+            if (!jsonDoc.RootElement.TryGetProperty("data", out var dataElement))
+                throw new Exception("Invalid response from Zalo API.");
+
+            var userDetail = JsonSerializer.Deserialize<ZaloUserDetailResponse>(dataElement.GetRawText());
+            if (userDetail == null)
+                throw new Exception("Failed to parse user detail.");
+
+            return userDetail;
+        }
+
+
     }
-   }
+}

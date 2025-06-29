@@ -493,6 +493,9 @@ const Header = () => {
                                 <Link href="/apps/chat">{t('chat')}</Link>
                             </li>
                             <li>
+                                <Link href="/messages">Tin Nhắn</Link>
+                            </li>
+                            <li>
                                 <Link href="/apps/mailbox">{t('mailbox')}</Link>
                             </li>
                             <li>

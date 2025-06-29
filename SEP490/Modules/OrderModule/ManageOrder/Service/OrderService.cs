@@ -315,7 +315,6 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             return true;
         }
 
-
         public void DeleteOrder(int orderId)
         {
             var order = _context.SaleOrders.FirstOrDefault(o => o.Id == orderId);

@@ -1,11 +1,18 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.Modules.LLMChat.Services;
 using SEP490.Modules.OrderModule.ManageOrder.Services;
+using SEP490.Modules.Users.Services;
+using SEP490.Modules.Zalo.Services;
 using System;
 using System.Reflection;
+using System.Text;
 var builder = WebApplication.CreateBuilder(args);
+var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 
 var mysqlVersionString = builder.Configuration["Database:MySqlVersion"];
 var mysqlVersion = new MySqlServerVersion(Version.Parse(mysqlVersionString));
@@ -16,11 +23,28 @@ builder.Services.AddDbContext<SEP490DbContext>(options =>
         mysqlVersion).UseSnakeCaseNamingConvention());
 // Add services to the container.
 builder.Services.AddScoped<IOrderService, OrderService>();
-
+builder.Services.AddScoped<IZaloChatForwardService, ZaloChatForwardService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddHttpClient<ZaloChatService>();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
-
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtIssuer,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey!))
+    };
+});
 // Register all services that inherit from BaseService
 var baseType = typeof(BaseService);
 
@@ -66,7 +90,7 @@ if (app.Environment.IsDevelopment())
 }
 app.UseCors("AllowFrontend");
 app.UseHttpsRedirection();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
