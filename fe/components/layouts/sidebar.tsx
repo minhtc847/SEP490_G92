@@ -121,7 +121,7 @@ const Sidebar = () => {
                                         <li>
                                             <Link href="/">{t('sales')}</Link>
                                         </li>
-                                        
+
                                     </ul>
                                 </AnimateHeight>
                             </li>
@@ -167,28 +167,31 @@ const Sidebar = () => {
                                 <AnimateHeight duration={300} height={currentMenu === 'production' ? 'auto' : 0}>
                                     <ul className="sub-menu text-gray-500">
                                         <li>
-                                            <Link href="/production-orders">Các lệnh sản xuất</Link>
+                                            <Link href="/production-plans">Kế hoạch sản xuất</Link>
                                         </li>
                                         <li>
-                                            <Link href="/production-orders/active">Đang sản xuất</Link>
+                                            <Link href="/production-orders">Các lệnh sản xuất</Link>
                                         </li>
+
                                     </ul>
                                 </AnimateHeight>
                             </li>
-                        <li className="menu nav-item">
-                            <button type="button" className={`${currentMenu === "customers" ? "active" : ""} nav-link group w-full`} onClick={() => toggleMenu("customers")}>
-                                <div className="flex items-center">
-                                    <IconMenuUsers className="shrink-0 group-hover:!text-primary" />
-                                    <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
-                                    Khách Hàng
-                                    </span>
-                                </div>
+                            
+                            {/* Khách Hàng */}
+                            <li className="menu nav-item">
+                                <button type="button" className={`${currentMenu === "customers" ? "active" : ""} nav-link group w-full`} onClick={() => toggleMenu("customers")}>
+                                    <div className="flex items-center">
+                                        <IconMenuUsers className="shrink-0 group-hover:!text-primary" />
+                                        <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                            Khách Hàng
+                                        </span>
+                                    </div>
 
-                                <div className={currentMenu !== "customers" ? "-rotate-90 rtl:rotate-90" : ""}>
-                                    <IconCaretDown />
-                                </div>
-                            </button>
-                            <AnimateHeight duration={300} height={currentMenu === "customers" ? "auto" : 0}>
+                                    <div className={currentMenu !== "customers" ? "-rotate-90 rtl:rotate-90" : ""}>
+                                        <IconCaretDown />
+                                    </div>
+                                </button>
+                                <AnimateHeight duration={300} height={currentMenu === "customers" ? "auto" : 0}>
                                     <ul className="sub-menu text-gray-500">
                                         <li>
                                             <Link href="/customers">Danh Sách Khách Hàng</Link>
@@ -198,6 +201,18 @@ const Sidebar = () => {
                                         </li>
                                     </ul>
                                 </AnimateHeight>
+                            </li>
+
+                            {/* Tin Nhắn */}
+                            <li className="menu nav-item">
+                                <Link href="/messages" className="nav-link group w-full">
+                                    <div className="flex items-center">
+                                        <IconMenuChat className="shrink-0 group-hover:!text-primary" />
+                                        <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                            Tin Nhắn
+                                        </span>
+                                    </div>
+                                </Link>
                             </li>
 
                         </ul>
