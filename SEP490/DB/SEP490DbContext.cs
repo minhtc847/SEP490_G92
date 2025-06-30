@@ -27,17 +27,20 @@ namespace SEP490.DB
         public DbSet<SaleOrder> SaleOrders { get; set; }
         public DbSet<OrderDetail> OrderDetails { get; set; }
         public DbSet<OrderDetailProduct> OrderDetailProducts { get; set; }
-        public DbSet<Delivery> Deliveries { get; set; }
-        public DbSet<DeliveryDetail> DeliveryDetails { get; set; }
+        public DbSet<Account> Accounts { get; set; }
+        public DbSet<Role> Roles { get; set; }
+        public DbSet<DeliveryHistory> DeliveryHistories { get; set; }
         public DbSet<ProductionPlan> ProductionPlans { get; set; }
         public DbSet<ProductionOrder> ProductionOrders { get; set; }
+        public DbSet<ProductionOrderDetail> ProductionOrderDetails { get; set; }
         public DbSet<ProductionPlanDetail> ProductionPlanDetails { get; set; }
-        public DbSet<WarehouseReceipt> WarehouseReceipts { get; set; }
-        public DbSet<WarehouseIssue> WarehouseIssues { get; set; }
-        public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
+        public DbSet<Department> Departments { get; set; }
+        public DbSet<Employee> Employees { get; set; }
+        public DbSet<HistoryMessage> HistoryMessages { get; set; }
         public DbSet<ProductionOutput> ProductionOutputs { get; set; }
         public DbSet<ProductionMaterial> ProductionMaterials { get; set; }
+        public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
+        public DbSet<PurchaseOrderDetail> PurchaseOrderDetails { get; set; }
         public DbSet<ZaloToken> ZaloTokens { get; set; }
-        public DbSet<HistoryMessage> HistoryMessages { get; set; }
     }
 }
