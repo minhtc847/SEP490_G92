@@ -1,6 +1,6 @@
 ﻿namespace SEP490.DB.Models
 {
-    public class CutGlassDiary
+    public class CutGlassInvoice
     {
     }
 }
