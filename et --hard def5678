@@ -1,0 +1,20 @@
+[33m5e391f7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mproduct[m[33m)[m HEAD@{0}: reset: moving to HEAD~1
+[33mddc6f9a[m[33m ([m[1;31morigin/product[m[33m)[m HEAD@{1}: commit: edit create/edit page for sales-order page
+[33m5e391f7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mproduct[m[33m)[m HEAD@{2}: commit: Complete CRUD function for Product
+[33mec67100[m[33m ([m[1;31morigin/price-quotes[m[33m, [m[1;32mprice-quotes[m[33m)[m HEAD@{3}: checkout: moving from price-quotes to product
+[33mec67100[m[33m ([m[1;31morigin/price-quotes[m[33m, [m[1;32mprice-quotes[m[33m)[m HEAD@{4}: commit: Complete CRUD function for Price Quotes
+[33m5af3f6d[m[33m ([m[1;31morigin/customer[m[33m, [m[1;32mcustomer[m[33m)[m HEAD@{5}: checkout: moving from customer to price-quotes
+[33m5af3f6d[m[33m ([m[1;31morigin/customer[m[33m, [m[1;32mcustomer[m[33m)[m HEAD@{6}: commit: Complete CRUD function for Customer
+[33m79ce2ec[m[33m ([m[1;31morigin/sales-order[m[33m, [m[1;32msales-order[m[33m)[m HEAD@{7}: checkout: moving from sales-order to customer
+[33m79ce2ec[m[33m ([m[1;31morigin/sales-order[m[33m, [m[1;32msales-order[m[33m)[m HEAD@{8}: commit: change category -> product_name (glass_structure)
+[33md6ebcae[m HEAD@{9}: commit: update constraint for create function of sales-order
+[33me0bce71[m HEAD@{10}: commit: edit some constraint for create and edit function of sales-order
+[33m5f01c50[m HEAD@{11}: commit: Complete create function for SalesOrder
+[33m1a67155[m HEAD@{12}: commit: Complete list/detail/edit function for SaleOrder
+[33m735568b[m HEAD@{13}: commit: Add edit function for sales-order (90%)
+[33ma62af25[m[33m ([m[1;31morigin/sales-order2[m[33m, [m[1;32msales-order2[m[33m)[m HEAD@{14}: checkout: moving from sales-order2 to sales-order
+[33ma62af25[m[33m ([m[1;31morigin/sales-order2[m[33m, [m[1;32msales-order2[m[33m)[m HEAD@{15}: checkout: moving from sales-order to sales-order2
+[33ma62af25[m[33m ([m[1;31morigin/sales-order2[m[33m, [m[1;32msales-order2[m[33m)[m HEAD@{16}: commit: Remove TotalAmount For OrderDetail
+[33m54b36e4[m[33m ([m[1;31morigin/dev[m[33m, [m[1;32mdev[m[33m)[m HEAD@{17}: checkout: moving from dev to sales-order
+[33m54b36e4[m[33m ([m[1;31morigin/dev[m[33m, [m[1;32mdev[m[33m)[m HEAD@{18}: checkout: moving from main to dev
+[33m29f0bf3[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{19}: clone: from https://github.com/minhtc847/SEP490_G92.git
