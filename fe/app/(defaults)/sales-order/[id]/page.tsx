@@ -83,7 +83,6 @@ const SalesOrderDetailPage = () => {
                 <thead className="bg-gray-100">
                     <tr>
                         <th className="border p-2">STT</th>
-                        <th className="border p-2">Mã SP</th>
                         <th className="border p-2">Tên SP</th>
                         <th className="border p-2">Rộng (mm)</th>
                         <th className="border p-2">Cao (mm)</th>
@@ -98,7 +97,6 @@ const SalesOrderDetailPage = () => {
                     {products.map((item, idx) => (
                         <tr key={idx}>
                             <td className="border p-2 text-center">{idx + 1}</td>
-                            <td className="border p-2">{item.productCode}</td>
                             <td className="border p-2">{item.productName}</td>
                             <td className="border p-2 text-right">{item.width}</td>
                             <td className="border p-2 text-right">{item.height}</td>

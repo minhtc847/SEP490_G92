@@ -3,48 +3,68 @@
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import {
-    CustomerOption,
-    searchCustomers,
+    createProduct,
     createOrderDetail,
-    OrderItem,
-    checkProductCodeExists,
     getGlassStructures,
     loadOptions,
     ProductOption,
     GlassStructure,
     loadCustomerOptions,
     getNextOrderCode,
+    CustomerOption,
+    checkProductNameExists,
+    getAllCustomerNames,
+    getAllProductNames,
 } from '@/app/(defaults)/sales-order/create/service';
 import AsyncSelect from 'react-select/async';
 
 const SalesOrderCreatePage = () => {
     const router = useRouter();
+    const [glassStructures, setGlassStructures] = useState<GlassStructure[]>([]);
+    const [selectedProduct, setSelectedProduct] = useState<ProductOption | null>(null);
+    const [isCustomerLocked, setIsCustomerLocked] = useState(false);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            const structures = await getGlassStructures();
-            setGlassStructures(structures);
+    const [customerNames, setCustomerNames] = useState<string[]>([]);
+    const [isCustomerNameDuplicate, setIsCustomerNameDuplicate] = useState(false);
 
-            const nextCode = await getNextOrderCode();
-            setForm((prev) => ({
-                ...prev,
-                orderCode: nextCode,
-            }));
-        };
+    const [productNames, setProductNames] = useState<string[]>([]);
+    const [isProductNameDuplicate, setIsProductNameDuplicate] = useState(false);
 
-        fetchData();
-    }, []);
+    const handleCustomerNameChange = (value: string) => {
+        const isDuplicate = customerNames.includes(value.trim());
+        setIsCustomerNameDuplicate(isDuplicate);
 
-    const [form, setForm] = useState<{
-        customer: string;
-        address: string;
-        phone: string;
-        orderDate: string;
-        orderCode: string;
-        discount: number;
-        status: string;
-        orderItems: OrderItemWithFlag[];
-    }>({
+        setForm((prev) => ({
+            ...prev,
+            customer: value,
+        }));
+    };
+
+    const [showAddProductForm, setShowAddProductForm] = useState(false);
+    const [newProductForm, setNewProductForm] = useState({
+        productName: '',
+        width: 0,
+        height: 0,
+        thickness: 0,
+        quantity: 1,
+        unitPrice: 0,
+        glassStructureId: undefined as number | undefined,
+    });
+
+    type OrderItem = {
+        id: number;
+        productId: number;
+        productName: string;
+        width: number;
+        height: number;
+        thickness: number;
+        quantity: number;
+        unitPrice: number;
+        glassStructureId?: number;
+        isFromDatabase?: boolean;
+    };
+
+    const [form, setForm] = useState({
         customer: '',
         address: '',
         phone: '',
@@ -52,21 +72,56 @@ const SalesOrderCreatePage = () => {
         orderCode: '',
         discount: 0,
         status: 'Chưa thực hiện',
-        orderItems: [],
+        orderItems: [] as OrderItem[],
     });
+
+    useEffect(() => {
+        const area = (newProductForm.width * newProductForm.height) / 1_000_000;
+        const structure = glassStructures.find((gs) => gs.id === newProductForm.glassStructureId);
+
+        const unitPrice = +(area * (structure?.unitPrice || 0)).toFixed(0);
+
+        const fetchOrderCode = async () => {
+            try {
+                const code = await getNextOrderCode();
+                setForm((prev) => ({ ...prev, orderCode: code }));
+            } catch (error) {
+                console.error('Lỗi khi lấy mã đơn hàng:', error);
+            }
+        };
+
+        fetchOrderCode();
+
+        getGlassStructures().then(setGlassStructures).catch(console.error);
+
+        getAllCustomerNames().then(setCustomerNames);
+
+        getAllProductNames().then(setProductNames);
+
+        setNewProductForm((prev) => ({
+            ...prev,
+            unitPrice,
+        }));
+    }, [newProductForm.width, newProductForm.height, newProductForm.glassStructureId, glassStructures]);
+
+    const handleProductNameChange = (value: string) => {
+        const isDuplicate = productNames.includes(value.trim());
+        setIsProductNameDuplicate(isDuplicate);
+        setNewProductForm((prev) => ({
+            ...prev,
+            productName: value,
+        }));
+    };
 
     const handleItemChange = (index: number, field: keyof OrderItem, value: string | number) => {
         const updatedItems = [...form.orderItems];
-
         const currentItem = updatedItems[index];
 
-        if (currentItem.isFromDatabase && ['productCode', 'productName', 'width', 'height', 'thickness', 'unitPrice'].includes(field)) {
-            return;
-        }
+        if (currentItem.isFromDatabase && ['productName', 'width', 'height', 'thickness', 'unitPrice'].includes(field)) return;
 
         updatedItems[index] = {
             ...currentItem,
-            [field]: field === 'productName' || field === 'productCode' ? value.toString() : +value,
+            [field]: field === 'productName' ? value.toString() : +value,
         };
 
         setForm((prev) => ({ ...prev, orderItems: updatedItems }));
@@ -81,7 +136,6 @@ const SalesOrderCreatePage = () => {
                     id: Date.now(),
                     productId: 0,
                     productName: '',
-                    productCode: '',
                     width: 0,
                     height: 0,
                     thickness: 0,
@@ -98,18 +152,88 @@ const SalesOrderCreatePage = () => {
         setForm((prev) => ({ ...prev, orderItems: updatedItems }));
     };
 
-    const handleBack = () => router.back();
+    const handleSaveProduct = async () => {
+        try {
+            if (isProductNameDuplicate) {
+                alert('Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.');
+                return;
+            }
+
+            const regex = /^Kính .+ phút, KT: \d+\*\d+\*\d+ mm, .+$/;
+            if (!regex.test(newProductForm.productName)) {
+                alert('Tên sản phẩm không đúng định dạng. Ví dụ: "Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng"');
+                return;
+            }
+
+            if (!newProductForm.productName.trim()) {
+                alert('Vui lòng nhập tên sản phẩm!');
+                return;
+            }
+
+            const isExisted = await checkProductNameExists(newProductForm.productName);
+            if (isExisted) {
+                alert('Tên sản phẩm đã tồn tại, vui lòng chọn tên khác!');
+                return;
+            }
+
+            if (!newProductForm.glassStructureId) {
+                alert('Vui lòng chọn cấu trúc kính!');
+                return;
+            }
+
+            const payload = {
+                productName: newProductForm.productName,
+                width: newProductForm.width.toString(),
+                height: newProductForm.height.toString(),
+                thickness: newProductForm.thickness,
+                uom: 'Tấm',
+                productType: 'Thành Phẩm',
+                unitPrice: 0,
+                glassStructureId: newProductForm.glassStructureId,
+            };
+
+            const newProduct = await createProduct(payload);
+
+            setForm((prev) => ({
+                ...prev,
+                orderItems: [
+                    ...prev.orderItems,
+                    {
+                        id: Date.now(),
+                        productId: newProduct.id,
+                        productName: newProduct.productName,
+                        width: Number(newProduct.width),
+                        height: Number(newProduct.height),
+                        thickness: Number(newProduct.thickness),
+                        quantity: 1,
+                        unitPrice: Number(newProduct.unitPrice),
+                        glassStructureId: newProduct.glassStructureId,
+                        isFromDatabase: true,
+                    },
+                ],
+            }));
+
+            setShowAddProductForm(false);
+            setNewProductForm({
+                productName: '',
+                width: 0,
+                height: 0,
+                thickness: 0,
+                quantity: 1,
+                unitPrice: 0,
+                glassStructureId: undefined,
+            });
+        } catch (err) {
+            console.error('Lỗi thêm sản phẩm:', err);
+            alert('Thêm sản phẩm thất bại!');
+        }
+    };
 
     const handleSave = async () => {
         try {
-            for (const item of form.orderItems) {
-                if (!item.productId || item.productId === 0) {
-                    const exists = await checkProductCodeExists(item.productCode);
-                    if (exists) {
-                        alert(`Mã sản phẩm "${item.productCode}" đã tồn tại. Vui lòng sửa lại mã hoặc tạo mã tự động.`);
-                        return;
-                    }
-                }
+            if (isCustomerNameDuplicate) {
+                alert('Tên khách hàng đã tồn tại. Vui lòng nhập tên khác.');
+                return;
             }
 
             const payload = {
@@ -122,7 +246,7 @@ const SalesOrderCreatePage = () => {
                 status: form.status,
                 products: form.orderItems.map((item) => ({
                     productId: item.productId,
-                    productCode: item.productCode,
+                    productCode: '',
                     productName: item.productName,
                     height: item.height.toString(),
                     width: item.width.toString(),
@@ -134,11 +258,10 @@ const SalesOrderCreatePage = () => {
             };
 
             const res = await createOrderDetail(payload);
-
             alert('Tạo đơn hàng thành công!');
             router.push(`/sales-order/${res.id}`);
         } catch (err: any) {
-            console.error('Lỗi tạo đơn hàng:', err.response?.data || err.message);
+            console.error('Lỗi tạo đơn hàng:', err);
             alert('Tạo đơn hàng thất bại! ' + (err.response?.data?.title || err.message));
         }
     };
@@ -147,10 +270,6 @@ const SalesOrderCreatePage = () => {
     const totalAmount = form.orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
     const discountAmount = (form.discount / 100) * totalAmount;
     const finalAmount = totalAmount - discountAmount;
-    const [selectedProduct, setSelectedProduct] = useState<ProductOption | null>(null);
-    const [glassStructures, setGlassStructures] = useState<GlassStructure[]>([]);
-    const [isCustomerLocked, setIsCustomerLocked] = useState(false);
-    type OrderItemWithFlag = OrderItem & { isFromDatabase?: boolean };
 
     return (
         <div className="max-w-6xl mx-auto p-6">
@@ -159,59 +278,28 @@ const SalesOrderCreatePage = () => {
             <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
                     <label className="block mb-1 font-medium">Tên khách hàng</label>
-                    <input
-                        disabled={isCustomerLocked}
-                        style={{ height: '35px' }}
-                        className="input input-bordered w-full"
-                        value={form.customer}
-                        onChange={(e) => setForm((prev) => ({ ...prev, customer: e.target.value }))}
-                    />
+                    <input disabled={isCustomerLocked} className="input input-bordered w-full" value={form.customer} onChange={(e) => handleCustomerNameChange(e.target.value)} />
+                    {isCustomerNameDuplicate && <p className="text-red-500 text-sm mt-1">Tên khách hàng đã tồn tại. Vui lòng nhập tên khác.</p>}
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Địa chỉ</label>
-                    <input
-                        disabled={isCustomerLocked}
-                        style={{ height: '35px' }}
-                        className="input input-bordered w-full"
-                        value={form.address}
-                        onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
-                    />
+                    <input disabled={isCustomerLocked} className="input input-bordered w-full" value={form.address} onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))} />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Số điện thoại</label>
-                    <input
-                        disabled={isCustomerLocked}
-                        style={{ height: '35px' }}
-                        className="input input-bordered w-full"
-                        value={form.phone}
-                        onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
-                    />
+                    <input disabled={isCustomerLocked} className="input input-bordered w-full" value={form.phone} onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))} />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Ngày đặt</label>
-                    <input
-                        disabled={isCustomerLocked}
-                        style={{ height: '35px' }}
-                        className="input input-bordered w-full bg-gray-100"
-                        type="text"
-                        value={new Date(form.orderDate).toLocaleDateString('en-US')}
-                        readOnly
-                    />
+                    <input disabled className="input input-bordered w-full bg-gray-100" type="text" value={new Date(form.orderDate).toLocaleDateString('en-US')} readOnly />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Mã đơn hàng</label>
-                    <input
-                        disabled={isCustomerLocked}
-                        style={{ height: '35px' }}
-                        className="input input-bordered w-full"
-                        value={form.orderCode}
-                        onChange={(e) => setForm((prev) => ({ ...prev, orderCode: e.target.value }))}
-                    />
+                    <input disabled className="input input-bordered w-full" value={form.orderCode} />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Chiết khấu (%)</label>
                     <input
-                        style={{ height: '35px' }}
                         type="number"
                         className="input input-bordered w-full"
                         min={0}
@@ -221,29 +309,36 @@ const SalesOrderCreatePage = () => {
                     />
                 </div>
                 <div>
+                    <label className="block mb-1 font-medium">Trạng thái</label>
+                    <select className="select select-bordered w-full" value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}>
+                        <option value="Chưa thực hiện">Chưa thực hiện</option>
+                        <option value="Đang thực hiện">Đang thực hiện</option>
+                        <option value="Hoàn thành">Hoàn thành</option>
+                        <option value="Đã huỷ">Đã huỷ</option>
+                    </select>
+                </div>
+                <div>
+                    <label className="block mb-1 font-medium">Khách hàng có sẵn</label>
                     <div className="flex items-center gap-2">
-                        <div className="w-[470px]">
-                            <AsyncSelect
-                                cacheOptions
-                                defaultOptions
-                                loadOptions={loadCustomerOptions}
-                                placeholder="Thêm theo mã hoặc tên khách hàng"
-                                onChange={(option: CustomerOption | null) => {
-                                    if (!option) return;
-                                    const c = option.customer;
-
-                                    setForm((prev) => ({
-                                        ...prev,
-                                        customer: c.customerName,
-                                        address: c.address,
-                                        phone: c.phone,
-                                        discount: c.discount * 100,
-                                    }));
-
-                                    setIsCustomerLocked(true);
-                                }}
-                            />
-                        </div>
+                        <AsyncSelect
+                            cacheOptions
+                            defaultOptions
+                            loadOptions={loadCustomerOptions}
+                            placeholder="Tìm theo mã hoặc tên khách hàng"
+                            onChange={(option: CustomerOption | null) => {
+                                if (!option) return;
+                                const c = option.customer;
+                                setForm((prev) => ({
+                                    ...prev,
+                                    customer: c.customerName,
+                                    address: c.address,
+                                    phone: c.phone,
+                                    discount: c.discount * 100,
+                                }));
+                                setIsCustomerLocked(true);
+                            }}
+                            styles={{ container: (base) => ({ ...base, width: 300 }) }}
+                        />
                         {isCustomerLocked && (
                             <button
                                 onClick={() => {
@@ -259,30 +354,19 @@ const SalesOrderCreatePage = () => {
                                 className="btn btn-sm btn-outline text-red-500"
                                 type="button"
                             >
-                                Đặt lại
+                                ✕ Xoá KH
                             </button>
                         )}
                     </div>
                 </div>
-                <div>
-                    <label className="block mb-1 font-medium">Trạng thái</label>
-                    <select style={{ height: '35px' }} className="select select-bordered w-full" value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}>
-                        <option value="Chưa thực hiện">Chưa thực hiện</option>
-                        <option value="Đang thực hiện">Đang thực hiện</option>
-                        <option value="Hoàn thành">Hoàn thành</option>
-                        <option value="Đã huỷ">Đã huỷ</option>
-                    </select>
-                </div>
             </div>
 
             <h3 className="text-xl font-semibold mb-3">Chi tiết đơn hàng</h3>
-
             <div className="overflow-x-auto mb-4">
                 <table className="table table-zebra min-w-[1000px]">
                     <thead>
                         <tr>
                             <th>STT</th>
-                            <th>Mã SP</th>
                             <th>Tên SP</th>
                             <th>Rộng</th>
                             <th>Cao</th>
@@ -300,39 +384,8 @@ const SalesOrderCreatePage = () => {
                             const area = (item.width * item.height) / 1_000_000;
                             const total = item.quantity * item.unitPrice;
                             return (
-                                <tr key={index}>
+                                <tr key={item.id}>
                                     <td>{index + 1}</td>
-                                    <td>
-                                        <div className="flex items-center gap-1">
-                                            <input
-                                                disabled={item.isFromDatabase}
-                                                type="text"
-                                                value={item.productCode}
-                                                onChange={async (e) => {
-                                                    const value = e.target.value;
-                                                    handleItemChange(index, 'productCode', value);
-                                                }}
-                                                className="input input-sm w-32"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    const generated = `VT${Date.now().toString().slice(-5)}`;
-                                                    handleItemChange(index, 'productCode', generated);
-                                                }}
-                                                className="btn btn-ghost btn-xs p-1"
-                                                title="Tạo mã tự động"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4">
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        d="M16.023 9.348h4.992M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </td>
                                     <td>
                                         <input
                                             disabled={item.isFromDatabase}
@@ -343,8 +396,8 @@ const SalesOrderCreatePage = () => {
                                     </td>
                                     <td>
                                         <input
-                                            disabled={item.isFromDatabase}
                                             type="number"
+                                            disabled={item.isFromDatabase}
                                             value={item.width}
                                             onChange={(e) => handleItemChange(index, 'width', +e.target.value)}
                                             className="input input-sm"
@@ -352,8 +405,8 @@ const SalesOrderCreatePage = () => {
                                     </td>
                                     <td>
                                         <input
-                                            disabled={item.isFromDatabase}
                                             type="number"
+                                            disabled={item.isFromDatabase}
                                             value={item.height}
                                             onChange={(e) => handleItemChange(index, 'height', +e.target.value)}
                                             className="input input-sm"
@@ -361,8 +414,8 @@ const SalesOrderCreatePage = () => {
                                     </td>
                                     <td>
                                         <input
-                                            disabled={item.isFromDatabase}
                                             type="number"
+                                            disabled={item.isFromDatabase}
                                             value={item.thickness}
                                             onChange={(e) => handleItemChange(index, 'thickness', +e.target.value)}
                                             className="input input-sm"
@@ -373,8 +426,8 @@ const SalesOrderCreatePage = () => {
                                     </td>
                                     <td>
                                         <input
-                                            disabled={item.isFromDatabase}
                                             type="number"
+                                            disabled={item.isFromDatabase}
                                             value={item.unitPrice}
                                             onChange={(e) => handleItemChange(index, 'unitPrice', +e.target.value)}
                                             className="input input-sm"
@@ -383,21 +436,19 @@ const SalesOrderCreatePage = () => {
                                     <td>{area.toFixed(2)}</td>
                                     <td>{total.toLocaleString()} đ</td>
                                     <td>
-                                        <td>
-                                            <select
-                                                disabled={item.isFromDatabase}
-                                                className="select select-sm"
-                                                value={item.glassStructureId || ''}
-                                                onChange={(e) => handleItemChange(index, 'glassStructureId', +e.target.value)}
-                                            >
-                                                <option value="">-- Chọn --</option>
-                                                {glassStructures.map((gs) => (
-                                                    <option key={gs.id} value={gs.id}>
-                                                        {gs.productName}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </td>
+                                        <select
+                                            disabled={item.isFromDatabase}
+                                            className="select select-sm"
+                                            value={item.glassStructureId || ''}
+                                            onChange={(e) => handleItemChange(index, 'glassStructureId', +e.target.value)}
+                                        >
+                                            <option value="">-- Chọn --</option>
+                                            {glassStructures.map((gs) => (
+                                                <option key={gs.id} value={gs.id}>
+                                                    {gs.productName}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </td>
                                     <td>
                                         <button onClick={() => removeItem(index)} className="btn btn-sm btn-error">
@@ -427,11 +478,9 @@ const SalesOrderCreatePage = () => {
                         onChange={(option: ProductOption | null) => {
                             if (!option) return;
                             const p = option.product;
-
-                            const newItem: OrderItemWithFlag = {
+                            const newItem: OrderItem = {
                                 id: Date.now(),
                                 productId: p.id,
-                                productCode: p.productCode,
                                 productName: p.productName,
                                 height: Number(p.height),
                                 width: Number(p.width),
@@ -441,20 +490,129 @@ const SalesOrderCreatePage = () => {
                                 glassStructureId: p.glassStructureId,
                                 isFromDatabase: true,
                             };
-
-                            setForm((prev) => ({
-                                ...prev,
-                                orderItems: [...prev.orderItems, newItem],
-                            }));
-
+                            setForm((prev) => ({ ...prev, orderItems: [...prev.orderItems, newItem] }));
                             setSelectedProduct(null);
                         }}
                     />
                 </div>
                 <div>
-                    <button onClick={addItem} className="btn btn-outline btn-sm mb-6">
+                    <button onClick={() => setShowAddProductForm(true)} className="btn btn-outline btn-sm mb-6">
                         + Thêm sản phẩm
                     </button>
+                    {showAddProductForm && (
+                        <div className="border rounded-lg p-4 mb-6 bg-gray-50">
+                            <h4 className="text-lg font-semibold mb-2">Thêm sản phẩm mới</h4>
+                            <p className="text-sm text-gray-500 italic mb-2">
+                                ⚠️ Tên sản phẩm phải theo định dạng: <strong>Kính [loại] phút, KT: [rộng]*[cao]*[dày] mm, [mô tả thêm]</strong>
+                                <br />
+                                <span>
+                                    Ví dụ: <code>Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng</code>
+                                </span>
+                            </p>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="col-span-full">
+                                    <label className="block mb-1 font-medium">Tên sản phẩm</label>
+                                    <input
+                                        className="input input-sm input-bordered w-full"
+                                        placeholder="VD: Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng"
+                                        value={newProductForm.productName}
+                                        onChange={(e) => handleProductNameChange(e.target.value)}
+                                    />
+                                    {isProductNameDuplicate && <p className="text-red-500 text-sm mt-1">Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block mb-1 font-medium">Rộng (mm)</label>
+                                    <input
+                                        className="input input-sm input-bordered w-full"
+                                        type="number"
+                                        value={newProductForm.width}
+                                        onChange={(e) => setNewProductForm((prev) => ({ ...prev, width: +e.target.value }))}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block mb-1 font-medium">Cao (mm)</label>
+                                    <input
+                                        className="input input-sm input-bordered w-full"
+                                        type="number"
+                                        value={newProductForm.height}
+                                        onChange={(e) => setNewProductForm((prev) => ({ ...prev, height: +e.target.value }))}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block mb-1 font-medium">Dày (mm)</label>
+                                    <input
+                                        className="input input-sm input-bordered w-full"
+                                        type="number"
+                                        value={newProductForm.thickness}
+                                        onChange={(e) => setNewProductForm((prev) => ({ ...prev, thickness: +e.target.value }))}
+                                    />
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label className="block mb-1 font-medium">Cấu trúc kính</label>
+                                    <AsyncSelect
+                                        cacheOptions
+                                        defaultOptions
+                                        placeholder="Tìm cấu trúc kính..."
+                                        value={
+                                            glassStructures
+                                                .filter((gs) => gs.id === newProductForm.glassStructureId)
+                                                .map((gs) => ({
+                                                    label: gs.productName,
+                                                    value: gs.id,
+                                                }))[0] || null
+                                        }
+                                        loadOptions={(inputValue, callback) => {
+                                            const filtered = glassStructures
+                                                .filter((gs) => gs.productName.toLowerCase().includes(inputValue.toLowerCase()))
+                                                .map((gs) => ({
+                                                    label: gs.productName,
+                                                    value: gs.id,
+                                                }));
+                                            callback(filtered);
+                                        }}
+                                        onChange={(option) => {
+                                            setNewProductForm((prev) => ({
+                                                ...prev,
+                                                glassStructureId: option ? option.value : undefined,
+                                            }));
+                                        }}
+                                        styles={{ container: (base) => ({ ...base, width: '100%' }) }}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block mb-1 font-medium">Diện tích (m²)</label>
+                                    <div className="input input-sm bg-gray-100 flex items-center">{((newProductForm.width * newProductForm.height) / 1_000_000).toFixed(2)}</div>
+                                </div>
+
+                                <div>
+                                    <label className="block mb-1 font-medium">Đơn giá (₫)</label>
+                                    <div className="input input-sm bg-gray-100 flex items-center">
+                                        {(() => {
+                                            const area = (newProductForm.width * newProductForm.height) / 1_000_000;
+                                            const structure = glassStructures.find((gs) => gs.id === newProductForm.glassStructureId);
+                                            const price = (structure?.unitPrice || 0) * area;
+                                            return price.toFixed(0);
+                                        })()}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 flex gap-4">
+                                <button className="btn btn-sm btn-primary" onClick={handleSaveProduct}>
+                                    Lưu sản phẩm
+                                </button>
+                                <button className="btn btn-sm btn-ghost text-red-500" onClick={() => setShowAddProductForm(false)}>
+                                    ✕ Huỷ
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -474,7 +632,7 @@ const SalesOrderCreatePage = () => {
             </div>
 
             <div className="flex items-center gap-4 mt-4">
-                <button onClick={handleBack} className="btn btn-status-secondary">
+                <button onClick={() => router.back()} className="btn btn-status-secondary">
                     ◀ Quay lại
                 </button>
                 <button onClick={handleSave} className="btn btn-primary">

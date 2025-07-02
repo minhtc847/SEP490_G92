@@ -68,6 +68,8 @@ const SalesOrderSummary = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [loading, setLoading] = useState(true);
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -88,10 +90,12 @@ const SalesOrderSummary = () => {
     const filteredOrders = orders
         .filter((order) => order.customerName.toLowerCase().includes(searchTerm.toLowerCase()))
         .filter((order) => {
-            if (!selectedDate) return true;
             const orderDate = new Date(order.orderDate);
-            const selected = new Date(selectedDate);
-            return orderDate.getFullYear() === selected.getFullYear() && orderDate.getMonth() === selected.getMonth() && orderDate.getDate() === selected.getDate();
+
+            if (fromDate && new Date(fromDate) > orderDate) return false;
+            if (toDate && new Date(toDate) < orderDate) return false;
+
+            return true;
         })
         .filter((order) => (statusFilter ? order.status === statusFilter : true))
         .sort((a, b) => {
@@ -135,15 +139,32 @@ const SalesOrderSummary = () => {
                 />
 
                 <div className="flex flex-wrap items-center gap-4">
-                    <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => {
-                            setSelectedDate(e.target.value);
-                            setCurrentPage(1);
-                        }}
-                        className="input input-bordered py-2 px-4 rounded-lg shadow-sm"
-                    />
+                    <div className="flex gap-4">
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium whitespace-nowrap">Từ:</label>
+                            <input
+                                type="date"
+                                value={fromDate}
+                                onChange={(e) => {
+                                    setFromDate(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                                className="input input-bordered py-2 px-4 rounded-lg shadow-sm"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium whitespace-nowrap">Đến:</label>
+                            <input
+                                type="date"
+                                value={toDate}
+                                onChange={(e) => {
+                                    setToDate(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                                className="input input-bordered py-2 px-4 rounded-lg shadow-sm"
+                            />
+                        </div>
+                    </div>
 
                     <select
                         onChange={(e) => {
@@ -201,7 +222,7 @@ const SalesOrderSummary = () => {
                 <table className="table w-full">
                     <thead>
                         <tr>
-                            <th className="w-[500px]">Tên Khách Hàng</th>
+                            <th>Tên Khách Hàng</th>
                             <th>Ngày Đặt</th>
                             <th>Mã Đơn Hàng</th>
                             <th>Thành Tiền</th>

@@ -16,6 +16,26 @@ export interface ProductDetail {
 export interface GlassStructureOption {
     id: number;
     productName: string;
+    unitPrice: number;
+}
+
+export async function createProduct(data: any) {
+  const res = await fetch('/api/product', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || 'Tạo sản phẩm thất bại');
+  }
+}
+
+export async function searchGlassStructures(inputValue: string) {
+  const res = await fetch(`/api/product/search?query=${encodeURIComponent(inputValue)}`);
+  const data = await res.json();
+  return data;
 }
 
 export const getProductById = async (id: string): Promise<ProductDetail> => {
@@ -29,13 +49,4 @@ export const updateProduct = async (id: number, data: ProductDetail) => {
 
 export const deleteProduct = async (id: string) => {
     await axios.delete(`/api/Product/${id}`);
-};
-
-export const createProduct = async (data: ProductDetail) => {
-    await axios.post(`/api/Product`, data);
-};
-
-export const searchGlassStructures = async (inputValue: string): Promise<GlassStructureOption[]> => {
-    const res = await axios.get(`/api/glass-structures/search?query=${inputValue}`);
-    return res.data;
 };

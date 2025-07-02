@@ -75,6 +75,7 @@ export interface GlassStructure {
     edgeType?: string;
     adhesiveType?: string;
     composition?: string;
+    unitPrice: number;
 }
 
 export interface ProductSuggestion {
@@ -126,6 +127,52 @@ export interface ProductSearchResult {
     glassStructureId?: number;
 }
 
+export interface CreateProductDto {
+    productName: string;
+    height: string;
+    width: string;
+    thickness: number;
+    unitPrice: number;
+    glassStructureId: number;
+}
+
+export interface ProductCreatedResponse {
+    id: number;
+    productName: string;
+    height: string;
+    width: string;
+    thickness: number;
+    unitPrice: number;
+    glassStructureId: number;
+}
+
+export const checkProductNameExists = async (name: string): Promise<boolean> => {
+    const res = await axios.get('/api/orders/check-product-name', {
+        params: { name },
+    });
+    return res.data.exists;
+};
+
+export const getGlassStructures = async (): Promise<GlassStructure[]> => {
+    const res = await axios.get('/api/orders/glass-structures');
+    return res.data;
+};
+
+export const getAllCustomerNames = async (): Promise<string[]> => {
+    const res = await axios.get('/api/orders/all-customer-names');
+    return res.data;
+};
+
+export const getAllProductNames = async (): Promise<string[]> => {
+    const res = await axios.get('/api/orders/all-product-names');
+    return res.data;
+};
+
+export const createProduct = async (payload: CreateProductDto): Promise<ProductCreatedResponse> => {
+    const res = await axios.post('/api/orders/product', payload);
+    return res.data;
+};
+
 export const searchCustomers = async (query: string): Promise<CustomerOption[]> => {
     const res = await axios.get(`/api/orders/search-customer?query=${query}`);
     return res.data.map((c: any) => ({
@@ -155,7 +202,7 @@ export const loadOptions = async (inputValue: string, selectedProductIds: number
     return result.map((p) => ({
         label: `${p.productCode} - ${p.productName}`,
         value: p.id,
-        isDisabled: selectedProductIds.includes(p.id), // 🚫 disable nếu đã chọn
+        isDisabled: selectedProductIds.includes(p.id),
         product: {
             id: p.id,
             productCode: p.productCode,
@@ -171,11 +218,6 @@ export const loadOptions = async (inputValue: string, selectedProductIds: number
 
 export const searchProducts = async (query: string): Promise<ProductSearchResult[]> => {
     const res = await axios.get(`/api/orders/search?query=${query}`);
-    return res.data;
-};
-
-export const getGlassStructures = async (): Promise<GlassStructure[]> => {
-    const res = await axios.get('/api/glass-structures');
     return res.data;
 };
 
