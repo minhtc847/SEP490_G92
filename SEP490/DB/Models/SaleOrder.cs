@@ -9,6 +9,7 @@ public class SaleOrder
     public decimal? OrderValue { get; set; }
     public string? Status { get; set; }
     public string? DeliveryStatus { get; set; }
+    public string? Note { get; set; }
     public Customer Customer { get; set; } = null!;
     //Added for OrderDetail
     public ICollection<OrderDetail> OrderDetails { get; set; }
