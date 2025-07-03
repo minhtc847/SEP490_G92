@@ -34,7 +34,7 @@ namespace SEP490.DB
         public DbSet<ProductionOrder> ProductionOrders { get; set; }
         public DbSet<ProductionOrderDetail> ProductionOrderDetails { get; set; }
         public DbSet<ProductionPlanDetail> ProductionPlanDetails { get; set; }
-        public DbSet<Department> Departments { get; set; }
+        
         public DbSet<Employee> Employees { get; set; }
         public DbSet<HistoryMessage> HistoryMessages { get; set; }
         public DbSet<ProductionOutput> ProductionOutputs { get; set; }

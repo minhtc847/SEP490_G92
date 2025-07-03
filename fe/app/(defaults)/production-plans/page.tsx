@@ -1,238 +1,248 @@
 'use client';
-import { DataTable, DataTableSortStatus } from 'mantine-datatable';
-import { useEffect, useState } from 'react';
-import sortBy from 'lodash/sortBy';
-import Swal from 'sweetalert2';
-import { useRouter } from 'next/navigation';
-import { getProductionPlansArray, ProductionPlan, updateProductionPlanStatus } from './service';
+import IconEdit from '@/components/icon/icon-edit';
+import IconEye from '@/components/icon/icon-eye';
+import IconPlus from '@/components/icon/icon-plus';
+import IconTrashLines from '@/components/icon/icon-trash-lines';
+import { sortBy } from 'lodash';
+import { DataTableSortStatus, DataTable } from 'mantine-datatable';
+import Link from 'next/link';
+import React, { useEffect, useState } from 'react';
 
-const PAGE_SIZES = [5, 10, 20, 50];
+const ProductionPlansPage = () => {
+    const [items, setItems] = useState([
+        {
+            id: 1,
+            orderCode: 'PP001',
+            customerName: 'Công ty TNHH ABC',
+            totalProducts: 150,
+            status: { tooltip: 'Đang sản xuất', color: 'warning' },
+        },
+        {
+            id: 2,
+            orderCode: 'PP002',
+            customerName: 'Công ty XYZ',
+            totalProducts: 200,
+            status: { tooltip: 'Hoàn thành', color: 'success' },
+        },
+        {
+            id: 3,
+            orderCode: 'PP003',
+            customerName: 'Công ty DEF',
+            totalProducts: 75,
+            status: { tooltip: 'Chờ xử lý', color: 'danger' },
+        },
+        {
+            id: 4,
+            orderCode: 'PP004',
+            customerName: 'Công ty GHI',
+            totalProducts: 300,
+            status: { tooltip: 'Đang sản xuất', color: 'warning' },
+        },
+        {
+            id: 5,
+            orderCode: 'PP005',
+            customerName: 'Công ty JKL',
+            totalProducts: 120,
+            status: { tooltip: 'Hoàn thành', color: 'success' },
+        },
+        {
+            id: 6,
+            orderCode: 'PP006',
+            customerName: 'Công ty MNO',
+            totalProducts: 180,
+            status: { tooltip: 'Chờ xử lý', color: 'danger' },
+        },
+        {
+            id: 7,
+            orderCode: 'PP007',
+            customerName: 'Công ty PQR',
+            totalProducts: 250,
+            status: { tooltip: 'Đang sản xuất', color: 'warning' },
+        },
+        {
+            id: 8,
+            orderCode: 'PP008',
+            customerName: 'Công ty STU',
+            totalProducts: 90,
+            status: { tooltip: 'Hoàn thành', color: 'success' },
+        },
+        {
+            id: 9,
+            orderCode: 'PP009',
+            customerName: 'Công ty VWX',
+            totalProducts: 160,
+            status: { tooltip: 'Chờ xử lý', color: 'danger' },
+        },
+        {
+            id: 10,
+            orderCode: 'PP010',
+            customerName: 'Công ty YZ',
+            totalProducts: 220,
+            status: { tooltip: 'Đang sản xuất', color: 'warning' },
+        },
+    ]);
 
-const statusColor = (status: string) => {
-  switch (status) {
-    case 'Chờ phê duyệt':
-      return 'bg-gray-200 text-gray-800';
-    case 'Đang sản xuất':
-      return 'bg-blue-100 text-blue-800';
-    case 'Đã hoàn tất':
-      return 'bg-green-100 text-green-800';
-    case 'Đã hủy':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
+    const [page, setPage] = useState(1);
+    const PAGE_SIZES = [10, 20, 30, 50, 100];
+    const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
+    const [initialRecords, setInitialRecords] = useState(sortBy(items, 'orderCode'));
+    const [records, setRecords] = useState(initialRecords);
 
-const ListProductionOrders = () => {
-  const [productionDetails, setproductionDetails] = useState<ProductionPlan[]>([]);
-  const [popup, setPopup] = useState<{ open: boolean; action: string; record: any | null }>({
-    open: false,
-    action: '',
-    record: null,
-  });
-
-  const router = useRouter();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
-  const [sortStatus, setSortStatus] = useState<DataTableSortStatus>({
-    columnAccessor: 'id',
-    direction: 'asc',
-  });
-  const [initialRecords, setInitialRecords] = useState<ProductionPlan[]>([]);
-  const [recordsData, setRecordsData] = useState<ProductionPlan[]>([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const result = await getProductionPlansArray();
-        setproductionDetails(result);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    const sorted = sortBy(productionDetails, sortStatus.columnAccessor);
-    setInitialRecords(sortStatus.direction === 'desc' ? sorted.reverse() : sorted);
-  }, [productionDetails, sortStatus]);
-
-  useEffect(() => {
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize;
-    setRecordsData([...initialRecords.slice(from, to)]);
-  }, [page, pageSize, initialRecords]);
-
-  const handleView = (record: any) => {
-    router.push(`/production-plans/${record.id}`);
-  };
-
-  const handleApprove = (record: any) => {
-    setPopup({ open: true, action: 'approve', record });
-  };
-
-  const handleComplete = (record: any) => {
-    setPopup({ open: true, action: 'complete', record });
-  };
-
-  const handleCancel = async (record: any) => {
-    const confirmed = await Swal.fire({
-      icon: 'warning',
-      title: 'Bạn có chắc muốn hủy lệnh này?',
-      showCancelButton: true,
-      confirmButtonText: 'Hủy lệnh',
-      cancelButtonText: 'Không',
+    const [search, setSearch] = useState('');
+    const [sortStatus, setSortStatus] = useState<DataTableSortStatus>({
+        columnAccessor: 'orderCode',
+        direction: 'asc',
     });
 
-    if (confirmed.isConfirmed) {
-      try {
-        await updateProductionPlanStatus(record.id, 'Đã hủy');
-        const updated = await getProductionPlansArray();
-        setproductionDetails(updated);
+    useEffect(() => {
+        setPage(1);
+    }, [pageSize]);
 
-        Swal.fire('Đã hủy!', `Lệnh sản xuất ${record.id} đã chuyển sang trạng thái "Đã hủy".`, 'success');
-      } catch (err) {
-        Swal.fire('Lỗi', 'Không thể hủy lệnh. Vui lòng thử lại.', 'error');
-      }
-    }
-  };
+    useEffect(() => {
+        const from = (page - 1) * pageSize;
+        const to = from + pageSize;
+        setRecords([...initialRecords.slice(from, to)]);
+    }, [page, pageSize, initialRecords]);
 
-  const handlePopupYes = async () => {
-    if (!popup.record) return;
-
-    const newStatus =
-      popup.action === 'approve'
-        ? 'Đang sản xuất'
-        : popup.action === 'complete'
-        ? 'Đã hoàn tất'
-        : popup.record.status;
-
-    try {
-      await updateProductionPlanStatus(popup.record.id, newStatus);
-      const updated = await getProductionPlansArray();
-      setproductionDetails(updated);
-
-      Swal.fire({
-        title: 'Thành công!',
-        text:
-          popup.action === 'approve'
-            ? `Lệnh sản xuất ${popup.record.id} đã được phê duyệt!`
-            : `Lệnh sản xuất ${popup.record.id} đã hoàn tất!`,
-        icon: 'success',
-      });
-    } catch (error) {
-      Swal.fire('Lỗi', 'Không thể cập nhật trạng thái. Vui lòng thử lại.', 'error');
-    }
-
-    setPopup({ open: false, action: '', record: null });
-  };
-
-  const handlePopupNo = () => {
-    setPopup({ open: false, action: '', record: null });
-  };
-  const normalizeStatus = (status: string): string => {
-    return status
-      .toLowerCase()
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-  
-
-  return (
-    <div>
-      <div className="mb-5">
-        <h1 className="text-2xl font-bold">Danh sách kế hoạch sản xuất</h1>
-      </div>
-      <div className="panel mt-6">
-        <DataTable
-          highlightOnHover
-          className="table-hover whitespace-nowrap"
-          records={recordsData}
-          columns={[
-            { accessor: 'id', title: 'Mã LXS', sortable: true },
-            { accessor: 'planDate', title: 'Thời gian', sortable: true },
-            { accessor: 'orderCode', title: 'Mã ĐH', sortable: true },
-            { accessor: 'customerName', title: 'KHÁCH HÀNG', sortable: true },
-            { accessor: 'quantity', title: 'Tổng Số lượng', sortable: true },
-            {
-              accessor: 'status',
-              title: 'Trạng thái',
-              render: (record) => (
-                <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColor(record.status)}`}>
-                  {record.status}
-                </span>
-              ),
-              sortable: true,
-            },
-            {
-              accessor: 'actions',
-              title: 'ACTION',
-              render: (record: any) => {
-                const normalizedStatus = normalizeStatus(record.status); // CHUẨN HÓA TẠI ĐÂY
-            
+    useEffect(() => {
+        setInitialRecords(() => {
+            return items.filter((item) => {
                 return (
-                  <div className="flex gap-2">
-                    <button className="btn btn-outline-primary btn-xs" onClick={() => handleView(record)}>
-                      View
-                    </button>
-                    {normalizedStatus === 'Chờ Phê Duyệt' && (
-                      <button className="btn btn-success btn-xs" onClick={() => handleApprove(record)}>
-                        Phê duyệt
-                      </button>
-                    )}
-                    {normalizedStatus === 'Đang Sản Xuất' && (
-                      <button className="btn btn-primary btn-xs" onClick={() => handleComplete(record)}>
-                        Hoàn tất
-                      </button>
-                    )}
-                    {normalizedStatus !== 'Đã Hủy' && (
-                      <button className="btn btn-danger btn-xs" onClick={() => handleCancel(record)}>
-                        Hủy
-                      </button>
-                    )}
-                  </div>
+                    item.orderCode.toLowerCase().includes(search.toLowerCase()) ||
+                    item.customerName.toLowerCase().includes(search.toLowerCase()) ||
+                    item.totalProducts.toString().includes(search.toLowerCase()) ||
+                    item.status.tooltip.toLowerCase().includes(search.toLowerCase())
                 );
-              },
-            }
-            
-          ]}
-          totalRecords={initialRecords.length}
-          recordsPerPage={pageSize}
-          page={page}
-          onPageChange={setPage}
-          recordsPerPageOptions={PAGE_SIZES}
-          onRecordsPerPageChange={setPageSize}
-          sortStatus={sortStatus}
-          onSortStatusChange={setSortStatus}
-          minHeight={200}
-          paginationText={({ from, to, totalRecords }) => `Hiển thị từ ${from} đến ${to} / ${totalRecords} dòng`}
-        />
-      </div>
+            });
+        });
+    }, [search]);
 
-      {popup.open && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
-          <div className="bg-white rounded shadow-lg p-6 min-w-[300px]">
-            <div className="mb-4 text-base font-semibold">
-              {popup.action === 'approve'
-                ? 'Bạn có chắc muốn phê duyệt lệnh sản xuất này?'
-                : 'Bạn có chắc muốn hoàn tất lệnh sản xuất này?'}
+    useEffect(() => {
+        const data2 = sortBy(initialRecords, sortStatus.columnAccessor);
+        setRecords(sortStatus.direction === 'desc' ? data2.reverse() : data2);
+        setPage(1);
+    }, [sortStatus]);
+
+    const deleteRow = (id: any = null) => {
+        if (window.confirm('Bạn có chắc chắn muốn xóa kế hoạch sản xuất này?')) {
+            if (id) {
+                setRecords(items.filter((item) => item.id !== id));
+                setInitialRecords(items.filter((item) => item.id !== id));
+                setItems(items.filter((item) => item.id !== id));
+                setSearch('');
+            }
+        }
+    };
+
+    return (
+        <div className="panel border-white-light px-0 dark:border-[#1b2e4b]">
+            <div className="production-plans-table">
+                <div className="mb-4.5 flex flex-col gap-5 px-5 md:flex-row md:items-center">
+                    <div className="flex items-center gap-2">
+                        <Link href="/production-plans/create" className="btn btn-primary gap-2">
+                            <IconPlus />
+                            Thêm mới
+                        </Link>
+                    </div>
+                    <div className="ltr:ml-auto rtl:mr-auto">
+                        <input 
+                            type="text" 
+                            className="form-input w-auto" 
+                            placeholder="Tìm kiếm..." 
+                            value={search} 
+                            onChange={(e) => setSearch(e.target.value)} 
+                        />
+                    </div>
+                </div>
+
+                <div className="datatables pagination-padding">
+                    <DataTable
+                        className="table-hover whitespace-nowrap"
+                        records={records}
+                        columns={[
+                            {
+                                accessor: 'index',
+                                title: '#',
+                                sortable: false,
+                                width: 70,
+                                render: (_, index) => <span>{index + 1}</span>,
+                            },
+                            {
+                                accessor: 'orderCode',
+                                title: 'Mã đơn hàng',
+                                sortable: true,
+                                render: ({ orderCode }) => (
+                                    <Link href="/production-plans/preview">
+                                        <div className="font-semibold text-primary underline hover:no-underline">{orderCode}</div>
+                                    </Link>
+                                ),
+                            },
+                            {
+                                accessor: 'customerName',
+                                title: 'Tên khách hàng',
+                                sortable: true,
+                            },
+                            {
+                                accessor: 'totalProducts',
+                                title: 'Tổng số SP',
+                                sortable: true,
+                                textAlignment: 'center',
+                                render: ({ totalProducts }) => (
+                                    <div className="text-center font-semibold">{totalProducts}</div>
+                                ),
+                            },
+                            {
+                                accessor: 'status',
+                                title: 'Trạng thái',
+                                sortable: true,
+                                render: ({ status }) => (
+                                    <span className={`badge badge-outline-${status.color}`}>
+                                        {status.tooltip}
+                                    </span>
+                                ),
+                            },
+                            {
+                                accessor: 'action',
+                                title: 'Thao tác',
+                                sortable: false,
+                                textAlignment: 'center',
+                                width: 150,
+                                render: ({ id }) => (
+                                    <div className="mx-auto flex w-max items-center gap-4">
+                                        <Link href="/production-plans/edit" className="flex hover:text-info">
+                                            <IconEdit className="h-4.5 w-4.5" />
+                                        </Link>
+                                        <Link href="/production-plans/preview" className="flex hover:text-primary">
+                                            <IconEye />
+                                        </Link>
+                                        <button 
+                                            type="button" 
+                                            className="flex hover:text-danger" 
+                                            onClick={() => deleteRow(id)}
+                                        >
+                                            <IconTrashLines />
+                                        </button>
+                                    </div>
+                                ),
+                            },
+                        ]}
+                        highlightOnHover
+                        totalRecords={initialRecords.length}
+                        recordsPerPage={pageSize}
+                        page={page}
+                        onPageChange={(p) => setPage(p)}
+                        recordsPerPageOptions={PAGE_SIZES}
+                        onRecordsPerPageChange={setPageSize}
+                        sortStatus={sortStatus}
+                        onSortStatusChange={setSortStatus}
+                        paginationText={({ from, to, totalRecords }) => 
+                            `Hiển thị ${from} đến ${to} trong tổng số ${totalRecords} bản ghi`
+                        }
+                    />
+                </div>
             </div>
-            <div className="flex justify-end gap-2">
-              <button className="btn btn-primary btn-sm" onClick={handlePopupYes}>
-                Yes
-              </button>
-              <button className="btn btn-outline btn-sm" onClick={handlePopupNo}>
-                No
-              </button>
-            </div>
-          </div>
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
-export default ListProductionOrders;
+export default ProductionPlansPage;
