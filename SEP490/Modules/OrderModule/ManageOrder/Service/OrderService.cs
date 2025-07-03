@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.DB.Models;
 using SEP490.Modules.OrderModule.ManageOrder.DTO;
@@ -6,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace SEP490.Modules.OrderModule.ManageOrder.Services
 {
-    public class OrderService : IOrderService
+    public class OrderService : BaseService, IOrderService
     {
         private readonly SEP490DbContext _context;
 

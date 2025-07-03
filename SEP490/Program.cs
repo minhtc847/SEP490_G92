@@ -17,11 +17,7 @@ builder.Services.AddDbContext<SEP490DbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection"),
         mysqlVersion).UseSnakeCaseNamingConvention());
 // Add services to the container.
-builder.Services.AddScoped<IOrderService, SEP490.Modules.OrderModule.ManageOrder.Services.OrderService>();
-builder.Services.AddScoped<ICustomerService, SEP490.Modules.CustomerModule.ManageCustomer.Service.CustomerService>();
-builder.Services.AddScoped<IGlassStructureService, SEP490.Modules.GlassStructureModule.ManageGlassStructure.Service.GlassStructureService>();
-builder.Services.AddScoped<IProductService, SEP490.Modules.ProductModule.ManageProduct.Service.ProductService>();
-
+//builder.Services.AddScoped<IOrderService, SEP490.Modules.OrderModule.ManageOrder.Services.OrderService>();
 
 builder.Services.AddControllers();
 
@@ -65,7 +61,6 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI();
 }

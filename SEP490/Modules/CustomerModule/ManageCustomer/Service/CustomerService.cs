@@ -1,11 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.DB.Models;
 using SEP490.Modules.CustomerModule.ManageCustomer.DTO;
 
 namespace SEP490.Modules.CustomerModule.ManageCustomer.Service
 {
-    public class CustomerService : ICustomerService
+    public class CustomerService : BaseService, ICustomerService
     {
         private readonly SEP490DbContext _context;
 
