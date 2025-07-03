@@ -37,6 +37,21 @@ class AuthService {
         },
     });
 
+    constructor() {
+        // Initialize token from localStorage on service creation
+        this.initializeToken();
+    }
+
+    // Initialize token from localStorage
+    private initializeToken() {
+        if (typeof window !== 'undefined') {
+            const token = localStorage.getItem('token');
+            if (token) {
+                this.setAuthToken(token);
+            }
+        }
+    }
+
     // Add token to requests
     setAuthToken(token: string) {
         if (token) {

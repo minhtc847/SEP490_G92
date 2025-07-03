@@ -1,9 +1,23 @@
 import { useSelector } from 'react-redux';
+import { useEffect } from 'react';
 import { IRootState } from '@/store';
+import { restoreAuth } from '@/store/authSlice';
+import { useDispatch } from 'react-redux';
 
 export const usePermissions = () => {
+    const dispatch = useDispatch();
     const roleId = useSelector((state: IRootState) => state.auth.user?.roleId);
     const roleName = useSelector((state: IRootState) => state.auth.user?.roleName);
+    const isAuthenticated = useSelector((state: IRootState) => state.auth.isAuthenticated);
+    const token = useSelector((state: IRootState) => state.auth.token);
+
+    // Ensure authentication state is restored
+    useEffect(() => {
+        if (token && !roleId) {
+            // Token exists but user data is missing, try to restore
+            dispatch(restoreAuth());
+        }
+    }, [token, roleId, dispatch]);
 
     const hasPermission = (permission: string): boolean => {
         if (!roleId) return false;
@@ -47,6 +61,7 @@ export const usePermissions = () => {
     return {
         roleId,
         roleName,
+        isAuthenticated,
         hasPermission,
         canView,
         canCreate,

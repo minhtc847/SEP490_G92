@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { IRootState } from '@/store';
@@ -20,10 +20,27 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
     const router = useRouter();
     const isAuthenticated = useSelector((state: IRootState) => state.auth.isAuthenticated);
-    const { hasPermission, roleId } = usePermissions();
+    const token = useSelector((state: IRootState) => state.auth.token);
+    const { hasPermission, roleId, isAuthenticated: authFromHook } = usePermissions();
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (!isAuthenticated) {
+        // Check if we have a token but user data is not loaded yet
+        if (token && !isAuthenticated) {
+            // Wait a bit for the auth restoration to complete
+            const timer = setTimeout(() => {
+                setIsLoading(false);
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+        
+        setIsLoading(false);
+    }, [token, isAuthenticated]);
+
+    useEffect(() => {
+        if (isLoading) return;
+
+        if (!isAuthenticated && !token) {
             router.push(fallbackPath);
             return;
         }
@@ -39,7 +56,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
             router.push('/unauthorized');
             return;
         }
-    }, [isAuthenticated, requiredPermission, requiredRole, roleId, router, fallbackPath, hasPermission]);
+    }, [isAuthenticated, requiredPermission, requiredRole, roleId, router, fallbackPath, hasPermission, token, isLoading]);
+
+    // Show loading while checking authentication
+    if (isLoading || (token && !isAuthenticated)) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+            </div>
+        );
+    }
 
     // Show loading or redirect if not authenticated
     if (!isAuthenticated) {

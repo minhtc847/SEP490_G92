@@ -102,4 +102,4 @@ export const addMaterialsForProduct = async (glassProductId: number, productionO
         console.error('Error adding materials for product:', error);
         throw new Error('Không thể thêm materials cho sản phẩm');
     }
-};
+}; 

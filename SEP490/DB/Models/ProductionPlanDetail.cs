@@ -8,6 +8,8 @@
         public int Quantity { get; set; }
         public int Producing { get; set; }
         public int Done { get; set; }
+        public int DaCatKinh { get; set; }
+        public int DaTronKeo { get; set; }
         public int DaGiao { get; set; }
         public Product? Product { get; set; }
         public ProductionPlan? ProductionPlan { get; set; }

@@ -1,227 +1,339 @@
 'use client';
+import IconEdit from '@/components/icon/icon-edit';
+import IconPlus from '@/components/icon/icon-plus';
+import IconPrinter from '@/components/icon/icon-printer';
+import IconSend from '@/components/icon/icon-send';
+import Link from 'next/link';
+import React from 'react';
 
-import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { 
-  getProductionPlanDetailsArray, 
-  ProductionPlanDetail, 
-  getProductionOrdersByPlanId, 
-  ProductionOrdersByPlanDto, 
-  createProductionOrderByPlanId, 
-  ProductionOrder 
-} from './service';
-
-const ProductionOrderDetailPage = () => {
-  const { id } = useParams();
-  const router = useRouter();
-
-  const [productionItems, setProductionItems] = useState<ProductionPlanDetail[]>([]);
-  const [productionOrders, setProductionOrders] = useState<ProductionOrdersByPlanDto[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Fetch data from API
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!id) return;
-      
-      try {
-        const [planDetails, ordersData] = await Promise.all([
-          getProductionPlanDetailsArray(id as string),
-          getProductionOrdersByPlanId(parseInt(id as string))
-        ]);
-        
-        setProductionItems(planDetails);
-        setProductionOrders(Array.isArray(ordersData) ? ordersData : []);
-      } catch (error) {
-        console.error('Lỗi khi tải dữ liệu:', error);
-      } finally {
-        setLoading(false);
-      }
+const ProductionPlanDetailPage = () => {
+    const exportTable = () => {
+        window.print();
     };
 
-    fetchData();
-  }, [id]);
-
-  const handleEdit = () => {
-    router.push(`/production-plans/edit/${id}`);
-  };
-
-  const handleBack = () => {
-    router.push('/production-plans');
-  };
-
-  const handleViewDetail = (orderId: number) => {
-    router.push(`/production-orders/${orderId}`);
-  };
-
-  const handleCreateProductionOrder = async () => {
-    if (!id) return;
-    
-    try {
-      setLoading(true);
-      const newOrder = await createProductionOrderByPlanId(Number(id));
-      
-      setProductionOrders(prev => [
+    const items = [
         {
-          productionOrderId: newOrder.id,
-          productionOrderCode: newOrder.productionOrderCode,
-          orderDate: newOrder.orderDate,
-          description: newOrder.description,
-          productionStatus: newOrder.productionStatus,
-          productionPlanId: newOrder.productionPlanId,
-          productCodes: [],
-          totalAmount: 0
-        } as ProductionOrdersByPlanDto,
-        ...prev
-      ]);
-    } catch (error) {
-      alert('Tạo lệnh sản xuất thất bại!');
-    } finally {
-      setLoading(false);
-    }
-  };
+            id: 1,
+            productName: 'Kính cường lực 8mm',
+            totalQuantity: 100,
+            inProduction: 30,
+            completed: 20,
+            daCatKinh: 80,
+            daDanKinh: 60,
+            daTronKeo: 40,
+            daDoKeo: 20,
+        },
+        {
+            id: 2,
+            productName: 'Kính cường lực 10mm',
+            totalQuantity: 150,
+            inProduction: 50,
+            completed: 80,
+            daCatKinh: 150,
+            daDanKinh: 120,
+            daTronKeo: 100,
+            daDoKeo: 80,
+        },
+        {
+            id: 3,
+            productName: 'Kính cường lực 12mm',
+            totalQuantity: 80,
+            inProduction: 25,
+            completed: 45,
+            daCatKinh: 80,
+            daDanKinh: 60,
+            daTronKeo: 40,
+            daDoKeo: 20,
+        },
+        {
+            id: 4,
+            productName: 'Kính cường lực 6mm',
+            totalQuantity: 200,
+            inProduction: 100,
+            completed: 150,
+            daCatKinh: 200,
+            daDanKinh: 180,
+            daTronKeo: 160,
+            daDoKeo: 150,
+        },
+    ];
 
-  const totals = productionItems.reduce(
-    (acc, item) => ({
-      quantity: acc.quantity + Number(item.quantity),
-      inProgress: acc.inProgress + Number(item.inProgressQuantity),
-      completed: acc.completed + Number(item.completed)
-    }),
-    { quantity: 0, inProgress: 0, completed: 0 }
-  );
+    const columns = [
+        {
+            key: 'id',
+            label: 'Số thứ tự',
+        },
+        {
+            key: 'productName',
+            label: 'Tên sản phẩm',
+        },
+        {
+            key: 'totalQuantity',
+            label: 'Tổng số lượng',
+            class: 'ltr:text-right rtl:text-left',
+        },
+        {
+            key: 'inProduction',
+            label: 'Đang sản xuất',
+            class: 'ltr:text-right rtl:text-left',
+        },
+        {
+            key: 'completed',
+            label: 'Đã hoàn thành',
+            class: 'ltr:text-right rtl:text-left',
+        },
+        {
+            key: 'daCatKinh',
+            label: 'Đã cắt kính',
+            class: 'ltr:text-right rtl:text-left',
+        },
+        {
+            key: 'daDanKinh',
+            label: 'Đã dán kính',
+            class: 'ltr:text-right rtl:text-left',
+        },
+        {
+            key: 'daTronKeo',
+            label: 'Đã trộn keo',
+            class: 'ltr:text-right rtl:text-left',
+        },
+        {
+            key: 'daDoKeo',
+            label: 'Đã đổ keo',
+            class: 'ltr:text-right rtl:text-left',
+        },
+    ];
 
-  if (loading) {
-    return <p className="p-6">Đang tải dữ liệu...</p>;
-  }
+    return (
+        <div>
+            <div className="mb-6 flex flex-wrap items-center justify-center gap-4 lg:justify-end">
+                <button type="button" className="btn btn-primary gap-2">
+                    <IconSend />
+                    Lên lệnh sản xuất
+                </button>
 
-  return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Chi tiết kế hoạch sản xuất: {id}</h1>
-        <div className="space-x-2">
-          <button onClick={handleEdit} className="px-4 py-1 bg-blue-500 text-white rounded">
-            📝 Sửa
-          </button>
-          <button 
-            className="px-4 py-1 bg-green-600 text-white rounded" 
-            onClick={handleCreateProductionOrder}
-          >
-            🏭 Sản xuất
-          </button>
-        </div>
-      </div>
 
-      {/* Plan Info */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-sm">
-        <div><strong>Mã lệnh sản xuất:</strong> {id}</div>
-        <div><strong>Ngày tạo:</strong> Không có dữ liệu</div>
-        <div><strong>Trạng thái:</strong> Không có dữ liệu</div>
-      </div>
+            </div>
+            <div className="panel">
+                <div className="flex flex-wrap justify-between gap-4 px-4">
+                    <div className="text-2xl font-semibold uppercase">Kế hoạch sản xuất</div>
 
-      {/* Production Plan Details Table */}
-      <h2 className="text-xl font-semibold mb-4">Chi tiết kế hoạch sản xuất</h2>
-      <div className="overflow-x-auto mb-6">
-        <table className="w-full border-collapse border text-sm">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="border p-2">STT</th>
-              <th className="border p-2">Mã SP</th>
-              <th className="border p-2">Tên SP</th>
-              <th className="border p-2">Số lượng</th>
-              <th className="border p-2">Đang sản xuất</th>
-              <th className="border p-2">Đã hoàn thành</th>
-            </tr>
-          </thead>
-          <tbody>
-            {productionItems.map((item, idx) => (
-              <tr key={`plan-detail-${idx}`}>
-                <td className="border p-2 text-center">{idx + 1}</td>
-                <td className="border p-2">{item.productCode}</td>
-                <td className="border p-2 text-right">{item.productName}</td>
-                <td className="border p-2 text-right">{item.quantity}</td>
-                <td className="border p-2 text-right">{item.inProgressQuantity}</td>
-                <td className="border p-2 text-right">{item.completed}</td>
-              </tr>
-            ))}
-            <tr className="bg-gray-50 font-bold">
-              <td colSpan={3} className="border p-2 text-right">Tổng cộng:</td>
-              <td className="border p-2 text-right">{totals.quantity}</td>
-              <td className="border p-2 text-right">{totals.inProgress}</td>
-              <td className="border p-2 text-right">{totals.completed}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+                </div>
 
-      {/* Production Orders Table */}
-      <h2 className="text-xl font-semibold mb-4">Lệnh sản xuất</h2>
-      <div className="overflow-x-auto mb-6">
-        <table className="w-full border-collapse border text-sm">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="border p-2">STT</th>
-              <th className="border p-2">Mã lệnh sản xuất</th>
-              <th className="border p-2">Ngày tạo</th>
-              <th className="border p-2">Mô tả</th>
-              <th className="border p-2">Trạng thái</th>
-              <th className="border p-2">Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Array.isArray(productionOrders) && productionOrders.length > 0 ? (
-              productionOrders.map((order, idx) => (
-                <tr key={`production-order-${order.productionOrderCode}`}>
-                  <td className="border p-2 text-center">{idx + 1}</td>
-                  <td className="border p-2">{order.productionOrderCode}</td>
-                  <td className="border p-2">
-                    {order.orderDate ? new Date(order.orderDate).toLocaleDateString('vi-VN') : 'Không có ngày'}
-                  </td>
-                  <td className="border p-2 max-w-md break-words whitespace-normal min-w-48">
-                    <div className="max-h-20 overflow-y-auto">
-                      {order.description || 'Không có mô tả'}
+
+                <hr className="my-6 border-white-light dark:border-[#1b2e4b]" />
+                <div className="flex flex-col flex-wrap justify-between gap-6 lg:flex-row">
+                    <div className="flex-1">
+                        <div className="space-y-1 text-white-dark">
+                            <div>Sản xuất cho:</div>
+                            <div className="font-semibold text-black dark:text-white">Công ty TNHH ABC</div>
+                            <div>405 Mulberry Rd. Mc Grady, NC, 28649</div>
+                            <div>abc@company.com</div>
+                            <div>(128) 666 070</div>
+                        </div>
                     </div>
-                  </td>
-                  <td className="border p-2">
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      order.productionStatus === 'Completed' ? 'bg-green-100 text-green-800' :
-                      order.productionStatus === 'InProgress' ? 'bg-yellow-100 text-yellow-800' :
-                      order.productionStatus === 'Pending' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {order.productionStatus === 'Completed' ? 'Hoàn thành' :
-                       order.productionStatus === 'InProgress' ? 'Đang sản xuất' :
-                       order.productionStatus === 'Pending' ? 'Chờ sản xuất' :
-                       order.productionStatus}
-                    </span>
-                  </td>
-                  <td className="border p-2">
-                    <button 
-                      onClick={() => handleViewDetail(order.productionOrderId)} 
-                      className="text-blue-600 hover:underline"
-                    >
-                      Xem chi tiết
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={6} className="border p-4 text-center text-gray-500">
-                  Chưa có lệnh sản xuất nào cho kế hoạch này
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                    <div className="flex flex-col justify-between gap-6 sm:flex-row lg:w-2/3">
+                        <div className="xl:1/3 sm:w-1/2 lg:w-2/5">
+                            <div className="mb-2 flex w-full items-center justify-between">
+                                <div className="text-white-dark">Mã đơn hàng :</div>
+                                <div>#PP001</div>
+                            </div>
+                            <div className="mb-2 flex w-full items-center justify-between">
+                                <div className="text-white-dark">Ngày đặt hàng :</div>
+                                <div>15 Dec 2024</div>
+                            </div>
 
-      {/* Back Button */}
-      <button onClick={handleBack} className="px-3 py-1 bg-gray-300 text-black rounded mt-4">
-        ◀ Quay lại
-      </button>
-    </div>
-  );
+                            <div className="flex w-full items-center justify-between">
+                                <div className="text-white-dark">Tình trạng giao hàng :</div>
+                                <div>Đang giao</div>
+                            </div>
+                        </div>
+                        <div className="xl:1/3 sm:w-1/2 lg:w-2/5">
+                            <div className="mb-2 flex w-full items-center justify-between">
+                                <div className="text-white-dark">Ngày bắt đầu:</div>
+                                <div className="whitespace-nowrap">16 Dec 2024</div>
+                            </div>
+
+                            <div className="mb-2 flex w-full items-center justify-between">
+                                <div className="text-white-dark">Trạng thái:</div>
+                                <div>Đang sản xuất</div>
+                            </div>
+                            <div className="mb-2 flex w-full items-center justify-between">
+                                <div className="text-white-dark">Tổng sản phẩm:</div>
+                                <div>530</div>
+                            </div>
+                            <div className="mb-2 flex w-full items-center justify-between">
+                                <div className="text-white-dark">Đã hoàn thành:</div>
+                                <div>295</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="table-responsive mt-6">
+                    <table className="table-striped">
+                        <thead>
+                            <tr>
+                                {columns.map((column) => {
+                                    return (
+                                        <th key={column.key} className={column?.class}>
+                                            {column.label}
+                                        </th>
+                                    );
+                                })}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {items.map((item) => {
+                                return (
+                                    <tr key={item.id}>
+                                        <td>{item.id}</td>
+                                        <td>{item.productName}</td>
+                                        <td className="ltr:text-right rtl:text-left">{item.totalQuantity}</td>
+                                        <td className="ltr:text-right rtl:text-left">{item.inProduction}</td>
+                                        <td className="ltr:text-right rtl:text-left">{item.completed}</td>
+                                        <td className="ltr:text-right rtl:text-left">{item.daCatKinh}</td>
+                                        <td className="ltr:text-right rtl:text-left">{item.daDanKinh}</td>
+                                        <td className="ltr:text-right rtl:text-left">{item.daTronKeo}</td>
+                                        <td className="ltr:text-right rtl:text-left">{item.daDoKeo}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div className="panel mt-6">
+                <div className="mb-4">
+                    <h3 className="text-lg font-semibold">Lệnh sản xuất</h3>
+                </div>
+                <div className="table-responsive">
+                    <table className="table-striped">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Loại lệnh sản xuất</th>
+                                <th>Sản xuất cho</th>
+                                <th>Số lượng</th>
+                                <th>Đã xuất kho NVL</th>
+                                <th>Đã nhập kho thành phẩm</th>
+                                <th>Xem chi tiết</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>Lệnh sản xuất thường</td>
+                                <td>Kính cường lực 8mm</td>
+                                <td>100</td>
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        checked={true}
+                                        disabled
+                                        className="form-checkbox"
+                                    />
+                                </td>
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        checked={false}
+                                        disabled
+                                        className="form-checkbox"
+                                    />
+                                </td>
+                                <td>
+                                    <Link href="/production-orders/1" className="btn btn-sm btn-outline-primary">
+                                        Xem chi tiết
+                                    </Link>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>Lệnh sản xuất gấp</td>
+                                <td>Kính cường lực 10mm</td>
+                                <td>150</td>
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        checked={true}
+                                        disabled
+                                        className="form-checkbox"
+                                    />
+                                </td>
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        checked={true}
+                                        disabled
+                                        className="form-checkbox"
+                                    />
+                                </td>
+                                <td>
+                                    <Link href="/production-orders/2" className="btn btn-sm btn-outline-primary">
+                                        Xem chi tiết
+                                    </Link>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>Lệnh sản xuất thường</td>
+                                <td>Kính cường lực 12mm</td>
+                                <td>80</td>
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        checked={false}
+                                        disabled
+                                        className="form-checkbox"
+                                    />
+                                </td>
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        checked={false}
+                                        disabled
+                                        className="form-checkbox"
+                                    />
+                                </td>
+                                <td>
+                                    <Link href="/production-orders/3" className="btn btn-sm btn-outline-primary">
+                                        Xem chi tiết
+                                    </Link>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td>Lệnh sản xuất gấp</td>
+                                <td>Kính cường lực 6mm</td>
+                                <td>200</td>
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        checked={true}
+                                        disabled
+                                        className="form-checkbox"
+                                    />
+                                </td>
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        checked={false}
+                                        disabled
+                                        className="form-checkbox"
+                                    />
+                                </td>
+                                <td>
+                                    <Link href="/production-orders/4" className="btn btn-sm btn-outline-primary">
+                                        Xem chi tiết
+                                    </Link>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
 };
 
-export default ProductionOrderDetailPage;
+export default ProductionPlanDetailPage;
