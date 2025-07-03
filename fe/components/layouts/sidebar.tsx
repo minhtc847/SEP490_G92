@@ -161,6 +161,9 @@ const Sidebar = () => {
                             <li>
                                 <Link href="/production-orders">Các lệnh sản xuất</Link>
                             </li>
+                            <li>
+                                <Link href="/production-orders/view">Danh sách lệnh sản xuất cho kế toán</Link>
+                            </li>
                         </ul>
                     </AnimateHeight>
                 </li>
