@@ -94,7 +94,6 @@ const SalesOrderDetailPage = () => {
                 <thead className="bg-gray-100">
                     <tr>
                         <th className="border p-2">STT</th>
-                        <th className="border p-2">Mã SP</th>
                         <th className="border p-2">Tên SP</th>
                         <th className="border p-2">Rộng (mm)</th>
                         <th className="border p-2">Cao (mm)</th>
@@ -103,14 +102,12 @@ const SalesOrderDetailPage = () => {
                         <th className="border p-2">Đơn giá (₫)</th>
                         <th className="border p-2">Diện tích (m²)</th>
                         <th className="border p-2">Thành tiền (₫)</th>
-                        <th className="border p-2">Cấu trúc kính</th>
                     </tr>
                 </thead>
                 <tbody>
                     {products.map((item, idx) => (
                         <tr key={idx}>
                             <td className="border p-2 text-center">{idx + 1}</td>
-                            <td className="border p-2">{item.productCode}</td>
                             <td className="border p-2">{item.productName}</td>
                             <td className="border p-2 text-right">{item.width}</td>
                             <td className="border p-2 text-right">{item.height}</td>
@@ -119,7 +116,6 @@ const SalesOrderDetailPage = () => {
                             <td className="border p-2 text-right">{item.unitPrice.toLocaleString()}</td>
                             <td className="border p-2 text-right">{item.areaM2}</td>
                             <td className="border p-2 text-right">{item.totalAmount.toLocaleString()}</td>
-                            <td className="border p-2">{item.glassCategory || '—'}</td>
                         </tr>
                     ))}
                 </tbody>

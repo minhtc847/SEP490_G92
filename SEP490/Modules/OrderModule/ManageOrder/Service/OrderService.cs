@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.DB.Models;
 using SEP490.Modules.OrderModule.ManageOrder.DTO;
@@ -6,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace SEP490.Modules.OrderModule.ManageOrder.Services
 {
-    public class OrderService : IOrderService
+    public class OrderService : BaseService, IOrderService
     {
         private readonly SEP490DbContext _context;
 
@@ -110,7 +111,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
 
                                    GlassStructureId = g?.Id,
                                    GlassStructureCode = g?.ProductCode,
-                                   GlassCategory = g?.Category,
+                                   GlassCategory = g?.ProductName,
                                    EdgeType = g?.EdgeType,
                                    AdhesiveType = g?.AdhesiveType,
                                    GlassLayers = g?.GlassLayers,
@@ -138,6 +139,41 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 TotalQuantity = totalQuantity,
                 TotalAmount = Math.Round(totalAmount, 2)
             };
+        }
+        public async Task<Product> CreateProductAsync(CreateProductV2Dto dto)
+        {
+            bool isNameExisted = await _context.Products.AnyAsync(p => p.ProductName == dto.ProductName);
+            if (isNameExisted)
+                throw new Exception("Tên sản phẩm đã tồn tại!");
+
+            if (!decimal.TryParse(dto.Width, out var widthMm) || !decimal.TryParse(dto.Height, out var heightMm))
+                throw new Exception("Chiều rộng hoặc chiều cao không hợp lệ.");
+
+            var area = (widthMm * heightMm) / 1_000_000m;
+
+            var structure = await _context.GlassStructures.FirstOrDefaultAsync(x => x.Id == dto.GlassStructureId);
+            if (structure == null || structure.UnitPrice == null)
+                throw new Exception("Cấu trúc kính không tồn tại hoặc chưa có đơn giá.");
+
+            var calculatedUnitPrice = area * structure.UnitPrice.Value;
+
+            var product = new Product
+            {
+                ProductCode = null,
+                ProductName = dto.ProductName,
+                ProductType = dto.ProductType ?? "Thành Phẩm",
+                UOM = dto.UOM ?? "Tấm",
+                Width = dto.Width,
+                Height = dto.Height,
+                Thickness = dto.Thickness,
+                Weight = dto.Weight,
+                UnitPrice = calculatedUnitPrice,
+                GlassStructureId = dto.GlassStructureId,
+            };
+
+            _context.Products.Add(product);
+            await _context.SaveChangesAsync();
+            return product;
         }
 
         public int CreateOrder(CreateOrderDto dto)
@@ -177,31 +213,6 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
 
             foreach (var p in dto.Products)
             {
-                if (p.ProductId == 0)
-                {
-                    if (_context.Products.Any(pr => pr.ProductCode == p.ProductCode))
-                    {
-                        throw new Exception($"Mã sản phẩm '{p.ProductCode}' đã tồn tại.");
-                    }
-
-                    var newProduct = new Product
-                    {
-                        ProductCode = p.ProductCode,
-                        ProductName = p.ProductName,
-                        Width = p.Width,
-                        Height = p.Height,
-                        Thickness = p.Thickness,
-                        UnitPrice = p.UnitPrice,
-                        ProductType = "Thành phẩm",
-                        GlassStructureId = (int)(p.GlassStructureId ?? null),
-                        UOM = "Tấm"
-                    };
-                    _context.Products.Add(newProduct);
-                    _context.SaveChanges();
-
-                    p.ProductId = newProduct.Id;
-                }
-
                 var odp = new OrderDetailProduct
                 {
                     OrderDetailId = detail.Id,
@@ -379,12 +390,19 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             int nextNumber = maxNumber + 1;
             return $"ĐH{nextNumber:D5}";
         }
-
-
         public List<GlassStructureDto> GetAllGlassStructures()
         {
-            throw new NotImplementedException();
+            return _context.GlassStructures
+                .Select(g => new GlassStructureDto
+                {
+                    Id = g.Id,
+                    ProductCode = g.ProductCode,
+                    ProductName = g.ProductName,
+                    UnitPrice = g.UnitPrice
+                })
+                .ToList();
         }
+
 
 
     }
