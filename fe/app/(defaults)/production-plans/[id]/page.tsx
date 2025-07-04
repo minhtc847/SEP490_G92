@@ -4,9 +4,14 @@ import IconPlus from '@/components/icon/icon-plus';
 import IconPrinter from '@/components/icon/icon-printer';
 import IconSend from '@/components/icon/icon-send';
 import Link from 'next/link';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import { fetchProductionPlanDetail, ProductionPlanDetail } from '../service';
 
 const ProductionPlanDetailPage = () => {
+    const { id } = useParams();
+    const [detail, setDetail] = useState<ProductionPlanDetail | null>(null);
+
     const exportTable = () => {
         window.print();
     };
@@ -104,6 +109,15 @@ const ProductionPlanDetailPage = () => {
         },
     ];
 
+    useEffect(() => {
+        if (!id) return;
+        fetchProductionPlanDetail(id as string)
+            .then(setDetail)
+            .catch((err) => {
+                console.error('Lỗi khi fetch chi tiết production plan:', err);
+            });
+    }, [id]);
+
     return (
         <div>
             <div className="mb-6 flex flex-wrap items-center justify-center gap-4 lg:justify-end">
@@ -126,45 +140,42 @@ const ProductionPlanDetailPage = () => {
                     <div className="flex-1">
                         <div className="space-y-1 text-white-dark">
                             <div>Sản xuất cho:</div>
-                            <div className="font-semibold text-black dark:text-white">Công ty TNHH ABC</div>
-                            <div>405 Mulberry Rd. Mc Grady, NC, 28649</div>
-                            <div>abc@company.com</div>
-                            <div>(128) 666 070</div>
+                            <div className="font-semibold text-black dark:text-white">{detail?.customerName || '-'}</div>
+                            <div>{detail?.address || '-'}</div>
+                            <div>{detail?.phone || '-'}</div>
                         </div>
                     </div>
                     <div className="flex flex-col justify-between gap-6 sm:flex-row lg:w-2/3">
                         <div className="xl:1/3 sm:w-1/2 lg:w-2/5">
                             <div className="mb-2 flex w-full items-center justify-between">
                                 <div className="text-white-dark">Mã đơn hàng :</div>
-                                <div>#PP001</div>
+                                <div>{detail?.orderCode ? `#${detail.orderCode}` : '-'}</div>
                             </div>
                             <div className="mb-2 flex w-full items-center justify-between">
                                 <div className="text-white-dark">Ngày đặt hàng :</div>
-                                <div>15 Dec 2024</div>
+                                <div>{detail?.orderDate ? new Date(detail.orderDate).toLocaleDateString() : '-'}</div>
                             </div>
-
                             <div className="flex w-full items-center justify-between">
                                 <div className="text-white-dark">Tình trạng giao hàng :</div>
-                                <div>Đang giao</div>
+                                <div>{detail?.deliveryStatus || '-'}</div>
                             </div>
                         </div>
                         <div className="xl:1/3 sm:w-1/2 lg:w-2/5">
                             <div className="mb-2 flex w-full items-center justify-between">
                                 <div className="text-white-dark">Ngày bắt đầu:</div>
-                                <div className="whitespace-nowrap">16 Dec 2024</div>
+                                <div className="whitespace-nowrap">{detail?.planDate ? new Date(detail.planDate).toLocaleDateString() : '-'}</div>
                             </div>
-
                             <div className="mb-2 flex w-full items-center justify-between">
                                 <div className="text-white-dark">Trạng thái:</div>
-                                <div>Đang sản xuất</div>
+                                <div>{detail?.status || '-'}</div>
                             </div>
                             <div className="mb-2 flex w-full items-center justify-between">
                                 <div className="text-white-dark">Tổng sản phẩm:</div>
-                                <div>530</div>
+                                <div>{detail?.quantity ?? '-'}</div>
                             </div>
                             <div className="mb-2 flex w-full items-center justify-between">
                                 <div className="text-white-dark">Đã hoàn thành:</div>
-                                <div>295</div>
+                                <div>{detail?.done ?? '-'}</div>
                             </div>
                         </div>
                     </div>

@@ -7,92 +7,53 @@ import { sortBy } from 'lodash';
 import { DataTableSortStatus, DataTable } from 'mantine-datatable';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
+import { fetchProductionPlanList, ProductionPlan } from './service';
+
+const statusMap: Record<string, { tooltip: string; color: string }> = {
+    'Đang sản xuất': { tooltip: 'Đang sản xuất', color: 'warning' },
+    'Hoàn thành': { tooltip: 'Hoàn thành', color: 'success' },
+    'Chờ xử lý': { tooltip: 'Chờ xử lý', color: 'danger' },
+};
 
 const ProductionPlansPage = () => {
-    const [items, setItems] = useState([
-        {
-            id: 1,
-            orderCode: 'PP001',
-            customerName: 'Công ty TNHH ABC',
-            totalProducts: 150,
-            status: { tooltip: 'Đang sản xuất', color: 'warning' },
-        },
-        {
-            id: 2,
-            orderCode: 'PP002',
-            customerName: 'Công ty XYZ',
-            totalProducts: 200,
-            status: { tooltip: 'Hoàn thành', color: 'success' },
-        },
-        {
-            id: 3,
-            orderCode: 'PP003',
-            customerName: 'Công ty DEF',
-            totalProducts: 75,
-            status: { tooltip: 'Chờ xử lý', color: 'danger' },
-        },
-        {
-            id: 4,
-            orderCode: 'PP004',
-            customerName: 'Công ty GHI',
-            totalProducts: 300,
-            status: { tooltip: 'Đang sản xuất', color: 'warning' },
-        },
-        {
-            id: 5,
-            orderCode: 'PP005',
-            customerName: 'Công ty JKL',
-            totalProducts: 120,
-            status: { tooltip: 'Hoàn thành', color: 'success' },
-        },
-        {
-            id: 6,
-            orderCode: 'PP006',
-            customerName: 'Công ty MNO',
-            totalProducts: 180,
-            status: { tooltip: 'Chờ xử lý', color: 'danger' },
-        },
-        {
-            id: 7,
-            orderCode: 'PP007',
-            customerName: 'Công ty PQR',
-            totalProducts: 250,
-            status: { tooltip: 'Đang sản xuất', color: 'warning' },
-        },
-        {
-            id: 8,
-            orderCode: 'PP008',
-            customerName: 'Công ty STU',
-            totalProducts: 90,
-            status: { tooltip: 'Hoàn thành', color: 'success' },
-        },
-        {
-            id: 9,
-            orderCode: 'PP009',
-            customerName: 'Công ty VWX',
-            totalProducts: 160,
-            status: { tooltip: 'Chờ xử lý', color: 'danger' },
-        },
-        {
-            id: 10,
-            orderCode: 'PP010',
-            customerName: 'Công ty YZ',
-            totalProducts: 220,
-            status: { tooltip: 'Đang sản xuất', color: 'warning' },
-        },
-    ]);
+    const [items, setItems] = useState<any[]>([]);
+    const [initialRecords, setInitialRecords] = useState<any[]>([]);
+    const [records, setRecords] = useState<any[]>([]);
 
     const [page, setPage] = useState(1);
     const PAGE_SIZES = [10, 20, 30, 50, 100];
     const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
-    const [initialRecords, setInitialRecords] = useState(sortBy(items, 'orderCode'));
-    const [records, setRecords] = useState(initialRecords);
 
     const [search, setSearch] = useState('');
     const [sortStatus, setSortStatus] = useState<DataTableSortStatus>({
         columnAccessor: 'orderCode',
         direction: 'asc',
     });
+
+    useEffect(() => {
+        async function loadData() {
+            try {
+                const data: ProductionPlan[] = await fetchProductionPlanList();
+                const mapped = data.map((plan, idx) => ({
+                    id: plan.id,
+                    orderCode: plan.orderCode,
+                    customerName: plan.customerName,
+                    totalProducts: plan.quantity,
+                    status: statusMap[plan.status || ''] || { tooltip: plan.status || '', color: 'secondary' },
+                }));
+                setItems(mapped);
+                console.log('Fetched plans:', mapped);
+            } catch (error: any) {
+                console.error('Lỗi khi fetch production plans:', error);
+                alert(error?.message || 'Có lỗi xảy ra khi lấy danh sách production plan');
+            }
+        }
+        loadData();
+    }, []);
+
+    useEffect(() => {
+        setInitialRecords(sortBy(items, 'orderCode'));
+    }, [items]);
 
     useEffect(() => {
         setPage(1);
@@ -135,113 +96,127 @@ const ProductionPlansPage = () => {
     };
 
     return (
-        <div className="panel border-white-light px-0 dark:border-[#1b2e4b]">
-            <div className="production-plans-table">
-                <div className="mb-4.5 flex flex-col gap-5 px-5 md:flex-row md:items-center">
-                    <div className="flex items-center gap-2">
-                        <Link href="/production-plans/create" className="btn btn-primary gap-2">
-                            <IconPlus />
-                            Thêm mới
-                        </Link>
+        <div>
+            <div className="mb-5">
+                <h1 className="text-2xl font-bold">Danh sách kế hoạch sản xuất</h1>
+            </div>
+            <div className="panel mt-6">
+
+                <div className="production-plans-table">
+                    <div className="mb-4.5 flex flex-col gap-5 px-5 md:flex-row md:items-center">
+                        <div className="flex items-center gap-2">
+                            <Link href="/production-plans/create" className="btn btn-primary gap-2">
+                                <IconPlus />
+                                Thêm mới
+                            </Link>
+                        </div>
+                        <div className="ltr:ml-auto rtl:mr-auto">
+                            <input
+                                type="text"
+                                className="form-input w-auto"
+                                placeholder="Tìm kiếm..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </div>
                     </div>
-                    <div className="ltr:ml-auto rtl:mr-auto">
-                        <input 
-                            type="text" 
-                            className="form-input w-auto" 
-                            placeholder="Tìm kiếm..." 
-                            value={search} 
-                            onChange={(e) => setSearch(e.target.value)} 
+
+                    <div className="datatables pagination-padding">
+                        <DataTable
+                            className="table-hover whitespace-nowrap"
+                            records={records}
+                            columns={[
+                                {
+                                    accessor: 'index',
+                                    title: '#',
+                                    sortable: false,
+                                    width: 70,
+                                    render: (_, index) => <span>{index + 1}</span>,
+                                },
+                                {
+                                    accessor: 'orderCode',
+                                    title: 'Mã đơn hàng',
+                                    sortable: true,
+                                    render: ({ orderCode }) => {
+                                        const orderId = orderCode.replace(/^DH/, '');
+                                        return (
+                                            <Link href={`/sales-order/${orderId}`}>
+                                                <div className="font-semibold text-primary underline hover:no-underline">{orderCode}</div>
+                                            </Link>
+                                        );
+                                    },
+                                },
+                                {
+                                    accessor: 'customerName',
+                                    title: 'Tên khách hàng',
+                                    sortable: true,
+                                    textAlignment: 'center',
+                                    render: ({ customerName }) => (
+                                        <div className="text-center font-semibold">{customerName}</div>
+                                    ),
+                                },
+                                {
+                                    accessor: 'totalProducts',
+                                    title: 'Tổng số SP',
+                                    sortable: true,
+                                    textAlignment: 'center',
+                                    render: ({ totalProducts }) => (
+                                        <div className="text-center font-semibold">{totalProducts}</div>
+                                    ),
+                                },
+                                {
+                                    accessor: 'status',
+                                    title: 'Trạng thái',
+                                    sortable: true,
+                                    render: ({ status }) => (
+                                        <span className={`badge badge-outline-${status.color}`}>
+                                            {status.tooltip}
+                                        </span>
+                                    ),
+                                },
+                                {
+                                    accessor: 'action',
+                                    title: 'Thao tác',
+                                    sortable: false,
+                                    textAlignment: 'center',
+                                    width: 150,
+                                    render: ({ id }) => (
+                                        <div className="mx-auto flex w-max items-center gap-4">
+                                            <Link href="/production-plans/edit" className="flex hover:text-info">
+                                                <IconEdit className="h-4.5 w-4.5" />
+                                            </Link>
+                                            <Link href={`/production-plans/${id}`} className="flex hover:text-primary">
+                                                <IconEye />
+                                            </Link>
+                                            <button
+                                                type="button"
+                                                className="flex hover:text-danger"
+                                                onClick={() => deleteRow(id)}
+                                            >
+                                                <IconTrashLines />
+                                            </button>
+                                        </div>
+                                    ),
+                                },
+                            ]}
+                            highlightOnHover
+                            totalRecords={initialRecords.length}
+                            recordsPerPage={pageSize}
+                            page={page}
+                            onPageChange={(p) => setPage(p)}
+                            recordsPerPageOptions={PAGE_SIZES}
+                            onRecordsPerPageChange={setPageSize}
+                            sortStatus={sortStatus}
+                            onSortStatusChange={setSortStatus}
+                            paginationText={({ from, to, totalRecords }) =>
+                                `Hiển thị ${from} đến ${to} trong tổng số ${totalRecords} bản ghi`
+                            }
                         />
                     </div>
                 </div>
-
-                <div className="datatables pagination-padding">
-                    <DataTable
-                        className="table-hover whitespace-nowrap"
-                        records={records}
-                        columns={[
-                            {
-                                accessor: 'index',
-                                title: '#',
-                                sortable: false,
-                                width: 70,
-                                render: (_, index) => <span>{index + 1}</span>,
-                            },
-                            {
-                                accessor: 'orderCode',
-                                title: 'Mã đơn hàng',
-                                sortable: true,
-                                render: ({ orderCode }) => (
-                                    <Link href="/production-plans/preview">
-                                        <div className="font-semibold text-primary underline hover:no-underline">{orderCode}</div>
-                                    </Link>
-                                ),
-                            },
-                            {
-                                accessor: 'customerName',
-                                title: 'Tên khách hàng',
-                                sortable: true,
-                            },
-                            {
-                                accessor: 'totalProducts',
-                                title: 'Tổng số SP',
-                                sortable: true,
-                                textAlignment: 'center',
-                                render: ({ totalProducts }) => (
-                                    <div className="text-center font-semibold">{totalProducts}</div>
-                                ),
-                            },
-                            {
-                                accessor: 'status',
-                                title: 'Trạng thái',
-                                sortable: true,
-                                render: ({ status }) => (
-                                    <span className={`badge badge-outline-${status.color}`}>
-                                        {status.tooltip}
-                                    </span>
-                                ),
-                            },
-                            {
-                                accessor: 'action',
-                                title: 'Thao tác',
-                                sortable: false,
-                                textAlignment: 'center',
-                                width: 150,
-                                render: ({ id }) => (
-                                    <div className="mx-auto flex w-max items-center gap-4">
-                                        <Link href="/production-plans/edit" className="flex hover:text-info">
-                                            <IconEdit className="h-4.5 w-4.5" />
-                                        </Link>
-                                        <Link href="/production-plans/preview" className="flex hover:text-primary">
-                                            <IconEye />
-                                        </Link>
-                                        <button 
-                                            type="button" 
-                                            className="flex hover:text-danger" 
-                                            onClick={() => deleteRow(id)}
-                                        >
-                                            <IconTrashLines />
-                                        </button>
-                                    </div>
-                                ),
-                            },
-                        ]}
-                        highlightOnHover
-                        totalRecords={initialRecords.length}
-                        recordsPerPage={pageSize}
-                        page={page}
-                        onPageChange={(p) => setPage(p)}
-                        recordsPerPageOptions={PAGE_SIZES}
-                        onRecordsPerPageChange={setPageSize}
-                        sortStatus={sortStatus}
-                        onSortStatusChange={setSortStatus}
-                        paginationText={({ from, to, totalRecords }) => 
-                            `Hiển thị ${from} đến ${to} trong tổng số ${totalRecords} bản ghi`
-                        }
-                    />
-                </div>
             </div>
         </div>
+
     );
 };
 
