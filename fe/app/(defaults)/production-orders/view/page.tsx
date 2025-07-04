@@ -51,7 +51,7 @@ const ListProductionOrders = () => {
 
   useEffect(() => {
     setLoading(true);
-    fetch("https://localhost:7075/api/ProductionOrders")
+    fetch("https://localhost:7075/api/ProductionAccountantControllers")
       .then((res) => res.json())
       .then((data) => {
         setInitialRecords(data);
@@ -119,6 +119,19 @@ const ListProductionOrders = () => {
               { accessor: "orderCode", title: "Mã ĐH", sortable: true },
               { accessor: "customerName", title: "KHÁCH HÀNG", sortable: true },
               { accessor: "totalAmount", title: "Tổng Số lượng", sortable: true },
+              { 
+                accessor: "ProductionStatus", 
+                title: "Trạng thái", 
+                sortable: true,
+                render: (record: any) => (
+                  <span
+                    className={`px-2 py-1 rounded text-sm font-semibold ${statusColor(record.ProductionStatus)}`}
+                  >
+                    {record.status}
+                  </span>
+                ),
+              },
+              
               {
                 accessor: "actions",
                 title: "ACTION",
