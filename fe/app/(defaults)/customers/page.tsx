@@ -1,264 +1,156 @@
-"use client"
-import { useState, useEffect } from "react"
-import IconTrashLines from "@/components/icon/icon-trash-lines"
-import IconEdit from "@/components/icon/icon-edit"
-import IconEye from "@/components/icon/icon-eye"
-import IconPlus from "@/components/icon/icon-plus"
-import IconUser from "@/components/icon/icon-user"
-import IconUsers from "@/components/icon/icon-users"
-import Tippy from "@tippyjs/react"
-import "tippy.js/dist/tippy.css"
-import Link from "next/link"
+'use client';
 
-interface Customer {
-  id: number
-  name: string
-  phone: string
-  address: string
-  customerType: "customer" | "supplier"
-  notes?: string
-  discount?: number
-  createdAt: string
-  customerCode: string
-}
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import Tippy from '@tippyjs/react';
+import 'tippy.js/dist/tippy.css';
+import IconTrashLines from '@/components/icon/icon-trash-lines';
+import IconEdit from '@/components/icon/icon-edit';
+import IconEye from '@/components/icon/icon-eye';
+import IconPlus from '@/components/icon/icon-plus';
+import IconUser from '@/components/icon/icon-user';
+import IconUsers from '@/components/icon/icon-users';
+import { CustomerListDto, getCustomerList, deleteCustomerById } from './service';
 
 const CustomersListPage = () => {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [customerTypeFilter, setCustomerTypeFilter] = useState<"all" | "customer" | "supplier">("all")
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [loading, setLoading] = useState(true)
+    const [searchTerm, setSearchTerm] = useState('');
+    const [customerTypeFilter, setCustomerTypeFilter] = useState<'all' | 'customer' | 'supplier'>('all');
+    const [customers, setCustomers] = useState<CustomerListDto[]>([]);
+    const [loading, setLoading] = useState(true);
 
-  // Dữ liệu mẫu ban đầu
-  const initialCustomers: Customer[] = [
-    {
-      id: 1,
-      name: "Nguyễn Văn A",
-      phone: "0123456789",
-      address: "123 Đường ABC, Quận 1, Hà Nội",
-      customerType: "customer",
-      notes: "Khách hàng VIP, ưu tiên phục vụ",
-      discount: 10,
-      createdAt: "2024-01-15",
-      customerCode: "KH001",
-    },
-    {
-      id: 2,
-      name: "Công ty TNHH ABC",
-      phone: "0987654321",
-      address: "456 Đường XYZ, Quận 3, TP.HCM",
-      customerType: "supplier",
-      notes: "Nhà cung cấp nguyên liệu chính",
-      discount: 5,
-      createdAt: "2024-02-20",
-      customerCode: "NCC001",
-    },
-    {
-      id: 3,
-      name: "Lê Văn C",
-      phone: "0369852147",
-      address: "789 Đường DEF, Hải Châu, Đà Nẵng",
-      customerType: "customer",
-      notes: "",
-      discount: 0,
-      createdAt: "2024-03-10",
-      customerCode: "KH002",
-    },
-  ]
+    useEffect(() => {
+        const fetch = async () => {
+            try {
+                const data = await getCustomerList();
+                setCustomers(data);
+            } catch (error) {
+                console.error('Lỗi tải danh sách khách hàng:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-  // Load dữ liệu khi component mount
-  useEffect(() => {
-    const loadCustomers = () => {
-      if (typeof window !== "undefined") {
-        const stored = localStorage.getItem("customers_data")
-        if (!stored) {
-          localStorage.setItem("customers_data", JSON.stringify(initialCustomers))
-          setCustomers(initialCustomers)
-        } else {
-          setCustomers(JSON.parse(stored))
+        fetch();
+    }, []);
+
+    const handleDelete = async (id: number, name: string) => {
+        if (window.confirm(`Bạn có chắc muốn xoá khách hàng "${name}"?`)) {
+            try {
+                await deleteCustomerById(id);
+                setCustomers((prev) => prev.filter((c) => c.id !== id));
+                alert('Xoá thành công!');
+            } catch (err) {
+                console.error('Lỗi xoá:', err);
+                alert('Không thể xoá khách hàng đã có đơn hang hoặc giao dịch.');
+            }
         }
-      }
-      setLoading(false)
-    }
-    loadCustomers()
-  }, [])
+    };
 
-  // Xóa khách hàng
-  const handleDelete = async (id: number, name: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa khách hàng "${name}"?`)) {
-      const updatedCustomers = customers.filter((customer) => customer.id !== id)
-      setCustomers(updatedCustomers)
-      localStorage.setItem("customers_data", JSON.stringify(updatedCustomers))
-      alert("Xóa khách hàng thành công!")
-    }
-  }
+    const filtered = customers.filter((customer) => {
+        const matchesSearch = (customer.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) || (customer.customerCode?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
 
-  // Filter dữ liệu
-  const filteredData = customers.filter((customer) => {
-    const matchesSearch =
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.customerCode.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesType = customerTypeFilter === 'all' || (customerTypeFilter === 'customer' && !customer.isSupplier) || (customerTypeFilter === 'supplier' && customer.isSupplier);
 
-    const matchesType = customerTypeFilter === "all" || customer.customerType === customerTypeFilter
+        return matchesSearch && matchesType;
+    });
 
-    return matchesSearch && matchesType
-  })
+    if (loading) return <div className="panel">Đang tải dữ liệu...</div>;
 
-  if (loading) {
-    return <div className="panel">Đang tải...</div>
-  }
+    return (
+        <div className="panel">
+            <div className="mb-5">
+                <h2 className="text-xl font-semibold mb-4">Danh sách khách hàng</h2>
 
-  return (
-    <div className="panel">
-      <div className="mb-5">
-        <h2 className="text-xl font-semibold mb-4">Danh sách khách hàng</h2>
-
-        {/* Search and Actions Bar */}
-        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              placeholder="Tìm kiếm khách hàng..."
-              className="form-input w-auto"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <select
-              className="form-select w-48"
-              value={customerTypeFilter}
-              onChange={(e) => setCustomerTypeFilter(e.target.value as "all" | "customer" | "supplier")}
-            >
-              <option value="all">Loại khách hàng</option>
-              <option value="customer">Khách hàng</option>
-              <option value="supplier">Nhà cung cấp</option>
-            </select>
-            <button type="button" className="btn btn-primary">
-              Tìm kiếm
-            </button>
-          </div>
-          <Link href="/customers/create">
-            <button type="button" className="btn btn-success">
-              <IconPlus className="mr-2" />
-              Thêm khách hàng
-            </button>
-          </Link>
-        </div>
-
-        {/* Filter Tags */}
-        <div className="mb-4 flex gap-2">
-          <span className="badge bg-primary">Tất cả ({customers.length})</span>
-          <span className="badge bg-info">
-            <IconUser className="w-3 h-3 mr-1" />
-            Khách hàng ({customers.filter((c) => c.customerType === "customer").length})
-          </span>
-          <span className="badge bg-warning">
-            <IconUsers className="w-3 h-3 mr-1" />
-            Nhà cung cấp ({customers.filter((c) => c.customerType === "supplier").length})
-          </span>
-        </div>
-
-        {/* Table */}
-        <div className="table-responsive">
-          <table className="table-hover">
-            <thead>
-              <tr>
-                <th>Mã</th>
-                <th>Tên khách hàng</th>
-                <th>Số điện thoại</th>
-                <th>Địa chỉ</th>
-                <th>Loại</th>
-                <th>Chiết khấu</th>
-                <th className="text-center">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.map((customer) => (
-                <tr key={customer.id}>
-                  <td>
-                    <div className="font-semibold text-primary">{customer.customerCode}</div>
-                  </td>
-                  <td>
-                    <div className="whitespace-nowrap font-semibold">{customer.name}</div>
-                    {customer.notes && <div className="text-xs text-gray-500 mt-1">{customer.notes}</div>}
-                  </td>
-                  <td>{customer.phone}</td>
-                  <td className="max-w-xs truncate">{customer.address}</td>
-                  <td>
-                    <div className="flex items-center gap-1">
-                      {customer.customerType === "customer" ? (
-                        <>
-                          <IconUser className="w-4 h-4 text-blue-500" />
-                          <span className="text-blue-600 font-medium">Khách hàng</span>
-                        </>
-                      ) : (
-                        <>
-                          <IconUsers className="w-4 h-4 text-orange-500" />
-                          <span className="text-orange-600 font-medium">Nhà cung cấp</span>
-                        </>
-                      )}
+                {/* Tìm kiếm và bộ lọc */}
+                <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2">
+                        <input type="text" placeholder="Tìm kiếm theo tên hoặc mã KH..." className="form-input w-60" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                        <select className="form-select w-48" value={customerTypeFilter} onChange={(e) => setCustomerTypeFilter(e.target.value as any)}>
+                            <option value="all">Tất cả</option>
+                            <option value="customer">Khách hàng</option>
+                            <option value="supplier">Nhà cung cấp</option>
+                        </select>
                     </div>
-                  </td>
-                  <td>
-                    <span className="font-semibold text-green-600">{customer.discount || 0}</span>
-                  </td>
-                  <td className="text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <Tippy content="Xem chi tiết">
-                        <Link href={`/customers/${customer.id}`}>
-                          <button type="button" className="btn btn-sm btn-outline-primary">
-                            <IconEye />
-                          </button>
-                        </Link>
-                      </Tippy>
-                      <Tippy content="Chỉnh sửa">
-                        <Link href={`/customers/${customer.id}/edit`}>
-                          <button type="button" className="btn btn-sm btn-outline-warning">
-                            <IconEdit />
-                          </button>
-                        </Link>
-                      </Tippy>
-                      <Tippy content="Xóa">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => handleDelete(customer.id, customer.name)}
-                        >
-                          <IconTrashLines />
+
+                    <Link href="/customers/create">
+                        <button className="btn btn-success">
+                            <IconPlus className="mr-2" />
+                            Thêm khách hàng
                         </button>
-                      </Tippy>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </Link>
+                </div>
+
+                {/* Thống kê */}
+                <div className="mb-4 flex gap-2">
+                    <span className="badge bg-primary">Tổng: {customers.length}</span>
+                    <span className="badge bg-info">
+                        <IconUser className="w-3 h-3 mr-1" />
+                        KH: {customers.filter((c) => !c.isSupplier).length}
+                    </span>
+                    <span className="badge bg-warning">
+                        <IconUsers className="w-3 h-3 mr-1" />
+                        NCC: {customers.filter((c) => c.isSupplier).length}
+                    </span>
+                </div>
+
+                {/* Bảng */}
+                <div className="table-responsive">
+                    <table className="table-hover">
+                        <thead>
+                            <tr>
+                                <th>Mã</th>
+                                <th>Tên</th>
+                                <th>ĐT</th>
+                                <th>Địa chỉ</th>
+                                <th>Loại</th>
+                                <th>Chiết khấu</th>
+                                <th className="text-center">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filtered.map((c) => (
+                                <tr key={c.id}>
+                                    <td className="text-primary font-bold">{c.customerCode}</td>
+                                    <td>{c.customerName}</td>
+                                    <td>{c.phone}</td>
+                                    <td>{c.address}</td>
+                                    <td>
+                                        <span className={c.isSupplier ? 'text-orange-600' : 'text-blue-600'}>{c.isSupplier ? 'Nhà cung cấp' : 'Khách hàng'}</span>
+                                    </td>
+                                    <td>{(c.discount ?? 0) * 100}%</td>
+                                    <td className="text-center">
+                                        <div className="flex justify-center gap-2">
+                                            <Tippy content="Xem">
+                                                <Link href={`/customers/${c.id}`}>
+                                                    <button className="btn btn-sm btn-outline-primary">
+                                                        <IconEye />
+                                                    </button>
+                                                </Link>
+                                            </Tippy>
+                                            <Tippy content="Sửa">
+                                                <Link href={`/customers/${c.id}/edit`}>
+                                                    <button className="btn btn-sm btn-outline-warning">
+                                                        <IconEdit />
+                                                    </button>
+                                                </Link>
+                                            </Tippy>
+                                            <Tippy content="Xoá">
+                                                <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(c.id, c.customerName)}>
+                                                    <IconTrashLines />
+                                                </button>
+                                            </Tippy>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                {filtered.length === 0 && <div className="text-center py-8 text-gray-500">Không tìm thấy khách hàng nào</div>}
+            </div>
         </div>
+    );
+};
 
-        {filteredData.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-gray-500">Không tìm thấy khách hàng nào</p>
-          </div>
-        )}
-
-        {/* Pagination */}
-        <div className="mt-4 flex items-center justify-between">
-          <div className="text-sm text-gray-500">
-            Hiển thị {filteredData.length} của {customers.length} khách hàng
-          </div>
-          <div className="flex gap-2">
-            <button type="button" className="btn btn-sm btn-outline-primary" disabled>
-              Trước
-            </button>
-            <button type="button" className="btn btn-sm btn-primary">
-              1
-            </button>
-            <button type="button" className="btn btn-sm btn-outline-primary" disabled>
-              Sau
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default CustomersListPage
+export default CustomersListPage;

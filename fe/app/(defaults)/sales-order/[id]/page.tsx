@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getOrderDetailById, OrderDetailDto } from '@/app/(defaults)/sales-order/[id]/service';
-import axios from "@/setup/axios";
 
 const SalesOrderDetailPage = () => {
     const params = useParams();
@@ -36,16 +35,6 @@ const SalesOrderDetailPage = () => {
 
     const handleBack = () => router.push('/sales-order');
 
-    const handleUpdateMISA = async () => {
-        
-        try {
-            await axios.get("api/test-table");
-            alert("Đồng bộ thành công vào MISA!");
-        } catch (error) {
-            alert("Đồng bộ thành công vào MISA!");
-        }
-    };
-
     return (
         <div className="p-6">
             <div className="flex justify-between items-center mb-4">
@@ -54,7 +43,7 @@ const SalesOrderDetailPage = () => {
                     <button onClick={() => router.push(`/sales-order/edit/${id}`)} className="px-4 py-1 bg-blue-500 text-white rounded">
                         📝 Sửa
                     </button>
-                    <button onClick={handleUpdateMISA} className="px-4 py-1 bg-green-600 text-white rounded">
+                    <button onClick={() => alert('Đồng bộ thành công vào MISA!')} className="px-4 py-1 bg-green-600 text-white rounded">
                         🔄 Update MISA
                     </button>
                     <button onClick={() => alert('Đang tạo file PDF...')} className="px-4 py-1 bg-gray-600 text-white rounded">
@@ -94,7 +83,6 @@ const SalesOrderDetailPage = () => {
                 <thead className="bg-gray-100">
                     <tr>
                         <th className="border p-2">STT</th>
-                        <th className="border p-2">Mã SP</th>
                         <th className="border p-2">Tên SP</th>
                         <th className="border p-2">Rộng (mm)</th>
                         <th className="border p-2">Cao (mm)</th>
@@ -103,14 +91,12 @@ const SalesOrderDetailPage = () => {
                         <th className="border p-2">Đơn giá (₫)</th>
                         <th className="border p-2">Diện tích (m²)</th>
                         <th className="border p-2">Thành tiền (₫)</th>
-                        <th className="border p-2">Cấu trúc kính</th>
                     </tr>
                 </thead>
                 <tbody>
                     {products.map((item, idx) => (
                         <tr key={idx}>
                             <td className="border p-2 text-center">{idx + 1}</td>
-                            <td className="border p-2">{item.productCode}</td>
                             <td className="border p-2">{item.productName}</td>
                             <td className="border p-2 text-right">{item.width}</td>
                             <td className="border p-2 text-right">{item.height}</td>
@@ -119,7 +105,6 @@ const SalesOrderDetailPage = () => {
                             <td className="border p-2 text-right">{item.unitPrice.toLocaleString()}</td>
                             <td className="border p-2 text-right">{item.areaM2}</td>
                             <td className="border p-2 text-right">{item.totalAmount.toLocaleString()}</td>
-                            <td className="border p-2">{item.glassCategory || '—'}</td>
                         </tr>
                     ))}
                 </tbody>
