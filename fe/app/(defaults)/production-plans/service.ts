@@ -64,3 +64,26 @@ export interface ProductionPlanProductDetail {
   daTronKeo: number;
   daGiao: number;
 }
+
+export interface ProductionOrderListItem {
+  id: number;
+  orderDate: string;
+  type: string;
+  description: string;
+  isMaterialExported: boolean;
+  isProductImported: boolean;
+  
+}
+
+export async function fetchProductionOrdersByPlanId(id: number | string): Promise<ProductionOrderListItem[]> {
+  const response = await axios.get(`/api/ProductionPlan/detail/${id}/production-orders`);
+  return response.data.map((item: any) => ({
+    id: item.productionOrderId,
+    orderDate: item.orderDate,
+    type: item.type,
+    description: item.description,
+    isMaterialExported: item.statusDaXuatKhoNVL,
+    isProductImported: item.statusDaNhapKhoTP,
+    
+  }));
+}

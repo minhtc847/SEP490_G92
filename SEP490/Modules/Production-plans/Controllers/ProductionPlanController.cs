@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SEP490.DB.Models;
 using SEP490.Modules.Production_plans.DTO;
 using SEP490.Modules.Production_plans.Services;
+using SEP490.Modules.ProductionOrders.Services;
 
 namespace SEP490.Modules.Production_plans.Controllers
 {
@@ -12,9 +13,11 @@ namespace SEP490.Modules.Production_plans.Controllers
     {
 
         private readonly IProductionPlanService _productionPlanService;
-        public ProductionPlanController(IProductionPlanService productionPlanService)
+        private readonly IProductionOrdersService _productionOrdersService;
+        public ProductionPlanController(IProductionPlanService productionPlanService, IProductionOrdersService productionOrdersService)
         {
             _productionPlanService = productionPlanService;
+            _productionOrdersService = productionOrdersService;
         }
 
         [HttpGet("list")]
@@ -37,6 +40,13 @@ namespace SEP490.Modules.Production_plans.Controllers
         {
             var productDetails = await _productionPlanService.GetProductionPlanProductDetailsAsync(id);
             return Ok(productDetails);
+        }
+
+        [HttpGet("detail/{id}/production-orders")]
+        public async Task<IActionResult> GetProductionOrdersByPlanId(int id)
+        {
+            var orders = await _productionOrdersService.GetProductionOrdersByPlanIdAsync(id);
+            return Ok(orders);
         }
     }
 }

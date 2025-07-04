@@ -96,10 +96,13 @@ namespace SEP490.Modules.ProductionOrders.Services
                 .Select(po => new ProductionOrdersByPlanDto
                 {
                     ProductionOrderId = po.Id,
-                    ProductionOrderCode = po.ProductionOrderCode,
+
                     OrderDate = po.OrderDate,
+                    Type = po.Type,
                     Description = po.Description,
-                    ProductionStatus = po.ProductionStatus
+                    StatusDaXuatKhoNVL = po.StatusDaXuatKhoNVL,
+                    StatusDaNhapKhoTP = po.StatusDaNhapKhoTP,
+
                 })
                 .ToListAsync();
 
