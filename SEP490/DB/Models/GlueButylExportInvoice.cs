@@ -2,5 +2,6 @@
 {
     public class GlueButylExportInvoice
     {
+        public int Id { get; set; }
     }
 }
