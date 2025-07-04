@@ -58,5 +58,26 @@ namespace SEP490.Modules.Production_plans.Services
                 Done = plan.ProductionPlanDetails.Sum(x => x.Done)
             };
         }
+
+        public async Task<List<ProductionPlanProductDetailDTO>> GetProductionPlanProductDetailsAsync(int id)
+        {
+            var productDetails = await _context.ProductionPlanDetails
+                .Include(pd => pd.Product)
+                .Where(pd => pd.ProductionPlanId == id)
+                .Select(pd => new ProductionPlanProductDetailDTO
+                {
+                    Id = pd.Id,
+                    ProductName = pd.Product.ProductName ?? string.Empty,
+                    TotalQuantity = pd.Quantity,
+                    InProduction = pd.Producing ?? 0,
+                    Completed = pd.Done,
+                    DaCatKinh = pd.DaCatKinh ?? 0,
+                    DaTronKeo = pd.DaTronKeo ?? 0,
+                    DaGiao = pd.DaGiao ?? 0
+                })
+                .ToListAsync();
+
+            return productDetails;
+        }
     }
 }

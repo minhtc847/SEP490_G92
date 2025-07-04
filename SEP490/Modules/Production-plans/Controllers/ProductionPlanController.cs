@@ -31,5 +31,12 @@ namespace SEP490.Modules.Production_plans.Controllers
             if (detail == null) return NotFound();
             return Ok(detail);
         }
+
+        [HttpGet("detail/{id}/products")]
+        public async Task<IActionResult> GetProductionPlanProductDetails(int id)
+        {
+            var productDetails = await _productionPlanService.GetProductionPlanProductDetailsAsync(id);
+            return Ok(productDetails);
+        }
     }
 }

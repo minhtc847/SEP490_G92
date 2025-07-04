@@ -127,7 +127,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                     ProductCode = po.Product.ProductCode,
                     UOM = po.UOM,
                     Amount = po.Amount,
-                    OrderId = po.ProductionOrder.ProductionPlan.SaleOrderId,
+                    //OrderId = po.ProductionOrder.ProductionPlan.SaleOrderId,
                     CostObject = po.CostObject
                 })
                 .ToListAsync();

@@ -20,6 +20,16 @@ export async function fetchProductionPlanDetail(id: number | string) {
 }
 
 /**
+ * Fetch danh sách sản phẩm trong production plan từ backend
+ * @param id id của production plan
+ * @returns Promise<ProductionPlanProductDetail[]>
+ */
+export async function fetchProductionPlanProductDetails(id: number | string) {
+  const response = await axios.get(`/api/ProductionPlan/detail/${id}/products`);
+  return response.data;
+}
+
+/**
  * Kiểu dữ liệu cho production plan
  */
 export interface ProductionPlan {
@@ -42,4 +52,15 @@ export interface ProductionPlanDetail {
   status?: string;
   quantity?: number;
   done: number;
+}
+
+export interface ProductionPlanProductDetail {
+  id: number;
+  productName: string;
+  totalQuantity: number;
+  inProduction: number;
+  completed: number;
+  daCatKinh: number;
+  daTronKeo: number;
+  daGiao: number;
 }

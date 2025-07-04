@@ -6,62 +6,19 @@ import IconSend from '@/components/icon/icon-send';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { fetchProductionPlanDetail, ProductionPlanDetail } from '../service';
+import { fetchProductionPlanDetail, fetchProductionPlanProductDetails, ProductionPlanDetail, ProductionPlanProductDetail } from '../service';
 
 const ProductionPlanDetailPage = () => {
     const { id } = useParams();
     const [detail, setDetail] = useState<ProductionPlanDetail | null>(null);
+    const [productDetails, setProductDetails] = useState<ProductionPlanProductDetail[]>([]);
+    const [loading, setLoading] = useState(true);
 
     const exportTable = () => {
         window.print();
     };
 
-    const items = [
-        {
-            id: 1,
-            productName: 'Kính cường lực 8mm',
-            totalQuantity: 100,
-            inProduction: 30,
-            completed: 20,
-            daCatKinh: 80,
-            daDanKinh: 60,
-            daTronKeo: 40,
-            daDoKeo: 20,
-        },
-        {
-            id: 2,
-            productName: 'Kính cường lực 10mm',
-            totalQuantity: 150,
-            inProduction: 50,
-            completed: 80,
-            daCatKinh: 150,
-            daDanKinh: 120,
-            daTronKeo: 100,
-            daDoKeo: 80,
-        },
-        {
-            id: 3,
-            productName: 'Kính cường lực 12mm',
-            totalQuantity: 80,
-            inProduction: 25,
-            completed: 45,
-            daCatKinh: 80,
-            daDanKinh: 60,
-            daTronKeo: 40,
-            daDoKeo: 20,
-        },
-        {
-            id: 4,
-            productName: 'Kính cường lực 6mm',
-            totalQuantity: 200,
-            inProduction: 100,
-            completed: 150,
-            daCatKinh: 200,
-            daDanKinh: 180,
-            daTronKeo: 160,
-            daDoKeo: 150,
-        },
-    ];
+    // Remove hardcoded items - will use real data from API
 
     const columns = [
         {
@@ -92,30 +49,43 @@ const ProductionPlanDetailPage = () => {
             label: 'Đã cắt kính',
             class: 'ltr:text-right rtl:text-left',
         },
-        {
-            key: 'daDanKinh',
-            label: 'Đã dán kính',
-            class: 'ltr:text-right rtl:text-left',
-        },
+        // {
+        //     key: 'daDanKinh',
+        //     label: 'Đã dán kính',
+        //     class: 'ltr:text-right rtl:text-left',
+        // },
         {
             key: 'daTronKeo',
             label: 'Đã trộn keo',
             class: 'ltr:text-right rtl:text-left',
         },
-        {
-            key: 'daDoKeo',
-            label: 'Đã đổ keo',
-            class: 'ltr:text-right rtl:text-left',
-        },
+        // {
+        //     key: 'daDoKeo',
+        //     label: 'Đã đổ keo',
+        //     class: 'ltr:text-right rtl:text-left',
+        // },
     ];
 
     useEffect(() => {
         if (!id) return;
-        fetchProductionPlanDetail(id as string)
-            .then(setDetail)
-            .catch((err) => {
-                console.error('Lỗi khi fetch chi tiết production plan:', err);
-            });
+        
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                const [detailData, productData] = await Promise.all([
+                    fetchProductionPlanDetail(id as string),
+                    fetchProductionPlanProductDetails(id as string)
+                ]);
+                setDetail(detailData);
+                setProductDetails(productData);
+            } catch (err) {
+                console.error('Lỗi khi fetch dữ liệu production plan:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
     }, [id]);
 
     return (
@@ -194,21 +164,33 @@ const ProductionPlanDetailPage = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {items.map((item) => {
-                                return (
-                                    <tr key={item.id}>
-                                        <td>{item.id}</td>
-                                        <td>{item.productName}</td>
-                                        <td className="ltr:text-right rtl:text-left">{item.totalQuantity}</td>
-                                        <td className="ltr:text-right rtl:text-left">{item.inProduction}</td>
-                                        <td className="ltr:text-right rtl:text-left">{item.completed}</td>
-                                        <td className="ltr:text-right rtl:text-left">{item.daCatKinh}</td>
-                                        <td className="ltr:text-right rtl:text-left">{item.daDanKinh}</td>
-                                        <td className="ltr:text-right rtl:text-left">{item.daTronKeo}</td>
-                                        <td className="ltr:text-right rtl:text-left">{item.daDoKeo}</td>
-                                    </tr>
-                                );
-                            })}
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={columns.length} className="text-center py-4">
+                                        Đang tải dữ liệu...
+                                    </td>
+                                </tr>
+                            ) : productDetails.length === 0 ? (
+                                <tr>
+                                    <td colSpan={columns.length} className="text-center py-4">
+                                        Không có dữ liệu sản phẩm
+                                    </td>
+                                </tr>
+                            ) : (
+                                productDetails.map((item) => {
+                                    return (
+                                        <tr key={item.id}>
+                                            <td>{item.id}</td>
+                                            <td>{item.productName}</td>
+                                            <td className="ltr:text-right rtl:text-left">{item.totalQuantity}</td>
+                                            <td className="ltr:text-right rtl:text-left">{item.inProduction}</td>
+                                            <td className="ltr:text-right rtl:text-left">{item.completed}</td>
+                                            <td className="ltr:text-right rtl:text-left">{item.daCatKinh}</td>
+                                            <td className="ltr:text-right rtl:text-left">{item.daTronKeo}</td>
+                                        </tr>
+                                    );
+                                })
+                            )}
                         </tbody>
                     </table>
                 </div>
