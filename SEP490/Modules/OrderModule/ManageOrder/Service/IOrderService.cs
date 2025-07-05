@@ -1,4 +1,5 @@
-﻿using SEP490.Modules.OrderModule.ManageOrder.DTO;
+﻿using SEP490.DB.Models;
+using SEP490.Modules.OrderModule.ManageOrder.DTO;
 
 namespace SEP490.Modules.OrderModule.ManageOrder.Services
 {
@@ -12,6 +13,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
         List<CustomerSearchResultDto> SearchCustomers(string keyword);
         int CreateOrder(CreateOrderDto dto);
         string GetNextOrderCode();
+        Task<Product> CreateProductAsync(CreateProductV2Dto dto);
     }
 
 }

@@ -14,16 +14,55 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
     {
         private readonly SEP490DbContext _context;
         private readonly IOrderService _orderService;
-        private readonly IOrderService _customerService;
 
-        public OrderController(SEP490DbContext context, IOrderService orderService, IOrderService customerService)
+        public OrderController(SEP490DbContext context, IOrderService orderService)
         {
             _context = context;
             _orderService = orderService;
-            _customerService = customerService;
         }
 
-        // GET: api/orders
+        [HttpGet("all-customer-names")]
+        public async Task<IActionResult> GetAllCustomerNames()
+        {
+            var names = await _context.Customers
+                .Select(c => c.CustomerName)
+                .ToListAsync();
+
+            return Ok(names);
+        }
+
+        [HttpGet("all-product-names")]
+        public async Task<IActionResult> GetAllProductNames()
+        {
+            var productNames = await _context.Products
+                .Select(p => p.ProductName)
+                .ToListAsync();
+
+            return Ok(productNames);
+        }
+
+
+        [HttpGet("check-product-name")]
+        public async Task<IActionResult> CheckProductName([FromQuery] string name)
+        {
+            bool exists = await _context.Products.AnyAsync(p => p.ProductName == name);
+            return Ok(new { exists });
+        }
+
+        [HttpGet("glass-structures")]
+        public IActionResult GetAllGlassStructures()
+        {
+            var result = _orderService.GetAllGlassStructures();
+            return Ok(result);
+        }
+
+        [HttpPost("product")]
+        public async Task<IActionResult> CreateProduct([FromBody] CreateProductV2Dto dto)
+        {
+            var result = await _orderService.CreateProductAsync(dto);
+            return Ok(result);
+        }
+
         [HttpGet]
         public ActionResult<List<OrderDto>> GetAllOrders()
         {
@@ -79,8 +118,8 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
         {
             try
             {
-                var orderId = _orderService.CreateOrder(dto);
-                if (orderId <= 0)
+                var orderId = _orderService.CreateOrder(dto); 
+                if (orderId <= 0) 
                 {
                     return BadRequest("Tạo đơn hàng thất bại.");
                 }
@@ -162,5 +201,3 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
         }
     }
 }
-
-

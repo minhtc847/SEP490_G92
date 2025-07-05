@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { mockPriceQuotes as initialQuotes } from '@/app/data/price-quotes';
-import { useSearchParams } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { getPriceQuotes, PriceQuote } from '@/app/(defaults)/price-quotes/service';
+import IconEye from '@/components/icon/icon-eye';
+import IconEdit from '@/components/icon/icon-edit';
+import IconTrash from '@/components/icon/icon-trash-lines';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -44,7 +46,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: nu
 };
 
 const PriceQuotePage = () => {
-    const [quotes, setQuotes] = useState(initialQuotes);
+    const [quotes, setQuotes] = useState<PriceQuote[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');
@@ -53,35 +55,48 @@ const PriceQuotePage = () => {
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const router = useRouter();
     const [message, setMessage] = useState('');
+    const searchParams = useSearchParams();
+    const deletedMessage = searchParams.get('deleted');
+    const successMessage = searchParams.get('success');
+
+    useEffect(() => {
+        const fetch = async () => {
+            try {
+                const data = await getPriceQuotes();
+                console.log('DATA:', data);
+                setQuotes(data);
+            } catch (err) {
+                console.error('Lỗi khi tải báo giá:', err);
+            }
+        };
+        fetch();
+    }, []);
 
     const handleDelete = (id: string) => {
         const deletedItem = quotes.find((q) => q.id === id);
         if (deletedItem && confirm(`Bạn có chắc chắn muốn xóa báo giá: ${deletedItem.productName}?`)) {
             setQuotes((prev) => prev.filter((q) => q.id !== id));
-            setMessage(`🗑️ Đã xóa báo giá thành công: ${deletedItem.productName}`);
-            setTimeout(() => setMessage(''), 3000);
+            router.push(`/price-quotes?deleted=${encodeURIComponent(deletedItem.productName)}`);
         }
     };
 
     const filteredQuotes = quotes
         .filter((item) => item.productName.toLowerCase().includes(searchTerm.toLowerCase()))
-        .filter((item) => (typeFilter ? item.type === typeFilter : true))
         .filter((item) => (categoryFilter ? item.category === categoryFilter : true))
+        .filter((item) => (typeFilter ? item.productCode === typeFilter : true))
         .sort((a, b) => {
-            if (priceSort === 'asc') return a.price - b.price;
-            if (priceSort === 'desc') return b.price - a.price;
+            if (priceSort === 'asc') return a.unitPrice - b.unitPrice;
+            if (priceSort === 'desc') return b.unitPrice - a.unitPrice;
             return 0;
         });
-
-    const handleCreateNew = () => {
-        router.push('/price-quotes/create');
-    };
 
     const totalPages = Math.ceil(filteredQuotes.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedQuotes = filteredQuotes.slice(startIndex, startIndex + itemsPerPage);
-    const searchParams = useSearchParams();
-    const successMessage = searchParams.get('success');
+
+    const handleCreateNew = () => {
+        router.push('/price-quotes/create');
+    };
 
     return (
         <div className="p-6 bg-white rounded-lg shadow">
@@ -91,12 +106,18 @@ const PriceQuotePage = () => {
                     + Thêm báo giá
                 </button>
             </div>
-            
+
             {successMessage && (
                 <div className="mb-4 p-3 rounded-xl bg-green-100 text-green-800 border border-green-300">
                     Đã thêm báo giá thành công cho <strong>{successMessage}</strong>.
                 </div>
             )}
+            {deletedMessage && (
+                <div className="mb-4 p-3 rounded-xl bg-red-100 text-red-800 border border-red-300">
+                    🗑️ Đã xoá báo giá thành công: <strong>{deletedMessage}</strong>
+                </div>
+            )}
+
             {message && <div className="mb-4 p-3 rounded bg-green-100 text-green-800 border border-green-300">{message}</div>}
 
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -112,7 +133,7 @@ const PriceQuotePage = () => {
                 />
                 <div className="flex flex-wrap items-center gap-4">
                     <select
-                        className="select select-bordered pl-4 pr-4 py-2 rounded-lg shadow-sm"
+                        className="select select-bordered ..."
                         value={categoryFilter}
                         onChange={(e) => {
                             setCategoryFilter(e.target.value);
@@ -120,27 +141,29 @@ const PriceQuotePage = () => {
                         }}
                     >
                         <option value="">Tất cả phân loại</option>
-                        {Array.from(new Set(initialQuotes.map((q) => q.category))).map((cat) => (
+                        {Array.from(new Set(quotes.map((q) => q.category))).map((cat) => (
                             <option key={cat} value={cat}>
                                 {cat}
                             </option>
                         ))}
                     </select>
+
                     <select
-                        className="select select-bordered pl-4 pr-4 py-2 rounded-lg shadow-sm"
+                        className="select select-bordered ..."
                         value={typeFilter}
                         onChange={(e) => {
                             setTypeFilter(e.target.value);
                             setCurrentPage(1);
                         }}
                     >
-                        <option value="">Tất cả loại</option>
-                        {Array.from(new Set(initialQuotes.map((q) => q.type))).map((type) => (
-                            <option key={type} value={type}>
-                                {type}
+                        <option value="">Tất cả mã sản phẩm</option>
+                        {Array.from(new Set(quotes.map((q) => q.productCode))).map((code) => (
+                            <option key={code} value={code}>
+                                {code}
                             </option>
                         ))}
                     </select>
+
                     <select
                         onChange={(e) => {
                             const val = e.target.value;
@@ -183,8 +206,6 @@ const PriceQuotePage = () => {
                             <th>Tên</th>
                             <th>Phân loại</th>
                             <th>Chủng loại</th>
-                            <th>Độ dày</th>
-                            <th>Trọng lượng</th>
                             <th>Đơn giá</th>
                             <th>Hành động</th>
                         </tr>
@@ -194,19 +215,17 @@ const PriceQuotePage = () => {
                             <tr key={index}>
                                 <td>{item.productName}</td>
                                 <td>{item.category}</td>
-                                <td>{item.type}</td>
-                                <td>{item.thickness}mm</td>
-                                <td>{item.weight}kg/m2</td>
-                                <td>{item.price.toLocaleString()}₫</td>
+                                <td>{item.productCode}</td>
+                                <td>{item.unitPrice.toLocaleString()}₫</td>
                                 <td className="flex gap-2">
-                                    <button className="px-2 py-1 text-sm text-white bg-gray-600 rounded hover:bg-gray-800 transition" onClick={() => router.push(`/price-quotes/${item.id}`)}>
-                                        Chi tiết
+                                    <button onClick={() => router.push(`/price-quotes/${item.id}`)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-300 transition" title="Chi tiết">
+                                        <IconEye className="w-5 h-5 text-gray-700" />
                                     </button>
-                                    <button onClick={() => router.push(`/price-quotes/edit/${item.id}`)} className="px-2 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-800 transition">
-                                        Sửa
+                                    <button onClick={() => router.push(`/price-quotes/edit/${item.id}`)} className="p-2 bg-blue-100 rounded-full hover:bg-blue-200 transition" title="Sửa">
+                                        <IconEdit className="w-5 h-5 text-blue-700" />
                                     </button>
-                                    <button onClick={() => handleDelete(item.id)} className="px-2 py-1 text-sm text-white bg-red-600 rounded hover:bg-red-800 transition">
-                                        Xóa
+                                    <button onClick={() => handleDelete(item.id)} className="p-2 bg-red-100 rounded-full hover:bg-red-200 transition" title="Xoá">
+                                        <IconTrash className="w-5 h-5 text-red-700" />
                                     </button>
                                 </td>
                             </tr>
