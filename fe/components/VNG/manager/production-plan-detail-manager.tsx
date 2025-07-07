@@ -144,6 +144,31 @@ const mockProductionOrders = [
     },
 ];
 
+// Mock data for warehouse slips
+const mockWarehouseSlips = [
+    {
+        id: 1,
+        date: '2024-07-05T08:00:00Z',
+        type: 'Cắt kính',
+        user: 'Nguyễn Văn A',
+        note: 'Xuất kính cho đơn hàng #123',
+    },
+    {
+        id: 2,
+        date: '2024-07-06T09:30:00Z',
+        type: 'keo,butyl',
+        user: 'Trần Thị B',
+        note: 'Xuất keo cho sản xuất',
+    },
+    {
+        id: 3,
+        date: '2024-07-07T10:15:00Z',
+        type: 'hóa chất',
+        user: 'Lê Văn C',
+        note: 'Xuất hóa chất cho phòng lab',
+    },
+];
+
 interface ProductionPlanDetailManagerComponentProps {
     orderInfo?: OrderInfo;
     productData?: ProductDetail[];
@@ -173,6 +198,9 @@ const ProductionPlanDetailManagerComponent: React.FC<ProductionPlanDetailManager
     const [modal5, setModal5] = useState(false);
     const [selectedOrderType, setSelectedOrderType] = useState<string>('');
     const [modalProductQuantities, setModalProductQuantities] = useState<{ [productId: number]: number }>({});
+    const [warehouseTabPage, setWarehouseTabPage] = useState(1);
+    const [warehouseTabPageSize, setWarehouseTabPageSize] = useState(PAGE_SIZES[0]);
+    const [warehouseTabRecords, setWarehouseTabRecords] = useState(mockWarehouseSlips);
     const toggleTabs = (name: string) => {
         setTabs(name);
     };
@@ -243,6 +271,14 @@ const ProductionPlanDetailManagerComponent: React.FC<ProductionPlanDetailManager
             });
         });
     }, [productionOrderSearch, productionOrders]);
+    useEffect(() => {
+        setWarehouseTabPage(1);
+    }, [warehouseTabPageSize]);
+    useEffect(() => {
+        const from = (warehouseTabPage - 1) * warehouseTabPageSize;
+        const to = from + warehouseTabPageSize;
+        setWarehouseTabRecords([...mockWarehouseSlips.slice(from, to)]);
+    }, [warehouseTabPage, warehouseTabPageSize]);
     const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass) === 'rtl';
 
     // Handler for dropdown selection
@@ -295,7 +331,18 @@ const ProductionPlanDetailManagerComponent: React.FC<ProductionPlanDetailManager
                                 Chi tiết lệnh sản xuất
                             </button>
                         </li>
-
+                        <li className="mr-2">
+                            <button
+                                type="button"
+                                className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'warehouse'
+                                    ? 'text-primary border-primary'
+                                    : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                                    }`}
+                                onClick={() => toggleTabs('warehouse')}
+                            >
+                                Phiếu xuất/nhập kho
+                            </button>
+                        </li>
                     </ul>
                 </div>
 
@@ -485,6 +532,75 @@ const ProductionPlanDetailManagerComponent: React.FC<ProductionPlanDetailManager
                                 onRecordsPerPageChange={setPageSize}
                                 minHeight={200}
                                 paginationText={({ from, to, totalRecords }) => `Showing  ${from} to ${to} of ${totalRecords} entries`}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {tabs === 'warehouse' && (
+                    <div>
+                        <div className="mb-4.5 flex flex-col gap-5 px-5 md:flex-row md:items-center">
+                            <div className="flex items-center gap-2">
+                                <h3 className="text-lg font-semibold">Danh sách phiếu xuất/nhập kho</h3>
+                            </div>
+                        </div>
+                        <div className="datatables pagination-padding">
+                            <DataTable
+                                className="table-hover whitespace-nowrap"
+                                records={warehouseTabRecords}
+                                columns={[
+                                    {
+                                        accessor: 'index',
+                                        title: 'STT',
+                                        width: 70,
+                                        render: (_, index) => <span>{index + 1}</span>,
+                                    },
+                                    {
+                                        accessor: 'date',
+                                        title: 'Ngày xuất',
+                                        render: ({ date }) => (
+                                            <div>{date ? new Date(date).toLocaleDateString() : '-'}</div>
+                                        ),
+                                    },
+                                    {
+                                        accessor: 'type',
+                                        title: 'Loại xuất',
+                                        render: ({ type }) => (
+                                            <span>{type}</span>
+                                        ),
+                                    },
+                                    {
+                                        accessor: 'user',
+                                        title: 'Người xuất',
+                                    },
+                                    {
+                                        accessor: 'note',
+                                        title: 'Ghi chú',
+                                    },
+                                    {
+                                        accessor: 'action',
+                                        title: 'Thao tác',
+                                        textAlignment: 'center',
+                                        width: 100,
+                                        render: ({ id }) => (
+                                            <div className="mx-auto flex w-max items-center gap-4">
+                                                <Link href={`/mockup/manager/ware-house-slips/${id}`} className="flex hover:text-primary" title="Xem chi tiết">
+                                                    <IconEye />
+                                                </Link>
+                                            </div>
+                                        ),
+                                    },
+                                ]}
+                                highlightOnHover
+                                totalRecords={mockWarehouseSlips.length}
+                                recordsPerPage={warehouseTabPageSize}
+                                page={warehouseTabPage}
+                                onPageChange={(p) => setWarehouseTabPage(p)}
+                                recordsPerPageOptions={PAGE_SIZES}
+                                onRecordsPerPageChange={setWarehouseTabPageSize}
+                                paginationText={({ from, to, totalRecords }) =>
+                                    `Hiển thị ${from} đến ${to} trong tổng số ${totalRecords} bản ghi`
+                                }
                             />
                         </div>
                     </div>

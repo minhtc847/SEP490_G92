@@ -45,7 +45,7 @@ const mockProductionOrder: ProductionOrderDto = {
     productionOrderCode: 'LO001',
     orderDate: '2024-07-01T08:00:00Z',
     productionStatus: 'Đang sản xuất',
-    description: 'Lệnh sản xuất kính cường lực cho dự án ABC',
+    description: 'Lệnh cắt kính,....',
 };
 
 const mockProductionOutputs: ProductionOutputDto[] = [
@@ -437,10 +437,10 @@ const ProductionOrdersDetailWorkerComponent: React.FC<ProductionOrdersDetailWork
             {/* Order Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-sm">
                 <div>
-                    <strong>Mã lệnh sản xuất:</strong> {productionOrderLoading ? 'Đang tải...' : productionOrder?.productionOrderCode || 'N/A'}
+                    <strong>Sản xuất cho:</strong> EI70 200*300*25, EI90 500*300*30
                 </div>
                 <div>
-                    <strong>Ngày xuất:</strong> {productionOrderLoading ? 'Đang tải...' : productionOrder?.orderDate ? new Date(productionOrder.orderDate).toLocaleDateString('vi-VN') : 'N/A'}
+                    <strong>Ngày lên lệnh sản xuất:</strong> {productionOrderLoading ? 'Đang tải...' : productionOrder?.orderDate ? new Date(productionOrder.orderDate).toLocaleDateString('vi-VN') : 'N/A'}
                 </div>
                 <div>
                     <strong>Trạng thái:</strong> {productionOrderLoading ? 'Đang tải...' : productionOrder?.productionStatus || 'N/A'}
