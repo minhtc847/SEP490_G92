@@ -10,7 +10,7 @@ export interface ProductInOrderDto {
   unitPrice: number;
   quantity: number;
   totalAmount: number;
-  glassCategory?: string;
+  glassProductName?: string;
 }
 
 export interface OrderDetailDto {
@@ -30,8 +30,3 @@ export const getOrderDetailById = async (id: number): Promise<OrderDetailDto> =>
   const response = await axios.get(`/api/orders/${id}`);
   return response.data;
 };
-
-export const updateSelenium = async (): Promise<any> => {
-  const response = await axios.get('api/test-table');
-  return response.data;
-}

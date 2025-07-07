@@ -1,29 +1,23 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { mockPriceQuotes } from '@/app/data/price-quotes';
-
-interface PriceQuote {
-    id: string;
-    productName: string;
-    type: string;
-    category: string;
-    thickness: number;
-    weight: number;
-    price: number;
-}
+import { getPriceQuoteById, updatePriceQuote, PriceQuoteDetail, deletePriceQuote } from './service';
 
 const PriceQuoteEditPage = () => {
     const { id } = useParams();
     const router = useRouter();
+    const [formData, setFormData] = useState<PriceQuoteDetail | null>(null);
 
-    const quote = mockPriceQuotes.find((q) => q.id === id);
-    const [formData, setFormData] = useState<PriceQuote | null>(quote || null);
-
-    if (!formData) {
-        return <div className="p-6 text-red-600">Không tìm thấy báo giá với ID: {id}</div>;
-    }
+    useEffect(() => {
+        if (id) {
+            getPriceQuoteById(String(id))
+                .then(setFormData)
+                .catch((err) => {
+                    console.error('Lỗi khi tải báo giá:', err);
+                });
+        }
+    }, [id]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -31,100 +25,85 @@ const PriceQuoteEditPage = () => {
             prev
                 ? {
                       ...prev,
-                      [name]: ['price', 'weight', 'thickness'].includes(name) ? Number(value) : value,
+                      [name]: ['glassLayers', 'adhesiveLayers', 'adhesiveThickness', 'unitPrice'].includes(name) ? Number(value) : value,
                   }
-                : null
+                : null,
         );
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        console.log('Updated data:', formData);
-        router.push('/price-quotes');
+    const handleDelete = async () => {
+        if (!formData) return;
+        const confirmDelete = confirm(`Bạn có chắc chắn muốn xoá báo giá: ${formData.productName}?`);
+        if (!confirmDelete) return;
+
+        try {
+            await deletePriceQuote(String(formData.id));
+            router.push(`/price-quotes?deleted=${encodeURIComponent(formData.productName)}`);
+        } catch (err) {
+            console.error('Lỗi khi xoá báo giá:', err);
+            alert('Xoá báo giá thất bại!');
+        }
     };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!formData) return;
+        try {
+            await updatePriceQuote(formData.id, formData);
+            router.push(`/price-quotes?success=${encodeURIComponent(formData.productName)}`);
+        } catch (err) {
+            console.error('Lỗi khi cập nhật báo giá:', err);
+        }
+    };
+
+    if (!formData) {
+        return <div className="p-6 text-red-600">Đang tải dữ liệu...</div>;
+    }
 
     return (
         <div className="p-6 bg-white rounded-lg shadow-md">
             <h2 className="text-xl font-bold mb-6">Chỉnh sửa báo giá</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block font-medium text-gray-700 mb-1">Tên sản phẩm</label>
-                    <input
-                        type="text"
-                        name="productName"
-                        value={formData.productName}
-                        onChange={handleChange}
-                        className="w-full border px-3 py-2 rounded-lg shadow-sm focus:ring focus:ring-blue-200"
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {['productCode', 'productName', 'category', 'edgeType', 'adhesiveType', 'composition'].map((field) => (
+                        <div key={field}>
+                            <label className="block font-medium text-gray-700 mb-1 capitalize">{field}</label>
+                            <input type="text" name={field} value={(formData as any)[field]} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
+                        </div>
+                    ))}
                 </div>
-                <div>
-                    <label className="block font-medium text-gray-700 mb-1">Loại</label>
-                    <input
-                        type="text"
-                        name="type"
-                        value={formData.type}
-                        onChange={handleChange}
-                        className="w-full border px-3 py-2 rounded-lg shadow-sm focus:ring focus:ring-blue-200"
-                    />
-                </div>
-                <div>
-                    <label className="block font-medium text-gray-700 mb-1">Phân loại</label>
-                    <input
-                        type="text"
-                        name="category"
-                        value={formData.category}
-                        onChange={handleChange}
-                        className="w-full border px-3 py-2 rounded-lg shadow-sm focus:ring focus:ring-blue-200"
-                    />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block font-medium text-gray-700 mb-1">Độ dày (mm)</label>
-                        <input
-                            type="number"
-                            name="thickness"
-                            value={formData.thickness}
-                            onChange={handleChange}
-                            className="w-full border px-3 py-2 rounded-lg shadow-sm focus:ring focus:ring-blue-200"
-                        />
+                        <label className="block font-medium text-gray-700 mb-1">Số lớp kính</label>
+                        <input style={{ height: 35 }} type="number" name="glassLayers" value={formData.glassLayers} onChange={handleChange} className="input w-full" />
                     </div>
                     <div>
-                        <label className="block font-medium text-gray-700 mb-1">Trọng lượng (kg/m2)</label>
-                        <input
-                            type="number"
-                            name="weight"
-                            value={formData.weight}
-                            onChange={handleChange}
-                            className="w-full border px-3 py-2 rounded-lg shadow-sm focus:ring focus:ring-blue-200"
-                        />
+                        <label className="block font-medium text-gray-700 mb-1">Số lớp keo</label>
+                        <input style={{ height: 35 }} type="number" name="adhesiveLayers" value={formData.adhesiveLayers} onChange={handleChange} className="input w-full" />
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <label className="block font-medium text-gray-700 mb-1">Độ dày keo (mm)</label>
+                        <input style={{ height: 35 }} type="number" name="adhesiveThickness" value={formData.adhesiveThickness} onChange={handleChange} className="input w-full" />
                     </div>
                     <div>
                         <label className="block font-medium text-gray-700 mb-1">Đơn giá (₫)</label>
-                        <input
-                            type="number"
-                            name="price"
-                            value={formData.price}
-                            onChange={handleChange}
-                            className="w-full border px-3 py-2 rounded-lg shadow-sm focus:ring focus:ring-blue-200"
-                        />
+                        <input style={{ height: 35 }} type="number" name="unitPrice" value={formData.unitPrice} onChange={handleChange} className="input w-full" />
                     </div>
                 </div>
 
-                <div className="flex gap-4 pt-4">
-                    <button
-                        type="button"
-                        onClick={() => router.back()}
-                        className="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition"
-                    >
+                <div className="flex flex-wrap gap-4 pt-4">
+                    <button type="button" onClick={() => router.back()} className="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition">
                         ◀ Quay lại
                     </button>
-                    <button
-                        type="submit"
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-                    >
-                        Lưu thay đổi
+                    <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                        💾 Lưu thay đổi
                     </button>
-                    
+                    <button type="button" onClick={handleDelete} className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">
+                        🗑️ Xoá báo giá
+                    </button>
                 </div>
             </form>
         </div>

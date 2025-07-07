@@ -67,6 +67,10 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("export_invoice_id");
 
+                    b.Property<string>("Note")
+                        .HasColumnType("longtext")
+                        .HasColumnName("note");
+
                     b.Property<int>("ProductId")
                         .HasColumnType("int")
                         .HasColumnName("product_id");
@@ -169,6 +173,10 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("material_type");
 
+                    b.Property<string>("note")
+                        .HasColumnType("longtext")
+                        .HasColumnName("note");
+
                     b.Property<int>("quantity")
                         .HasColumnType("int")
                         .HasColumnName("quantity");
@@ -196,6 +204,10 @@ namespace SEP490.DB.Migrations
                     b.Property<bool>("IsDC")
                         .HasColumnType("tinyint(1)")
                         .HasColumnName("is_dc");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("longtext")
+                        .HasColumnName("note");
 
                     b.Property<string>("OutputName")
                         .IsRequired()
@@ -748,19 +760,8 @@ namespace SEP490.DB.Migrations
                         .HasColumnName("quantity");
 
                     b.Property<string>("TrangThai")
-                        .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("trang_thai");
-
-                    b.Property<string>("TrangThaiCatKinh")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("trang_thai_cat_kinh");
-
-                    b.Property<string>("TrangThaiXuatKeo")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("trang_thai_xuat_keo");
 
                     b.HasKey("Id")
                         .HasName("pk_production_order_details");
@@ -832,7 +833,7 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("customer_code");
 
-                    b.Property<int>("CustomerId")
+                    b.Property<int?>("CustomerId")
                         .HasColumnType("int")
                         .HasColumnName("customer_id");
 
@@ -844,7 +845,7 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("quantity");
 
-                    b.Property<int>("SaleOrderId")
+                    b.Property<int?>("SaleOrderId")
                         .HasColumnType("int")
                         .HasColumnName("sale_order_id");
 
@@ -875,6 +876,14 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("da_cat_kinh");
 
+                    b.Property<int?>("DaDoKeo")
+                        .HasColumnType("int")
+                        .HasColumnName("da_do_keo");
+
+                    b.Property<int?>("DaGhepKinh")
+                        .HasColumnType("int")
+                        .HasColumnName("da_ghep_kinh");
+
                     b.Property<int?>("DaGiao")
                         .HasColumnType("int")
                         .HasColumnName("da_giao");
@@ -883,9 +892,33 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("da_tron_keo");
 
+                    b.Property<decimal?>("DoDaiButyl")
+                        .HasColumnType("decimal(65,30)")
+                        .HasColumnName("do_dai_butyl");
+
+                    b.Property<int?>("Doday")
+                        .HasColumnType("int")
+                        .HasColumnName("doday");
+
                     b.Property<int>("Done")
                         .HasColumnType("int")
                         .HasColumnName("done");
+
+                    b.Property<int?>("IsKinhCuongLuc")
+                        .HasColumnType("int")
+                        .HasColumnName("is_kinh_cuong_luc");
+
+                    b.Property<int?>("Kinh4")
+                        .HasColumnType("int")
+                        .HasColumnName("kinh4");
+
+                    b.Property<int?>("Kinh5")
+                        .HasColumnType("int")
+                        .HasColumnName("kinh5");
+
+                    b.Property<int?>("LoaiButyl")
+                        .HasColumnType("int")
+                        .HasColumnName("loai_butyl");
 
                     b.Property<int?>("Producing")
                         .HasColumnType("int")
@@ -902,6 +935,26 @@ namespace SEP490.DB.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int")
                         .HasColumnName("quantity");
+
+                    b.Property<int?>("SoLopKeo")
+                        .HasColumnType("int")
+                        .HasColumnName("so_lop_keo");
+
+                    b.Property<int?>("SoLopKinh")
+                        .HasColumnType("int")
+                        .HasColumnName("so_lop_kinh");
+
+                    b.Property<decimal?>("TongKeoMem")
+                        .HasColumnType("decimal(65,30)")
+                        .HasColumnName("tong_keo_mem");
+
+                    b.Property<decimal?>("TongKeoNano")
+                        .HasColumnType("decimal(65,30)")
+                        .HasColumnName("tong_keo_nano");
+
+                    b.Property<string>("UOM")
+                        .HasColumnType("longtext")
+                        .HasColumnName("uom");
 
                     b.HasKey("Id")
                         .HasName("pk_production_plan_details");
@@ -1349,15 +1402,11 @@ namespace SEP490.DB.Migrations
                     b.HasOne("SEP490.DB.Models.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_production_plans_customers_customer_id");
 
                     b.HasOne("SEP490.DB.Models.SaleOrder", "SaleOrder")
                         .WithMany()
                         .HasForeignKey("SaleOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_production_plans_sale_orders_sale_order_id");
 
                     b.Navigation("Customer");

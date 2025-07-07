@@ -4,59 +4,24 @@ import IconPlus from '@/components/icon/icon-plus';
 import IconPrinter from '@/components/icon/icon-printer';
 import IconSend from '@/components/icon/icon-send';
 import Link from 'next/link';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import { fetchProductionPlanDetail, fetchProductionPlanProductDetails, 
+    ProductionPlanDetail, ProductionPlanProductDetail, fetchProductionOrdersByPlanId, 
+    ProductionOrderListItem } from '../service';
 
 const ProductionPlanDetailPage = () => {
+    const { id } = useParams();
+    const [detail, setDetail] = useState<ProductionPlanDetail | null>(null);
+    const [productDetails, setProductDetails] = useState<ProductionPlanProductDetail[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [productionOrders, setProductionOrders] = useState<ProductionOrderListItem[]>([]);
+
     const exportTable = () => {
         window.print();
     };
 
-    const items = [
-        {
-            id: 1,
-            productName: 'Kính cường lực 8mm',
-            totalQuantity: 100,
-            inProduction: 30,
-            completed: 20,
-            daCatKinh: 80,
-            daDanKinh: 60,
-            daTronKeo: 40,
-            daDoKeo: 20,
-        },
-        {
-            id: 2,
-            productName: 'Kính cường lực 10mm',
-            totalQuantity: 150,
-            inProduction: 50,
-            completed: 80,
-            daCatKinh: 150,
-            daDanKinh: 120,
-            daTronKeo: 100,
-            daDoKeo: 80,
-        },
-        {
-            id: 3,
-            productName: 'Kính cường lực 12mm',
-            totalQuantity: 80,
-            inProduction: 25,
-            completed: 45,
-            daCatKinh: 80,
-            daDanKinh: 60,
-            daTronKeo: 40,
-            daDoKeo: 20,
-        },
-        {
-            id: 4,
-            productName: 'Kính cường lực 6mm',
-            totalQuantity: 200,
-            inProduction: 100,
-            completed: 150,
-            daCatKinh: 200,
-            daDanKinh: 180,
-            daTronKeo: 160,
-            daDoKeo: 150,
-        },
-    ];
+    // Remove hardcoded items - will use real data from API
 
     const columns = [
         {
@@ -88,21 +53,35 @@ const ProductionPlanDetailPage = () => {
             class: 'ltr:text-right rtl:text-left',
         },
         {
-            key: 'daDanKinh',
-            label: 'Đã dán kính',
-            class: 'ltr:text-right rtl:text-left',
-        },
-        {
             key: 'daTronKeo',
             label: 'Đã trộn keo',
             class: 'ltr:text-right rtl:text-left',
         },
-        {
-            key: 'daDoKeo',
-            label: 'Đã đổ keo',
-            class: 'ltr:text-right rtl:text-left',
-        },
     ];
+
+    useEffect(() => {
+        if (!id) return;
+        
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                const [detailData, productData, ordersData] = await Promise.all([
+                    fetchProductionPlanDetail(id as string),
+                    fetchProductionPlanProductDetails(id as string),
+                    fetchProductionOrdersByPlanId(id as string)
+                ]);
+                setDetail(detailData);
+                setProductDetails(productData);
+                setProductionOrders(ordersData);
+            } catch (err) {
+                console.error('Lỗi khi fetch dữ liệu production plan:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [id]);
 
     return (
         <div>
@@ -126,45 +105,42 @@ const ProductionPlanDetailPage = () => {
                     <div className="flex-1">
                         <div className="space-y-1 text-white-dark">
                             <div>Sản xuất cho:</div>
-                            <div className="font-semibold text-black dark:text-white">Công ty TNHH ABC</div>
-                            <div>405 Mulberry Rd. Mc Grady, NC, 28649</div>
-                            <div>abc@company.com</div>
-                            <div>(128) 666 070</div>
+                            <div className="font-semibold text-black dark:text-white">{detail?.customerName || '-'}</div>
+                            <div>{detail?.address || '-'}</div>
+                            <div>{detail?.phone || '-'}</div>
                         </div>
                     </div>
                     <div className="flex flex-col justify-between gap-6 sm:flex-row lg:w-2/3">
                         <div className="xl:1/3 sm:w-1/2 lg:w-2/5">
                             <div className="mb-2 flex w-full items-center justify-between">
                                 <div className="text-white-dark">Mã đơn hàng :</div>
-                                <div>#PP001</div>
+                                <div>{detail?.orderCode ? `#${detail.orderCode}` : '-'}</div>
                             </div>
                             <div className="mb-2 flex w-full items-center justify-between">
                                 <div className="text-white-dark">Ngày đặt hàng :</div>
-                                <div>15 Dec 2024</div>
+                                <div>{detail?.orderDate ? new Date(detail.orderDate).toLocaleDateString() : '-'}</div>
                             </div>
-
                             <div className="flex w-full items-center justify-between">
                                 <div className="text-white-dark">Tình trạng giao hàng :</div>
-                                <div>Đang giao</div>
+                                <div>{detail?.deliveryStatus || '-'}</div>
                             </div>
                         </div>
                         <div className="xl:1/3 sm:w-1/2 lg:w-2/5">
                             <div className="mb-2 flex w-full items-center justify-between">
                                 <div className="text-white-dark">Ngày bắt đầu:</div>
-                                <div className="whitespace-nowrap">16 Dec 2024</div>
+                                <div className="whitespace-nowrap">{detail?.planDate ? new Date(detail.planDate).toLocaleDateString() : '-'}</div>
                             </div>
-
                             <div className="mb-2 flex w-full items-center justify-between">
                                 <div className="text-white-dark">Trạng thái:</div>
-                                <div>Đang sản xuất</div>
+                                <div>{detail?.status || '-'}</div>
                             </div>
                             <div className="mb-2 flex w-full items-center justify-between">
                                 <div className="text-white-dark">Tổng sản phẩm:</div>
-                                <div>530</div>
+                                <div>{detail?.quantity ?? '-'}</div>
                             </div>
                             <div className="mb-2 flex w-full items-center justify-between">
                                 <div className="text-white-dark">Đã hoàn thành:</div>
-                                <div>295</div>
+                                <div>{detail?.done ?? '-'}</div>
                             </div>
                         </div>
                     </div>
@@ -183,21 +159,33 @@ const ProductionPlanDetailPage = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {items.map((item) => {
-                                return (
-                                    <tr key={item.id}>
-                                        <td>{item.id}</td>
-                                        <td>{item.productName}</td>
-                                        <td className="ltr:text-right rtl:text-left">{item.totalQuantity}</td>
-                                        <td className="ltr:text-right rtl:text-left">{item.inProduction}</td>
-                                        <td className="ltr:text-right rtl:text-left">{item.completed}</td>
-                                        <td className="ltr:text-right rtl:text-left">{item.daCatKinh}</td>
-                                        <td className="ltr:text-right rtl:text-left">{item.daDanKinh}</td>
-                                        <td className="ltr:text-right rtl:text-left">{item.daTronKeo}</td>
-                                        <td className="ltr:text-right rtl:text-left">{item.daDoKeo}</td>
-                                    </tr>
-                                );
-                            })}
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={columns.length} className="text-center py-4">
+                                        Đang tải dữ liệu...
+                                    </td>
+                                </tr>
+                            ) : productDetails.length === 0 ? (
+                                <tr>
+                                    <td colSpan={columns.length} className="text-center py-4">
+                                        Không có dữ liệu sản phẩm
+                                    </td>
+                                </tr>
+                            ) : (
+                                productDetails.map((item) => {
+                                    return (
+                                        <tr key={item.id}>
+                                            <td>{item.id}</td>
+                                            <td>{item.productName}</td>
+                                            <td className="ltr:text-right rtl:text-left">{item.totalQuantity}</td>
+                                            <td className="ltr:text-right rtl:text-left">{item.inProduction}</td>
+                                            <td className="ltr:text-right rtl:text-left">{item.completed}</td>
+                                            <td className="ltr:text-right rtl:text-left">{item.daCatKinh}</td>
+                                            <td className="ltr:text-right rtl:text-left">{item.daTronKeo}</td>
+                                        </tr>
+                                    );
+                                })
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -211,123 +199,42 @@ const ProductionPlanDetailPage = () => {
                         <thead>
                             <tr>
                                 <th>STT</th>
-                                <th>Loại lệnh sản xuất</th>
-                                <th>Sản xuất cho</th>
-                                <th>Số lượng</th>
+                                <th>Ngày lên lệnh SX</th>
+                                <th>Loại</th>
+                                <th>Mô tả</th>
                                 <th>Đã xuất kho NVL</th>
-                                <th>Đã nhập kho thành phẩm</th>
+                                <th>Đã nhập kho TP</th>
                                 <th>Xem chi tiết</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td>Lệnh sản xuất thường</td>
-                                <td>Kính cường lực 8mm</td>
-                                <td>100</td>
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        checked={true}
-                                        disabled
-                                        className="form-checkbox"
-                                    />
-                                </td>
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        checked={false}
-                                        disabled
-                                        className="form-checkbox"
-                                    />
-                                </td>
-                                <td>
-                                    <Link href="/production-orders/1" className="btn btn-sm btn-outline-primary">
-                                        Xem chi tiết
-                                    </Link>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>2</td>
-                                <td>Lệnh sản xuất gấp</td>
-                                <td>Kính cường lực 10mm</td>
-                                <td>150</td>
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        checked={true}
-                                        disabled
-                                        className="form-checkbox"
-                                    />
-                                </td>
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        checked={true}
-                                        disabled
-                                        className="form-checkbox"
-                                    />
-                                </td>
-                                <td>
-                                    <Link href="/production-orders/2" className="btn btn-sm btn-outline-primary">
-                                        Xem chi tiết
-                                    </Link>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>3</td>
-                                <td>Lệnh sản xuất thường</td>
-                                <td>Kính cường lực 12mm</td>
-                                <td>80</td>
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        checked={false}
-                                        disabled
-                                        className="form-checkbox"
-                                    />
-                                </td>
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        checked={false}
-                                        disabled
-                                        className="form-checkbox"
-                                    />
-                                </td>
-                                <td>
-                                    <Link href="/production-orders/3" className="btn btn-sm btn-outline-primary">
-                                        Xem chi tiết
-                                    </Link>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>4</td>
-                                <td>Lệnh sản xuất gấp</td>
-                                <td>Kính cường lực 6mm</td>
-                                <td>200</td>
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        checked={true}
-                                        disabled
-                                        className="form-checkbox"
-                                    />
-                                </td>
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        checked={false}
-                                        disabled
-                                        className="form-checkbox"
-                                    />
-                                </td>
-                                <td>
-                                    <Link href="/production-orders/4" className="btn btn-sm btn-outline-primary">
-                                        Xem chi tiết
-                                    </Link>
-                                </td>
-                            </tr>
+                            {productionOrders.length === 0 ? (
+                                <tr>
+                                    <td colSpan={7} className="text-center py-4">
+                                        Không có dữ liệu lệnh sản xuất
+                                    </td>
+                                </tr>
+                            ) : (
+                                productionOrders.map((item, idx) => (
+                                    <tr key={item.id}>
+                                        <td>{idx + 1}</td>
+                                        <td>{item.orderDate ? new Date(item.orderDate).toLocaleDateString() : '-'}</td>
+                                        <td>{item.type}</td>
+                                        <td>{item.description}</td>
+                                        <td>
+                                            <input type="checkbox" checked={item.isMaterialExported} disabled className="form-checkbox" />
+                                        </td>
+                                        <td>
+                                            <input type="checkbox" checked={item.isProductImported} disabled className="form-checkbox" />
+                                        </td>
+                                        <td>
+                                            <Link href={`/production-orders/${item.id}`} className="btn btn-sm btn-outline-primary">
+                                                Xem chi tiết
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
