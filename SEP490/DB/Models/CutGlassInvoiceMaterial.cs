@@ -8,6 +8,7 @@
         public int materialType { get; set; } // 4ly, 5ly
 
         public int quantity { get; set; } // So luong
+        public string? note { get; set; } = string.Empty;
 
         public ExportInvoice ExportInvoice { get; set; } = null!;
     }
