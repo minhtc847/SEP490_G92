@@ -1,8 +1,5 @@
 'use client';
-import IconEdit from '@/components/icon/icon-edit';
 import IconEye from '@/components/icon/icon-eye';
-import IconPlus from '@/components/icon/icon-plus';
-import IconTrashLines from '@/components/icon/icon-trash-lines';
 import { sortBy } from 'lodash';
 import { DataTableSortStatus, DataTable } from 'mantine-datatable';
 import Link from 'next/link';
@@ -160,14 +157,6 @@ const ProductionPlanList: React.FC = () => {
 
     const [search, setSearch] = useState('');
     const [productionOrderSearch, setProductionOrderSearch] = useState('');
-    const [sortStatus, setSortStatus] = useState<DataTableSortStatus>({
-        columnAccessor: 'orderCode',
-        direction: 'asc',
-    });
-    const [productionOrderSortStatus, setProductionOrderSortStatus] = useState<DataTableSortStatus>({
-        columnAccessor: 'orderDate',
-        direction: 'asc',
-    });
 
     useEffect(() => {
         // Load mock data
@@ -255,18 +244,6 @@ const ProductionPlanList: React.FC = () => {
         });
     }, [productionOrderSearch, productionOrders]);
 
-    useEffect(() => {
-        const data2 = sortBy(initialRecords, sortStatus.columnAccessor);
-        setRecords(sortStatus.direction === 'desc' ? data2.reverse() : data2);
-        setPage(1);
-    }, [sortStatus]);
-
-    useEffect(() => {
-        const data2 = sortBy(productionOrderInitialRecords, productionOrderSortStatus.columnAccessor);
-        setProductionOrderRecords(productionOrderSortStatus.direction === 'desc' ? data2.reverse() : data2);
-        setProductionOrderPage(1);
-    }, [productionOrderSortStatus, productionOrderInitialRecords]);
-
     const deleteRow = (id: any = null) => {
         if (window.confirm('Bạn có chắc chắn muốn xóa kế hoạch sản xuất này?')) {
             if (id) {
@@ -283,12 +260,6 @@ const ProductionPlanList: React.FC = () => {
             {/* Production Plans Table */}
             <div className="production-plans-table">
                 <div className="mb-4.5 flex flex-col gap-5 px-5 md:flex-row md:items-center">
-                    <div className="flex items-center gap-2">
-                        <Link href="/production-plans/create" className="btn btn-primary gap-2">
-                            <IconPlus />
-                            Thêm mới
-                        </Link>
-                    </div>
                     <div className="ltr:ml-auto rtl:mr-auto">
                         <input
                             type="text"
@@ -308,14 +279,12 @@ const ProductionPlanList: React.FC = () => {
                             {
                                 accessor: 'index',
                                 title: '#',
-                                sortable: false,
                                 width: 70,
                                 render: (_, index) => <span>{index + 1}</span>,
                             },
                             {
                                 accessor: 'orderCode',
                                 title: 'Mã đơn hàng',
-                                sortable: true,
                                 render: ({ orderCode }) => {
                                     const orderId = orderCode.replace(/^DH/, '');
                                     return (
@@ -328,7 +297,6 @@ const ProductionPlanList: React.FC = () => {
                             {
                                 accessor: 'customerName',
                                 title: 'Tên khách hàng',
-                                sortable: true,
                                 textAlignment: 'center',
                                 render: ({ customerName }) => (
                                     <div className="text-center font-semibold">{customerName}</div>
@@ -337,7 +305,6 @@ const ProductionPlanList: React.FC = () => {
                             {
                                 accessor: 'totalProducts',
                                 title: 'Tổng số SP',
-                                sortable: true,
                                 textAlignment: 'center',
                                 render: ({ totalProducts }) => (
                                     <div className="text-center font-semibold">{totalProducts}</div>
@@ -346,7 +313,6 @@ const ProductionPlanList: React.FC = () => {
                             {
                                 accessor: 'status',
                                 title: 'Trạng thái',
-                                sortable: true,
                                 render: ({ status }) => (
                                     <span className={`badge badge-outline-${status.color}`}>
                                         {status.tooltip}
@@ -356,7 +322,6 @@ const ProductionPlanList: React.FC = () => {
                             {
                                 accessor: 'action',
                                 title: 'Thao tác',
-                                sortable: false,
                                 textAlignment: 'center',
                                 width: 150,
                                 render: ({ id }) => (
@@ -377,8 +342,6 @@ const ProductionPlanList: React.FC = () => {
                         onPageChange={(p) => setPage(p)}
                         recordsPerPageOptions={PAGE_SIZES}
                         onRecordsPerPageChange={setPageSize}
-                        sortStatus={sortStatus}
-                        onSortStatusChange={setSortStatus}
                         paginationText={({ from, to, totalRecords }) =>
                             `Hiển thị ${from} đến ${to} trong tổng số ${totalRecords} bản ghi`
                         }
@@ -417,14 +380,12 @@ const ProductionPlanList: React.FC = () => {
                             {
                                 accessor: 'index',
                                 title: '#',
-                                sortable: false,
                                 width: 70,
                                 render: (_, index) => <span>{index + 1}</span>,
                             },
                             {
                                 accessor: 'orderDate',
                                 title: 'Ngày lên lệnh',
-                                sortable: true,
                                 render: ({ orderDate }) => (
                                     <div>{orderDate ? new Date(orderDate).toLocaleDateString() : '-'}</div>
                                 ),
@@ -432,7 +393,6 @@ const ProductionPlanList: React.FC = () => {
                             {
                                 accessor: 'description',
                                 title: 'Mô tả',
-                                sortable: true,
                                 render: ({ description }) => (
                                     <div className="max-w-xs truncate" title={description}>
                                         {description}
@@ -442,7 +402,6 @@ const ProductionPlanList: React.FC = () => {
                             {
                                 accessor: 'status',
                                 title: 'Trạng thái',
-                                sortable: true,
                                 render: ({ status }) => (
                                     <span className={`badge badge-outline-${status.color}`}>
                                         {status.tooltip}
@@ -452,7 +411,6 @@ const ProductionPlanList: React.FC = () => {
                             {
                                 accessor: 'isMaterialExported',
                                 title: 'Đã xuất kho NVL',
-                                sortable: true,
                                 textAlignment: 'center',
                                 render: ({ isMaterialExported }) => (
                                     <input 
@@ -466,7 +424,6 @@ const ProductionPlanList: React.FC = () => {
                             {
                                 accessor: 'isProductImported',
                                 title: 'Đã nhập kho TP',
-                                sortable: true,
                                 textAlignment: 'center',
                                 render: ({ isProductImported }) => (
                                     <input 
@@ -480,7 +437,6 @@ const ProductionPlanList: React.FC = () => {
                             {
                                 accessor: 'action',
                                 title: 'Thao tác',
-                                sortable: false,
                                 textAlignment: 'center',
                                 width: 150,
                                 render: ({ id }) => (
@@ -499,8 +455,6 @@ const ProductionPlanList: React.FC = () => {
                         onPageChange={(p) => setProductionOrderPage(p)}
                         recordsPerPageOptions={PAGE_SIZES}
                         onRecordsPerPageChange={setProductionOrderPageSize}
-                        sortStatus={productionOrderSortStatus}
-                        onSortStatusChange={setProductionOrderSortStatus}
                         paginationText={({ from, to, totalRecords }) =>
                             `Hiển thị ${from} đến ${to} trong tổng số ${totalRecords} bản ghi`
                         }
