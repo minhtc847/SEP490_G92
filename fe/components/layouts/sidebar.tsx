@@ -276,11 +276,15 @@ const Sidebar = () => {
                     </button>
                     <AnimateHeight duration={300} height={currentMenu === "mockup" ? "auto" : 0}>
                         <ul className="sub-menu text-gray-500">
+                           
                             <li>
-                                <Link href="/mockup/worker/production-orders">Danh sách lệnh sx - worker</Link>
+                                <Link href="/mockup/worker/production-plans">Danh sách kế hoạch sản xuất - worker</Link>
                             </li>
                             <li>
-                                <Link href="/mockup/worker/production-orders">Cấu trúc keo</Link>
+                                <Link href="/mockup/manager/production-plans">Danh sách kế hoạch sản xuất - manager</Link>
+                            </li>
+                            <li>
+                                <Link href="/mockup/accountant/production-plans">Danh sách kế hoạch sản xuất - manager</Link>
                             </li>
                         </ul>
                     </AnimateHeight>

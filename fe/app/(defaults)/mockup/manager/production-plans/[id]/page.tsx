@@ -1,5 +1,5 @@
 'use client';
-import ProductionPlanDetail from '@/components/VNG/worker/production-plan-detail';
+import ProductionPlanDetailManager from '@/components/VNG/manager/production-plan-detail-manager';
 import React from 'react';
 
 interface ProductionPlanDetailPageProps {
@@ -21,7 +21,7 @@ const ProductionPlanDetailPage: React.FC<ProductionPlanDetailPageProps> = ({ par
                 <h1 className="text-2xl font-bold">Chi tiết kế hoạch sản xuất</h1>
             </div>
 
-            <ProductionPlanDetail
+            <ProductionPlanDetailManager
                 onOrderCreated={handleOrderCreated}
             />
 

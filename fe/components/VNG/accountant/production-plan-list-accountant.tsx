@@ -139,7 +139,7 @@ const mockProductionOrdersByPlan: Record<number, any[]> = {
     ],
 };
 
-const ProductionPlanList: React.FC = () => {
+const ProductionPlanListAccountant: React.FC = () => {
     const [items, setItems] = useState<ProductionPlanListItem[]>([]);
     const [initialRecords, setInitialRecords] = useState<ProductionPlanListItem[]>([]);
     const [records, setRecords] = useState<ProductionPlanListItem[]>([]);
@@ -511,4 +511,4 @@ const ProductionPlanList: React.FC = () => {
     );
 };
 
-export default ProductionPlanList;
+export default ProductionPlanListAccountant;

@@ -1,5 +1,5 @@
 'use client';
-import ProductionPlanList from '@/components/VNG/worker/production-plan-list';
+import ProductionPlanListManager from '@/components/VNG/manager/production-plan-list-manager';
 import React from 'react';
 
 const WorkerProductionPlansPage = () => {
@@ -9,7 +9,7 @@ const WorkerProductionPlansPage = () => {
                 <h1 className="text-2xl font-bold">Danh sách kế hoạch sản xuất</h1>
             </div>
             <div className="panel mt-6">
-                <ProductionPlanList />
+                <ProductionPlanListManager />
             </div>
         </div>
     );

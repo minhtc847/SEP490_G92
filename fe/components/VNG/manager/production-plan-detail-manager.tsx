@@ -132,13 +132,13 @@ const mockProductionOrders = [
     },
 ];
 
-interface ProductionOrdersDetailWorkerComponentProps {
+interface ProductionPlanDetailManagerComponentProps {
     orderInfo?: OrderInfo;
     productData?: ProductDetail[];
     onOrderCreated?: () => void;
 }
 
-const ProductionOrdersDetailWorkerComponent: React.FC<ProductionOrdersDetailWorkerComponentProps> = ({
+const ProductionPlanDetailManagerComponent: React.FC<ProductionPlanDetailManagerComponentProps> = ({
     orderInfo = {
         customerName: 'Anh Huy Adamco',
         orderCode: 'ĐH00003',
@@ -723,4 +723,4 @@ const ProductionOrdersDetailWorkerComponent: React.FC<ProductionOrdersDetailWork
     );
 };
 
-export default ProductionOrdersDetailWorkerComponent;
+export default ProductionPlanDetailManagerComponent;
