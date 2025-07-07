@@ -1,11 +1,8 @@
 'use client';
 import { DataTable } from 'mantine-datatable';
 import { useEffect, useState } from 'react';
-import IconFile from '@/components/icon/icon-file';
-import IconPrinter from '@/components/icon/icon-printer';
 import IconEye from '@/components/icon/icon-eye';
 import Link from 'next/link';
-import Swal from 'sweetalert2';
 
 export interface OrderInfo {
     customerName: string;

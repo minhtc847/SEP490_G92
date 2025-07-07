@@ -284,7 +284,7 @@ const Sidebar = () => {
                                 <Link href="/mockup/manager/production-plans">Danh sách kế hoạch sản xuất - manager</Link>
                             </li>
                             <li>
-                                <Link href="/mockup/accountant/production-plans">Danh sách kế hoạch sản xuất - manager</Link>
+                                <Link href="/mockup/accountant/production-plans">Danh sách kế hoạch sản xuất - accountant</Link>
                             </li>
                         </ul>
                     </AnimateHeight>
