@@ -13,6 +13,7 @@ namespace SEP490.DB.Models
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; } // Optional if calculated in app
         public PurchaseOrder PurchaseOrder { get; set; }
-
+        public int ProductId { get; set; }
+        public Product? Product { get; set; }
     }
 }

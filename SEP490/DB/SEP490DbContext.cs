@@ -17,6 +17,10 @@ namespace SEP490.DB
 
             modelBuilder.Entity<OrderDetailProduct>()
             .HasKey(x => new { x.OrderDetailId, x.ProductId });
+            modelBuilder.Entity<PurchaseOrder>()
+                .HasOne(po => po.Customer)
+                .WithMany(c => c.PurchaseOrders)
+                .HasForeignKey(po => po.CustomerId); 
         }
 
         // Define DbSet properties for your entities here
