@@ -10,5 +10,6 @@
         public string TrangThaiCatKinh { get; set; }
         public Product? Product { get; set; }
         public ProductionOrder? ProductionOrder { get; set; }
+        public int ProductionOrderId { get; set; }
     }
 }
