@@ -1,6 +1,7 @@
 import axios from "@/setup/axios";
 
 export interface ProductInOrderDto {
+  productId: number;
   productCode: string;
   productName: string;
   height: number;

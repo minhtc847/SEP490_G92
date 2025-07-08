@@ -99,6 +99,15 @@ namespace SEP490.Modules.GlassStructureModule.ManageGlassStructure.Controller
             return Ok(new { exists });
         }
 
+        [HttpGet("by-product/{productId}")]
+        public IActionResult GetByProductId(int productId)
+        {
+            var product = _context.Products.Include(p => p.GlassStructure).FirstOrDefault(p => p.Id == productId);
+            if (product == null || product.GlassStructure == null)
+                return NotFound(new { message = "Không tìm thấy cấu trúc kính cho sản phẩm này." });
+            return Ok(product.GlassStructure);
+        }
+
 
         [HttpGet("categories")]
         public IActionResult GetCategories()

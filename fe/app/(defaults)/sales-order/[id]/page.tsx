@@ -49,7 +49,7 @@ const SalesOrderDetailPage = () => {
                     <button onClick={() => alert('Đang tạo file PDF...')} className="px-4 py-1 bg-gray-600 text-white rounded">
                         🧾 Xuất PDF
                     </button>
-                    <button onClick={() => router.push(`/production-orders/create?orderId=${id}`)} className="px-4 py-1 bg-yellow-500 text-black rounded">
+                    <button onClick={() => router.push(`/production-plans/create?orderId=${id}`)} className="px-4 py-1 bg-yellow-500 text-black rounded">
                         🏭 Tạo lệnh sản xuất
                     </button>
                 </div>

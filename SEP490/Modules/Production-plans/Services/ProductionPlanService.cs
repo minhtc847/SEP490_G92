@@ -79,5 +79,92 @@ namespace SEP490.Modules.Production_plans.Services
 
             return productDetails;
         }
+
+        public async Task<ProductionPlanDetailViewDTO> CreateProductionPlanFromSaleOrderAsync(CreateProductionPlanFromSaleOrderDTO dto)
+        {
+            var saleOrder = await _context.SaleOrders
+                .Include(so => so.Customer)
+                .Include(so => so.OrderDetails)
+                    .ThenInclude(od => od.OrderDetailProducts)
+                        .ThenInclude(odp => odp.Product)
+                            .ThenInclude(p => p.GlassStructure)
+                .FirstOrDefaultAsync(so => so.Id == dto.SaleOrderId);
+
+            if (saleOrder == null)
+                throw new Exception("Sale order not found");
+
+            var plan = new ProductionPlan
+            {
+                SaleOrderId = saleOrder.Id,
+                CustomerId = saleOrder.CustomerId,
+                PlanDate = DateTime.Now,
+                Status = "Đang sản xuất",
+                Quantity = dto.Products.Sum(p => p.Quantity)
+            };
+            _context.ProductionPlans.Add(plan);
+            await _context.SaveChangesAsync();
+
+            decimal totalKeoNano = 0;
+            decimal totalKeoMem = 0;
+
+            foreach (var prod in dto.Products)
+            {
+                var product = await _context.Products
+                    .Include(p => p.GlassStructure)
+                    .FirstOrDefaultAsync(p => p.Id == prod.ProductId);
+
+                if (product == null || product.GlassStructure == null)
+                    throw new Exception("Product or GlassStructure not found");
+
+                int glass5mm = 2;
+                int glass4mm = (product.GlassStructure.GlassLayers ?? 0) - 2;
+                if (glass4mm < 0) glass4mm = 0;
+                int butylType = (int)(product.GlassStructure.AdhesiveThickness ?? 0);
+
+                decimal width = Convert.ToDecimal(product.Width);
+                decimal height = Convert.ToDecimal(product.Height);
+                decimal areaKeo = ((width - 20) * (height - 20)) / 1_000_000M;
+                decimal doDayKeo = prod.Thickness - (glass4mm * 4) - (glass5mm * 5);
+                decimal tongKeo = areaKeo * doDayKeo * 1.2M;
+
+                if ((product.GlassStructure.AdhesiveType ?? "").ToLower() == "nano")
+                    totalKeoNano += tongKeo;
+                else if ((product.GlassStructure.AdhesiveType ?? "").ToLower() == "mềm")
+                    totalKeoMem += tongKeo;
+
+                var planDetail = new ProductionPlanDetail
+                {
+                    ProductionPlanId = plan.Id,
+                    ProductId = product.Id,
+                    Quantity = prod.Quantity,
+                    Doday = prod.Thickness,
+                    SoLopKeo = prod.GlueLayers,
+                    SoLopKinh = prod.GlassLayers,
+                    Kinh4 = glass4mm,
+                    Kinh5 = glass5mm,
+                    LoaiButyl = butylType,
+                    IsKinhCuongLuc = prod.IsCuongLuc ? 1 : 0,
+                    TongKeoNano = (product.GlassStructure.AdhesiveType ?? "").ToLower() == "nano" ? tongKeo : 0,
+                    TongKeoMem = (product.GlassStructure.AdhesiveType ?? "").ToLower() == "mềm" ? tongKeo : 0
+                };
+                _context.ProductionPlanDetails.Add(planDetail);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return new ProductionPlanDetailViewDTO
+            {
+                CustomerName = saleOrder.Customer.CustomerName ?? "",
+                Address = saleOrder.Customer.Address,
+                Phone = saleOrder.Customer.Phone,
+                OrderCode = saleOrder.OrderCode ?? "",
+                OrderDate = saleOrder.OrderDate,
+                DeliveryStatus = saleOrder.DeliveryStatus,
+                PlanDate = plan.PlanDate,
+                Status = plan.Status,
+                Quantity = plan.Quantity,
+                Done = 0
+            };
+        }
     }
 }
