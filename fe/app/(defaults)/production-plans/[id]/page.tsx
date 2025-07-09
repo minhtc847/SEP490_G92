@@ -12,7 +12,7 @@ import { useParams } from 'next/navigation';
 import {
     fetchProductionPlanDetail, fetchProductionPlanProductDetails,
     ProductionPlanDetail, ProductionPlanProductDetail, fetchProductionOrdersByPlanId,
-    ProductionOrderListItem
+    ProductionOrderListItem, fetchProductionPlanMaterialDetail, ProductionPlanMaterialDetail, ProductionPlanMaterialProduct
 } from '../service';
 
 const ProductionPlanDetailPage = () => {
@@ -94,6 +94,11 @@ const ProductionPlanDetailPage = () => {
         },
     ];
 
+    const [tabs, setTabs] = useState<string>('plan');
+    const toggleTabs = (tab: string) => setTabs(tab);
+    const [materialDetail, setMaterialDetail] = useState<ProductionPlanMaterialDetail | null>(null);
+    const [materialLoading, setMaterialLoading] = useState(false);
+
     useEffect(() => {
         if (!id) return;
 
@@ -118,105 +123,194 @@ const ProductionPlanDetailPage = () => {
         fetchData();
     }, [id]);
 
+    useEffect(() => {
+        if (tabs === 'plandetail' && id) {
+            setMaterialLoading(true);
+            fetchProductionPlanMaterialDetail(id as string)
+                .then(setMaterialDetail)
+                .finally(() => setMaterialLoading(false));
+        }
+    }, [tabs, id]);
+
     return (
         <div>
             <div className="panel">
-                <div className="flex flex-wrap justify-between gap-4 px-4">
-                    <div className="text-2xl font-semibold uppercase">Kế hoạch sản xuất</div>
-
+                <div className="mb-5">
+                    <ul className="flex flex-wrap -mb-px border-b border-[#e0e6ed] dark:border-[#191e3a]">
+                        <li className="mr-2">
+                            <button
+                                type="button"
+                                className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'plan' ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
+                                onClick={() => toggleTabs('plan')}
+                            >
+                                Kế hoạch sản xuất
+                            </button>
+                        </li>
+                        <li className="mr-2">
+                            <button
+                                type="button"
+                                className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'plandetail' ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
+                                onClick={() => toggleTabs('plandetail')}
+                            >
+                                Chi tiết vật tư
+                            </button>
+                        </li>
+                    </ul>
                 </div>
+                {tabs === 'plan' && (
+                    <div>
+                        {/* Nội dung panel cũ: thông tin chung, bảng sản phẩm... */}
+                        <div className="flex flex-wrap justify-between gap-4 px-4">
+                            <div className="text-2xl font-semibold uppercase">Kế hoạch sản xuất</div>
+                        </div>
 
-
-                <hr className="my-6 border-white-light dark:border-[#1b2e4b]" />
-                <div className="flex flex-col flex-wrap justify-between gap-6 lg:flex-row">
-                    <div className="flex-1">
-                        <div className="space-y-1 text-white-dark">
-                            <div>Sản xuất cho:</div>
-                            <div className="font-semibold text-black dark:text-white">{detail?.customerName || '-'}</div>
-                            <div>{detail?.address || '-'}</div>
-                            <div>{detail?.phone || '-'}</div>
+                        <hr className="my-6 border-white-light dark:border-[#1b2e4b]" />
+                        <div className="flex flex-col flex-wrap justify-between gap-6 lg:flex-row">
+                            <div className="flex-1">
+                                <div className="space-y-1 text-white-dark">
+                                    <div>Sản xuất cho:</div>
+                                    <div className="font-semibold text-black dark:text-white">{detail?.customerName || '-'}</div>
+                                    <div>{detail?.address || '-'}</div>
+                                    <div>{detail?.phone || '-'}</div>
+                                </div>
+                            </div>
+                            <div className="flex flex-col justify-between gap-6 sm:flex-row lg:w-2/3">
+                                <div className="xl:1/3 sm:w-1/2 lg:w-2/5">
+                                    <div className="mb-2 flex w-full items-center justify-between">
+                                        <div className="text-white-dark">Mã đơn hàng :</div>
+                                        <div>{detail?.orderCode ? `#${detail.orderCode}` : '-'}</div>
+                                    </div>
+                                    <div className="mb-2 flex w-full items-center justify-between">
+                                        <div className="text-white-dark">Ngày đặt hàng :</div>
+                                        <div>{detail?.orderDate ? new Date(detail.orderDate).toLocaleDateString() : '-'}</div>
+                                    </div>
+                                    <div className="flex w-full items-center justify-between">
+                                        <div className="text-white-dark">Tình trạng giao hàng :</div>
+                                        <div>{detail?.deliveryStatus || '-'}</div>
+                                    </div>
+                                </div>
+                                <div className="xl:1/3 sm:w-1/2 lg:w-2/5">
+                                    <div className="mb-2 flex w-full items-center justify-between">
+                                        <div className="text-white-dark">Ngày bắt đầu:</div>
+                                        <div className="whitespace-nowrap">{detail?.planDate ? new Date(detail.planDate).toLocaleDateString() : '-'}</div>
+                                    </div>
+                                    <div className="mb-2 flex w-full items-center justify-between">
+                                        <div className="text-white-dark">Trạng thái:</div>
+                                        <div>{detail?.status || '-'}</div>
+                                    </div>
+                                    <div className="mb-2 flex w-full items-center justify-between">
+                                        <div className="text-white-dark">Tổng sản phẩm:</div>
+                                        <div>{detail?.quantity ?? '-'}</div>
+                                    </div>
+                                    <div className="mb-2 flex w-full items-center justify-between">
+                                        <div className="text-white-dark">Đã hoàn thành:</div>
+                                        <div>{detail?.done ?? '-'}</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div className="flex flex-col justify-between gap-6 sm:flex-row lg:w-2/3">
-                        <div className="xl:1/3 sm:w-1/2 lg:w-2/5">
-                            <div className="mb-2 flex w-full items-center justify-between">
-                                <div className="text-white-dark">Mã đơn hàng :</div>
-                                <div>{detail?.orderCode ? `#${detail.orderCode}` : '-'}</div>
-                            </div>
-                            <div className="mb-2 flex w-full items-center justify-between">
-                                <div className="text-white-dark">Ngày đặt hàng :</div>
-                                <div>{detail?.orderDate ? new Date(detail.orderDate).toLocaleDateString() : '-'}</div>
-                            </div>
-                            <div className="flex w-full items-center justify-between">
-                                <div className="text-white-dark">Tình trạng giao hàng :</div>
-                                <div>{detail?.deliveryStatus || '-'}</div>
-                            </div>
-                        </div>
-                        <div className="xl:1/3 sm:w-1/2 lg:w-2/5">
-                            <div className="mb-2 flex w-full items-center justify-between">
-                                <div className="text-white-dark">Ngày bắt đầu:</div>
-                                <div className="whitespace-nowrap">{detail?.planDate ? new Date(detail.planDate).toLocaleDateString() : '-'}</div>
-                            </div>
-                            <div className="mb-2 flex w-full items-center justify-between">
-                                <div className="text-white-dark">Trạng thái:</div>
-                                <div>{detail?.status || '-'}</div>
-                            </div>
-                            <div className="mb-2 flex w-full items-center justify-between">
-                                <div className="text-white-dark">Tổng sản phẩm:</div>
-                                <div>{detail?.quantity ?? '-'}</div>
-                            </div>
-                            <div className="mb-2 flex w-full items-center justify-between">
-                                <div className="text-white-dark">Đã hoàn thành:</div>
-                                <div>{detail?.done ?? '-'}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div className="table-responsive mt-6">
-                    <table className="table-striped">
-                        <thead>
-                            <tr>
-                                {columns.map((column) => {
-                                    return (
-                                        <th key={column.key} className={column?.class}>
-                                            {column.label}
-                                        </th>
-                                    );
-                                })}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={columns.length} className="text-center py-4">
-                                        Đang tải dữ liệu...
-                                    </td>
-                                </tr>
-                            ) : productDetails.length === 0 ? (
-                                <tr>
-                                    <td colSpan={columns.length} className="text-center py-4">
-                                        Không có dữ liệu sản phẩm
-                                    </td>
-                                </tr>
-                            ) : (
-                                productDetails.map((item) => {
-                                    return (
-                                        <tr key={item.id}>
-                                            <td>{item.id}</td>
-                                            <td>{item.productName}</td>
-                                            <td className="ltr:text-right rtl:text-left">{item.totalQuantity}</td>
-                                            <td className="ltr:text-right rtl:text-left">{item.daCatKinh}</td>
-                                            <td className="ltr:text-right rtl:text-left">{item.daGhepKinh}</td>
-                                            <td className="ltr:text-right rtl:text-left">{item.daDoKeo}</td>
-                                            <td className="ltr:text-right rtl:text-left">{item.completed}</td>
-                                            <td className="ltr:text-right rtl:text-left">{item.daGiao}</td>
+                        <div className="table-responsive mt-6">
+                            <table className="table-striped">
+                                <thead>
+                                    <tr>
+                                        {columns.map((column) => {
+                                            return (
+                                                <th key={column.key} className={column?.class}>
+                                                    {column.label}
+                                                </th>
+                                            );
+                                        })}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {loading ? (
+                                        <tr>
+                                            <td colSpan={columns.length} className="text-center py-4">
+                                                Đang tải dữ liệu...
+                                            </td>
                                         </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                    ) : productDetails.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={columns.length} className="text-center py-4">
+                                                Không có dữ liệu sản phẩm
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        productDetails.map((item) => {
+                                            return (
+                                                <tr key={item.id}>
+                                                    <td>{item.id}</td>
+                                                    <td>{item.productName}</td>
+                                                    <td className="ltr:text-right rtl:text-left">{item.totalQuantity}</td>
+                                                    <td className="ltr:text-right rtl:text-left">{item.daCatKinh}</td>
+                                                    <td className="ltr:text-right rtl:text-left">{item.daGhepKinh}</td>
+                                                    <td className="ltr:text-right rtl:text-left">{item.daDoKeo}</td>
+                                                    <td className="ltr:text-right rtl:text-left">{item.completed}</td>
+                                                    <td className="ltr:text-right rtl:text-left">{item.daGiao}</td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+                {tabs === 'plandetail' && (
+                    <div>
+                        {materialLoading ? (
+                            <div>Đang tải dữ liệu vật tư...</div>
+                        ) : (
+                            <>
+                                <div className="flex flex-col flex-wrap justify-between gap-6 lg:flex-row">
+                                    <div className="flex flex-col justify-between gap-6 sm:flex-row lg:w-2/3">
+                                        <div className="xl:1/3 sm:w-1/2 lg:w-2/5">
+                                            <div className="mb-2 flex w-full items-center justify-between">
+                                                <div className="text-white-dark">Tổng keo nano :</div>
+                                                <div>{materialDetail?.totalKeoNano ?? '-'} kg</div>
+                                            </div>
+                                        </div>
+                                        <div className="xl:1/3 sm:w-1/2 lg:w-2/5">
+                                            <div className="mb-2 flex w-full items-center justify-between">
+                                                <div className="text-white-dark">Tổng keo mềm:</div>
+                                                <div className="whitespace-nowrap">{materialDetail?.totalKeoMem ?? '-'} kg</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="datatables mt-8">
+                                    <DataTable
+                                        highlightOnHover
+                                        className="table-hover whitespace-nowrap"
+                                        records={materialDetail?.products ?? []}
+                                        columns={[
+                                            { accessor: 'id', title: 'STT' },
+                                            { accessor: 'productName', title: 'Tên sản phẩm', render: (record: ProductionPlanMaterialProduct) => `${record.productName}` },
+                                            { accessor: 'quantity', title: 'Số lượng' },
+                                            { accessor: 'thickness', title: 'Dày' },
+                                            { accessor: 'glueLayers', title: 'Lớp keo' },
+                                            { accessor: 'glassLayers', title: 'Số kính' },
+                                            { accessor: 'glass4mm', title: 'Kính 4' },
+                                            { accessor: 'glass5mm', title: 'Kính 5' },
+                                            { accessor: 'butylType', title: 'Loại butyl' },
+                                            { accessor: 'totalGlue', title: 'Tổng keo(kg)', render: (record: ProductionPlanMaterialProduct) => record.totalGlue?.toFixed(2) },
+                                            { accessor: 'butylLength', title: 'Tổng butyl (m)', render: (record: ProductionPlanMaterialProduct) => record.butylLength?.toFixed(2) },
+                                            { accessor: 'isCuongLuc', title: 'CL', render: (record: ProductionPlanMaterialProduct) => (<input type="checkbox" checked={record.isCuongLuc} disabled className="form-checkbox" />) },
+                                        ]}
+                                        totalRecords={materialDetail?.products?.length ?? 0}
+                                        recordsPerPage={10}
+                                        page={1}
+                                        onPageChange={() => { }}
+                                        recordsPerPageOptions={[10, 20, 50]}
+                                        onRecordsPerPageChange={() => { }}
+                                        minHeight={200}
+                                        paginationText={({ from, to, totalRecords }) => `Showing  ${from} to ${to} of ${totalRecords} entries`}
+                                    />
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
             </div>
 
             <div className="panel mt-6">
@@ -245,11 +339,6 @@ const ProductionPlanDetailPage = () => {
                                 <li>
                                     <button type="button" onClick={() => handleDropdownSelect('Ghép kính')}>
                                         Ghép kính
-                                    </button>
-                                </li>
-                                <li>
-                                    <button type="button" onClick={() => handleDropdownSelect('Sản xuất keo')}>
-                                        Sản xuất keo
                                     </button>
                                 </li>
                                 <li>

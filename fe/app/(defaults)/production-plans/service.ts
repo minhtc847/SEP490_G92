@@ -89,3 +89,38 @@ export async function fetchProductionOrdersByPlanId(id: number | string): Promis
     
   }));
 }
+
+export interface ProductionPlanMaterialProduct {
+  id: number;
+  productName: string;
+  productCode: string;
+  width: number;
+  height: number;
+  quantity: number;
+  thickness: number;
+  glueLayers: number;
+  glassLayers: number;
+  glass4mm: number;
+  glass5mm: number;
+  butylType: number;
+  totalGlue: number;
+  butylLength: number;
+  isCuongLuc: boolean;
+}
+
+export interface ProductionPlanMaterialDetail {
+  totalKeoNano: number;
+  chatA: number;
+  koh: number;
+  h2o: number;
+  totalKeoMem: number;
+  nuocLieu: number;
+  a: number;
+  b: number;
+  products: ProductionPlanMaterialProduct[];
+}
+
+export async function fetchProductionPlanMaterialDetail(id: number | string): Promise<ProductionPlanMaterialDetail> {
+  const response = await axios.get(`/api/ProductionPlan/detail/${id}/materials`);
+  return response.data;
+}

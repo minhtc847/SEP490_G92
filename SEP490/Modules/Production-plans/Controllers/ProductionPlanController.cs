@@ -49,6 +49,13 @@ namespace SEP490.Modules.Production_plans.Controllers
             return Ok(orders);
         }
 
+        [HttpGet("detail/{id}/materials")]
+        public async Task<IActionResult> GetProductionPlanMaterialDetail(int id)
+        {
+            var detail = await _productionPlanService.GetProductionPlanMaterialDetailAsync(id);
+            return Ok(detail);
+        }
+
         [HttpPost("create-from-sale-order")]
         public async Task<IActionResult> CreateFromSaleOrder([FromBody] CreateProductionPlanFromSaleOrderDTO dto)
         {

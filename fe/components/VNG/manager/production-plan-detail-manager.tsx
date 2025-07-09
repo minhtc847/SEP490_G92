@@ -453,7 +453,7 @@ const ProductionPlanDetailManagerComponent: React.FC<ProductionPlanDetailManager
                                         <div className="text-white-dark">Tổng keo nano :</div>
                                         <div>20 kg</div>
                                     </div>
-                                    <div className="mb-2 flex w-full items-center justify-between">
+                                    {/* <div className="mb-2 flex w-full items-center justify-between">
                                         <div className="text-white-dark">Chất A :</div>
                                         <div>10 kg</div>
                                     </div>
@@ -464,14 +464,14 @@ const ProductionPlanDetailManagerComponent: React.FC<ProductionPlanDetailManager
                                     <div className="flex w-full items-center justify-between">
                                         <div className="text-white-dark">H2O :</div>
                                         <div>8 kg</div>
-                                    </div>
+                                    </div> */}
                                 </div>
                                 <div className="xl:1/3 sm:w-1/2 lg:w-2/5">
                                     <div className="mb-2 flex w-full items-center justify-between">
                                         <div className="text-white-dark">Tổng keo mềm:</div>
                                         <div className="whitespace-nowrap">20 kg</div>
                                     </div>
-                                    <div className="mb-2 flex w-full items-center justify-between">
+                                    {/* <div className="mb-2 flex w-full items-center justify-between">
                                         <div className="text-white-dark">Nước liệu: </div>
                                         <div>10 kg</div>
                                     </div>
@@ -482,7 +482,7 @@ const ProductionPlanDetailManagerComponent: React.FC<ProductionPlanDetailManager
                                     <div className="mb-2 flex w-full items-center justify-between">
                                         <div className="text-white-dark">B :</div>
                                         <div>3 kg</div>
-                                    </div>
+                                    </div> */}
                                 </div>
                             </div>
                         </div>

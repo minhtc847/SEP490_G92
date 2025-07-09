@@ -168,5 +168,44 @@ namespace SEP490.Modules.Production_plans.Services
                 Done = 0
             };
         }
+
+        public async Task<ProductionPlanMaterialDetailDTO> GetProductionPlanMaterialDetailAsync(int id)
+        {
+            var planDetails = await _context.ProductionPlanDetails
+                .Include(pd => pd.Product)
+                .Where(pd => pd.ProductionPlanId == id)
+                .ToListAsync();
+
+            var dto = new ProductionPlanMaterialDetailDTO();
+            // TODO: Tính toán các trường tổng vật tư dựa trên dữ liệu planDetails và Product
+            // Demo mẫu:
+            dto.TotalKeoNano = planDetails.Sum(x => (decimal?)x.TongKeoNano ?? 0);
+            dto.ChatA = 10; // Tính toán thực tế tuỳ vào công thức
+            dto.KOH = 2;
+            dto.H2O = 8;
+            dto.TotalKeoMem = planDetails.Sum(x => (decimal?)x.TongKeoMem ?? 0);
+            dto.NuocLieu = 10;
+            dto.A = 7;
+            dto.B = 3;
+            dto.Products = planDetails.Select(pd => new ProductionPlanMaterialProductDTO
+            {
+                Id = pd.Id,
+                ProductName = pd.Product.ProductName ?? string.Empty,
+                ProductCode = pd.Product.ProductCode,
+                Width = pd.Product.Width,
+                Height = pd.Product.Height,
+                Quantity = pd.Quantity,
+                Thickness = pd.Doday ?? 0,
+                GlueLayers = pd.SoLopKeo ?? 0,
+                GlassLayers = pd.SoLopKinh ?? 0,
+                Glass4mm = pd.Kinh4 ?? 0,
+                Glass5mm = pd.Kinh5 ?? 0,
+                ButylType = pd.LoaiButyl ?? 0,
+                TotalGlue = pd.TongKeoNano ?? 0 + pd.TongKeoMem ?? 0,
+                ButylLength = pd.DoDaiButyl ?? 0,
+                IsCuongLuc = (pd.IsKinhCuongLuc ?? 0) == 1
+            }).ToList();
+            return dto;
+        }
     }
 }

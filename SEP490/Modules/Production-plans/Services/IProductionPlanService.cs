@@ -9,5 +9,6 @@ namespace SEP490.Modules.Production_plans.Services
         Task<ProductionPlanDetailViewDTO?> GetProductionPlanDetailAsync(int id);
         Task<List<ProductionPlanProductDetailDTO>> GetProductionPlanProductDetailsAsync(int id);
         Task<ProductionPlanDetailViewDTO> CreateProductionPlanFromSaleOrderAsync(CreateProductionPlanFromSaleOrderDTO dto);
+        Task<ProductionPlanMaterialDetailDTO> GetProductionPlanMaterialDetailAsync(int id);
     }
 }
