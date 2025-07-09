@@ -265,15 +265,32 @@ const Sidebar = () => {
         // User Management - Factory Manager only
         if (isFactoryManager()) {
             items.push(
-                <li key="users" className="menu nav-item">
-                    <Link href="/users" className="nav-link group w-full">
+                <li key="mockup" className="menu nav-item">
+                    <button type="button" className={`${currentMenu === "mockup" ? "active" : ""} nav-link group w-full`} onClick={() => toggleMenu("mockup")}>
                         <div className="flex items-center">
-                            <IconMenuUsers className="shrink-0 group-hover:!text-primary" />
+                            <IconMenuComponents className="shrink-0 group-hover:!text-primary" />
                             <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
-                                Quản Lý Người Dùng
+                                Mockup
                             </span>
                         </div>
-                    </Link>
+                        <div className={currentMenu !== "mockup" ? "-rotate-90 rtl:rotate-90" : ""}>
+                            <IconCaretDown />
+                        </div>
+                    </button>
+                    <AnimateHeight duration={300} height={currentMenu === "mockup" ? "auto" : 0}>
+                        <ul className="sub-menu text-gray-500">
+                           
+                            <li>
+                                <Link href="/mockup/worker/production-plans">Danh sách kế hoạch sản xuất - worker</Link>
+                            </li>
+                            <li>
+                                <Link href="/mockup/manager/production-plans">Danh sách kế hoạch sản xuất - manager</Link>
+                            </li>
+                            <li>
+                                <Link href="/mockup/accountant/production-plans">Danh sách kế hoạch sản xuất - accountant</Link>
+                            </li>
+                        </ul>
+                    </AnimateHeight>
                 </li>
             );
         }

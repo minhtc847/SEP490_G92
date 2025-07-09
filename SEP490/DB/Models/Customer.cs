@@ -16,4 +16,5 @@ public class Customer
     public string? TagName { get; set; }
 
     public ICollection<SaleOrder> SaleOrders { get; set; } = new List<SaleOrder>();
+    public ICollection<PurchaseOrder> PurchaseOrders { get; set; } = new List<PurchaseOrder>();
 }

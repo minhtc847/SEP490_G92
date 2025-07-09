@@ -47,7 +47,7 @@ namespace SEP490.Modules.CustomerModule.ManageCustomer.Service
                 Phone = customer.Phone,
                 Discount = customer.Discount,
                 IsSupplier = customer.IsSupplier,
-                ZaloId = customer.ZaloId,
+                ZalopId = customer.ZaloId,
                 ZaloName = customer.ZaloName,
                 TagName = customer.TagName
             };
@@ -65,7 +65,7 @@ namespace SEP490.Modules.CustomerModule.ManageCustomer.Service
                 Phone = dto.Phone,
                 Discount = dto.Discount,
                 IsSupplier = dto.IsSupplier,
-                ZaloId = dto.ZaloId,
+                ZaloId = dto.ZalopId,
                 ZaloName = dto.ZaloName,
                 TagName = dto.TagName
             };
@@ -90,7 +90,7 @@ namespace SEP490.Modules.CustomerModule.ManageCustomer.Service
             customer.Phone = dto.Phone;
             customer.Discount = dto.Discount;
             customer.IsSupplier = dto.IsSupplier;
-            customer.ZaloId = dto.ZaloId;
+            customer.ZaloId = dto.ZalopId;
             customer.ZaloName = dto.ZaloName;
             customer.TagName = dto.TagName;
 

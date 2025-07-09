@@ -19,6 +19,6 @@
 
         // Production plan detail info
         public int Done { get; set; }
-    }
 
+    }
 }

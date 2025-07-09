@@ -56,6 +56,42 @@ namespace SEP490.DB.Migrations
                     b.ToTable("accounts", (string)null);
                 });
 
+            modelBuilder.Entity("SEP490.DB.Models.ChemicalExportDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    b.Property<int>("ExportInvoiceId")
+                        .HasColumnType("int")
+                        .HasColumnName("export_invoice_id");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("longtext")
+                        .HasColumnName("note");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int")
+                        .HasColumnName("product_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(65,30)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("UOM")
+                        .HasColumnType("longtext")
+                        .HasColumnName("uom");
+
+                    b.HasKey("Id")
+                        .HasName("pk_chemical_export_details");
+
+                    b.HasIndex("ExportInvoiceId")
+                        .HasDatabaseName("ix_chemical_export_details_export_invoice_id");
+
+                    b.ToTable("chemical_export_details", (string)null);
+                });
+
             modelBuilder.Entity("SEP490.DB.Models.Customer", b =>
                 {
                     b.Property<int>("Id")
@@ -117,6 +153,84 @@ namespace SEP490.DB.Migrations
                     b.ToTable("customers", (string)null);
                 });
 
+            modelBuilder.Entity("SEP490.DB.Models.CutGlassInvoiceMaterial", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    b.Property<int>("ExportInvoiceId")
+                        .HasColumnType("int")
+                        .HasColumnName("export_invoice_id");
+
+                    b.Property<string>("materialName")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("material_name");
+
+                    b.Property<int>("materialType")
+                        .HasColumnType("int")
+                        .HasColumnName("material_type");
+
+                    b.Property<string>("note")
+                        .HasColumnType("longtext")
+                        .HasColumnName("note");
+
+                    b.Property<int>("quantity")
+                        .HasColumnType("int")
+                        .HasColumnName("quantity");
+
+                    b.HasKey("Id")
+                        .HasName("pk_cut_glass_invoice_materials");
+
+                    b.HasIndex("ExportInvoiceId")
+                        .HasDatabaseName("ix_cut_glass_invoice_materials_export_invoice_id");
+
+                    b.ToTable("cut_glass_invoice_materials", (string)null);
+                });
+
+            modelBuilder.Entity("SEP490.DB.Models.CutGlassInvoiceOutput", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    b.Property<int>("CutGlassInvoiceMaterialId")
+                        .HasColumnType("int")
+                        .HasColumnName("cut_glass_invoice_material_id");
+
+                    b.Property<bool>("IsDC")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_dc");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("longtext")
+                        .HasColumnName("note");
+
+                    b.Property<string>("OutputName")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("output_name");
+
+                    b.Property<int>("OutputType")
+                        .HasColumnType("int")
+                        .HasColumnName("output_type");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int")
+                        .HasColumnName("quantity");
+
+                    b.HasKey("Id")
+                        .HasName("pk_cut_glass_invoice_outputs");
+
+                    b.HasIndex("CutGlassInvoiceMaterialId")
+                        .HasDatabaseName("ix_cut_glass_invoice_outputs_cut_glass_invoice_material_id");
+
+                    b.ToTable("cut_glass_invoice_outputs", (string)null);
+                });
+
             modelBuilder.Entity("SEP490.DB.Models.DeliveryHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -176,12 +290,12 @@ namespace SEP490.DB.Migrations
                         .HasColumnName("quantity_delivered");
 
                     b.HasKey("Id")
-                        .HasName("pk_delivery_history_detail");
+                        .HasName("pk_delivery_history_details");
 
                     b.HasIndex("DeliveryHistoryId")
-                        .HasDatabaseName("ix_delivery_history_detail_delivery_history_id");
+                        .HasDatabaseName("ix_delivery_history_details_delivery_history_id");
 
-                    b.ToTable("delivery_history_detail", (string)null);
+                    b.ToTable("delivery_history_details", (string)null);
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.Employee", b =>
@@ -219,6 +333,50 @@ namespace SEP490.DB.Migrations
                         .HasName("pk_employees");
 
                     b.ToTable("employees", (string)null);
+                });
+
+            modelBuilder.Entity("SEP490.DB.Models.ExportInvoice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    b.Property<int?>("EmployeeId")
+                        .HasColumnType("int")
+                        .HasColumnName("employee_id");
+
+                    b.Property<string>("EmployeeName")
+                        .HasColumnType("longtext")
+                        .HasColumnName("employee_name");
+
+                    b.Property<string>("ExportDate")
+                        .HasColumnType("longtext")
+                        .HasColumnName("export_date");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("longtext")
+                        .HasColumnName("note");
+
+                    b.Property<int>("ProductionOrderId")
+                        .HasColumnType("int")
+                        .HasColumnName("production_order_id");
+
+                    b.Property<int?>("Status")
+                        .HasColumnType("int")
+                        .HasColumnName("status");
+
+                    b.Property<int?>("TotalAmount")
+                        .HasColumnType("int")
+                        .HasColumnName("total_amount");
+
+                    b.HasKey("Id")
+                        .HasName("pk_export_invoices");
+
+                    b.HasIndex("ProductionOrderId")
+                        .HasDatabaseName("ix_export_invoices_production_order_id");
+
+                    b.ToTable("export_invoices", (string)null);
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.GlassStructure", b =>
@@ -272,6 +430,19 @@ namespace SEP490.DB.Migrations
                         .HasName("pk_glass_structures");
 
                     b.ToTable("glass_structures", (string)null);
+                });
+
+            modelBuilder.Entity("SEP490.DB.Models.GlueButylExportInvoice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_glue_butyl_export_invoices");
+
+                    b.ToTable("glue_butyl_export_invoices", (string)null);
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.HistoryMessage", b =>
@@ -589,19 +760,8 @@ namespace SEP490.DB.Migrations
                         .HasColumnName("quantity");
 
                     b.Property<string>("TrangThai")
-                        .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("trang_thai");
-
-                    b.Property<string>("TrangThaiCatKinh")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("trang_thai_cat_kinh");
-
-                    b.Property<string>("TrangThaiXuatKeo")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("trang_thai_xuat_keo");
 
                     b.HasKey("Id")
                         .HasName("pk_production_order_details");
@@ -673,7 +833,7 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("customer_code");
 
-                    b.Property<int>("CustomerId")
+                    b.Property<int?>("CustomerId")
                         .HasColumnType("int")
                         .HasColumnName("customer_id");
 
@@ -685,7 +845,7 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("quantity");
 
-                    b.Property<int>("SaleOrderId")
+                    b.Property<int?>("SaleOrderId")
                         .HasColumnType("int")
                         .HasColumnName("sale_order_id");
 
@@ -716,6 +876,14 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("da_cat_kinh");
 
+                    b.Property<int?>("DaDoKeo")
+                        .HasColumnType("int")
+                        .HasColumnName("da_do_keo");
+
+                    b.Property<int?>("DaGhepKinh")
+                        .HasColumnType("int")
+                        .HasColumnName("da_ghep_kinh");
+
                     b.Property<int?>("DaGiao")
                         .HasColumnType("int")
                         .HasColumnName("da_giao");
@@ -724,9 +892,33 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("da_tron_keo");
 
+                    b.Property<decimal?>("DoDaiButyl")
+                        .HasColumnType("decimal(65,30)")
+                        .HasColumnName("do_dai_butyl");
+
+                    b.Property<int?>("Doday")
+                        .HasColumnType("int")
+                        .HasColumnName("doday");
+
                     b.Property<int>("Done")
                         .HasColumnType("int")
                         .HasColumnName("done");
+
+                    b.Property<int?>("IsKinhCuongLuc")
+                        .HasColumnType("int")
+                        .HasColumnName("is_kinh_cuong_luc");
+
+                    b.Property<int?>("Kinh4")
+                        .HasColumnType("int")
+                        .HasColumnName("kinh4");
+
+                    b.Property<int?>("Kinh5")
+                        .HasColumnType("int")
+                        .HasColumnName("kinh5");
+
+                    b.Property<int?>("LoaiButyl")
+                        .HasColumnType("int")
+                        .HasColumnName("loai_butyl");
 
                     b.Property<int?>("Producing")
                         .HasColumnType("int")
@@ -743,6 +935,26 @@ namespace SEP490.DB.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int")
                         .HasColumnName("quantity");
+
+                    b.Property<int?>("SoLopKeo")
+                        .HasColumnType("int")
+                        .HasColumnName("so_lop_keo");
+
+                    b.Property<int?>("SoLopKinh")
+                        .HasColumnType("int")
+                        .HasColumnName("so_lop_kinh");
+
+                    b.Property<decimal?>("TongKeoMem")
+                        .HasColumnType("decimal(65,30)")
+                        .HasColumnName("tong_keo_mem");
+
+                    b.Property<decimal?>("TongKeoNano")
+                        .HasColumnType("decimal(65,30)")
+                        .HasColumnName("tong_keo_nano");
+
+                    b.Property<string>("UOM")
+                        .HasColumnType("longtext")
+                        .HasColumnName("uom");
 
                     b.HasKey("Id")
                         .HasName("pk_production_plan_details");
@@ -767,6 +979,10 @@ namespace SEP490.DB.Migrations
                         .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("code");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int")
+                        .HasColumnName("customer_id");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime(6)")
@@ -797,6 +1013,9 @@ namespace SEP490.DB.Migrations
                     b.HasKey("Id")
                         .HasName("pk_purchase_orders");
 
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("ix_purchase_orders_customer_id");
+
                     b.HasIndex("EmployeeId")
                         .HasDatabaseName("ix_purchase_orders_employee_id");
 
@@ -812,6 +1031,10 @@ namespace SEP490.DB.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasColumnName("id");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int")
+                        .HasColumnName("product_id");
 
                     b.Property<string>("ProductName")
                         .IsRequired()
@@ -841,6 +1064,9 @@ namespace SEP490.DB.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_purchase_order_details");
+
+                    b.HasIndex("ProductId")
+                        .HasDatabaseName("ix_purchase_order_details_product_id");
 
                     b.HasIndex("PurchaseOrderId")
                         .HasDatabaseName("ix_purchase_order_details_purchase_order_id");
@@ -988,6 +1214,42 @@ namespace SEP490.DB.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("SEP490.DB.Models.ChemicalExportDetail", b =>
+                {
+                    b.HasOne("SEP490.DB.Models.ExportInvoice", "ExportInvoice")
+                        .WithMany()
+                        .HasForeignKey("ExportInvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_chemical_export_details_export_invoices_export_invoice_id");
+
+                    b.Navigation("ExportInvoice");
+                });
+
+            modelBuilder.Entity("SEP490.DB.Models.CutGlassInvoiceMaterial", b =>
+                {
+                    b.HasOne("SEP490.DB.Models.ExportInvoice", "ExportInvoice")
+                        .WithMany()
+                        .HasForeignKey("ExportInvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_cut_glass_invoice_materials_export_invoices_export_invoice_id");
+
+                    b.Navigation("ExportInvoice");
+                });
+
+            modelBuilder.Entity("SEP490.DB.Models.CutGlassInvoiceOutput", b =>
+                {
+                    b.HasOne("SEP490.DB.Models.CutGlassInvoiceMaterial", "CutGlassInvoiceMaterial")
+                        .WithMany()
+                        .HasForeignKey("CutGlassInvoiceMaterialId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_cut_glass_invoice_outputs_cut_glass_invoice_materials_cut_gl");
+
+                    b.Navigation("CutGlassInvoiceMaterial");
+                });
+
             modelBuilder.Entity("SEP490.DB.Models.DeliveryHistory", b =>
                 {
                     b.HasOne("SEP490.DB.Models.Product", "Product")
@@ -1016,9 +1278,21 @@ namespace SEP490.DB.Migrations
                         .HasForeignKey("DeliveryHistoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_delivery_history_detail_delivery_histories_delivery_history_");
+                        .HasConstraintName("fk_delivery_history_details_delivery_histories_delivery_history");
 
                     b.Navigation("DeliveryHistory");
+                });
+
+            modelBuilder.Entity("SEP490.DB.Models.ExportInvoice", b =>
+                {
+                    b.HasOne("SEP490.DB.Models.ProductionOrder", "ProductionOrder")
+                        .WithMany()
+                        .HasForeignKey("ProductionOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_export_invoices_production_orders_production_order_id");
+
+                    b.Navigation("ProductionOrder");
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.OrderDetail", b =>
@@ -1144,15 +1418,11 @@ namespace SEP490.DB.Migrations
                     b.HasOne("SEP490.DB.Models.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_production_plans_customers_customer_id");
 
                     b.HasOne("SEP490.DB.Models.SaleOrder", "SaleOrder")
                         .WithMany()
                         .HasForeignKey("SaleOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_production_plans_sale_orders_sale_order_id");
 
                     b.Navigation("Customer");
@@ -1183,6 +1453,13 @@ namespace SEP490.DB.Migrations
 
             modelBuilder.Entity("SEP490.DB.Models.PurchaseOrder", b =>
                 {
+                    b.HasOne("SEP490.DB.Models.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_purchase_orders_customers_customer_id");
+
                     b.HasOne("SEP490.DB.Models.Employee", "Employee")
                         .WithMany()
                         .HasForeignKey("EmployeeId")
@@ -1197,6 +1474,8 @@ namespace SEP490.DB.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_purchase_orders_customers_supplier_id");
 
+                    b.Navigation("Customer");
+
                     b.Navigation("Employee");
 
                     b.Navigation("Supplier");
@@ -1204,12 +1483,21 @@ namespace SEP490.DB.Migrations
 
             modelBuilder.Entity("SEP490.DB.Models.PurchaseOrderDetail", b =>
                 {
-                    b.HasOne("SEP490.DB.Models.PurchaseOrder", "PurchaseOrder")
+                    b.HasOne("SEP490.DB.Models.Product", "Product")
                         .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_purchase_order_details_products_product_id");
+
+                    b.HasOne("SEP490.DB.Models.PurchaseOrder", "PurchaseOrder")
+                        .WithMany("PurchaseOrderDetails")
                         .HasForeignKey("PurchaseOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_purchase_order_details_purchase_orders_purchase_order_id");
+
+                    b.Navigation("Product");
 
                     b.Navigation("PurchaseOrder");
                 });
@@ -1244,6 +1532,11 @@ namespace SEP490.DB.Migrations
             modelBuilder.Entity("SEP490.DB.Models.ProductionPlan", b =>
                 {
                     b.Navigation("ProductionPlanDetails");
+                });
+
+            modelBuilder.Entity("SEP490.DB.Models.PurchaseOrder", b =>
+                {
+                    b.Navigation("PurchaseOrderDetails");
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.SaleOrder", b =>

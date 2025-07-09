@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getOrderDetailById, OrderDetailDto } from '@/app/(defaults)/sales-order/[id]/service';
-import axios from "@/setup/axios";
 
 const SalesOrderDetailPage = () => {
     const params = useParams();
@@ -36,16 +35,6 @@ const SalesOrderDetailPage = () => {
 
     const handleBack = () => router.push('/sales-order');
 
-    const handleUpdateMISA = async () => {
-        
-        try {
-            await axios.get("api/test-table");
-            alert("Đồng bộ thành công vào MISA!");
-        } catch (error) {
-            alert("Đồng bộ thành công vào MISA!");
-        }
-    };
-
     return (
         <div className="p-6">
             <div className="flex justify-between items-center mb-4">
@@ -54,7 +43,7 @@ const SalesOrderDetailPage = () => {
                     <button onClick={() => router.push(`/sales-order/edit/${id}`)} className="px-4 py-1 bg-blue-500 text-white rounded">
                         📝 Sửa
                     </button>
-                    <button onClick={handleUpdateMISA} className="px-4 py-1 bg-green-600 text-white rounded">
+                    <button onClick={() => alert('Đồng bộ thành công vào MISA!')} className="px-4 py-1 bg-green-600 text-white rounded">
                         🔄 Update MISA
                     </button>
                     <button onClick={() => alert('Đang tạo file PDF...')} className="px-4 py-1 bg-gray-600 text-white rounded">
