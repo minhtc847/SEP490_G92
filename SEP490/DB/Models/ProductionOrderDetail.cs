@@ -8,5 +8,6 @@
         public string? TrangThai { get; set; } = string.Empty;
         public Product? Product { get; set; }
         public ProductionOrder? ProductionOrder { get; set; }
+        public int productionOrderId { get; set; }
     }
 }
