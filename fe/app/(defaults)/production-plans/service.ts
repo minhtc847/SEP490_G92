@@ -63,6 +63,8 @@ export interface ProductionPlanProductDetail {
   daCatKinh: number;
   daTronKeo: number;
   daGiao: number;
+  daGhepKinh: number;
+  daDoKeo: number;
 }
 
 export interface ProductionOrderListItem {

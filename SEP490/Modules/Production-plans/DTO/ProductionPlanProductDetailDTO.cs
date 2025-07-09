@@ -10,5 +10,7 @@ namespace SEP490.Modules.Production_plans.DTO
         public int DaCatKinh { get; set; }
         public int DaTronKeo { get; set; }
         public int DaGiao { get; set; }
+        public int DaGhepKinh { get; set; }
+        public int DaDoKeo { get; set; }
     }
 } 

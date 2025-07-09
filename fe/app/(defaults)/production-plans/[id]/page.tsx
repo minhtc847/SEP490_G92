@@ -26,7 +26,7 @@ const ProductionPlanDetailPage = () => {
     const columns = [
         {
             key: 'id',
-            label: 'Số thứ tự',
+            label: 'STT',
         },
         {
             key: 'productName',
@@ -34,17 +34,7 @@ const ProductionPlanDetailPage = () => {
         },
         {
             key: 'totalQuantity',
-            label: 'Tổng số lượng',
-            class: 'ltr:text-right rtl:text-left',
-        },
-        {
-            key: 'inProduction',
-            label: 'Đang sản xuất',
-            class: 'ltr:text-right rtl:text-left',
-        },
-        {
-            key: 'completed',
-            label: 'Đã hoàn thành',
+            label: 'Số lượng',
             class: 'ltr:text-right rtl:text-left',
         },
         {
@@ -53,8 +43,23 @@ const ProductionPlanDetailPage = () => {
             class: 'ltr:text-right rtl:text-left',
         },
         {
-            key: 'daTronKeo',
-            label: 'Đã trộn keo',
+            key: 'daGhepKinh',
+            label: 'Đã ghép kính',
+            class: 'ltr:text-right rtl:text-left',
+        },
+        {
+            key: 'daDoKeo',
+            label: 'Đã đổ keo',
+            class: 'ltr:text-right rtl:text-left',
+        },
+        {
+            key: 'completed',
+            label: 'Đã hoàn thành',
+            class: 'ltr:text-right rtl:text-left',
+        },
+        {
+            key: 'daGiao',
+            label: 'Đã giao',
             class: 'ltr:text-right rtl:text-left',
         },
     ];
@@ -178,10 +183,11 @@ const ProductionPlanDetailPage = () => {
                                             <td>{item.id}</td>
                                             <td>{item.productName}</td>
                                             <td className="ltr:text-right rtl:text-left">{item.totalQuantity}</td>
-                                            <td className="ltr:text-right rtl:text-left">{item.inProduction}</td>
-                                            <td className="ltr:text-right rtl:text-left">{item.completed}</td>
                                             <td className="ltr:text-right rtl:text-left">{item.daCatKinh}</td>
-                                            <td className="ltr:text-right rtl:text-left">{item.daTronKeo}</td>
+                                            <td className="ltr:text-right rtl:text-left">{item.daGhepKinh}</td>
+                                            <td className="ltr:text-right rtl:text-left">{item.daDoKeo}</td>
+                                            <td className="ltr:text-right rtl:text-left">{item.completed}</td>
+                                            <td className="ltr:text-right rtl:text-left">{item.daGiao}</td>
                                         </tr>
                                     );
                                 })

@@ -72,7 +72,9 @@ namespace SEP490.Modules.Production_plans.Services
                     InProduction = pd.Producing ?? 0,
                     Completed = pd.Done,
                     DaCatKinh = pd.DaCatKinh ?? 0,
+                    DaGhepKinh = pd.DaGhepKinh ?? 0,
                     DaTronKeo = pd.DaTronKeo ?? 0,
+                    DaDoKeo = pd.DaDoKeo ?? 0,
                     DaGiao = pd.DaGiao ?? 0
                 })
                 .ToListAsync();
