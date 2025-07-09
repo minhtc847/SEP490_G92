@@ -1,14 +1,19 @@
 'use client';
-import IconEdit from '@/components/icon/icon-edit';
-import IconPlus from '@/components/icon/icon-plus';
-import IconPrinter from '@/components/icon/icon-printer';
+import { DataTable } from 'mantine-datatable';
+import { Dialog, Transition } from '@headlessui/react';
+import { Fragment } from 'react';
+import Dropdown from '@/components/dropdown';
+import { useSelector } from 'react-redux';
+import { IRootState } from '@/store';
 import IconSend from '@/components/icon/icon-send';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { fetchProductionPlanDetail, fetchProductionPlanProductDetails, 
-    ProductionPlanDetail, ProductionPlanProductDetail, fetchProductionOrdersByPlanId, 
-    ProductionOrderListItem } from '../service';
+import {
+    fetchProductionPlanDetail, fetchProductionPlanProductDetails,
+    ProductionPlanDetail, ProductionPlanProductDetail, fetchProductionOrdersByPlanId,
+    ProductionOrderListItem
+} from '../service';
 
 const ProductionPlanDetailPage = () => {
     const { id } = useParams();
@@ -17,8 +22,33 @@ const ProductionPlanDetailPage = () => {
     const [loading, setLoading] = useState(true);
     const [productionOrders, setProductionOrders] = useState<ProductionOrderListItem[]>([]);
 
-    const exportTable = () => {
-        window.print();
+    // Dropdown & Modal states
+    const [modal5, setModal5] = useState(false);
+    const [selectedOrderType, setSelectedOrderType] = useState<string | null>(null);
+    const [modalProductQuantities, setModalProductQuantities] = useState<{ [productId: number]: number }>({});
+    const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass === 'rtl');
+
+    // Use productDetails as productData for modal
+    const productData = productDetails;
+
+    // Handler for dropdown selection
+    const handleDropdownSelect = (type: string) => {
+        setSelectedOrderType(type);
+        setModal5(true);
+        // Initialize modal quantities with default values (e.g., 0)
+        const initialQuantities: { [productId: number]: number } = {};
+        productData.forEach((product) => {
+            initialQuantities[product.id] = 0;
+        });
+        setModalProductQuantities(initialQuantities);
+    };
+
+    // Handler for changing quantity in modal
+    const handleModalQuantityChange = (productId: number, value: string) => {
+        setModalProductQuantities((prev) => ({
+            ...prev,
+            [productId]: Number(value),
+        }));
     };
 
     // Remove hardcoded items - will use real data from API
@@ -66,7 +96,7 @@ const ProductionPlanDetailPage = () => {
 
     useEffect(() => {
         if (!id) return;
-        
+
         const fetchData = async () => {
             try {
                 setLoading(true);
@@ -90,14 +120,6 @@ const ProductionPlanDetailPage = () => {
 
     return (
         <div>
-            <div className="mb-6 flex flex-wrap items-center justify-center gap-4 lg:justify-end">
-                <button type="button" className="btn btn-primary gap-2">
-                    <IconSend />
-                    Lên lệnh sản xuất
-                </button>
-
-
-            </div>
             <div className="panel">
                 <div className="flex flex-wrap justify-between gap-4 px-4">
                     <div className="text-2xl font-semibold uppercase">Kế hoạch sản xuất</div>
@@ -196,7 +218,50 @@ const ProductionPlanDetailPage = () => {
                     </table>
                 </div>
             </div>
+
             <div className="panel mt-6">
+
+                <div className="flex flex-wrap items-center justify-center gap-4 lg:justify-end">
+                    <div className="dropdown">
+                        <Dropdown
+                            placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`}
+                            btnClassName="btn btn-primary dropdown-toggle"
+                            button={
+                                <>
+                                    <IconSend />
+                                    Lên lệnh sản xuất
+                                    <span>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
+                                    </span>
+                                </>
+                            }
+                        >
+                            <ul className="!min-w-[170px]">
+                                <li>
+                                    <button type="button" onClick={() => handleDropdownSelect('Cắt kính')}>
+                                        Cắt kính
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" onClick={() => handleDropdownSelect('Ghép kính')}>
+                                        Ghép kính
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" onClick={() => handleDropdownSelect('Sản xuất keo')}>
+                                        Sản xuất keo
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" onClick={() => handleDropdownSelect('Đổ keo')}>
+                                        Đổ keo
+                                    </button>
+                                </li>
+                            </ul>
+                        </Dropdown>
+                    </div>
+                </div>
+
                 <div className="mb-4">
                     <h3 className="text-lg font-semibold">Lệnh sản xuất</h3>
                 </div>
@@ -244,6 +309,83 @@ const ProductionPlanDetailPage = () => {
                         </tbody>
                     </table>
                 </div>
+
+                <Transition appear show={modal5} as={Fragment}>
+                    <Dialog as="div" open={modal5} onClose={() => setModal5(false)}>
+                        <Transition.Child
+                            as={Fragment}
+                            enter="ease-out duration-300"
+                            enterFrom="opacity-0"
+                            enterTo="opacity-100"
+                            leave="ease-in duration-200"
+                            leaveFrom="opacity-100"
+                            leaveTo="opacity-0"
+                        >
+                            <div className="fixed inset-0" />
+                        </Transition.Child>
+                        <div className="fixed inset-0 bg-[black]/60 z-[999]">
+                            <div className="flex items-start justify-center min-h-screen px-4">
+                                <Transition.Child
+                                    as={Fragment}
+                                    enter="ease-out duration-300"
+                                    enterFrom="opacity-0 scale-95"
+                                    enterTo="opacity-100 scale-100"
+                                    leave="ease-in duration-200"
+                                    leaveFrom="opacity-100 scale-100"
+                                    leaveTo="opacity-0 scale-95"
+                                >
+                                    <Dialog.Panel className="panel border-0 p-0 rounded-lg overflow-hidden w-full max-w-5xl my-8 text-black dark:text-white-dark">
+                                        <div className="flex bg-[#fbfbfb] dark:bg-[#121c2c] items-center justify-between px-5 py-3">
+                                            <h5 className="font-bold text-lg">{selectedOrderType || 'Lệnh sản xuất'}</h5>
+                                            <button onClick={() => setModal5(false)} type="button" className="text-white-dark hover:text-dark">
+                                                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
+                                            </button>
+                                        </div>
+                                        <div className="p-5">
+                                            {/* Mocked product list with quantity input */}
+                                            <div className="table-responsive">
+                                                <table className="table-striped w-full">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>STT</th>
+                                                            <th>Tên sản phẩm</th>
+                                                            <th>Số lượng</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {productData.map((product, idx) => (
+                                                            <tr key={product.id}>
+                                                                <td>{idx + 1}</td>
+                                                                <td>{product.productName}</td>
+                                                                <td>
+                                                                    <input
+                                                                        type="number"
+                                                                        min={0}
+                                                                        className="form-input w-24"
+                                                                        value={modalProductQuantities[product.id] ?? 0}
+                                                                        onChange={e => handleModalQuantityChange(product.id, e.target.value)}
+                                                                    />
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <div className="flex justify-end items-center mt-8">
+                                                <button onClick={() => setModal5(false)} type="button" className="btn btn-outline-danger">
+                                                    Discard
+                                                </button>
+                                                <button onClick={() => setModal5(false)} type="button" className="btn btn-primary ltr:ml-4 rtl:mr-4">
+                                                    Save
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </Dialog.Panel>
+                                </Transition.Child>
+                            </div>
+                        </div>
+                    </Dialog>
+                </Transition>
             </div>
         </div>
     );
