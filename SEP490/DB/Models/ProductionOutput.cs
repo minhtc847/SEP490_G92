@@ -7,7 +7,6 @@
         public string? ProductName { get; set; }
         public string? UOM { get; set; }
         public decimal? Amount { get; set; }
-        public int OrderId { get; set; }
         public string? CostObject { get; set; }
         public int ProductionOrderId { get; set; }
         public ProductionOrder ProductionOrder { get; set; } = null!;
