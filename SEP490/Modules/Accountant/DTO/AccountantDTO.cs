@@ -1,0 +1,12 @@
+﻿namespace SEP490.Modules.Accountant.DTO
+{
+    public class AccountantDTO
+    {
+        public int ProductionOrderId { get; set; }
+        public string? ProductionOrderCode { get; set; }
+        public string? OrderCode { get; set; }
+        public string? CustomerName { get; set; }
+        public int TotalAmount { get; set; }
+        public string Status { get; set; }
+    }
+}

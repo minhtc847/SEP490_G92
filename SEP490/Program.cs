@@ -39,10 +39,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// Add services to the container.
-builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddScoped<IZaloChatForwardService, ZaloChatForwardService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
+
+
 builder.Services.AddHttpClient<ZaloChatService>();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
@@ -87,6 +85,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI();
 }

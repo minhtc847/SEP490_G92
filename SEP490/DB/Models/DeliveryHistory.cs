@@ -8,9 +8,10 @@
         public DateTime DeliveryDate { get; set; }
         public int QuantityDelivery { get; set; }
         public int ProductId { get; set; }
-
+        public string? Note { get; set; }
         public Product Product { get; set; } = null!;
         public ProductionPlan ProductionPlan { get; set; } = null!; 
+        public ICollection<DeliveryHistoryDetail> DeliveryDetails { get; set; } = new List<DeliveryHistoryDetail>();
         public ICollection<DeliveryHistoryDetail> DeliveryDetails { get; set; } = new List<DeliveryHistoryDetail>();
     }
 }
