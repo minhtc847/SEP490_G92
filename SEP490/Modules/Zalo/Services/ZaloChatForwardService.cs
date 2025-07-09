@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.DB.Models;
 using SEP490.Modules.Zalo.DTO;
@@ -8,7 +7,7 @@ using System.Text.Json;
 
 namespace SEP490.Modules.Zalo.Services
 {
-    public class ZaloChatForwardService : BaseService, IZaloChatForwardService
+    public class ZaloChatForwardService : IZaloChatForwardService
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly SEP490DbContext _context;

@@ -751,7 +751,7 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("product_id");
 
-                    b.Property<int>("ProductionOrderId")
+                    b.Property<int?>("ProductionOrderId")
                         .HasColumnType("int")
                         .HasColumnName("production_order_id");
 
@@ -1383,9 +1383,7 @@ namespace SEP490.DB.Migrations
                     b.HasOne("SEP490.DB.Models.ProductionOrder", "ProductionOrder")
                         .WithMany()
                         .HasForeignKey("ProductionOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_production_order_details_production_orders_production_order_");
+                        .HasConstraintName("fk_production_order_details_production_orders_production_order_id");
 
                     b.Navigation("Product");
 
