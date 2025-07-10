@@ -30,6 +30,16 @@ export async function fetchProductionPlanProductDetails(id: number | string) {
 }
 
 /**
+ * Tạo lệnh sản xuất cắt kính
+ * @param data dữ liệu lệnh cắt kính
+ * @returns Promise<boolean>
+ */
+export async function createCutGlassOrder(data: CutGlassOrderData) {
+  const response = await axios.post("/api/CutGlassOrder/create", data);
+  return response.data;
+}
+
+/**
  * Kiểu dữ liệu cho production plan
  */
 export interface ProductionPlan {
@@ -56,6 +66,7 @@ export interface ProductionPlanDetail {
 
 export interface ProductionPlanProductDetail {
   id: number;
+  productId: number; // Thêm productId để lưu ID thực của sản phẩm
   productName: string;
   totalQuantity: number;
   inProduction: number;
@@ -75,6 +86,17 @@ export interface ProductionOrderListItem {
   isMaterialExported: boolean;
   isProductImported: boolean;
   
+}
+
+export interface CutGlassOrderData {
+  productionPlanId: number;
+  productQuantities: { [productionPlanDetailId: number]: number }; // Sử dụng ID của ProductionPlanDetail
+  finishedProducts: FinishedProduct[];
+}
+
+export interface FinishedProduct {
+  productName: string;
+  quantity: number;
 }
 
 export async function fetchProductionOrdersByPlanId(id: number | string): Promise<ProductionOrderListItem[]> {

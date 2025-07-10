@@ -12,8 +12,10 @@ import { useParams } from 'next/navigation';
 import {
     fetchProductionPlanDetail, fetchProductionPlanProductDetails,
     ProductionPlanDetail, ProductionPlanProductDetail, fetchProductionOrdersByPlanId,
-    ProductionOrderListItem, fetchProductionPlanMaterialDetail, ProductionPlanMaterialDetail, ProductionPlanMaterialProduct
+    ProductionOrderListItem, fetchProductionPlanMaterialDetail, ProductionPlanMaterialDetail, ProductionPlanMaterialProduct,
+    createCutGlassOrder, CutGlassOrderData
 } from '../service';
+import CutGlassModal from '@/components/VNG/manager/production-orders/modals/CutGlassModal';
 
 const ProductionPlanDetailPage = () => {
     const { id } = useParams();
@@ -22,10 +24,10 @@ const ProductionPlanDetailPage = () => {
     const [loading, setLoading] = useState(true);
     const [productionOrders, setProductionOrders] = useState<ProductionOrderListItem[]>([]);
 
-    // Dropdown & Modal states
-    const [modal5, setModal5] = useState(false);
-    const [selectedOrderType, setSelectedOrderType] = useState<string | null>(null);
-    const [modalProductQuantities, setModalProductQuantities] = useState<{ [productId: number]: number }>({});
+    // Modal states
+    const [cutGlassModalOpen, setCutGlassModalOpen] = useState(false);
+    const [materialDetail, setMaterialDetail] = useState<ProductionPlanMaterialDetail | null>(null);
+    
     const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass === 'rtl');
 
     // Use productDetails as productData for modal
@@ -33,22 +35,50 @@ const ProductionPlanDetailPage = () => {
 
     // Handler for dropdown selection
     const handleDropdownSelect = (type: string) => {
-        setSelectedOrderType(type);
-        setModal5(true);
-        // Initialize modal quantities with default values (e.g., 0)
-        const initialQuantities: { [productId: number]: number } = {};
-        productData.forEach((product) => {
-            initialQuantities[product.id] = 0;
-        });
-        setModalProductQuantities(initialQuantities);
+        switch (type) {
+            case 'Cắt kính':
+                setCutGlassModalOpen(true);
+                break;
+            case 'Ghép kính':
+                // TODO: Implement other modals
+                console.log('Ghép kính modal - to be implemented');
+                break;
+            case 'Đổ keo':
+                // TODO: Implement other modals
+                console.log('Đổ keo modal - to be implemented');
+                break;
+        }
     };
 
-    // Handler for changing quantity in modal
-    const handleModalQuantityChange = (productId: number, value: string) => {
-        setModalProductQuantities((prev) => ({
-            ...prev,
-            [productId]: Number(value),
-        }));
+    // Handler for saving cut glass order
+    const handleSaveCutGlassOrder = async (data: CutGlassOrderData) => {
+        try {
+            // Prepare data for API
+            const orderData = {
+                productionPlanId: Number(id),
+                productQuantities: data.productQuantities,
+                finishedProducts: data.finishedProducts
+            };
+
+            const result = await createCutGlassOrder(orderData);
+            
+            if (result) {
+                // Refresh production orders list
+                const ordersData = await fetchProductionOrdersByPlanId(id as string);
+                setProductionOrders(ordersData);
+                
+                // Close modal
+                setCutGlassModalOpen(false);
+                
+                // Show success message (you can use a toast notification here)
+                alert('Lệnh cắt kính đã được tạo thành công!');
+            } else {
+                alert('Có lỗi xảy ra khi tạo lệnh cắt kính!');
+            }
+        } catch (error) {
+            console.error('Error creating cut glass order:', error);
+            alert('Có lỗi xảy ra khi tạo lệnh cắt kính!');
+        }
     };
 
     // Remove hardcoded items - will use real data from API
@@ -96,7 +126,6 @@ const ProductionPlanDetailPage = () => {
 
     const [tabs, setTabs] = useState<string>('plan');
     const toggleTabs = (tab: string) => setTabs(tab);
-    const [materialDetail, setMaterialDetail] = useState<ProductionPlanMaterialDetail | null>(null);
     const [materialLoading, setMaterialLoading] = useState(false);
 
     useEffect(() => {
@@ -105,14 +134,16 @@ const ProductionPlanDetailPage = () => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const [detailData, productData, ordersData] = await Promise.all([
+                const [detailData, productData, ordersData, materialData] = await Promise.all([
                     fetchProductionPlanDetail(id as string),
                     fetchProductionPlanProductDetails(id as string),
-                    fetchProductionOrdersByPlanId(id as string)
+                    fetchProductionOrdersByPlanId(id as string),
+                    fetchProductionPlanMaterialDetail(id as string)
                 ]);
                 setDetail(detailData);
                 setProductDetails(productData);
                 setProductionOrders(ordersData);
+                setMaterialDetail(materialData);
             } catch (err) {
                 console.error('Lỗi khi fetch dữ liệu production plan:', err);
             } finally {
@@ -124,13 +155,13 @@ const ProductionPlanDetailPage = () => {
     }, [id]);
 
     useEffect(() => {
-        if (tabs === 'plandetail' && id) {
+        if (tabs === 'plandetail' && id && !materialDetail) {
             setMaterialLoading(true);
             fetchProductionPlanMaterialDetail(id as string)
                 .then(setMaterialDetail)
                 .finally(() => setMaterialLoading(false));
         }
-    }, [tabs, id]);
+    }, [tabs, id, materialDetail]);
 
     return (
         <div>
@@ -399,82 +430,15 @@ const ProductionPlanDetailPage = () => {
                     </table>
                 </div>
 
-                <Transition appear show={modal5} as={Fragment}>
-                    <Dialog as="div" open={modal5} onClose={() => setModal5(false)}>
-                        <Transition.Child
-                            as={Fragment}
-                            enter="ease-out duration-300"
-                            enterFrom="opacity-0"
-                            enterTo="opacity-100"
-                            leave="ease-in duration-200"
-                            leaveFrom="opacity-100"
-                            leaveTo="opacity-0"
-                        >
-                            <div className="fixed inset-0" />
-                        </Transition.Child>
-                        <div className="fixed inset-0 bg-[black]/60 z-[999]">
-                            <div className="flex items-start justify-center min-h-screen px-4">
-                                <Transition.Child
-                                    as={Fragment}
-                                    enter="ease-out duration-300"
-                                    enterFrom="opacity-0 scale-95"
-                                    enterTo="opacity-100 scale-100"
-                                    leave="ease-in duration-200"
-                                    leaveFrom="opacity-100 scale-100"
-                                    leaveTo="opacity-0 scale-95"
-                                >
-                                    <Dialog.Panel className="panel border-0 p-0 rounded-lg overflow-hidden w-full max-w-5xl my-8 text-black dark:text-white-dark">
-                                        <div className="flex bg-[#fbfbfb] dark:bg-[#121c2c] items-center justify-between px-5 py-3">
-                                            <h5 className="font-bold text-lg">{selectedOrderType || 'Lệnh sản xuất'}</h5>
-                                            <button onClick={() => setModal5(false)} type="button" className="text-white-dark hover:text-dark">
-                                                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
-                                            </button>
-                                        </div>
-                                        <div className="p-5">
-                                            {/* Mocked product list with quantity input */}
-                                            <div className="table-responsive">
-                                                <table className="table-striped w-full">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>STT</th>
-                                                            <th>Tên sản phẩm</th>
-                                                            <th>Số lượng</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {productData.map((product, idx) => (
-                                                            <tr key={product.id}>
-                                                                <td>{idx + 1}</td>
-                                                                <td>{product.productName}</td>
-                                                                <td>
-                                                                    <input
-                                                                        type="number"
-                                                                        min={0}
-                                                                        className="form-input w-24"
-                                                                        value={modalProductQuantities[product.id] ?? 0}
-                                                                        onChange={e => handleModalQuantityChange(product.id, e.target.value)}
-                                                                    />
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                            <div className="flex justify-end items-center mt-8">
-                                                <button onClick={() => setModal5(false)} type="button" className="btn btn-outline-danger">
-                                                    Discard
-                                                </button>
-                                                <button onClick={() => setModal5(false)} type="button" className="btn btn-primary ltr:ml-4 rtl:mr-4">
-                                                    Save
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </Dialog.Panel>
-                                </Transition.Child>
-                            </div>
-                        </div>
-                    </Dialog>
-                </Transition>
+                {/* Cut Glass Modal */}
+                <CutGlassModal
+                    isOpen={cutGlassModalOpen}
+                    onClose={() => setCutGlassModalOpen(false)}
+                    products={productData}
+                    materialProducts={materialDetail?.products ?? []}
+                    productionPlanId={Number(id)}
+                    onSave={handleSaveCutGlassOrder}
+                />
             </div>
         </div>
     );
