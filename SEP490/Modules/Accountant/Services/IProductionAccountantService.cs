@@ -1,5 +1,5 @@
 ﻿using SEP490.Modules.Accountant.DTO;
-using SEP490.Modules.ProductionOrders.DTO;
+using SEP490.Modules.ProductionOrders;
 
 namespace SEP490.Modules.Accountant.Services
 {

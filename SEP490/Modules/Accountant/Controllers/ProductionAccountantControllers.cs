@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SEP490.Modules.Accountant.DTO;
 using SEP490.Modules.Accountant.Services;
-using SEP490.Modules.ProductionOrders.DTO;
+using SEP490.Modules.ProductionOrders;
 using SEP490.Modules.ProductionOrders.Services;
 
 namespace SEP490.Modules.Accountant.Controllers

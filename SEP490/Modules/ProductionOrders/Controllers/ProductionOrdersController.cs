@@ -16,6 +16,16 @@ namespace SEP490.Modules.ProductionOrders.Controllers
             _productionOrdersService = productionOrdersService;
         }
 
-  
+        [HttpGet("by-plan/{productionPlanId}")]
+        public async Task<ActionResult<List<ProductionOrdersByPlanDto>>> GetByPlanId(int productionPlanId)
+        {
+            var orders = await _productionOrdersService.GetProductionOrdersByPlanIdAsync(productionPlanId);
+            if (orders == null || !orders.Any())
+            {
+                return NotFound($"No production orders found for plan ID {productionPlanId}");
+            }
+            return Ok(orders);
+        }
+
     }
 }

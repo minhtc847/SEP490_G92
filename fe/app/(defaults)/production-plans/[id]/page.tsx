@@ -388,7 +388,7 @@ const ProductionPlanDetailPage = () => {
                                             <input type="checkbox" checked={item.isProductImported} disabled className="form-checkbox" />
                                         </td>
                                         <td>
-                                            <Link href={`/production-orders/${item.id}`} className="btn btn-sm btn-outline-primary">
+                                            <Link href={`/production-orders/view/${item.id}`} className="btn btn-sm btn-outline-primary">
                                                 Xem chi tiết
                                             </Link>
                                         </td>
