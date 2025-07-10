@@ -13,9 +13,10 @@ import {
     fetchProductionPlanDetail, fetchProductionPlanProductDetails,
     ProductionPlanDetail, ProductionPlanProductDetail, fetchProductionOrdersByPlanId,
     ProductionOrderListItem, fetchProductionPlanMaterialDetail, ProductionPlanMaterialDetail, ProductionPlanMaterialProduct,
-    createCutGlassOrder, CutGlassOrderData
+    createCutGlassOrder, CutGlassOrderData, createGlueGlassOrder, GlueGlassOrderData
 } from '../service';
 import CutGlassModal from '@/components/VNG/manager/production-orders/modals/CutGlassModal';
+import GlueGlassModal from '@/components/VNG/manager/production-orders/modals/GlueGlassModal';
 
 const ProductionPlanDetailPage = () => {
     const { id } = useParams();
@@ -26,6 +27,7 @@ const ProductionPlanDetailPage = () => {
 
     // Modal states
     const [cutGlassModalOpen, setCutGlassModalOpen] = useState(false);
+    const [glueGlassModalOpen, setGlueGlassModalOpen] = useState(false);
     const [materialDetail, setMaterialDetail] = useState<ProductionPlanMaterialDetail | null>(null);
     
     const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass === 'rtl');
@@ -40,8 +42,7 @@ const ProductionPlanDetailPage = () => {
                 setCutGlassModalOpen(true);
                 break;
             case 'Ghép kính':
-                // TODO: Implement other modals
-                console.log('Ghép kính modal - to be implemented');
+                setGlueGlassModalOpen(true);
                 break;
             case 'Đổ keo':
                 // TODO: Implement other modals
@@ -78,6 +79,37 @@ const ProductionPlanDetailPage = () => {
         } catch (error) {
             console.error('Error creating cut glass order:', error);
             alert('Có lỗi xảy ra khi tạo lệnh cắt kính!');
+        }
+    };
+
+    // Handler for saving glue glass order
+    const handleSaveGlueGlassOrder = async (data: GlueGlassOrderData) => {
+        try {
+            // Prepare data for API
+            const orderData = {
+                productionPlanId: Number(id),
+                productQuantities: data.productQuantities,
+                finishedProducts: data.finishedProducts
+            };
+
+            const result = await createGlueGlassOrder(orderData);
+            
+            if (result) {
+                // Refresh production orders list
+                const ordersData = await fetchProductionOrdersByPlanId(id as string);
+                setProductionOrders(ordersData);
+                
+                // Close modal
+                setGlueGlassModalOpen(false);
+                
+                // Show success message (you can use a toast notification here)
+                alert('Lệnh ghép kính đã được tạo thành công!');
+            } else {
+                alert('Có lỗi xảy ra khi tạo lệnh ghép kính!');
+            }
+        } catch (error) {
+            console.error('Error creating glue glass order:', error);
+            alert('Có lỗi xảy ra khi tạo lệnh ghép kính!');
         }
     };
 
@@ -438,6 +470,16 @@ const ProductionPlanDetailPage = () => {
                     materialProducts={materialDetail?.products ?? []}
                     productionPlanId={Number(id)}
                     onSave={handleSaveCutGlassOrder}
+                />
+
+                {/* Glue Glass Modal */}
+                <GlueGlassModal
+                    isOpen={glueGlassModalOpen}
+                    onClose={() => setGlueGlassModalOpen(false)}
+                    products={productData}
+                    materialProducts={materialDetail?.products ?? []}
+                    productionPlanId={Number(id)}
+                    onSave={handleSaveGlueGlassOrder}
                 />
             </div>
         </div>

@@ -40,6 +40,16 @@ export async function createCutGlassOrder(data: CutGlassOrderData) {
 }
 
 /**
+ * Tạo lệnh sản xuất ghép kính
+ * @param data dữ liệu lệnh ghép kính
+ * @returns Promise<boolean>
+ */
+export async function createGlueGlassOrder(data: GlueGlassOrderData) {
+  const response = await axios.post("/api/GlueGlassOrder/create", data);
+  return response.data;
+}
+
+/**
  * Kiểu dữ liệu cho production plan
  */
 export interface ProductionPlan {
@@ -89,6 +99,12 @@ export interface ProductionOrderListItem {
 }
 
 export interface CutGlassOrderData {
+  productionPlanId: number;
+  productQuantities: { [productionPlanDetailId: number]: number }; // Sử dụng ID của ProductionPlanDetail
+  finishedProducts: FinishedProduct[];
+}
+
+export interface GlueGlassOrderData {
   productionPlanId: number;
   productQuantities: { [productionPlanDetailId: number]: number }; // Sử dụng ID của ProductionPlanDetail
   finishedProducts: FinishedProduct[];
