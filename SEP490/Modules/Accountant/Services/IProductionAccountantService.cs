@@ -9,8 +9,14 @@ namespace SEP490.Modules.Accountant.Services
 
         List<ProductionOrderProductDTO> GetProductsByProductionOrderId(int productionOrderId);
 
-        Task<List<ProductWithMaterialsDTO>> GetProductAndMaterialByProductionOrderId(int productionOrderId);
+        //Task<List<ProductWithMaterialsDTO>> GetProductAndMaterialByProductionOrderId(int productionOrderId);
 
         Task<ProductWithMaterialsDTO?> GetProductAndMaterialByCode(int productionOrderId, string productCode);
+        Task<bool> CreateOutputInfo(int productionOrderId, CreateOutputDTO dto);
+        Task<bool> AddMaterialAsync(int productionOrderId, string productionCode, CreateMaterialDTO dto);
+
+        Task<bool> UpdateOutputInfo(int id, UpdateOutputDTO dto);
+        Task<bool> UpdateMaterialInfo(int id, UpdateMaterialDTO dto);
+
     }
 }
