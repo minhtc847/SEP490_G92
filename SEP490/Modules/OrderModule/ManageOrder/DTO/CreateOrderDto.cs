@@ -19,7 +19,7 @@
         public string ProductName { get; set; } = null!;
         public string Height { get; set; } = null!;
         public string Width { get; set; } = null!;
-        public int Thickness { get; set; }
+        public decimal Thickness { get; set; }
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public int? GlassStructureId { get; set; }

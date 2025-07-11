@@ -247,12 +247,12 @@ const SalesOrderCreatePage = () => {
                 products: form.orderItems.map((item) => ({
                     productId: item.productId,
                     productCode: '',
-                    productName: item.productName,
-                    height: item.height.toString(),
-                    width: item.width.toString(),
-                    thickness: item.thickness,
-                    unitPrice: item.unitPrice,
-                    quantity: item.quantity,
+                    productName: item.productName.trim(),
+                    height: item.height?.toString() || '0',
+                    width: item.width?.toString() || '0',
+                    thickness: +item.thickness,
+                    unitPrice: +item.unitPrice,
+                    quantity: +item.quantity,
                     glassStructureId: item.glassStructureId,
                 })),
             };
@@ -261,8 +261,8 @@ const SalesOrderCreatePage = () => {
             alert('Tạo đơn hàng thành công!');
             router.push(`/sales-order/${res.id}`);
         } catch (err: any) {
-            console.error('Lỗi tạo đơn hàng:', err);
-            alert('Tạo đơn hàng thất bại! ' + (err.response?.data?.title || err.message));
+            console.error('Response‑data:', err?.response?.data); // 👈 in ra toàn bộ
+            alert('Tạo đơn hàng thất bại!\n' + JSON.stringify(err?.response?.data?.errors ?? err?.response?.data, null, 2));
         }
     };
 

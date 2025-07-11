@@ -976,37 +976,34 @@ namespace SEP490.DB.Migrations
                         .HasColumnName("id");
 
                     b.Property<string>("Code")
-                        .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("code");
 
-                    b.Property<int>("CustomerId")
+                    b.Property<int?>("CustomerId")
                         .HasColumnType("int")
                         .HasColumnName("customer_id");
 
-                    b.Property<DateTime>("Date")
+                    b.Property<DateTime?>("Date")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("date");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("description");
 
-                    b.Property<int>("EmployeeId")
+                    b.Property<int?>("EmployeeId")
                         .HasColumnType("int")
                         .HasColumnName("employee_id");
 
                     b.Property<string>("Status")
-                        .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("status");
 
-                    b.Property<int>("SupplierId")
+                    b.Property<int?>("SupplierId")
                         .HasColumnType("int")
                         .HasColumnName("supplier_id");
 
-                    b.Property<decimal>("TotalValue")
+                    b.Property<decimal?>("TotalValue")
                         .HasColumnType("decimal(65,30)")
                         .HasColumnName("total_value");
 
@@ -1032,12 +1029,11 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("id");
 
-                    b.Property<int>("ProductId")
+                    b.Property<int?>("ProductId")
                         .HasColumnType("int")
                         .HasColumnName("product_id");
 
                     b.Property<string>("ProductName")
-                        .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("product_name");
 
@@ -1045,20 +1041,19 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("purchase_order_id");
 
-                    b.Property<int>("Quantity")
+                    b.Property<int?>("Quantity")
                         .HasColumnType("int")
                         .HasColumnName("quantity");
 
-                    b.Property<decimal>("TotalPrice")
+                    b.Property<decimal?>("TotalPrice")
                         .HasColumnType("decimal(65,30)")
                         .HasColumnName("total_price");
 
                     b.Property<string>("Unit")
-                        .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("unit");
 
-                    b.Property<decimal>("UnitPrice")
+                    b.Property<decimal?>("UnitPrice")
                         .HasColumnType("decimal(65,30)")
                         .HasColumnName("unit_price");
 
@@ -1452,24 +1447,18 @@ namespace SEP490.DB.Migrations
             modelBuilder.Entity("SEP490.DB.Models.PurchaseOrder", b =>
                 {
                     b.HasOne("SEP490.DB.Models.Customer", "Customer")
-                        .WithMany()
+                        .WithMany("PurchaseOrders")
                         .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_purchase_orders_customers_customer_id");
 
                     b.HasOne("SEP490.DB.Models.Employee", "Employee")
                         .WithMany()
                         .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_purchase_orders_employees_employee_id");
 
                     b.HasOne("SEP490.DB.Models.Customer", "Supplier")
                         .WithMany()
                         .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_purchase_orders_customers_supplier_id");
 
                     b.Navigation("Customer");
@@ -1484,8 +1473,6 @@ namespace SEP490.DB.Migrations
                     b.HasOne("SEP490.DB.Models.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_purchase_order_details_products_product_id");
 
                     b.HasOne("SEP490.DB.Models.PurchaseOrder", "PurchaseOrder")
@@ -1514,6 +1501,8 @@ namespace SEP490.DB.Migrations
 
             modelBuilder.Entity("SEP490.DB.Models.Customer", b =>
                 {
+                    b.Navigation("PurchaseOrders");
+
                     b.Navigation("SaleOrders");
                 });
 
