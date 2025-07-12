@@ -7,6 +7,6 @@ namespace SEP490.Modules.Accountant.DTO
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
         public string Uom { get; set; }
-        public int Quantity { get; set; }
+        public decimal Quantity { get; set; }
     }
 }

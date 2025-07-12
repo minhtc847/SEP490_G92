@@ -12,5 +12,6 @@
         public string? CostItem { get; set; }
         public ProductionOutput ProductionOutput { get; set; } = null!;
         public Product Product { get; set; } = null!;
+        public int? ProductId { get; set; }
     }
 }
