@@ -543,6 +543,7 @@ const ProductionPlanDetailManagerComponent: React.FC<ProductionPlanDetailManager
                             <div className="flex items-center gap-2">
                                 <h3 className="text-lg font-semibold">Danh sách phiếu xuất/nhập kho</h3>
                             </div>
+
                         </div>
                         <div className="datatables pagination-padding">
                             <DataTable

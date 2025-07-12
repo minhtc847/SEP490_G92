@@ -98,6 +98,16 @@ export interface ProductionOrderListItem {
   
 }
 
+export interface ExportInvoiceListItem {
+  id: number;
+  employeeName: string;
+  exportDate: string;
+  note: string;
+  status: number;
+  totalAmount: number;
+  productionOrderId: number;
+}
+
 export interface CutGlassOrderData {
   productionPlanId: number;
   productQuantities: { [productionPlanDetailId: number]: number }; // Sử dụng ID của ProductionPlanDetail
@@ -161,4 +171,17 @@ export interface ProductionPlanMaterialDetail {
 export async function fetchProductionPlanMaterialDetail(id: number | string): Promise<ProductionPlanMaterialDetail> {
   const response = await axios.get(`/api/ProductionPlan/detail/${id}/materials`);
   return response.data;
+}
+
+export async function fetchExportInvoicesByPlanId(id: number | string): Promise<ExportInvoiceListItem[]> {
+  const response = await axios.get(`/api/ExportInvoice/by-production-plan/${id}`);
+  return response.data.map((item: any) => ({
+    id: item.id,
+    employeeName: item.employeeName,
+    exportDate: item.exportDate,
+    note: item.note,
+    status: item.status,
+    totalAmount: item.totalAmount,
+    productionOrderId: item.productionOrderId
+  }));
 }
