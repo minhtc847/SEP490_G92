@@ -632,7 +632,6 @@ const ProductionPlanDetailPage = () => {
                     isOpen={pourGlueModalOpen}
                     onClose={() => setPourGlueModalOpen(false)}
                     products={productData}
-                    materialProducts={materialDetail?.products ?? []}
                     productionPlanId={Number(id)}
                     onSave={handleSavePourGlueOrder}
                 />
