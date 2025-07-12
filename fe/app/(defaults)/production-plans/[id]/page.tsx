@@ -15,10 +15,12 @@ import {
     ProductionPlanDetail, ProductionPlanProductDetail, fetchProductionOrdersByPlanId,
     ProductionOrderListItem, fetchProductionPlanMaterialDetail, ProductionPlanMaterialDetail, ProductionPlanMaterialProduct,
     createCutGlassOrder, CutGlassOrderData, createGlueGlassOrder, GlueGlassOrderData,
+    createPourGlueOrder, PourGlueOrderData,
     fetchExportInvoicesByPlanId, ExportInvoiceListItem
 } from '../service';
 import CutGlassModal from '@/components/VNG/manager/production-orders/modals/CutGlassModal';
 import GlueGlassModal from '@/components/VNG/manager/production-orders/modals/GlueGlassModal';
+import PourGlueModal from '@/components/VNG/manager/production-orders/modals/PourGlueModal';
 
 const ProductionPlanDetailPage = () => {
     const { id } = useParams();
@@ -30,6 +32,7 @@ const ProductionPlanDetailPage = () => {
     // Modal states
     const [cutGlassModalOpen, setCutGlassModalOpen] = useState(false);
     const [glueGlassModalOpen, setGlueGlassModalOpen] = useState(false);
+    const [pourGlueModalOpen, setPourGlueModalOpen] = useState(false);
     const [materialDetail, setMaterialDetail] = useState<ProductionPlanMaterialDetail | null>(null);
     
     // Warehouse tab states
@@ -54,8 +57,7 @@ const ProductionPlanDetailPage = () => {
                 setGlueGlassModalOpen(true);
                 break;
             case 'Đổ keo':
-                // TODO: Implement other modals
-                console.log('Đổ keo modal - to be implemented');
+                setPourGlueModalOpen(true);
                 break;
         }
     };
@@ -119,6 +121,37 @@ const ProductionPlanDetailPage = () => {
         } catch (error) {
             console.error('Error creating glue glass order:', error);
             alert('Có lỗi xảy ra khi tạo lệnh ghép kính!');
+        }
+    };
+
+    // Handler for saving pour glue order
+    const handleSavePourGlueOrder = async (data: PourGlueOrderData) => {
+        try {
+            // Prepare data for API
+            const orderData = {
+                productionPlanId: Number(id),
+                productQuantities: data.productQuantities,
+                finishedProducts: data.finishedProducts
+            };
+
+            const result = await createPourGlueOrder(orderData);
+            
+            if (result) {
+                // Refresh production orders list
+                const ordersData = await fetchProductionOrdersByPlanId(id as string);
+                setProductionOrders(ordersData);
+                
+                // Close modal
+                setPourGlueModalOpen(false);
+                
+                // Show success message (you can use a toast notification here)
+                alert('Lệnh đổ keo đã được tạo thành công!');
+            } else {
+                alert('Có lỗi xảy ra khi tạo lệnh đổ keo!');
+            }
+        } catch (error) {
+            console.error('Error creating pour glue order:', error);
+            alert('Có lỗi xảy ra khi tạo lệnh đổ keo!');
         }
     };
 
@@ -592,6 +625,16 @@ const ProductionPlanDetailPage = () => {
                     materialProducts={materialDetail?.products ?? []}
                     productionPlanId={Number(id)}
                     onSave={handleSaveGlueGlassOrder}
+                />
+
+                {/* Pour Glue Modal */}
+                <PourGlueModal
+                    isOpen={pourGlueModalOpen}
+                    onClose={() => setPourGlueModalOpen(false)}
+                    products={productData}
+                    materialProducts={materialDetail?.products ?? []}
+                    productionPlanId={Number(id)}
+                    onSave={handleSavePourGlueOrder}
                 />
             </div>
         </div>
