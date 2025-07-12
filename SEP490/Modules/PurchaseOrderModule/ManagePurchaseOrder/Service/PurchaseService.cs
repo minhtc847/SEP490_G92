@@ -2,9 +2,11 @@
 using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.DB.Models;
+using SEP490.Modules.OrderModule.ManageOrder.DTO;
 using SEP490.Modules.OrderModule.ManageOrder.Services;
 using SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.DTO;
 using System;
+using System.Text.RegularExpressions;
 
 namespace SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.Service
 {
@@ -86,6 +88,58 @@ namespace SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.Service
             };
         }
 
+        public async Task<int> CreatePurchaseOrderAsync(CreatePurchaseOrderDto dto)
+        {
+            var customer = await _context.Customers
+                .FirstOrDefaultAsync(c => c.CustomerName == dto.CustomerName);
+
+            if (customer == null)
+            {
+                customer = new Customer
+                {
+                    CustomerName = dto.CustomerName
+                };
+                _context.Customers.Add(customer);
+                await _context.SaveChangesAsync();         
+            }
+
+            var order = new PurchaseOrder
+            {
+                CustomerId = customer.Id,
+                Code = string.IsNullOrWhiteSpace(dto.Code) ? GetNextPurchaseOrderCode() : dto.Code,
+                Date = dto.Date,
+                Description = dto.Description,
+                Status = dto.Status
+            };
+            _context.PurchaseOrders.Add(order);
+            await _context.SaveChangesAsync();       
+
+            foreach (var p in dto.Products)
+            {
+                var detail = new PurchaseOrderDetail
+                {
+                    PurchaseOrderId = order.Id,
+                    ProductName = p.ProductName,
+                    Unit = "Tấm",
+                    Quantity = p.Quantity,
+
+                    Product = new Product
+                    {
+                        ProductName = p.ProductName,
+                        Width = p.Width.ToString(),
+                        Height = p.Height.ToString(),
+                        Thickness = p.Thickness,
+                        UOM = "Tấm",
+                        ProductType = "NVL"
+                    }
+                };
+                _context.PurchaseOrderDetails.Add(detail);
+            }
+
+            await _context.SaveChangesAsync();
+            return order.Id;
+        }
+
 
         public async Task<bool> DeletePurchaseOrderAsync(int id)
         {
@@ -105,6 +159,60 @@ namespace SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.Service
             await _context.SaveChangesAsync();
 
             return true;
+        }
+
+        public async Task<Product> CreateProductAsync(CreateProductV3Dto dto)
+        {
+            bool isNameExisted = await _context.Products.AnyAsync(p => p.ProductName == dto.ProductName);
+            if (isNameExisted)
+                throw new Exception("Tên sản phẩm đã tồn tại!");
+
+            if (!decimal.TryParse(dto.Width, out var widthMm) || !decimal.TryParse(dto.Height, out var heightMm))
+                throw new Exception("Chiều rộng hoặc chiều cao không hợp lệ.");
+
+            var area = (widthMm * heightMm) / 1_000_000m;
+
+
+
+            var product = new Product
+            {
+                ProductCode = null,
+                ProductName = dto.ProductName,
+                ProductType = dto.ProductType ?? "nvl",
+                UOM = dto.UOM ?? "Tấm",
+                Width = dto.Width,
+                Height = dto.Height,
+                Thickness = dto.Thickness,
+                Weight = null, 
+                UnitPrice = null,
+                GlassStructureId = null,
+            };
+
+            _context.Products.Add(product);
+            await _context.SaveChangesAsync();
+            return product;
+        }
+        public string GetNextPurchaseOrderCode()
+        {
+            var codes = _context.PurchaseOrders
+                .Where(po => EF.Functions.Like(po.Code, "MH%"))
+                .Select(po => po.Code!)
+                .ToList();
+
+            int maxNumber = 0;
+
+            foreach (var code in codes)
+            {
+                var match = Regex.Match(code, @"MH(\d+)");
+                if (match.Success && int.TryParse(match.Groups[1].Value, out int number))
+                {
+                    if (number > maxNumber)
+                        maxNumber = number;
+                }
+            }
+
+            int nextNumber = maxNumber + 1;
+            return $"MH{nextNumber:D5}";
         }
 
     }

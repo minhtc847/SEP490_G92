@@ -10,6 +10,6 @@
         public decimal Thickness { get; set; }
         public decimal? Weight { get; set; } = null;
         public decimal UnitPrice { get; set; }
-        public int GlassStructureId { get; set; }
+        public int? GlassStructureId { get; set; }
     }
 }

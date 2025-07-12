@@ -114,9 +114,6 @@ const PurchaseOrderDetailPage = () => {
                     <strong>Tổng số lượng:</strong>{' '}
                     {order.purchaseOrderDetails.reduce((sum, item) => sum + (item.quantity ?? 0), 0)}
                 </p>
-                <p>
-                    <strong>Tổng tiền:</strong> {(order.totalValue ?? 0).toLocaleString()} ₫
-                </p>
             </div>
 
             <button onClick={handleBack} className="mt-6 px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">

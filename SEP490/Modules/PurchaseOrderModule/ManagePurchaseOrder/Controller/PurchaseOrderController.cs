@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.Service;
+using SEP490.Modules.OrderModule.ManageOrder.DTO;
 using SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.DTO;
+using SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.Service;
 
 namespace SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.Controller
 {
@@ -22,6 +23,13 @@ namespace SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.Controller
             return Ok(result);
         }
 
+        [HttpGet("next-code")]
+        public IActionResult GetNextCode()
+        {
+            var code = _purchaseOrderService.GetNextPurchaseOrderCode(); 
+            return Ok(code);
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<PurchaseOrderWithDetailsDto>> GetById(int id)
         {
@@ -32,7 +40,19 @@ namespace SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.Controller
             return Ok(order);
         }
 
+        [HttpPost("product")]
+        public async Task<IActionResult> CreateProduct([FromBody] CreateProductV3Dto dto)
+        {
+            var result = await _purchaseOrderService.CreateProductAsync(dto);
+            return Ok(result);
+        }
 
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreatePurchaseOrderDto dto)
+        {
+            var orderId = await _purchaseOrderService.CreatePurchaseOrderAsync(dto);
+            return Ok(new { id = orderId });
+        }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)

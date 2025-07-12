@@ -127,25 +127,6 @@ const SalesOrderCreatePage = () => {
         setForm((prev) => ({ ...prev, orderItems: updatedItems }));
     };
 
-    const addItem = () => {
-        setForm((prev) => ({
-            ...prev,
-            orderItems: [
-                ...prev.orderItems,
-                {
-                    id: Date.now(),
-                    productId: 0,
-                    productName: '',
-                    width: 0,
-                    height: 0,
-                    thickness: 0,
-                    quantity: 1,
-                    unitPrice: 0,
-                },
-            ],
-        }));
-    };
-
     const removeItem = (index: number) => {
         const updatedItems = [...form.orderItems];
         updatedItems.splice(index, 1);
@@ -261,7 +242,7 @@ const SalesOrderCreatePage = () => {
             alert('Tạo đơn hàng thành công!');
             router.push(`/sales-order/${res.id}`);
         } catch (err: any) {
-            console.error('Response‑data:', err?.response?.data); // 👈 in ra toàn bộ
+            console.error('Response‑data:', err?.response?.data);
             alert('Tạo đơn hàng thất bại!\n' + JSON.stringify(err?.response?.data?.errors ?? err?.response?.data, null, 2));
         }
     };
