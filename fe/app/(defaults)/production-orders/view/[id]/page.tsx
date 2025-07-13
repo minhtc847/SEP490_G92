@@ -226,8 +226,8 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     e.preventDefault()
 
     // Validate dữ liệu trước khi gửi
-    if (!addProductForm.productCode.trim()) {
-      alert("❌ Vui lòng nhập mã thành phẩm!")
+    if (!addProductForm.productName.trim()) {
+      alert("❌ Vui lòng nhập tên thành phẩm!")
       return
     }
     if (!addProductForm.productName.trim()) {
@@ -307,8 +307,8 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     e.preventDefault()
 
     // Validate dữ liệu
-    if (!productForm.productCode.trim()) {
-      alert("❌ Vui lòng nhập mã thành phẩm!")
+    if (!productForm.productName.trim()) {
+      alert("❌ Vui lòng nhập tên thành phẩm!")
       return
     }
     if (!productForm.productName.trim()) {
@@ -455,7 +455,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   }
 
   const handleProductCodeChange = (value: string) => {
-    setAddMaterialForm({ ...addMaterialForm, productCode: value })
+    setAddMaterialForm({ ...addMaterialForm, productName: value })
     console.log("🔍 Đang tìm kiếm:", value) // Debug log
     fetchProductSuggestions(value)
   }
@@ -575,7 +575,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   }
 
   const handleAddProductCodeChange = async (value: string) => {
-    setAddProductForm({ ...addProductForm, productCode: value })
+    setAddProductForm({ ...addProductForm, productName: value })
     console.log("🔍 Đang tìm kiếm sản phẩm:", value)
 
     if (value.length < 2) {
@@ -727,7 +727,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
             <thead className="bg-[#edf0ff]">
               <tr>
                 <th className="border p-2">#</th>
-                <th className="border p-2">Mã TP</th>
+                {/*<th className="border p-2">Mã TP</th>*/}
                 <th className="border p-2">Tên TP</th>
                 <th className="border p-2">ĐVT</th>
                 <th className="border p-2">Số lượng</th>
@@ -750,7 +750,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   }`}
                 >
                   <td className="border p-2">{index + 1}</td>
-                  <td className="border p-2 text-[#4361ee] font-mono">{item.productCode}</td>
+                  {/*<td className="border p-2 text-[#4361ee] font-mono">{item.productCode}</td>*/}
                   <td className="border p-2">{item.productName}</td>
                   <td className="border p-2">{item.uom}</td>
                   <td className="border p-2 text-right">{Number(item.quantity).toFixed(2)}</td>
@@ -759,7 +759,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
             </tbody>
             <tfoot>
               <tr className="bg-[#f4f7ff]">
-                <td colSpan={4} className="border p-2 text-right font-semibold">
+                <td colSpan={3} className="border p-2 text-right font-semibold">
                   Tổng:
                 </td>
                 <td className="border p-2 text-right font-semibold">{totalQuantity.toFixed(2)}</td>
@@ -788,7 +788,9 @@ export default function ProductionOrderView({ params }: { params: { id: string }
           <div className="flex justify-between items-center mb-2">
             <h2 className="font-semibold text-[#4361ee]">
               Định mức NVL cho:{" "}
-              <span className="bg-[#edf0ff] text-[#4361ee] px-2 py-1 rounded font-mono">{selectedProductCode}</span>
+              <span className="bg-[#edf0ff] text-[#4361ee] px-2 py-1 rounded font-mono">
+                {selectedProductData?.productName || ""}
+              </span>
             </h2>
             <div className="flex items-center gap-2">
               <button
@@ -811,7 +813,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
             <thead className="bg-[#edf0ff]">
               <tr>
                 <th className="border p-2">#</th>
-                <th className="border p-2">Mã NVL</th>
+                {/*<th className="border p-2">Mã NVL</th>*/}
                 <th className="border p-2">Tên NVL</th>
                 <th className="border p-2">ĐVT</th>
                 <th className="border p-2">Tổng SL</th>
@@ -821,7 +823,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="p-4 text-center text-gray-500 italic">
+                  <td colSpan={5} className="p-4 text-center text-gray-500 italic">
                     Đang tải dữ liệu...
                   </td>
                 </tr>
@@ -838,7 +840,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                     title="Click để chọn nguyên vật liệu này"
                   >
                     <td className="border p-2">{index + 1}</td>
-                    <td className="border p-2 text-[#4361ee] font-mono">{material.productCode}</td>
+                    {/*<td className="border p-2 text-[#4361ee] font-mono">{material.productCode}</td>*/}
                     <td className="border p-2 truncate" title={material.productName}>
                       {material.productName}
                     </td>
@@ -849,7 +851,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="border p-4 text-center text-gray-500 italic">
+                  <td colSpan={5} className="border p-4 text-center text-gray-500 italic">
                     {selectedProduct
                       ? `Không có nguyên vật liệu cho sản phẩm ${selectedProduct}`
                       : "Chọn sản phẩm để xem nguyên vật liệu"}
@@ -860,7 +862,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
             {currentMaterials.length > 0 && (
               <tfoot>
                 <tr className="bg-[#f4f7ff]">
-                  <td colSpan={4} className="border p-2 text-right font-semibold">
+                  <td colSpan={3} className="border p-2 text-right font-semibold">
                     Tổng:
                   </td>
                   <td className="border p-2 text-right font-semibold">{totalMaterialQuantity}</td>
@@ -912,14 +914,14 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
             <form onSubmit={handleAddProductFormSubmit} className="space-y-4">
               <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-1">📦 Mã thành phẩm</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">🏷️ Tên thành phẩm</label>
                 <input
                   type="text"
-                  value={addProductForm.productCode}
+                  value={addProductForm.productName}
                   onChange={(e) => handleAddProductCodeChange(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
                   required
-                  placeholder="Nhập mã thành phẩm (tối thiểu 2 ký tự)"
+                  placeholder="Nhập tên thành phẩm (tối thiểu 2 ký tự)"
                   autoComplete="off"
                 />
 
@@ -934,11 +936,11 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                     ) : productAddSuggestions.length > 0 ? (
                       productAddSuggestions.map((suggestion, index) => (
                         <div
-                          key={`add-product-${suggestion.productCode}-${index}`}
+                          key={`add-product-${suggestion.productName}-${index}`}
                           className="p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                           onClick={() => handleProductAddSuggestionSelect(suggestion)}
                         >
-                          <div className="font-mono text-[#4361ee] text-sm font-semibold">{suggestion.productCode}</div>
+                          {/* <div className="font-mono text-[#4361ee] text-sm font-semibold">{suggestion.productCode}</div> */}
                           <div className="text-gray-700 text-sm truncate">{suggestion.productName}</div>
                           <div className="text-gray-500 text-xs">ĐVT: {suggestion.uom}</div>
                         </div>
@@ -953,7 +955,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                 )}
               </div>
 
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">🏷️ Tên thành phẩm</label>
                 <input
                   type="text"
@@ -963,7 +965,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   required
                   placeholder="Nhập tên thành phẩm"
                 />
-              </div>
+              </div> */}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">📏 Đơn vị tính</label>
@@ -1022,10 +1024,10 @@ export default function ProductionOrderView({ params }: { params: { id: string }
           <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4 animate-in fade-in duration-200">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-[#4361ee]">
-                ➕ Thêm nguyên vật liệu mới
-                <div className="text-sm font-normal text-gray-600 mt-1">
+                Thêm nguyên vật liệu mới
+                {/* <div className="text-sm font-normal text-gray-600 mt-1">
                   Cho sản phẩm: <span className="font-mono text-[#4361ee]">{selectedProductCode}</span>
-                </div>
+                </div> */}
               </h3>
               <button
                 onClick={closeAddMaterialModal}
@@ -1037,14 +1039,14 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
             <form onSubmit={handleAddMaterialFormSubmit} className="space-y-4">
               <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-1">🧪 Mã nguyên vật liệu</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">🏷️ Tên nguyên vật liệu</label>
                 <input
                   type="text"
-                  value={addMaterialForm.productCode}
+                  value={addMaterialForm.productName}
                   onChange={(e) => handleProductCodeChange(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
                   required
-                  placeholder="Nhập mã nguyên vật liệu (tối thiểu 2 ký tự)"
+                  placeholder="Nhập tên nguyên vật liệu (tối thiểu 2 ký tự)"
                   autoComplete="off"
                 />
 
@@ -1059,11 +1061,11 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                     ) : productSuggestions.length > 0 ? (
                       productSuggestions.map((suggestion, index) => (
                         <div
-                          key={`${suggestion.productCode}-${index}`}
+                          key={`${suggestion.productName}-${index}`}
                           className="p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                           onClick={() => handleSuggestionSelect(suggestion)}
                         >
-                          <div className="font-mono text-[#4361ee] text-sm font-semibold">{suggestion.productCode}</div>
+                          {/* <div className="font-mono text-[#4361ee] text-sm font-semibold">{suggestion.productCode}</div> */}
                           <div className="text-gray-700 text-sm truncate">{suggestion.productName}</div>
                           <div className="text-gray-500 text-xs">ĐVT: {suggestion.uom}</div>
                         </div>
@@ -1078,7 +1080,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                 )}
               </div>
 
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">🏷️ Tên nguyên vật liệu</label>
                 <input
                   type="text"
@@ -1088,7 +1090,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   required
                   placeholder="Nhập tên nguyên vật liệu"
                 />
-              </div>
+              </div> */}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">📏 Đơn vị tính</label>
@@ -1169,7 +1171,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
             </div>
 
             <form onSubmit={handleProductFormSubmit} className="space-y-4">
-              <div>
+              {/*<div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">📦 Mã thành phẩm</label>
                 <input
                   type="text"
@@ -1179,7 +1181,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   required
                   placeholder="Nhập mã thành phẩm"
                 />
-              </div>
+              </div>*/}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">🏷️ Tên thành phẩm</label>
@@ -1251,11 +1253,11 @@ export default function ProductionOrderView({ params }: { params: { id: string }
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-[#4361ee]">
                 🔧 Cập nhật nguyên vật liệu
-                {editingMaterial && (
+                {/* {editingMaterial && (
                   <div className="text-sm font-normal text-gray-600 mt-1">
                     Đang sửa: <span className="font-mono text-[#4361ee]">{editingMaterial.productCode}</span>
                   </div>
-                )}
+                )} */}
               </h3>
               <button
                 onClick={closeMaterialModal}
@@ -1266,7 +1268,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
             </div>
 
             <form onSubmit={handleMaterialFormSubmit} className="space-y-4">
-              <div>
+              {/*<div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">🧪 Mã nguyên vật liệu</label>
                 <input
                   type="text"
@@ -1276,7 +1278,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   required
                   placeholder="Nhập mã nguyên vật liệu"
                 />
-              </div>
+              </div>*/}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">🏷️ Tên nguyên vật liệu</label>
