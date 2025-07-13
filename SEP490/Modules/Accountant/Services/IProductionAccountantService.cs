@@ -11,7 +11,8 @@ namespace SEP490.Modules.Accountant.Services
 
         //Task<List<ProductWithMaterialsDTO>> GetProductAndMaterialByProductionOrderId(int productionOrderId);
 
-        Task<ProductWithMaterialsDTO?> GetProductAndMaterialByCode(int productionOrderId, string productCode);
+        //Task<ProductWithMaterialsDTO?> GetProductAndMaterialByCode(int productionOrderId, string productCode);
+        Task<ProductWithMaterialsDTO?> GetProductAndMaterialByOutputId(int outputId);
         Task<bool> CreateOutputInfo(int productionOrderId, CreateOutputDTO dto);
         Task<bool> AddMaterialAsync(int productionOrderId, string productionCode, CreateMaterialDTO dto);
 

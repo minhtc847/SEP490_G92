@@ -44,6 +44,7 @@ namespace SEP490.Modules.Accountant.Services
                 .Include(po => po.Product)
                 .Select(po => new ProductionOrderProductDTO
                 {
+                    OutputId = po.Id,
                     ProductCode = po.Product.ProductCode,
                     ProductName = po.ProductName,
                     Uom = po.UOM,
@@ -54,61 +55,67 @@ namespace SEP490.Modules.Accountant.Services
             return products;
         }
 
-
-        //public async Task<List<ProductWithMaterialsDTO>> GetProductAndMaterialByProductionOrderId(int productionOrderId)
+        //public async Task<ProductWithMaterialsDTO?> GetProductAndMaterialByCode(int productionOrderId, string productCode)
         //{
+        //    productCode = productCode?.ToUpper().Trim();
+        //    Console.WriteLine($"🎯 Normalized ProductCode: '{productCode}'");
+
         //    var outputs = await _context.ProductionOutputs
-        //        .Where(po => po.ProductionOrderId == productionOrderId)
         //        .Include(po => po.Product)
+        //        .Where(po =>
+        //            po.ProductionOrderId == productionOrderId &&
+        //            po.Product.ProductCode.ToUpper() == productCode)
         //        .ToListAsync();
 
-        //    var result = outputs.Select(d => new ProductWithMaterialsDTO
+        //    if (outputs == null || outputs.Count == 0)
+        //        return null;
+
+        //    var totalQuantity = outputs.Sum(o => o.Amount ?? 0);
+
+        //    var materials = await _context.ProductionMaterials
+        //        .Include(m => m.Product)
+        //        .Where(m => m.ProductionName.ToUpper() == productCode)
+        //        .GroupBy(m => new { m.CostObject, m.CostItem, m.UOM })
+        //        .Select(g => new MaterialAccountantDTO
+        //        {
+        //            ProductCode = g.Key.CostObject,
+        //            ProductName = g.Key.CostItem,
+        //            Uom = g.Key.UOM,
+        //            QuantityPer = g.Sum(m => m.Amount ?? 0),
+        //            TotalQuantity = g.Sum(m => m.Amount ?? 0) * totalQuantity
+        //        })
+        //        .ToListAsync();
+
+        //    return new ProductWithMaterialsDTO
         //    {
         //        Product = new ProductionOrderProductDTO
         //        {
-        //            ProductCode = d.Product.ProductCode,
-        //            ProductName = d.Product.ProductName,
-        //            Uom = d.Product.UOM,
-        //            Quantity = d.Amount ?? 0
+        //            ProductCode = outputs.First().Product.ProductCode,
+        //            ProductName = outputs.First().Product.ProductName,
+        //            Uom = outputs.First().Product.UOM,
+        //            Quantity = (int)totalQuantity
         //        },
-        //        Materials = _context.ProductionMaterials
-        //            .Where(m => m.ProductionOutputId == d.Id)
-        //            .Select(m => new MaterialAccountantDTO
-        //            {
-        //                ProductCode = m.CostObject,
-        //                ProductName = m.CostItem,
-        //                Uom = m.UOM,
-        //                TotalQuantity = m.Amount ?? 0,
-        //                QuantityPer = (m.Amount.HasValue && (d.Amount ?? 0) > 0)
-        //                    ? Math.Round(m.Amount.Value / (d.Amount ?? 1), 3)
-        //                    : 0
-        //            }).ToList()
-        //    }).ToList();
-
-        //    return result;
+        //        Materials = materials
+        //    };
         //}
-
-
-        public async Task<ProductWithMaterialsDTO?> GetProductAndMaterialByCode(int productionOrderId, string productCode)
+        public async Task<ProductWithMaterialsDTO?> GetProductAndMaterialByOutputId(int outputId)
         {
-            productCode = productCode?.ToUpper().Trim();
-            Console.WriteLine($"🎯 Normalized ProductCode: '{productCode}'");
-
-            var outputs = await _context.ProductionOutputs
+            var output = await _context.ProductionOutputs
                 .Include(po => po.Product)
-                .Where(po =>
-                    po.ProductionOrderId == productionOrderId &&
-                    po.Product.ProductCode.ToUpper() == productCode)
-                .ToListAsync();
+                .FirstOrDefaultAsync(po => po.Id == outputId);
 
-            if (outputs == null || outputs.Count == 0)
+            if (output == null)
+            {
+                Console.WriteLine($"Không tìm thấy ProductionOutput với Id: {outputId}");
                 return null;
+            }
 
-            var totalQuantity = outputs.Sum(o => o.Amount ?? 0);
+            var productCode = output.Product.ProductCode.ToUpper().Trim();
+            var totalQuantity = output.Amount ?? 0;
 
             var materials = await _context.ProductionMaterials
                 .Include(m => m.Product)
-                .Where(m => m.ProductionName.ToUpper() == productCode)
+                .Where(m => m.ProductionOutputId == outputId)
                 .GroupBy(m => new { m.CostObject, m.CostItem, m.UOM })
                 .Select(g => new MaterialAccountantDTO
                 {
@@ -116,7 +123,7 @@ namespace SEP490.Modules.Accountant.Services
                     ProductName = g.Key.CostItem,
                     Uom = g.Key.UOM,
                     QuantityPer = g.Sum(m => m.Amount ?? 0),
-                    TotalQuantity = g.Sum(m => m.Amount ?? 0) * totalQuantity
+                    TotalQuantity = g.Sum(m => m.Amount ?? 0)
                 })
                 .ToListAsync();
 
@@ -124,9 +131,10 @@ namespace SEP490.Modules.Accountant.Services
             {
                 Product = new ProductionOrderProductDTO
                 {
-                    ProductCode = outputs.First().Product.ProductCode,
-                    ProductName = outputs.First().Product.ProductName,
-                    Uom = outputs.First().Product.UOM,
+                    OutputId = output.Id,
+                    ProductCode = output.Product.ProductCode,
+                    ProductName = output.Product.ProductName,
+                    Uom = output.Product.UOM,
                     Quantity = (int)totalQuantity
                 },
                 Materials = materials
