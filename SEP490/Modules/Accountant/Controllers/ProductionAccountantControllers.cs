@@ -28,22 +28,25 @@ namespace SEP490.Modules.Accountant.Controllers
             var products = _service.GetProductsByProductionOrderId(id);
             return Ok(products);
         }
-        //[HttpGet("products/{productionOrderId}")]
-        //public async Task<IActionResult> GetProductsWithMaterials(int productionOrderId)
+        //[HttpGet("products-productionName/{productionOrderId}")]
+        //public async Task<IActionResult> GetProductWithMaterials(int productionOrderId, [FromQuery] string productCode)
         //{
-        //    var result = await _service.GetProductAndMaterialByProductionOrderId(productionOrderId);
-        //    return Ok(result);
+        //    var result = await _service.GetProductAndMaterialByCode(productionOrderId, productCode);
+
+        //    if (result == null)
+        //        return NotFound("Không tìm thấy sản phẩm hoặc định mức NVL.");
+
+        //    return Ok(new List<ProductWithMaterialsDTO> { result });
         //}
-        [HttpGet("products-productionName/{productionOrderId}")]
-        public async Task<IActionResult> GetProductWithMaterials(int productionOrderId, [FromQuery] string productCode)
+
+        [HttpGet("products-materials-by-output/{outputId}")]
+        public async Task<IActionResult> GetProductWithMaterialsByOutputId(int outputId)
         {
-            var result = await _service.GetProductAndMaterialByCode(productionOrderId, productCode);
-
-            if (result == null)
-                return NotFound("Không tìm thấy sản phẩm hoặc định mức NVL.");
-
-            return Ok(new List<ProductWithMaterialsDTO> { result });
+            var result = await _service.GetProductAndMaterialByOutputId(outputId);
+            if (result == null) return NotFound("Không tìm thấy dữ liệu.");
+            return Ok(result);
         }
+
         [HttpPut("update-output-info/{id}")]
         public async Task<IActionResult> UpdateOutputInfo(int id, [FromBody] UpdateOutputDTO dto)
         {
