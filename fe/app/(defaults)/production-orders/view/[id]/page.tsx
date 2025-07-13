@@ -1067,7 +1067,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                 )}
               </div>
 
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Mã nguyên vật liệu</label>
                 <input
                   type="text"
@@ -1077,7 +1077,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   required
                   placeholder="Mã sẽ tự động điền hoặc nhập thủ công"
                 />
-              </div>
+              </div> */}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
