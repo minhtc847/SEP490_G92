@@ -105,9 +105,11 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                                    Width = decimal.TryParse(p.Width, out var width) ? width : 0,
                                    Thickness = p.Thickness ?? 0,
                                    AreaM2 = Math.Round(((decimal.TryParse(p.Height, out var h) ? h : 0) * (decimal.TryParse(p.Width, out var w) ? w : 0)) / 1_000_000, 4),
-                                   UnitPrice = p.UnitPrice ?? 0,
+                                   UnitPrice = g != null
+                                        ? Math.Round(((decimal.TryParse(p.Height, out var h1) ? h1 : 0) * (decimal.TryParse(p.Width, out var w1) ? w1 : 0)) / 1_000_000 * (g.UnitPrice ?? 0), 2): 0,
                                    Quantity = dp.Quantity ?? 0,
-                                   TotalAmount = (p.UnitPrice ?? 0) * (dp.Quantity ?? 0),
+                                   TotalAmount = g != null
+                                        ? Math.Round(((decimal.TryParse(p.Height, out var h2) ? h2 : 0) * (decimal.TryParse(p.Width, out var w2) ? w2 : 0)) / 1_000_000 * (g.UnitPrice ?? 0) * (dp.Quantity ?? 0), 2): 0,
 
                                    GlassStructureId = g?.Id,
                                    GlassStructureCode = g?.ProductCode,
@@ -275,25 +277,6 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 Product product;
 
 
-                if (pDto.ProductId == 0)
-                {
-                    product = new Product
-                    {
-                        ProductCode = pDto.ProductCode,
-                        ProductName = pDto.ProductName,
-                        Height = pDto.Height,
-                        Width = pDto.Width,
-                        Thickness = pDto.Thickness,
-                        UnitPrice = pDto.UnitPrice,
-                        GlassStructureId = (int)(pDto.GlassStructureId ?? null),
-                        UOM = "Tấm",
-                        ProductType = "Thành Phẩm"
-                    };
-                    _context.Products.Add(product);
-                    _context.SaveChanges();
-                }
-                else
-                {
                     product = _context.Products.FirstOrDefault(p => p.Id == pDto.ProductId);
                     if (product == null) continue;
 
@@ -303,7 +286,6 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                     product.Width = pDto.Width;
                     product.Thickness = pDto.Thickness;
                     product.UnitPrice = pDto.UnitPrice;
-                }
 
                 var existingOrderDetailProduct = orderDetail.OrderDetailProducts
                     .FirstOrDefault(odp => odp.ProductId == product.Id);
