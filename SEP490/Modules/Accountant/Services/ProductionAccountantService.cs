@@ -32,7 +32,8 @@ namespace SEP490.Modules.Accountant.Services
                     TotalAmount = _context.ProductionOutputs
                         .Where(poOut => poOut.ProductionOrderId == po.Id)
                         .Sum(poOut => (int?)poOut.Amount ?? 0),
-                    Status = po.ProductionStatus
+                    Status = po.ProductionStatus,   
+
                 })
                 .ToList();
         }
@@ -53,6 +54,20 @@ namespace SEP490.Modules.Accountant.Services
                 .ToList();
 
             return products;
+        }
+        public async Task<ProductionOrderInfoDTO?> GetProductionOrderInfoAsync(int id)
+        {
+            var po = await _context.ProductionOrders
+                .Where(po => po.Id == id)
+                .Select(po => new ProductionOrderInfoDTO
+                {
+                    Id = po.Id,
+                    ProductionOrderCode = po.ProductionOrderCode,
+                    Description = po.Description
+                })
+                .FirstOrDefaultAsync();
+
+            return po;
         }
 
         //public async Task<ProductWithMaterialsDTO?> GetProductAndMaterialByCode(int productionOrderId, string productCode)

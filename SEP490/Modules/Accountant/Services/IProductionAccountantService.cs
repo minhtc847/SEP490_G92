@@ -8,6 +8,7 @@ namespace SEP490.Modules.Accountant.Services
         List<AccountantDTO> GetAll();
 
         List<ProductionOrderProductDTO> GetProductsByProductionOrderId(int productionOrderId);
+        Task<ProductionOrderInfoDTO?> GetProductionOrderInfoAsync(int id);
 
         //Task<List<ProductWithMaterialsDTO>> GetProductAndMaterialByProductionOrderId(int productionOrderId);
 

@@ -32,6 +32,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   const [currentMaterials, setCurrentMaterials] = useState<MaterialItem[]>([])
   const [selectedMaterial, setSelectedMaterial] = useState<MaterialItem | null>(null)
   const [loading, setLoading] = useState(false)
+  const [orderDescription, setOrderDescription] = useState<string>("")
 
   // Modal states
   const [showProductModal, setShowProductModal] = useState(false)
@@ -157,6 +158,14 @@ export default function ProductionOrderView({ params }: { params: { id: string }
         setLoading(false)
       })
   }, [params.id, selectedProduct, finishedProducts])
+
+  useEffect(() => {
+  fetch(`https://localhost:7075/api/ProductionAccountantControllers/production-order-info/${params.id}`)
+    .then((res) => res.json())
+    .then((data) => {
+      if (data?.description) setOrderDescription(data.description)
+    })
+}, [params.id])
 
   const handleProductSelect = (id: number | undefined) => {
     if (id && id !== selectedProduct) {
@@ -703,7 +712,10 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold text-[#4361ee]">Lệnh sản xuất: {params.id}</h1>
+        <h1 className="text-xl font-bold text-[#4361ee]">Lệnh sản xuất cho: {orderDescription} 
+          
+        </h1>
+        
         <div className="flex items-center gap-4">
           <select className="px-4 py-2 border border-[#4361ee] text-[#4361ee] rounded shadow-sm focus:ring-2 focus:ring-[#4361ee] focus:outline-none text-sm">
             <option value="">Chọn thao tác</option>

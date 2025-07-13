@@ -38,6 +38,15 @@ namespace SEP490.Modules.Accountant.Controllers
 
         //    return Ok(new List<ProductWithMaterialsDTO> { result });
         //}
+        [HttpGet("production-order-info/{id}")]
+        public async Task<IActionResult> GetProductionOrderInfo(int id)
+        {
+            var result = await _service.GetProductionOrderInfoAsync(id);
+            if (result == null)
+                return NotFound("Không tìm thấy lệnh sản xuất");
+
+            return Ok(result);
+        }
 
         [HttpGet("products-materials-by-output/{outputId}")]
         public async Task<IActionResult> GetProductWithMaterialsByOutputId(int outputId)
