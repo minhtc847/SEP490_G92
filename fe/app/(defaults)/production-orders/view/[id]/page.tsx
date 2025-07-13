@@ -12,7 +12,8 @@ interface MaterialItem {
 }
 
 interface ProductItem {
-  outputId?: number // Change from id to outputId to match API response
+  id?: number // Thêm thuộc tính id
+  outputId?: number // Giữ nguyên outputId
   productCode: string
   productName: string
   uom: string
@@ -27,7 +28,7 @@ interface ApiResponse {
 export default function ProductionOrderView({ params }: { params: { id: string } }) {
   const router = useRouter()
   const [finishedProducts, setFinishedProducts] = useState<ProductItem[]>([])
-  const [selectedProduct, setSelectedProduct] = useState<string>("")
+  const [selectedProduct, setSelectedProduct] = useState<number | null>(null)
   const [currentMaterials, setCurrentMaterials] = useState<MaterialItem[]>([])
   const [selectedMaterial, setSelectedMaterial] = useState<MaterialItem | null>(null)
   const [loading, setLoading] = useState(false)
@@ -90,7 +91,11 @@ export default function ProductionOrderView({ params }: { params: { id: string }
         setFinishedProducts(data || [])
         if (data && data.length > 0) {
           const productWithMaterials = data.find((p) => p.productCode === "VT00372") || data[0]
-          setSelectedProduct(productWithMaterials.productCode)
+          // Ưu tiên outputId, nếu không có thì dùng id
+          const productId = productWithMaterials.outputId || productWithMaterials.id
+          if (productId) {
+            setSelectedProduct(productId)
+          }
         }
       })
       .catch((err) => console.error("❌ Lỗi khi fetch thành phẩm:", err))
@@ -103,7 +108,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     setSelectedMaterial(null)
 
     // Find the selected product to get its outputId
-    const selectedProductData = finishedProducts.find((p) => p.productCode === selectedProduct)
+    const selectedProductData = finishedProducts.find((p) => (p.outputId || p.id) === selectedProduct)
     if (!selectedProductData || !selectedProductData.outputId) {
       console.warn("⚠️ Không tìm thấy outputId cho sản phẩm:", selectedProduct)
       setLoading(false)
@@ -153,9 +158,9 @@ export default function ProductionOrderView({ params }: { params: { id: string }
       })
   }, [params.id, selectedProduct, finishedProducts])
 
-  const handleProductSelect = (productCode: string) => {
-    if (productCode !== selectedProduct) {
-      setSelectedProduct(productCode)
+  const handleProductSelect = (id: number | undefined) => {
+    if (id && id !== selectedProduct) {
+      setSelectedProduct(id)
       setCurrentMaterials([])
       setSelectedMaterial(null)
     }
@@ -185,8 +190,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
       return
     }
 
-    // Get the selected product or first product
-    const productToEdit = finishedProducts.find((p) => p.productCode === selectedProduct) || finishedProducts[0]
+    const productToEdit = finishedProducts.find((p) => (p.outputId || p.id) === selectedProduct) || finishedProducts[0]
     setEditingProduct(productToEdit)
     setProductForm({ ...productToEdit })
     setShowProductModal(true)
@@ -497,7 +501,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   const handleAddMaterialFormSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    const selectedProductData = finishedProducts.find((p) => p.productCode === selectedProduct)
+    const selectedProductData = finishedProducts.find((p) => (p.outputId || p.id) === selectedProduct)
     if (!selectedProductData || !selectedProductData.outputId) {
       alert("❌ Không tìm thấy outputId cho sản phẩm được chọn!")
       return
@@ -626,7 +630,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     if (!selectedProduct) return
 
     setLoading(true)
-    const selectedProductData = finishedProducts.find((p) => p.productCode === selectedProduct)
+    const selectedProductData = finishedProducts.find((p) => (p.outputId || p.id) === selectedProduct)
 
     if (!selectedProductData || !selectedProductData.outputId) {
       console.warn("⚠️ Không tìm thấy outputId cho sản phẩm:", selectedProduct)
@@ -673,7 +677,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
   // Add function to get selected product quantity
   const getSelectedProductQuantity = (): number => {
-    const selectedProductData = finishedProducts.find((p) => p.productCode === selectedProduct)
+    const selectedProductData = finishedProducts.find((p) => (p.outputId || p.id) === selectedProduct)
     return selectedProductData?.quantity || 1
   }
 
@@ -691,6 +695,9 @@ export default function ProductionOrderView({ params }: { params: { id: string }
       setCurrentMaterials(updatedMaterials)
     }
   }, [finishedProducts, selectedProduct]) // Depend on finishedProducts to catch quantity changes
+
+  const selectedProductData = finishedProducts.find((p) => (p.outputId || p.id) === selectedProduct)
+  const selectedProductCode = selectedProductData?.productCode || ""
 
   return (
     <div className="p-6">
@@ -730,10 +737,17 @@ export default function ProductionOrderView({ params }: { params: { id: string }
               {finishedProducts.map((item, index) => (
                 <tr
                   key={`${item.productCode}-${index}`}
+                  onClick={() => {
+                    const productId = item.outputId || item.id
+                    if (productId) {
+                      handleProductSelect(productId)
+                    }
+                  }}
                   className={`cursor-pointer hover:bg-blue-50 transition-colors ${
-                    selectedProduct === item.productCode ? "bg-[#edf0ff] border-l-4 border-[#4361ee] font-bold" : ""
+                    selectedProduct === (item.outputId || item.id)
+                      ? "bg-[#edf0ff] border-l-4 border-[#4361ee] font-bold"
+                      : ""
                   }`}
-                  onClick={() => handleProductSelect(item.productCode)}
                 >
                   <td className="border p-2">{index + 1}</td>
                   <td className="border p-2 text-[#4361ee] font-mono">{item.productCode}</td>
@@ -774,7 +788,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
           <div className="flex justify-between items-center mb-2">
             <h2 className="font-semibold text-[#4361ee]">
               Định mức NVL cho:{" "}
-              <span className="bg-[#edf0ff] text-[#4361ee] px-2 py-1 rounded font-mono">{selectedProduct}</span>
+              <span className="bg-[#edf0ff] text-[#4361ee] px-2 py-1 rounded font-mono">{selectedProductCode}</span>
             </h2>
             <div className="flex items-center gap-2">
               <button
@@ -1010,7 +1024,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
               <h3 className="text-lg font-semibold text-[#4361ee]">
                 ➕ Thêm nguyên vật liệu mới
                 <div className="text-sm font-normal text-gray-600 mt-1">
-                  Cho sản phẩm: <span className="font-mono text-[#4361ee]">{selectedProduct}</span>
+                  Cho sản phẩm: <span className="font-mono text-[#4361ee]">{selectedProductCode}</span>
                 </div>
               </h3>
               <button
