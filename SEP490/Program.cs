@@ -7,6 +7,7 @@ using SEP490.Modules.Auth.Middleware;
 using SEP490.Modules.Auth.Services;
 using SEP490.Modules.LLMChat.Services;
 using SEP490.Modules.OrderModule.ManageOrder.Services;
+using SEP490.Modules.ProductionOrders.Services;
 using SEP490.Modules.Zalo.Services;
 using System;
 using System.Reflection;
@@ -43,6 +44,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IZaloChatForwardService, ZaloChatForwardService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ICutGlassInvoiceService, CutGlassInvoiceService>();
 builder.Services.AddHttpClient<ZaloChatService>();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
