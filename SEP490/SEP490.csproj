@@ -28,7 +28,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DB\Migrations\" />
     <Folder Include="Modules\Customers\DTO\" />
     <Folder Include="Modules\TestModule\ManageSalesOrder\DTO\" />
   </ItemGroup>

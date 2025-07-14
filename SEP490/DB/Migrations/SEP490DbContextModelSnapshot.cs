@@ -644,7 +644,7 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("cost_object");
 
-                    b.Property<int>("ProductId")
+                    b.Property<int?>("ProductId")
                         .HasColumnType("int")
                         .HasColumnName("product_id");
 
@@ -751,10 +751,6 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("product_id");
 
-                    b.Property<int?>("ProductionOrderId")
-                        .HasColumnType("int")
-                        .HasColumnName("production_order_id");
-
                     b.Property<int>("Quantity")
                         .HasColumnType("int")
                         .HasColumnName("quantity");
@@ -763,13 +759,17 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("trang_thai");
 
+                    b.Property<int>("productionOrderId")
+                        .HasColumnType("int")
+                        .HasColumnName("production_order_id");
+
                     b.HasKey("Id")
                         .HasName("pk_production_order_details");
 
                     b.HasIndex("ProductId")
                         .HasDatabaseName("ix_production_order_details_product_id");
 
-                    b.HasIndex("ProductionOrderId")
+                    b.HasIndex("productionOrderId")
                         .HasDatabaseName("ix_production_order_details_production_order_id");
 
                     b.ToTable("production_order_details", (string)null);
@@ -789,6 +789,10 @@ namespace SEP490.DB.Migrations
                     b.Property<string>("CostObject")
                         .HasColumnType("longtext")
                         .HasColumnName("cost_object");
+
+                    b.Property<int?>("OutputFor")
+                        .HasColumnType("int")
+                        .HasColumnName("output_for");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("int")
@@ -1334,8 +1338,6 @@ namespace SEP490.DB.Migrations
                     b.HasOne("SEP490.DB.Models.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_production_materials_products_product_id");
 
                     b.HasOne("SEP490.DB.Models.ProductionOutput", "ProductionOutput")
@@ -1373,8 +1375,10 @@ namespace SEP490.DB.Migrations
 
                     b.HasOne("SEP490.DB.Models.ProductionOrder", "ProductionOrder")
                         .WithMany()
-                        .HasForeignKey("ProductionOrderId")
-                        .HasConstraintName("fk_production_order_details_production_orders_production_order_id");
+                        .HasForeignKey("productionOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_production_order_details_production_orders_production_order_");
 
                     b.Navigation("Product");
 

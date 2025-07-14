@@ -8,11 +8,11 @@ using SEP490.DB;
 
 #nullable disable
 
-namespace SEP490.DB.Migrations
+namespace SEP490.Migrations
 {
     [DbContext(typeof(SEP490DbContext))]
-    [Migration("20250707031719_FixDataBaseKiet")]
-    partial class FixDataBaseKiet
+    [Migration("20250714050248_Init-Kiet")]
+    partial class InitKiet
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -646,7 +646,7 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("cost_object");
 
-                    b.Property<int>("ProductId")
+                    b.Property<int?>("ProductId")
                         .HasColumnType("int")
                         .HasColumnName("product_id");
 
@@ -753,10 +753,6 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("product_id");
 
-                    b.Property<int?>("ProductionOrderId")
-                        .HasColumnType("int")
-                        .HasColumnName("production_order_id");
-
                     b.Property<int>("Quantity")
                         .HasColumnType("int")
                         .HasColumnName("quantity");
@@ -765,13 +761,17 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("trang_thai");
 
+                    b.Property<int>("productionOrderId")
+                        .HasColumnType("int")
+                        .HasColumnName("production_order_id");
+
                     b.HasKey("Id")
                         .HasName("pk_production_order_details");
 
                     b.HasIndex("ProductId")
                         .HasDatabaseName("ix_production_order_details_product_id");
 
-                    b.HasIndex("ProductionOrderId")
+                    b.HasIndex("productionOrderId")
                         .HasDatabaseName("ix_production_order_details_production_order_id");
 
                     b.ToTable("production_order_details", (string)null);
@@ -792,9 +792,9 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("cost_object");
 
-                    b.Property<int>("OrderId")
+                    b.Property<int?>("OutputFor")
                         .HasColumnType("int")
-                        .HasColumnName("order_id");
+                        .HasColumnName("output_for");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("int")
@@ -978,38 +978,42 @@ namespace SEP490.DB.Migrations
                         .HasColumnName("id");
 
                     b.Property<string>("Code")
-                        .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("code");
 
-                    b.Property<DateTime>("Date")
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("int")
+                        .HasColumnName("customer_id");
+
+                    b.Property<DateTime?>("Date")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("date");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("description");
 
-                    b.Property<int>("EmployeeId")
+                    b.Property<int?>("EmployeeId")
                         .HasColumnType("int")
                         .HasColumnName("employee_id");
 
                     b.Property<string>("Status")
-                        .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("status");
 
-                    b.Property<int>("SupplierId")
+                    b.Property<int?>("SupplierId")
                         .HasColumnType("int")
                         .HasColumnName("supplier_id");
 
-                    b.Property<decimal>("TotalValue")
+                    b.Property<decimal?>("TotalValue")
                         .HasColumnType("decimal(65,30)")
                         .HasColumnName("total_value");
 
                     b.HasKey("Id")
                         .HasName("pk_purchase_orders");
+
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("ix_purchase_orders_customer_id");
 
                     b.HasIndex("EmployeeId")
                         .HasDatabaseName("ix_purchase_orders_employee_id");
@@ -1027,8 +1031,11 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("id");
 
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int")
+                        .HasColumnName("product_id");
+
                     b.Property<string>("ProductName")
-                        .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("product_name");
 
@@ -1036,25 +1043,27 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("purchase_order_id");
 
-                    b.Property<int>("Quantity")
+                    b.Property<int?>("Quantity")
                         .HasColumnType("int")
                         .HasColumnName("quantity");
 
-                    b.Property<decimal>("TotalPrice")
+                    b.Property<decimal?>("TotalPrice")
                         .HasColumnType("decimal(65,30)")
                         .HasColumnName("total_price");
 
                     b.Property<string>("Unit")
-                        .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("unit");
 
-                    b.Property<decimal>("UnitPrice")
+                    b.Property<decimal?>("UnitPrice")
                         .HasColumnType("decimal(65,30)")
                         .HasColumnName("unit_price");
 
                     b.HasKey("Id")
                         .HasName("pk_purchase_order_details");
+
+                    b.HasIndex("ProductId")
+                        .HasDatabaseName("ix_purchase_order_details_product_id");
 
                     b.HasIndex("PurchaseOrderId")
                         .HasDatabaseName("ix_purchase_order_details_purchase_order_id");
@@ -1331,8 +1340,6 @@ namespace SEP490.DB.Migrations
                     b.HasOne("SEP490.DB.Models.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_production_materials_products_product_id");
 
                     b.HasOne("SEP490.DB.Models.ProductionOutput", "ProductionOutput")
@@ -1370,8 +1377,10 @@ namespace SEP490.DB.Migrations
 
                     b.HasOne("SEP490.DB.Models.ProductionOrder", "ProductionOrder")
                         .WithMany()
-                        .HasForeignKey("ProductionOrderId")
-                        .HasConstraintName("fk_production_order_details_production_orders_production_order_id");
+                        .HasForeignKey("productionOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_production_order_details_production_orders_production_order_");
 
                     b.Navigation("Product");
 
@@ -1439,19 +1448,22 @@ namespace SEP490.DB.Migrations
 
             modelBuilder.Entity("SEP490.DB.Models.PurchaseOrder", b =>
                 {
+                    b.HasOne("SEP490.DB.Models.Customer", "Customer")
+                        .WithMany("PurchaseOrders")
+                        .HasForeignKey("CustomerId")
+                        .HasConstraintName("fk_purchase_orders_customers_customer_id");
+
                     b.HasOne("SEP490.DB.Models.Employee", "Employee")
                         .WithMany()
                         .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_purchase_orders_employees_employee_id");
 
                     b.HasOne("SEP490.DB.Models.Customer", "Supplier")
                         .WithMany()
                         .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_purchase_orders_customers_supplier_id");
+
+                    b.Navigation("Customer");
 
                     b.Navigation("Employee");
 
@@ -1460,12 +1472,19 @@ namespace SEP490.DB.Migrations
 
             modelBuilder.Entity("SEP490.DB.Models.PurchaseOrderDetail", b =>
                 {
-                    b.HasOne("SEP490.DB.Models.PurchaseOrder", "PurchaseOrder")
+                    b.HasOne("SEP490.DB.Models.Product", "Product")
                         .WithMany()
+                        .HasForeignKey("ProductId")
+                        .HasConstraintName("fk_purchase_order_details_products_product_id");
+
+                    b.HasOne("SEP490.DB.Models.PurchaseOrder", "PurchaseOrder")
+                        .WithMany("PurchaseOrderDetails")
                         .HasForeignKey("PurchaseOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_purchase_order_details_purchase_orders_purchase_order_id");
+
+                    b.Navigation("Product");
 
                     b.Navigation("PurchaseOrder");
                 });
@@ -1484,6 +1503,8 @@ namespace SEP490.DB.Migrations
 
             modelBuilder.Entity("SEP490.DB.Models.Customer", b =>
                 {
+                    b.Navigation("PurchaseOrders");
+
                     b.Navigation("SaleOrders");
                 });
 
@@ -1500,6 +1521,11 @@ namespace SEP490.DB.Migrations
             modelBuilder.Entity("SEP490.DB.Models.ProductionPlan", b =>
                 {
                     b.Navigation("ProductionPlanDetails");
+                });
+
+            modelBuilder.Entity("SEP490.DB.Models.PurchaseOrder", b =>
+                {
+                    b.Navigation("PurchaseOrderDetails");
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.SaleOrder", b =>

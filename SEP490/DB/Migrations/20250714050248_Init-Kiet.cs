@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace SEP490.DB.Migrations
+namespace SEP490.Migrations
 {
-    public partial class InitDatabase2 : Migration
+    public partial class InitKiet : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -48,17 +48,26 @@ namespace SEP490.DB.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "departments",
+                name: "employees",
                 columns: table => new
                 {
                     id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    department_name = table.Column<string>(type: "longtext", nullable: false)
+                    employee_code = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    full_name = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    department_id = table.Column<int>(type: "int", nullable: false),
+                    phone = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    email = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    address = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_departments", x => x.id);
+                    table.PrimaryKey("pk_employees", x => x.id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -88,6 +97,19 @@ namespace SEP490.DB.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_glass_structures", x => x.id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "glue_butyl_export_invoices",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_glue_butyl_export_invoices", x => x.id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -190,6 +212,8 @@ namespace SEP490.DB.Migrations
                     status = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     delivery_status = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    note = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
@@ -205,32 +229,41 @@ namespace SEP490.DB.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "employees",
+                name: "purchase_orders",
                 columns: table => new
                 {
                     id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    employee_code = table.Column<string>(type: "longtext", nullable: true)
+                    date = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    code = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    full_name = table.Column<string>(type: "longtext", nullable: true)
+                    supplier_id = table.Column<int>(type: "int", nullable: true),
+                    description = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    department_id = table.Column<int>(type: "int", nullable: false),
-                    phone = table.Column<string>(type: "longtext", nullable: true)
+                    total_value = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
+                    status = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    email = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    address = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                    employee_id = table.Column<int>(type: "int", nullable: true),
+                    customer_id = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_employees", x => x.id);
+                    table.PrimaryKey("pk_purchase_orders", x => x.id);
                     table.ForeignKey(
-                        name: "fk_employees_departments_department_id",
-                        column: x => x.department_id,
-                        principalTable: "departments",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
+                        name: "fk_purchase_orders_customers_customer_id",
+                        column: x => x.customer_id,
+                        principalTable: "customers",
+                        principalColumn: "id");
+                    table.ForeignKey(
+                        name: "fk_purchase_orders_customers_supplier_id",
+                        column: x => x.supplier_id,
+                        principalTable: "customers",
+                        principalColumn: "id");
+                    table.ForeignKey(
+                        name: "fk_purchase_orders_employees_employee_id",
+                        column: x => x.employee_id,
+                        principalTable: "employees",
+                        principalColumn: "id");
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -269,62 +302,6 @@ namespace SEP490.DB.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "order_details",
-                columns: table => new
-                {
-                    id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    order_code = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    sale_order_id = table.Column<int>(type: "int", nullable: false),
-                    total_amount = table.Column<decimal>(type: "decimal(65,30)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_order_details", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_order_details_sale_orders_sale_order_id",
-                        column: x => x.sale_order_id,
-                        principalTable: "sale_orders",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "production_plans",
-                columns: table => new
-                {
-                    id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    plan_date = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    sale_order_id = table.Column<int>(type: "int", nullable: false),
-                    customer_code = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    customer_id = table.Column<int>(type: "int", nullable: false),
-                    quantity = table.Column<int>(type: "int", nullable: true),
-                    status = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_production_plans", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_production_plans_customers_customer_id",
-                        column: x => x.customer_id,
-                        principalTable: "customers",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "fk_production_plans_sale_orders_sale_order_id",
-                        column: x => x.sale_order_id,
-                        principalTable: "sale_orders",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "accounts",
                 columns: table => new
                 {
@@ -356,35 +333,87 @@ namespace SEP490.DB.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "purchase_orders",
+                name: "order_details",
                 columns: table => new
                 {
                     id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    date = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    code = table.Column<string>(type: "longtext", nullable: false)
+                    order_code = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    supplier_id = table.Column<int>(type: "int", nullable: false),
-                    description = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    total_value = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
-                    status = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    employee_id = table.Column<int>(type: "int", nullable: false)
+                    sale_order_id = table.Column<int>(type: "int", nullable: false),
+                    total_amount = table.Column<decimal>(type: "decimal(65,30)", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_purchase_orders", x => x.id);
+                    table.PrimaryKey("pk_order_details", x => x.id);
                     table.ForeignKey(
-                        name: "fk_purchase_orders_customers_supplier_id",
-                        column: x => x.supplier_id,
-                        principalTable: "customers",
+                        name: "fk_order_details_sale_orders_sale_order_id",
+                        column: x => x.sale_order_id,
+                        principalTable: "sale_orders",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "production_plans",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    plan_date = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    sale_order_id = table.Column<int>(type: "int", nullable: true),
+                    customer_code = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    customer_id = table.Column<int>(type: "int", nullable: true),
+                    quantity = table.Column<int>(type: "int", nullable: true),
+                    status = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_production_plans", x => x.id);
                     table.ForeignKey(
-                        name: "fk_purchase_orders_employees_employee_id",
-                        column: x => x.employee_id,
-                        principalTable: "employees",
+                        name: "fk_production_plans_customers_customer_id",
+                        column: x => x.customer_id,
+                        principalTable: "customers",
+                        principalColumn: "id");
+                    table.ForeignKey(
+                        name: "fk_production_plans_sale_orders_sale_order_id",
+                        column: x => x.sale_order_id,
+                        principalTable: "sale_orders",
+                        principalColumn: "id");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "purchase_order_details",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    purchase_order_id = table.Column<int>(type: "int", nullable: false),
+                    product_name = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    unit = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    quantity = table.Column<int>(type: "int", nullable: true),
+                    unit_price = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
+                    total_price = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
+                    product_id = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_purchase_order_details", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_purchase_order_details_products_product_id",
+                        column: x => x.product_id,
+                        principalTable: "products",
+                        principalColumn: "id");
+                    table.ForeignKey(
+                        name: "fk_purchase_order_details_purchase_orders_purchase_order_id",
+                        column: x => x.purchase_order_id,
+                        principalTable: "purchase_orders",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -424,6 +453,8 @@ namespace SEP490.DB.Migrations
                     id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     production_plan_id = table.Column<int>(type: "int", nullable: false),
+                    note = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     delivery_date = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     quantity_delivery = table.Column<int>(type: "int", nullable: false),
                     product_id = table.Column<int>(type: "int", nullable: false)
@@ -491,9 +522,25 @@ namespace SEP490.DB.Migrations
                     production_plan_id = table.Column<int>(type: "int", nullable: false),
                     product_id = table.Column<int>(type: "int", nullable: false),
                     quantity = table.Column<int>(type: "int", nullable: false),
-                    producing = table.Column<int>(type: "int", nullable: false),
+                    producing = table.Column<int>(type: "int", nullable: true),
                     done = table.Column<int>(type: "int", nullable: false),
-                    da_giao = table.Column<int>(type: "int", nullable: false)
+                    uom = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    doday = table.Column<int>(type: "int", nullable: true),
+                    so_lop_keo = table.Column<int>(type: "int", nullable: true),
+                    so_lop_kinh = table.Column<int>(type: "int", nullable: true),
+                    kinh4 = table.Column<int>(type: "int", nullable: true),
+                    kinh5 = table.Column<int>(type: "int", nullable: true),
+                    is_kinh_cuong_luc = table.Column<int>(type: "int", nullable: true),
+                    loai_butyl = table.Column<int>(type: "int", nullable: true),
+                    tong_keo_nano = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
+                    tong_keo_mem = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
+                    do_dai_butyl = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
+                    da_cat_kinh = table.Column<int>(type: "int", nullable: true),
+                    da_ghep_kinh = table.Column<int>(type: "int", nullable: true),
+                    da_tron_keo = table.Column<int>(type: "int", nullable: true),
+                    da_do_keo = table.Column<int>(type: "int", nullable: true),
+                    da_giao = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -514,27 +561,51 @@ namespace SEP490.DB.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "purchase_order_details",
+                name: "delivery_history_details",
                 columns: table => new
                 {
                     id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    purchase_order_id = table.Column<int>(type: "int", nullable: false),
-                    product_name = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    unit = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    quantity = table.Column<int>(type: "int", nullable: false),
-                    unit_price = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
-                    total_price = table.Column<decimal>(type: "decimal(65,30)", nullable: false)
+                    delivery_history_id = table.Column<int>(type: "int", nullable: false),
+                    delivery_date = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    quantity_delivered = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_purchase_order_details", x => x.id);
+                    table.PrimaryKey("pk_delivery_history_details", x => x.id);
                     table.ForeignKey(
-                        name: "fk_purchase_order_details_purchase_orders_purchase_order_id",
-                        column: x => x.purchase_order_id,
-                        principalTable: "purchase_orders",
+                        name: "fk_delivery_history_details_delivery_histories_delivery_history",
+                        column: x => x.delivery_history_id,
+                        principalTable: "delivery_histories",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "export_invoices",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    employee_id = table.Column<int>(type: "int", nullable: true),
+                    employee_name = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    export_date = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    note = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    status = table.Column<int>(type: "int", nullable: true),
+                    total_amount = table.Column<int>(type: "int", nullable: true),
+                    production_order_id = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_export_invoices", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_export_invoices_production_orders_production_order_id",
+                        column: x => x.production_order_id,
+                        principalTable: "production_orders",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -548,22 +619,19 @@ namespace SEP490.DB.Migrations
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     product_id = table.Column<int>(type: "int", nullable: false),
                     quantity = table.Column<int>(type: "int", nullable: false),
-                    trang_thai = table.Column<string>(type: "longtext", nullable: false)
+                    trang_thai = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    trang_thai_xuat_keo = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    trang_thai_cat_kinh = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    production_order_id = table.Column<int>(type: "int", nullable: true)
+                    production_order_id = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_production_order_details", x => x.id);
                     table.ForeignKey(
-                        name: "fk_production_order_details_production_orders_production_order_id",
+                        name: "fk_production_order_details_production_orders_production_order_",
                         column: x => x.production_order_id,
                         principalTable: "production_orders",
-                        principalColumn: "id");
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "fk_production_order_details_products_product_id",
                         column: x => x.product_id,
@@ -585,10 +653,10 @@ namespace SEP490.DB.Migrations
                     uom = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     amount = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
-                    order_id = table.Column<int>(type: "int", nullable: false),
                     cost_object = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    production_order_id = table.Column<int>(type: "int", nullable: false)
+                    production_order_id = table.Column<int>(type: "int", nullable: false),
+                    output_for = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -603,6 +671,58 @@ namespace SEP490.DB.Migrations
                         name: "fk_production_outputs_products_product_id",
                         column: x => x.product_id,
                         principalTable: "products",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "chemical_export_details",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    export_invoice_id = table.Column<int>(type: "int", nullable: false),
+                    product_id = table.Column<int>(type: "int", nullable: false),
+                    quantity = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
+                    uom = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    note = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_chemical_export_details", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_chemical_export_details_export_invoices_export_invoice_id",
+                        column: x => x.export_invoice_id,
+                        principalTable: "export_invoices",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "cut_glass_invoice_materials",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    export_invoice_id = table.Column<int>(type: "int", nullable: false),
+                    material_name = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    material_type = table.Column<int>(type: "int", nullable: false),
+                    quantity = table.Column<int>(type: "int", nullable: false),
+                    note = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_cut_glass_invoice_materials", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_cut_glass_invoice_materials_export_invoices_export_invoice_id",
+                        column: x => x.export_invoice_id,
+                        principalTable: "export_invoices",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -625,7 +745,7 @@ namespace SEP490.DB.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     cost_item = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    product_id = table.Column<int>(type: "int", nullable: false)
+                    product_id = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -640,6 +760,32 @@ namespace SEP490.DB.Migrations
                         name: "fk_production_materials_products_product_id",
                         column: x => x.product_id,
                         principalTable: "products",
+                        principalColumn: "id");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "cut_glass_invoice_outputs",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    cut_glass_invoice_material_id = table.Column<int>(type: "int", nullable: false),
+                    output_name = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    output_type = table.Column<int>(type: "int", nullable: false),
+                    quantity = table.Column<int>(type: "int", nullable: false),
+                    is_dc = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    note = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_cut_glass_invoice_outputs", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_cut_glass_invoice_outputs_cut_glass_invoice_materials_cut_gl",
+                        column: x => x.cut_glass_invoice_material_id,
+                        principalTable: "cut_glass_invoice_materials",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -656,6 +802,21 @@ namespace SEP490.DB.Migrations
                 column: "role_id");
 
             migrationBuilder.CreateIndex(
+                name: "ix_chemical_export_details_export_invoice_id",
+                table: "chemical_export_details",
+                column: "export_invoice_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_cut_glass_invoice_materials_export_invoice_id",
+                table: "cut_glass_invoice_materials",
+                column: "export_invoice_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_cut_glass_invoice_outputs_cut_glass_invoice_material_id",
+                table: "cut_glass_invoice_outputs",
+                column: "cut_glass_invoice_material_id");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_delivery_histories_product_id",
                 table: "delivery_histories",
                 column: "product_id");
@@ -666,9 +827,14 @@ namespace SEP490.DB.Migrations
                 column: "production_plan_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_employees_department_id",
-                table: "employees",
-                column: "department_id");
+                name: "ix_delivery_history_details_delivery_history_id",
+                table: "delivery_history_details",
+                column: "delivery_history_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_export_invoices_production_order_id",
+                table: "export_invoices",
+                column: "production_order_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_order_detail_products_product_id",
@@ -741,9 +907,19 @@ namespace SEP490.DB.Migrations
                 column: "glass_structure_id");
 
             migrationBuilder.CreateIndex(
+                name: "ix_purchase_order_details_product_id",
+                table: "purchase_order_details",
+                column: "product_id");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_purchase_order_details_purchase_order_id",
                 table: "purchase_order_details",
                 column: "purchase_order_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_purchase_orders_customer_id",
+                table: "purchase_orders",
+                column: "customer_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_purchase_orders_employee_id",
@@ -767,7 +943,16 @@ namespace SEP490.DB.Migrations
                 name: "accounts");
 
             migrationBuilder.DropTable(
-                name: "delivery_histories");
+                name: "chemical_export_details");
+
+            migrationBuilder.DropTable(
+                name: "cut_glass_invoice_outputs");
+
+            migrationBuilder.DropTable(
+                name: "delivery_history_details");
+
+            migrationBuilder.DropTable(
+                name: "glue_butyl_export_invoices");
 
             migrationBuilder.DropTable(
                 name: "history_messages");
@@ -797,6 +982,12 @@ namespace SEP490.DB.Migrations
                 name: "roles");
 
             migrationBuilder.DropTable(
+                name: "cut_glass_invoice_materials");
+
+            migrationBuilder.DropTable(
+                name: "delivery_histories");
+
+            migrationBuilder.DropTable(
                 name: "order_details");
 
             migrationBuilder.DropTable(
@@ -806,7 +997,7 @@ namespace SEP490.DB.Migrations
                 name: "purchase_orders");
 
             migrationBuilder.DropTable(
-                name: "production_orders");
+                name: "export_invoices");
 
             migrationBuilder.DropTable(
                 name: "products");
@@ -815,13 +1006,13 @@ namespace SEP490.DB.Migrations
                 name: "employees");
 
             migrationBuilder.DropTable(
-                name: "production_plans");
+                name: "production_orders");
 
             migrationBuilder.DropTable(
                 name: "glass_structures");
 
             migrationBuilder.DropTable(
-                name: "departments");
+                name: "production_plans");
 
             migrationBuilder.DropTable(
                 name: "sale_orders");
