@@ -101,7 +101,8 @@ namespace SEP490.Modules.ProductionOrders.Services
                     UOM = "tấm",
                     Amount = finishedProduct.Quantity,
                     CostObject = null,
-                    ProductionOrderId = productionOrderId
+                    ProductionOrderId = productionOrderId,
+                    OutputFor = finishedProduct.OutputFor
                 });
             }
 
@@ -118,19 +119,23 @@ namespace SEP490.Modules.ProductionOrders.Services
             // Tạo ProductionOrderDetails cho các sản phẩm gốc cần cắt (từ ProductQuantities)
             foreach (var kvp in request.ProductQuantities)
             {
-                // Lấy ProductId thực từ ProductionPlanDetail
-                var planDetail = await _context.ProductionPlanDetails
-                    .FirstOrDefaultAsync(pd => pd.Id == kvp.Key);
-                
-                if (planDetail != null)
+                // Chỉ tạo ProductionOrderDetail nếu quantity > 0
+                if (kvp.Value > 0)
                 {
-                    orderDetails.Add(new ProductionOrderDetail
+                    // Lấy ProductId thực từ ProductionPlanDetail
+                    var planDetail = await _context.ProductionPlanDetails
+                        .FirstOrDefaultAsync(pd => pd.Id == kvp.Key);
+                    
+                    if (planDetail != null)
                     {
-                        ProductId = planDetail.ProductId, // Sử dụng ProductId thực từ bảng Product
-                        Quantity = kvp.Value, // Số lượng sản phẩm gốc cần cắt
-                        TrangThai = null,
-                        productionOrderId = productionOrderId
-                    });
+                        orderDetails.Add(new ProductionOrderDetail
+                        {
+                            ProductId = planDetail.ProductId, // Sử dụng ProductId thực từ bảng Product
+                            Quantity = kvp.Value, // Số lượng sản phẩm gốc cần cắt
+                            TrangThai = null,
+                            productionOrderId = productionOrderId
+                        });
+                    }
                 }
             }
 

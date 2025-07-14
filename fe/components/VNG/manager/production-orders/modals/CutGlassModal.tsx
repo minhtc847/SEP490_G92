@@ -22,6 +22,7 @@ interface FinishedProduct {
     productName: string;
     quantity: number;
     sourceProductId?: number; // Track which product this finished product comes from
+    outputFor?: number; // ID của ProductionPlanDetail mà output này phục vụ
 }
 
 const CutGlassModal = ({ isOpen, onClose, products, materialProducts, productionPlanId, onSave }: CutGlassModalProps) => {
@@ -64,7 +65,8 @@ const CutGlassModal = ({ isOpen, onClose, products, materialProducts, production
                         const finishedProduct: FinishedProduct = {
                             productName: `Kính trắng KT: ${width}*${height}*5 mm`,
                             quantity: calculatedQuantity,
-                            sourceProductId: product.id
+                            sourceProductId: product.id,
+                            outputFor: product.id // Set outputFor to the ProductionPlanDetail ID
                         };
                         
                         newFinishedProducts.push(finishedProduct);

@@ -7,9 +7,5 @@ namespace SEP490.Modules.ProductionOrders.DTO
         public List<FinishedProductDto> FinishedProducts { get; set; } = new List<FinishedProductDto>();
     }
 
-    public class FinishedProductDto
-    {
-        public string ProductName { get; set; } = string.Empty;
-        public int Quantity { get; set; }
-    }
+
 } 

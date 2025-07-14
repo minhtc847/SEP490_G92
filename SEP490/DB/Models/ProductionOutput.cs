@@ -9,6 +9,7 @@
         public decimal? Amount { get; set; }
         public string? CostObject { get; set; }
         public int ProductionOrderId { get; set; }
+        public int? OutputFor { get; set; } // ID của ProductionPlanDetail mà output này phục vụ
         public ProductionOrder ProductionOrder { get; set; } = null!;
         public Product Product { get; set; } = null!;
     }

@@ -22,6 +22,7 @@ interface FinishedProduct {
     productName: string;
     quantity: number;
     sourceProductId?: number; // Track which product this finished product comes from
+    outputFor?: number; // ID của ProductionPlanDetail mà output này phục vụ
 }
 
 const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productionPlanId, onSave }: GlueGlassModalProps) => {
@@ -51,7 +52,8 @@ const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productio
                 const finishedProduct: FinishedProduct = {
                     productName: `${product.productName} chưa đổ keo`,
                     quantity: quantity, // Số lượng bằng với số lượng cần ghép
-                    sourceProductId: product.id
+                    sourceProductId: product.id,
+                    outputFor: product.id // Set outputFor to the ProductionPlanDetail ID
                 };
                 
                 newFinishedProducts.push(finishedProduct);
