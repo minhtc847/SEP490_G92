@@ -100,7 +100,7 @@ namespace SEP490.Modules.Auth.Services
             }
             catch (Exception ex)
             {
-                return new AuthResult { Success = false, Message = $"Lỗi: {ex.Message}" };
+                return new AuthResult { Success = false, Message = $"Lỗi: {ex}" };
             }
         }
 

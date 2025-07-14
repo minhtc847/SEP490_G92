@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SEP490.DB;
 
@@ -10,9 +11,10 @@ using SEP490.DB;
 namespace SEP490.DB.Migrations
 {
     [DbContext(typeof(SEP490DbContext))]
-    partial class SEP490DbContextModelSnapshot : ModelSnapshot
+    [Migration("20250711105006_UpdateGlueButylExportTable")]
+    partial class UpdateGlueButylExportTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -439,22 +441,10 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("id");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("created_at");
-
-                    b.Property<int>("EmployeeId")
-                        .HasColumnType("int")
-                        .HasColumnName("employee_id");
-
                     b.Property<string>("GlueButyls")
                         .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("glue_butyls");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("longtext")
-                        .HasColumnName("note");
 
                     b.Property<int>("ProductionPlanId")
                         .HasColumnType("int")
@@ -467,9 +457,6 @@ namespace SEP490.DB.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_glue_butyl_export_invoices");
-
-                    b.HasIndex("EmployeeId")
-                        .HasDatabaseName("ix_glue_butyl_export_invoices_employee_id");
 
                     b.HasIndex("ProductionPlanId")
                         .HasDatabaseName("ix_glue_butyl_export_invoices_production_plan_id");
@@ -1329,21 +1316,12 @@ namespace SEP490.DB.Migrations
 
             modelBuilder.Entity("SEP490.DB.Models.GlueButylExportInvoice", b =>
                 {
-                    b.HasOne("SEP490.DB.Models.Employee", "Employee")
-                        .WithMany()
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_glue_butyl_export_invoices_employees_employee_id");
-
                     b.HasOne("SEP490.DB.Models.ProductionPlan", "ProductionPlan")
                         .WithMany("GlueButylExportInvoices")
                         .HasForeignKey("ProductionPlanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_glue_butyl_export_invoices_production_plans_production_plan_");
-
-                    b.Navigation("Employee");
 
                     b.Navigation("ProductionPlan");
                 });

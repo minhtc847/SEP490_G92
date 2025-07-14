@@ -2,6 +2,7 @@
 import { Transition, Dialog, TransitionChild, DialogPanel } from '@headlessui/react';
 import React, { Fragment, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
+import GlueButylExportModalComponent from '../manager/glue-butyl-export-modal-component';
 
 export interface ProductionOutputDto {
     productionOutputId: number;
@@ -119,7 +120,7 @@ const ProductionOrdersDetailWorkerComponent: React.FC<ProductionOrdersDetailWork
     // Modal states
     const [addProductModal, setAddProductModal] = useState(false);
     const [addMaterialModal, setAddMaterialModal] = useState(false);
-    
+
     // Loading states
     const [loading, setLoading] = useState(false);
     const [productionOrderLoading, setProductionOrderLoading] = useState(false);
@@ -236,7 +237,7 @@ const ProductionOrdersDetailWorkerComponent: React.FC<ProductionOrdersDetailWork
         showMessage('Sản phẩm đã được lưu thành công.');
         setAddProductModal(false);
         resetProductForm();
-        
+
         if (onProductUpdated) {
             onProductUpdated();
         }
@@ -258,8 +259,8 @@ const ProductionOrdersDetailWorkerComponent: React.FC<ProductionOrdersDetailWork
 
         if (materialParams.id) {
             // Update existing material
-            const updatedMaterials = currentMaterials.map(m => 
-                m.id === materialParams.id 
+            const updatedMaterials = currentMaterials.map(m =>
+                m.id === materialParams.id
                     ? {
                         ...m,
                         productionName: materialParams.materialType,
@@ -290,7 +291,7 @@ const ProductionOrdersDetailWorkerComponent: React.FC<ProductionOrdersDetailWork
         showMessage('Vật tư đã được lưu thành công.');
         setAddMaterialModal(false);
         resetMaterialForm();
-        
+
         if (onMaterialUpdated) {
             onMaterialUpdated();
         }
@@ -327,16 +328,16 @@ const ProductionOrdersDetailWorkerComponent: React.FC<ProductionOrdersDetailWork
 
     const deleteProduct = (product: ProductionOutputDto) => {
         setFilteredProducts(prev => prev.filter(p => p.productionOutputId !== product.productionOutputId));
-        
+
         // Xóa materials của sản phẩm này
         setMaterialsByProduct(prev => {
             const newMaterials = { ...prev };
             delete newMaterials[product.productionOutputId];
             return newMaterials;
         });
-        
+
         showMessage('Sản phẩm đã được xóa thành công.');
-        
+
         if (onProductUpdated) {
             onProductUpdated();
         }
@@ -344,17 +345,17 @@ const ProductionOrdersDetailWorkerComponent: React.FC<ProductionOrdersDetailWork
 
     const deleteMaterial = (material: MaterialDto) => {
         if (!selectedProduct) return;
-        
+
         const currentMaterials = materialsByProduct[selectedProduct.productionOutputId] || [];
         const updatedMaterials = currentMaterials.filter(m => m.id !== material.id);
-        
+
         setMaterialsByProduct(prev => ({
             ...prev,
             [selectedProduct.productionOutputId]: updatedMaterials
         }));
-        
+
         showMessage('Vật tư đã được xóa thành công.');
-        
+
         if (onMaterialUpdated) {
             onMaterialUpdated();
         }
@@ -389,7 +390,7 @@ const ProductionOrdersDetailWorkerComponent: React.FC<ProductionOrdersDetailWork
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 500));
             showMessage('Đã thêm materials thành công');
-            
+
             // Thêm materials mẫu cho sản phẩm này
             const defaultMaterials: MaterialDto[] = [
                 {
@@ -399,7 +400,7 @@ const ProductionOrdersDetailWorkerComponent: React.FC<ProductionOrdersDetailWork
                     amount: 25.5,
                 }
             ];
-            
+
             setMaterialsByProduct(prev => ({
                 ...prev,
                 [product.productionOutputId]: defaultMaterials
@@ -457,6 +458,18 @@ const ProductionOrdersDetailWorkerComponent: React.FC<ProductionOrdersDetailWork
             <div className="mb-6">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold">Danh sách thành phẩm</h2>
+                    <GlueButylExportModalComponent //fake data
+                        products={[
+                        {name: 'Kính cường lực 5mm', quantity: 10},
+                        {name: 'Kính dán 8mm', quantity: 5}
+                        ]}
+                    productionPlanId={1}
+                        type='Cat Kinh'
+                        employees={[
+                            {name: 'Nguyễn Văn A', id: 1},
+                            {name: 'Trần Thị B', id: 2},
+                        ]}
+                        ></GlueButylExportModalComponent>
                     <button
                         onClick={() => editProduct()}
                         className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
@@ -482,9 +495,9 @@ const ProductionOrdersDetailWorkerComponent: React.FC<ProductionOrdersDetailWork
                                 {filteredProducts.map((product, idx) => {
                                     const productMaterials = materialsByProduct[product.productionOutputId] || [];
                                     const hasMaterials = productMaterials.length > 0;
-                                    
+
                                     return (
-                                        <tr 
+                                        <tr
                                             key={product.productionOutputId}
                                             className={`cursor-pointer hover:bg-gray-50 ${selectedProduct?.productionOutputId === product.productionOutputId ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}
                                             onClick={() => handleProductSelect(product)}
@@ -495,31 +508,31 @@ const ProductionOrdersDetailWorkerComponent: React.FC<ProductionOrdersDetailWork
                                             <td className="border p-2 text-right">{product.amount}</td>
                                             <td className="border p-2">
                                                 <div className="flex justify-center gap-2">
-                                                    <button 
+                                                    <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             editProduct(product);
-                                                        }} 
+                                                        }}
                                                         className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
                                                     >
                                                         Sửa
                                                     </button>
                                                     {!hasMaterials && (
-                                                        <button 
+                                                        <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 handleAddMaterialsForProduct(product);
-                                                            }} 
+                                                            }}
                                                             className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
                                                         >
                                                             Thêm Material
                                                         </button>
                                                     )}
-                                                    <button 
+                                                    <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             deleteProduct(product);
-                                                        }} 
+                                                        }}
                                                         className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600"
                                                     >
                                                         Xóa
@@ -583,14 +596,14 @@ const ProductionOrdersDetailWorkerComponent: React.FC<ProductionOrdersDetailWork
                                             <td className="border p-2 text-right">{material.amount || 0}</td>
                                             <td className="border p-2">
                                                 <div className="flex justify-center gap-2">
-                                                    <button 
-                                                        onClick={() => editMaterial(material)} 
+                                                    <button
+                                                        onClick={() => editMaterial(material)}
                                                         className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
                                                     >
                                                         Sửa
                                                     </button>
-                                                    <button 
-                                                        onClick={() => deleteMaterial(material)} 
+                                                    <button
+                                                        onClick={() => deleteMaterial(material)}
                                                         className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600"
                                                     >
                                                         Xóa

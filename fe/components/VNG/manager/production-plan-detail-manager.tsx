@@ -584,7 +584,7 @@ const ProductionPlanDetailManagerComponent: React.FC<ProductionPlanDetailManager
                                         width: 100,
                                         render: ({ id }) => (
                                             <div className="mx-auto flex w-max items-center gap-4">
-                                                <Link href={`/mockup/manager/ware-house-slips/${id}`} className="flex hover:text-primary" title="Xem chi tiết">
+                                                <Link href={`/production-plans/glue-butyl-export/7`} className="flex hover:text-primary" title="Xem chi tiết">
                                                     <IconEye />
                                                 </Link>
                                             </div>

@@ -72,7 +72,7 @@ export interface ProductionOrderListItem {
   description: string;
   isMaterialExported: boolean;
   isProductImported: boolean;
-  
+
 }
 
 export async function fetchProductionOrdersByPlanId(id: number | string): Promise<ProductionOrderListItem[]> {
@@ -84,6 +84,40 @@ export async function fetchProductionOrdersByPlanId(id: number | string): Promis
     description: item.description,
     isMaterialExported: item.statusDaXuatKhoNVL,
     isProductImported: item.statusDaNhapKhoTP,
-    
+
   }));
+}
+
+export interface Product {
+    name: string;
+    quantity: number;
+}
+
+export interface Chemical {
+    type: string;
+    uom: string;
+    quantity: number;
+}
+
+export interface PhieuXuatKeoButylData {
+    id: number;
+    employeeName: string;
+    productionPlanId: number;
+    createdAt: string;
+    products: Product[];
+    glueButyls: Chemical[];
+}
+
+export async function fetchPhieuXuatKeoButylData(id: number | string): Promise<PhieuXuatKeoButylData> {
+  const response = await axios.get(`/api/GlueButylExport/get-by-id/${id}`);
+  return response.data;
+}
+
+export async function fetchAllPhieuXuatKeoButylData(id: number | string): Promise<PhieuXuatKeoButylData[]> {
+  const response = await axios.get(`/api/GlueButylExport/get-all/${id}`);
+  return response.data;
+}
+export async function createPhieuXuatKeoButylData(data: any) {
+  const response = await axios.post('/api/GlueButylExport/add', data);
+  return response.data;
 }
