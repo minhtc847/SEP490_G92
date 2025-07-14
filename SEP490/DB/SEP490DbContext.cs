@@ -49,7 +49,6 @@ namespace SEP490.DB
         public DbSet<ChemicalExportDetail> ChemicalExportDetails { get; set; }
         public DbSet<CutGlassInvoiceMaterial> CutGlassInvoiceMaterials { get; set; }
         public DbSet<CutGlassInvoiceOutput> CutGlassInvoiceOutputs { get; set; }
-        public DbSet<ExportInvoice> ExportInvoices { get; set; }
         public DbSet<GlueButylExportInvoice> GlueButylExportInvoices { get; set; }
     }
 }

@@ -6,7 +6,7 @@ using SEP490.Modules.ProductionOrders.DTO;
 
 namespace SEP490.Modules.ProductionOrders.Services
 {
-    public class ExportInvoiceService : BaseService, IExportInvoiceService
+    public class ExportInvoiceService : BaseService
     {
         private readonly SEP490DbContext _context;
 
@@ -15,24 +15,6 @@ namespace SEP490.Modules.ProductionOrders.Services
             _context = context;
         }
 
-        public async Task<List<ExportInvoiceDto>> GetExportInvoicesByProductionPlanIdAsync(int productionPlanId)
-        {
-            var exportInvoices = await _context.ExportInvoices
-                .Include(ei => ei.ProductionOrder)
-                .Where(ei => ei.ProductionOrder.ProductionPlanId == productionPlanId)
-                .Select(ei => new ExportInvoiceDto
-                {
-                    Id = ei.Id,
-                    EmployeeName = ei.EmployeeName,
-                    ExportDate = ei.ExportDate,
-                    Note = ei.Note,
-                    Status = ei.Status,
-                    TotalAmount = ei.TotalAmount,
-                    ProductionOrderId = ei.ProductionOrderId
-                })
-                .ToListAsync();
-
-            return exportInvoices;
-        }
+       
     }
 } 
