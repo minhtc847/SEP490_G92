@@ -129,6 +129,9 @@ namespace SEP490.Modules.Production_plans.Services
                 decimal doDayKeo = prod.Thickness - (glass4mm * 4) - (glass5mm * 5);
                 decimal tongKeo = areaKeo * doDayKeo * 1.2M;
 
+                // Tính độ dài butyl = (dài + rộng) * 2 * số lớp keo (chuyển từ mm sang m)
+                decimal doDaiButyl = ((width + height) * 2 * prod.GlueLayers) / 1000M;
+
                 if ((product.GlassStructure.AdhesiveType ?? "").ToLower() == "nano")
                     totalKeoNano += tongKeo;
                 else if ((product.GlassStructure.AdhesiveType ?? "").ToLower() == "mềm")
@@ -147,7 +150,8 @@ namespace SEP490.Modules.Production_plans.Services
                     LoaiButyl = butylType,
                     IsKinhCuongLuc = prod.IsCuongLuc ? 1 : 0,
                     TongKeoNano = (product.GlassStructure.AdhesiveType ?? "").ToLower() == "nano" ? tongKeo : 0,
-                    TongKeoMem = (product.GlassStructure.AdhesiveType ?? "").ToLower() == "mềm" ? tongKeo : 0
+                    TongKeoMem = (product.GlassStructure.AdhesiveType ?? "").ToLower() == "mềm" ? tongKeo : 0,
+                    DoDaiButyl = doDaiButyl
                 };
                 _context.ProductionPlanDetails.Add(planDetail);
             }
