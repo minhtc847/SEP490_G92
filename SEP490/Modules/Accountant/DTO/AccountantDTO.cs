@@ -8,6 +8,5 @@
         public string? CustomerName { get; set; }
         public int TotalAmount { get; set; }
         public string Status { get; set; }
-       
     }
 }

@@ -32,8 +32,7 @@ namespace SEP490.Modules.Accountant.Services
                     TotalAmount = _context.ProductionOutputs
                         .Where(poOut => poOut.ProductionOrderId == po.Id)
                         .Sum(poOut => (int?)poOut.Amount ?? 0),
-                    Status = po.ProductionStatus,   
-
+                    Status = po.ProductionStatus
                 })
                 .ToList();
         }
@@ -54,20 +53,6 @@ namespace SEP490.Modules.Accountant.Services
                 .ToList();
 
             return products;
-        }
-        public async Task<ProductionOrderInfoDTO?> GetProductionOrderInfoAsync(int id)
-        {
-            var po = await _context.ProductionOrders
-                .Where(po => po.Id == id)
-                .Select(po => new ProductionOrderInfoDTO
-                {
-                    Id = po.Id,
-                    ProductionOrderCode = po.ProductionOrderCode,
-                    Description = po.Description
-                })
-                .FirstOrDefaultAsync();
-
-            return po;
         }
 
         //public async Task<ProductWithMaterialsDTO?> GetProductAndMaterialByCode(int productionOrderId, string productCode)
@@ -222,20 +207,20 @@ namespace SEP490.Modules.Accountant.Services
         }
 
 
-        public async Task<bool> AddMaterialAsync(int productionOrderId, int outputId, CreateMaterialDTO dto)
+        public async Task<bool> AddMaterialAsync(int productionOrderId, string productionCode, CreateMaterialDTO dto)
         {
+            // Tìm thành phẩm tương ứng
             var output = await _context.ProductionOutputs
                 .Include(o => o.Product)
                 .FirstOrDefaultAsync(o =>
                     o.ProductionOrderId == productionOrderId &&
-                    o.Id == outputId);  
+                    o.Product.ProductCode == productionCode);
 
             if (output == null)
             {
-                Console.WriteLine($"Không tìm thấy output với ID: {outputId} trong production order {productionOrderId}");
+                Console.WriteLine($"Không tìm thấy thành phẩm: {productionCode} trong production order {productionOrderId}");
                 return false;
             }
-
             var existingProduct = await _context.Products
                 .FirstOrDefaultAsync(p => p.ProductCode.ToUpper() == dto.ProductCode.ToUpper());
 
@@ -243,7 +228,6 @@ namespace SEP490.Modules.Accountant.Services
             {
                 Console.WriteLine($"Không tìm thấy product với mã {dto.ProductCode}. Không gán product_id.");
             }
-
             var material = new ProductionMaterial
             {
                 ProductionId = output.ProductId,
@@ -255,10 +239,9 @@ namespace SEP490.Modules.Accountant.Services
                 Amount = dto.TotalQuantity,
                 ProductId = existingProduct?.Id ?? 0
             };
-
             if (existingProduct == null)
             {
-                throw new Exception($"Không tìm thấy product");
+                throw new Exception($"Không tìm thấy product trong bảng Products với mã: {dto.ProductCode}");
             }
 
             _context.ProductionMaterials.Add(material);
