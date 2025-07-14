@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SEP490.Modules.Accountant.DTO;
 using SEP490.Modules.Accountant.Services;
-using SEP490.Modules.ProductionOrders;
+using SEP490.Modules.ProductionOrders.DTO;
 using SEP490.Modules.ProductionOrders.Services;
 
 namespace SEP490.Modules.Accountant.Controllers
@@ -38,6 +38,15 @@ namespace SEP490.Modules.Accountant.Controllers
 
         //    return Ok(new List<ProductWithMaterialsDTO> { result });
         //}
+        [HttpGet("production-order-info/{id}")]
+        public async Task<IActionResult> GetProductionOrderInfo(int id)
+        {
+            var result = await _service.GetProductionOrderInfoAsync(id);
+            if (result == null)
+                return NotFound("Không tìm thấy lệnh sản xuất");
+
+            return Ok(result);
+        }
 
         [HttpGet("products-materials-by-output/{outputId}")]
         public async Task<IActionResult> GetProductWithMaterialsByOutputId(int outputId)
@@ -73,12 +82,21 @@ namespace SEP490.Modules.Accountant.Controllers
             return Ok(new { message = "Thêm thành phẩm thành công." });
         }
         [HttpPost("add-material-info/{productionOrderId}")]
-        public async Task<IActionResult> AddMaterial(int productionOrderId, [FromQuery] string productionCode, [FromBody] CreateMaterialDTO dto)
+        public async Task<IActionResult> AddMaterial(int productionOrderId, int outputId, [FromBody] CreateMaterialDTO dto)
         {
-            var success = await _service.AddMaterialAsync(productionOrderId, productionCode, dto);
-            if (!success)
-                return NotFound("Không tìm thấy thành phẩm.");
-            return Ok("Thêm nguyên vật liệu thành công.");
+            try
+            {
+                var result = await _service.AddMaterialAsync(productionOrderId, outputId, dto);
+                if (result)
+                {
+                    return Ok("Material added successfully");
+                }
+                return NotFound("Output not found");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
     }
