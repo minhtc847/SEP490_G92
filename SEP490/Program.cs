@@ -10,6 +10,7 @@ using SEP490.Modules.OrderModule.ManageOrder.Services;
 using SEP490.Modules.ProductionOrders.Services;
 using SEP490.Modules.Zalo.Services;
 using System;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 
@@ -94,6 +95,15 @@ if (app.Environment.IsDevelopment())
 }
 app.UseCors("AllowFrontend");
 app.UseHttpsRedirection();
+
+// Add logging middleware
+app.Use(async (context, next) =>
+{
+    Debug.WriteLine($"Request: {context.Request.Method} {context.Request.Path}");
+    await next();
+    Debug.WriteLine($"Response: {context.Response.StatusCode}");
+});
+
 app.UseMiddleware<PermissionMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
