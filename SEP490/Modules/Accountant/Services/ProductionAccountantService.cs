@@ -81,7 +81,6 @@ namespace SEP490.Modules.Accountant.Services
                 return null;
             }
 
-            
             var totalQuantity = output.Amount ?? 0;
 
             var materials = await _context.ProductionMaterials
@@ -90,7 +89,7 @@ namespace SEP490.Modules.Accountant.Services
                 .Select(m => new MaterialAccountantDTO
                 {
                     Id = m.Id, 
-                    ProductName = m.CostItem,
+                    ProductName = m.Product.ProductName,
                     Uom = m.UOM,
                     QuantityPer = m.Amount ?? 0,
                     TotalQuantity = m.Amount ?? 0
@@ -132,13 +131,14 @@ namespace SEP490.Modules.Accountant.Services
 
         public async Task<bool> UpdateMaterialInfo(int id, UpdateMaterialDTO dto)
         {
-            var material = await _context.ProductionMaterials.FindAsync(id);
-            if (material == null) return false;
+            var d = await _context.ProductionMaterials.FindAsync(id);
+            if (d == null) return false;
+            var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == d.ProductId);
+            if (product == null) return false;
 
-
-            material.CostItem = dto.ProductName;
-            material.UOM = dto.Uom;
-            material.Amount = dto.Amount;
+            d.Product.ProductName = product.ProductName;
+            d.UOM = dto.Uom;
+            d.Amount = dto.Amount;
 
             await _context.SaveChangesAsync();
             return true;
@@ -201,7 +201,6 @@ namespace SEP490.Modules.Accountant.Services
                 ProductionId = output.ProductId,
                 ProductionName = output.Product.ProductName,
                 ProductionOutputId = output.Id,
-                CostItem = dto.ProductName,
                 UOM = dto.Uom,
                 Amount = dto.TotalQuantity,
                 ProductId = existingProduct?.Id ?? 0

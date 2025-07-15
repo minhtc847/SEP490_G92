@@ -331,9 +331,10 @@ export default function ProductionOrderView({ params }: { params: { id: string }
       amount: Number(productForm.quantity),
     }
 
-    console.log("Đang cập nhật thành phẩm:", updateData)
+    const productIdToUpdate = editingProduct?.outputId || editingProduct?.id;
 
-    fetch(`https://localhost:7075/api/ProductionAccountantControllers/update-output-info/${params.id}`, {
+  fetch(`https://localhost:7075/api/ProductionAccountantControllers/update-output-info/${productIdToUpdate}`, {
+
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
