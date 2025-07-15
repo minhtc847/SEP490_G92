@@ -17,6 +17,7 @@ namespace SEP490.Modules.Production_plans.DTO
         public decimal TotalGlue { get; set; }
         public decimal ButylLength { get; set; }
         public bool IsCuongLuc { get; set; }
+        public string AdhesiveType { get; set; } = string.Empty;
     }
 
     public class ProductionPlanMaterialDetailDTO

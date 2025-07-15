@@ -170,6 +170,7 @@ export interface ProductionPlanMaterialProduct {
   totalGlue: number;
   butylLength: number;
   isCuongLuc: boolean;
+  adhesiveType: string;
 }
 
 export interface ProductionPlanMaterialDetail {

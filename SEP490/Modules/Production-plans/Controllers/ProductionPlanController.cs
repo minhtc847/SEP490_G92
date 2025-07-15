@@ -60,6 +60,7 @@ namespace SEP490.Modules.Production_plans.Controllers
         public async Task<IActionResult> CreateFromSaleOrder([FromBody] CreateProductionPlanFromSaleOrderDTO dto)
         {
             var result = await _productionPlanService.CreateProductionPlanFromSaleOrderAsync(dto);
+            
             return Ok(result);
         }
     }

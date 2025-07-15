@@ -177,6 +177,7 @@ namespace SEP490.Modules.Production_plans.Services
         {
             var planDetails = await _context.ProductionPlanDetails
                 .Include(pd => pd.Product)
+                    .ThenInclude(p => p.GlassStructure)
                 .Where(pd => pd.ProductionPlanId == id)
                 .ToListAsync();
 
@@ -207,7 +208,8 @@ namespace SEP490.Modules.Production_plans.Services
                 ButylType = pd.LoaiButyl ?? 0,
                 TotalGlue = pd.TongKeoNano ?? 0 + pd.TongKeoMem ?? 0,
                 ButylLength = pd.DoDaiButyl ?? 0,
-                IsCuongLuc = (pd.IsKinhCuongLuc ?? 0) == 1
+                IsCuongLuc = (pd.IsKinhCuongLuc ?? 0) == 1,
+                AdhesiveType = pd.Product.GlassStructure?.AdhesiveType ?? string.Empty
             }).ToList();
             return dto;
         }

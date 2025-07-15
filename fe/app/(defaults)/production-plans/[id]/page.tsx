@@ -145,13 +145,13 @@ const ProductionPlanDetailPage = () => {
                 setPourGlueModalOpen(false);
                 
                 // Show success message (you can use a toast notification here)
-                alert('Lệnh đổ keo đã được tạo thành công!');
+                alert('Lệnh sản xuất keo và lệnh đổ keo đã được tạo thành công!');
             } else {
-                alert('Có lỗi xảy ra khi tạo lệnh đổ keo!');
+                alert('Có lỗi xảy ra khi tạo lệnh sản xuất!');
             }
         } catch (error) {
             console.error('Error creating pour glue order:', error);
-            alert('Có lỗi xảy ra khi tạo lệnh đổ keo!');
+            alert('Có lỗi xảy ra khi tạo lệnh sản xuất!');
         }
     };
 

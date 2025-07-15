@@ -1,7 +1,8 @@
 'use client';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment, useState, useEffect } from 'react';
-import { ProductionPlanProductDetail } from '@/app/(defaults)/production-plans/service';
+import { ProductionPlanProductDetail, ProductionPlanMaterialProduct, fetchProductionPlanMaterialDetail } from '@/app/(defaults)/production-plans/service';
+import { createGelOrder, CreateGelOrderDto } from '@/app/(defaults)/production-plans/create/service';
 
 interface PourGlueModalProps {
     isOpen: boolean;
@@ -23,10 +24,33 @@ interface FinishedProduct {
     sourceProductId?: number;
 }
 
-
+// Công thức tính tổng keo
+function calculateTotalGlue(width: number, height: number, thickness: number, glass4mm: number, glass5mm: number) {
+    // Diện tích keo (m2)
+    const areaKeo = ((width - 20) * (height - 20)) / 1_000_000;
+    // Độ dày keo
+    const doDayKeo = thickness - (glass4mm * 4) - (glass5mm * 5);
+    // Tổng keo
+    return areaKeo * doDayKeo * 1.2;
+}
 
 const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: PourGlueModalProps) => {
     const [productQuantities, setProductQuantities] = useState<{ [productId: number]: number }>({});
+    const [loading, setLoading] = useState(false);
+    const [materialProducts, setMaterialProducts] = useState<ProductionPlanMaterialProduct[]>([]);
+
+    // Fetch material details when modal opens
+    useEffect(() => {
+        if (isOpen && productionPlanId) {
+            fetchProductionPlanMaterialDetail(productionPlanId)
+                .then((materialDetail) => {
+                    setMaterialProducts(materialDetail.products || []);
+                })
+                .catch((error) => {
+                    console.error('Error fetching material details:', error);
+                });
+        }
+    }, [isOpen, productionPlanId]);
 
     // Initialize quantities when modal opens
     useEffect(() => {
@@ -48,16 +72,76 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
         setProductQuantities(newQuantities);
     };
 
-    // Handle save
-    const handleSave = () => {
-        const orderData: PourGlueOrderData = {
-            productionPlanId: productionPlanId,
-            productQuantities,
-            finishedProducts: []
-        };
-        onSave(orderData);
-        onClose();
+    // Calculate total glue needed based on selected products
+    const calculateTotalGlueNeeded = () => {
+        let totalKeoNano = 0;
+        let totalKeoMem = 0;
+
+        products.forEach((product) => {
+            const quantity = productQuantities[product.id] || 0;
+            if (quantity > 0) {
+                // Find corresponding material product to get detailed specs
+                const materialProduct = materialProducts.find(mp => mp.productName === product.productName);
+                
+                if (materialProduct) {
+                    const gluePerUnit = calculateTotalGlue(
+                        materialProduct.width,
+                        materialProduct.height,
+                        materialProduct.thickness,
+                        materialProduct.glass4mm,
+                        materialProduct.glass5mm
+                    );
+                    const totalGlueForProduct = gluePerUnit * quantity;
+
+                    // Phân loại theo adhesive type
+                    if (materialProduct.adhesiveType?.toLowerCase() === 'nano') {
+                        totalKeoNano += totalGlueForProduct;
+                    } else if (materialProduct.adhesiveType?.toLowerCase() === 'mềm') {
+                        totalKeoMem += totalGlueForProduct;
+                    }
+                }
+            }
+        });
+
+        return { totalKeoNano, totalKeoMem };
     };
+
+    // Handle save - Create both gel order and pour glue order
+    const handleSave = async () => {
+        setLoading(true);
+        try {
+            const { totalKeoNano, totalKeoMem } = calculateTotalGlueNeeded();
+
+            // 1. Create Gel Order (Lệnh sản xuất keo)
+            if (totalKeoNano > 0 || totalKeoMem > 0) {
+                const gelOrderData: CreateGelOrderDto = {
+                    productionPlanId: productionPlanId,
+                    productQuantities: productQuantities,
+                    totalKeoNano: totalKeoNano,
+                    totalKeoMem: totalKeoMem
+                };
+
+                await createGelOrder(gelOrderData);
+            }
+
+            // 2. Create Pour Glue Order (Lệnh đổ keo)
+            const orderData: PourGlueOrderData = {
+                productionPlanId: productionPlanId,
+                productQuantities,
+                finishedProducts: []
+            };
+            onSave(orderData);
+
+            onClose();
+        } catch (error) {
+            console.error('Error creating orders:', error);
+            alert('Có lỗi xảy ra khi tạo lệnh sản xuất!');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const { totalKeoNano, totalKeoMem } = calculateTotalGlueNeeded();
 
     return (
         <Transition appear show={isOpen} as={Fragment}>
@@ -106,6 +190,8 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
                                                     <tr>
                                                         <th>STT</th>
                                                         <th>Tên sản phẩm</th>
+                                                        <th>Loại keo</th>
+                                                        <th>Tổng keo (kg)</th>
                                                         <th>Số lượng cần đổ</th>
                                                         <th>Số lượng đã đổ</th>
                                                         <th>Số lượng còn lại</th>
@@ -114,11 +200,15 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
                                                 <tbody>
                                                     {products.map((product, idx) => {
                                                         const remainingQuantity = product.totalQuantity - product.daDoKeo;
+                                                        const materialProduct = materialProducts.find(mp => mp.productName === product.productName);
+                                                        const totalGlue = materialProduct?.totalGlue || 0;
                                                         
                                                         return (
                                                             <tr key={product.id}>
                                                                 <td>{idx + 1}</td>
                                                                 <td>{product.productName}</td>
+                                                                <td className="text-center">{materialProduct?.adhesiveType || 'N/A'}</td>
+                                                                <td className="text-center">{totalGlue.toFixed(2)}</td>
                                                                 <td>
                                                                     <input
                                                                         type="number"
@@ -139,16 +229,43 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
                                         </div>
                                     </div>
 
-
+                                    {/* Glue Summary */}
+                                    {(totalKeoNano > 0 || totalKeoMem > 0) && (
+                                        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                            <h6 className="text-lg font-semibold mb-3">Tổng hợp keo cần sản xuất</h6>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                {totalKeoNano > 0 && (
+                                                    <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
+                                                        <span className="font-medium">Keo Nano:</span>
+                                                        <span className="font-bold">{totalKeoNano.toFixed(2)} kg</span>
+                                                    </div>
+                                                )}
+                                                {totalKeoMem > 0 && (
+                                                    <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded">
+                                                        <span className="font-medium">Keo Mềm:</span>
+                                                        <span className="font-bold">{totalKeoMem.toFixed(2)} kg</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                                                * Hệ thống sẽ tạo lệnh sản xuất keo trước, sau đó tạo lệnh đổ keo
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                                 
                                 {/* Footer - Fixed */}
                                 <div className="flex justify-end items-center p-5 border-t border-gray-200 dark:border-gray-700 bg-[#fbfbfb] dark:bg-[#121c2c]">
-                                    <button onClick={onClose} type="button" className="btn btn-outline-danger">
+                                    <button onClick={onClose} type="button" className="btn btn-outline-danger" disabled={loading}>
                                         Hủy
                                     </button>
-                                    <button onClick={handleSave} type="button" className="btn btn-primary ltr:ml-4 rtl:mr-4">
-                                        Tạo lệnh đổ keo
+                                    <button 
+                                        onClick={handleSave} 
+                                        type="button" 
+                                        className="btn btn-primary ltr:ml-4 rtl:mr-4"
+                                        disabled={loading}
+                                    >
+                                        {loading ? 'Đang tạo lệnh...' : 'Tạo lệnh đổ keo'}
                                     </button>
                                 </div>
                             </Dialog.Panel>
