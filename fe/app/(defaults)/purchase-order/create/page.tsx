@@ -202,10 +202,6 @@ const PurchaseOrderCreatePage = () => {
                     <input className="input input-bordered w-full bg-gray-100" value={form.createdDate} readOnly />
                 </div>
                 <div>
-                    <label className="block mb-1 font-medium">Mã đơn hàng</label>
-                    <input className="input input-bordered w-full" value={form.orderCode} readOnly />
-                </div>
-                <div>
                     <label className="block mb-1 font-medium">Trạng thái</label>
                     <select className="select select-bordered w-full" value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
                         <option value="Chờ đặt hàng">Chờ đặt hàng</option>
