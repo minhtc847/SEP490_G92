@@ -8,7 +8,7 @@
 
     public class MaterialAccountantDTO
     {
-        public string ProductCode { get; set; }
+        public int Id { get; set; }
         public string ProductName { get; set; }
         public string Uom { get; set; }
         public decimal QuantityPer { get; set; }
