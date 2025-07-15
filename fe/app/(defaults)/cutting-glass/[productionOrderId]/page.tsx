@@ -80,7 +80,7 @@ export default function CuttingGlassPage() {
 
   // Fetch danh sách thành phẩm cho autocomplete
   useEffect(() => {
-    fetch(`${API_BASE}/productionorders/products/thanhpham`)
+    fetch(`${API_BASE}/cuttingglassmanagement/products/thanhpham`)
       .then((res) => res.json())
       .then((data) => setThanhPhamProducts(data));
   }, []);
@@ -89,7 +89,7 @@ export default function CuttingGlassPage() {
   useEffect(() => {
     if (!productionOrderId) return;
     setLoading(true);
-    fetch(`${API_BASE}/productionorders/cutting-glass-summary/${productionOrderId}`)
+    fetch(`${API_BASE}/cuttingglassmanagement/summary/${productionOrderId}`)
       .then((res) => res.json())
       .then((data) => {
         console.log('Debug - Summary data loaded:', data);
@@ -138,15 +138,16 @@ export default function CuttingGlassPage() {
     }
     try {
       let product = selectedProduct;
-      // Nếu nhập tên mới, tạo Product mới
+      // Nếu sản phẩm chưa tồn tại, tạo mới
       if (!product) {
-        const productRes = await fetch(`${API_BASE}/productionorders/create-product`, {
+        const productRes = await fetch(`${API_BASE}/cuttingglassmanagement/create-product`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            productCode: form.productName,
             productName: form.productName,
-            uom: '',
-            productType: 'Thành phẩm', // Thêm ProductType cho kính dư
+            productType: "Thành phẩm",
+            uom: "m2"
           }),
         });
         product = await productRes.json();
@@ -181,25 +182,25 @@ export default function CuttingGlassPage() {
             confirmButtonText: 'Cộng dồn',
             cancelButtonText: 'Không',
           });
-          if (result.isConfirmed) {
-            // Gọi API update-cut-glass-output để cộng dồn
-            await fetch(`${API_BASE}/productionorders/update-cut-glass-output/${duplicate.id}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                quantity: Number(duplicate.quantity) + Number(form.quantity),
-                note: form.note,
-              }),
-            });
-            Swal.fire({ title: 'Cộng dồn thành công!', icon: 'success' });
-            setShowModal(false);
-            setForm({ isGlassOutput: false, productName: '', quantity: '', isDC: false, note: '', selectedMaterialId: '', itemType: 'material' });
-            setSelectedProduct(null);
-            setProductSearch("");
-            fetch(`${API_BASE}/productionorders/cutting-glass-summary/${productionOrderId}`)
-              .then((res) => res.json())
-              .then((data) => setSummary(data));
-            return;
+                      if (result.isConfirmed) {
+              // Gọi API update-cut-glass-output để cộng dồn
+              await fetch(`${API_BASE}/cuttingglassmanagement/update-cut-glass-output/${duplicate.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  quantity: Number(duplicate.quantity) + Number(form.quantity),
+                  note: form.note,
+                }),
+              });
+              Swal.fire({ title: 'Cộng dồn thành công!', icon: 'success' });
+              setShowModal(false);
+              setForm({ isGlassOutput: false, productName: '', quantity: '', isDC: false, note: '', selectedMaterialId: '', itemType: 'material' });
+              setSelectedProduct(null);
+              setProductSearch("");
+              fetch(`${API_BASE}/cuttingglassmanagement/summary/${productionOrderId}`)
+                .then((res) => res.json())
+                .then((data) => setSummary(data));
+              return;
           } else {
             return;
           }
@@ -216,7 +217,7 @@ export default function CuttingGlassPage() {
         }
         // Nếu không tìm thấy ProductionOutput, tạo mới với ProductionOrderId=null
         if (!productionOutputId) {
-          const outputRes = await fetch(`${API_BASE}/productionorders/create-production-output`, {
+          const outputRes = await fetch(`${API_BASE}/cuttingglassmanagement/create-production-output`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -229,7 +230,7 @@ export default function CuttingGlassPage() {
           productionOutputId = output.id;
         }
         // Tạo CutGlassInvoiceOutput cho kính dư
-        await fetch(`${API_BASE}/productionorders/create-cut-glass-output`, {
+        await fetch(`${API_BASE}/cuttingglassmanagement/create-cut-glass-output`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -256,7 +257,7 @@ export default function CuttingGlassPage() {
           });
           if (result.isConfirmed) {
             // Gọi API update-cut-glass-output để cộng dồn
-            await fetch(`${API_BASE}/productionorders/update-cut-glass-output/${duplicateBanThanhPham.id}`, {
+            await fetch(`${API_BASE}/cuttingglassmanagement/update-cut-glass-output/${duplicateBanThanhPham.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -269,7 +270,7 @@ export default function CuttingGlassPage() {
             setForm({ isGlassOutput: false, productName: '', quantity: '', isDC: false, note: '', selectedMaterialId: '', itemType: 'material' });
             setSelectedProduct(null);
             setProductSearch("");
-            fetch(`${API_BASE}/productionorders/cutting-glass-summary/${productionOrderId}`)
+            fetch(`${API_BASE}/cuttingglassmanagement/summary/${productionOrderId}`)
               .then((res) => res.json())
               .then((data) => setSummary(data));
             return;
@@ -289,7 +290,7 @@ export default function CuttingGlassPage() {
         }
         // Nếu không tìm thấy ProductionOutput, tạo mới với ProductionOrderId=null
         if (!productionOutputId) {
-          const outputRes = await fetch(`${API_BASE}/productionorders/create-production-output`, {
+          const outputRes = await fetch(`${API_BASE}/cuttingglassmanagement/create-production-output`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -302,7 +303,7 @@ export default function CuttingGlassPage() {
           productionOutputId = output.id;
         }
         // Tạo CutGlassInvoiceOutput cho bán thành phẩm (không cần materialId)
-        await fetch(`${API_BASE}/productionorders/create-cut-glass-output`, {
+        await fetch(`${API_BASE}/cuttingglassmanagement/create-cut-glass-output`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -326,7 +327,7 @@ export default function CuttingGlassPage() {
           });
           if (result.isConfirmed) {
             // Gọi API update-material để cộng dồn
-            await fetch(`${API_BASE}/productionorders/update-material/${duplicate.id}`, {
+            await fetch(`${API_BASE}/cuttingglassmanagement/update-material/${duplicate.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -339,7 +340,7 @@ export default function CuttingGlassPage() {
             setForm({ isGlassOutput: false, productName: '', quantity: '', isDC: false, note: '', selectedMaterialId: '', itemType: 'material' });
             setSelectedProduct(null);
             setProductSearch("");
-            fetch(`${API_BASE}/productionorders/cutting-glass-summary/${productionOrderId}`)
+            fetch(`${API_BASE}/cuttingglassmanagement/summary/${productionOrderId}`)
               .then((res) => res.json())
               .then((data) => setSummary(data));
             return;
@@ -348,7 +349,7 @@ export default function CuttingGlassPage() {
           }
         }
         // Tạo nguyên vật liệu
-        const materialRes = await fetch(`${API_BASE}/productionorders/create-material`, {
+        const materialRes = await fetch(`${API_BASE}/cuttingglassmanagement/create-material`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -366,7 +367,7 @@ export default function CuttingGlassPage() {
       setSelectedProduct(null);
       setProductSearch("");
       // reload
-      fetch(`${API_BASE}/productionorders/cutting-glass-summary/${productionOrderId}`)
+      fetch(`${API_BASE}/cuttingglassmanagement/summary/${productionOrderId}`)
         .then((res) => res.json())
         .then((data) => setSummary(data));
     } catch (e) {
@@ -401,7 +402,7 @@ export default function CuttingGlassPage() {
       if (editingItem.hasOwnProperty('isDC')) {
         // Update CutGlassInvoiceOutput
         console.log('Debug - Updating CutGlassInvoiceOutput');
-        await fetch(`${API_BASE}/productionorders/update-cut-glass-output/${editingItem.id}`, {
+        await fetch(`${API_BASE}/cuttingglassmanagement/update-cut-glass-output/${editingItem.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -412,7 +413,7 @@ export default function CuttingGlassPage() {
       } else {
         // Update CutGlassInvoiceMaterial
         console.log('Debug - Updating CutGlassInvoiceMaterial');
-        await fetch(`${API_BASE}/productionorders/update-material/${editingItem.id}`, {
+        await fetch(`${API_BASE}/cuttingglassmanagement/update-material/${editingItem.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -432,7 +433,7 @@ export default function CuttingGlassPage() {
       
       // reload
       console.log('Debug - Reloading data after update');
-      fetch(`${API_BASE}/productionorders/cutting-glass-summary/${productionOrderId}`)
+      fetch(`${API_BASE}/cuttingglassmanagement/summary/${productionOrderId}`)
         .then((res) => res.json())
         .then((data) => {
           console.log('Debug - New summary data:', data);
@@ -457,23 +458,23 @@ export default function CuttingGlassPage() {
     });
 
     if (result.isConfirmed) {
-      try {
-        if (type === 'glassOutput') {
-          await fetch(`${API_BASE}/productionorders/delete-cut-glass-output/${item.id}`, {
-            method: 'DELETE',
-          });
-        } else {
-          await fetch(`${API_BASE}/productionorders/delete-material/${item.id}`, {
-            method: 'DELETE',
-          });
-        }
-        
-        Swal.fire({ title: 'Xóa thành công!', icon: 'success' });
-        
-        // reload
-        fetch(`${API_BASE}/productionorders/cutting-glass-summary/${productionOrderId}`)
-          .then((res) => res.json())
-          .then((data) => setSummary(data));
+              try {
+          if (type === 'glassOutput') {
+            await fetch(`${API_BASE}/cuttingglassmanagement/delete-cut-glass-output/${item.id}`, {
+              method: 'DELETE',
+            });
+          } else {
+            await fetch(`${API_BASE}/cuttingglassmanagement/delete-material/${item.id}`, {
+              method: 'DELETE',
+            });
+          }
+          
+          Swal.fire({ title: 'Xóa thành công!', icon: 'success' });
+          
+          // reload
+          fetch(`${API_BASE}/cuttingglassmanagement/summary/${productionOrderId}`)
+            .then((res) => res.json())
+            .then((data) => setSummary(data));
       } catch (e) {
         Swal.fire({ title: 'Lỗi server!', icon: 'error' });
       }
@@ -737,7 +738,7 @@ export default function CuttingGlassPage() {
                           >
                             <option value="">-- Chọn nguyên vật liệu --</option>
                             {summary.materials.map((m: any) => (
-                              <option key={m.id} value={m.id}>{m.ProductName || m.productName}</option>
+                              <option key={m.id} value={m.ProductName || m.productName}>{m.ProductName || m.productName}</option>
                             ))}
                           </select>
                         </div>
