@@ -46,7 +46,6 @@ namespace SEP490.Modules.Accountant.Services
                 .Select(po => new ProductionOrderProductDTO
                 {
                     OutputId = po.Id,
-                    ProductCode = po.Product.ProductCode,
                     ProductName = po.ProductName,
                     Uom = po.UOM,
                     Quantity = po.Amount ?? 0
@@ -62,7 +61,6 @@ namespace SEP490.Modules.Accountant.Services
                 .Select(po => new ProductionOrderInfoDTO
                 {
                     Id = po.Id,
-                    ProductionOrderCode = po.ProductionOrderCode,
                     Description = po.Description
                 })
                 .FirstOrDefaultAsync();
@@ -70,49 +68,7 @@ namespace SEP490.Modules.Accountant.Services
             return po;
         }
 
-        //public async Task<ProductWithMaterialsDTO?> GetProductAndMaterialByCode(int productionOrderId, string productCode)
-        //{
-        //    productCode = productCode?.ToUpper().Trim();
-        //    Console.WriteLine($"🎯 Normalized ProductCode: '{productCode}'");
-
-        //    var outputs = await _context.ProductionOutputs
-        //        .Include(po => po.Product)
-        //        .Where(po =>
-        //            po.ProductionOrderId == productionOrderId &&
-        //            po.Product.ProductCode.ToUpper() == productCode)
-        //        .ToListAsync();
-
-        //    if (outputs == null || outputs.Count == 0)
-        //        return null;
-
-        //    var totalQuantity = outputs.Sum(o => o.Amount ?? 0);
-
-        //    var materials = await _context.ProductionMaterials
-        //        .Include(m => m.Product)
-        //        .Where(m => m.ProductionName.ToUpper() == productCode)
-        //        .GroupBy(m => new { m.CostObject, m.CostItem, m.UOM })
-        //        .Select(g => new MaterialAccountantDTO
-        //        {
-        //            ProductCode = g.Key.CostObject,
-        //            ProductName = g.Key.CostItem,
-        //            Uom = g.Key.UOM,
-        //            QuantityPer = g.Sum(m => m.Amount ?? 0),
-        //            TotalQuantity = g.Sum(m => m.Amount ?? 0) * totalQuantity
-        //        })
-        //        .ToListAsync();
-
-        //    return new ProductWithMaterialsDTO
-        //    {
-        //        Product = new ProductionOrderProductDTO
-        //        {
-        //            ProductCode = outputs.First().Product.ProductCode,
-        //            ProductName = outputs.First().Product.ProductName,
-        //            Uom = outputs.First().Product.UOM,
-        //            Quantity = (int)totalQuantity
-        //        },
-        //        Materials = materials
-        //    };
-        //}
+        
         public async Task<ProductWithMaterialsDTO?> GetProductAndMaterialByOutputId(int outputId)
         {
             var output = await _context.ProductionOutputs
@@ -125,20 +81,19 @@ namespace SEP490.Modules.Accountant.Services
                 return null;
             }
 
-            var productCode = output.Product.ProductCode.ToUpper().Trim();
+            //var productCode = output.Product.ProductCode.ToUpper().Trim();
             var totalQuantity = output.Amount ?? 0;
 
             var materials = await _context.ProductionMaterials
                 .Include(m => m.Product)
                 .Where(m => m.ProductionOutputId == outputId)
-                .GroupBy(m => new { m.CostObject, m.CostItem, m.UOM })
-                .Select(g => new MaterialAccountantDTO
+                .Select(m => new MaterialAccountantDTO
                 {
-                    ProductCode = g.Key.CostObject,
-                    ProductName = g.Key.CostItem,
-                    Uom = g.Key.UOM,
-                    QuantityPer = g.Sum(m => m.Amount ?? 0),
-                    TotalQuantity = g.Sum(m => m.Amount ?? 0)
+                    Id = m.Id, 
+                    ProductName = m.CostItem,
+                    Uom = m.UOM,
+                    QuantityPer = m.Amount ?? 0,
+                    TotalQuantity = m.Amount ?? 0
                 })
                 .ToListAsync();
 
@@ -147,7 +102,6 @@ namespace SEP490.Modules.Accountant.Services
                 Product = new ProductionOrderProductDTO
                 {
                     OutputId = output.Id,
-                    ProductCode = output.Product.ProductCode,
                     ProductName = output.Product.ProductName,
                     Uom = output.Product.UOM,
                     Quantity = (int)totalQuantity
@@ -167,7 +121,6 @@ namespace SEP490.Modules.Accountant.Services
                 return false;
             }
 
-            output.Product.ProductCode = dto.ProductCode;
             output.ProductName = dto.ProductName;
             output.UOM = dto.Uom;
             output.Amount = dto.Amount;
@@ -182,7 +135,7 @@ namespace SEP490.Modules.Accountant.Services
             var material = await _context.ProductionMaterials.FindAsync(id);
             if (material == null) return false;
 
-            material.CostObject = dto.ProductCode;
+
             material.CostItem = dto.ProductName;
             material.UOM = dto.Uom;
             material.Amount = dto.Amount;
@@ -193,13 +146,12 @@ namespace SEP490.Modules.Accountant.Services
 
         public async Task<bool> CreateOutputInfo(int productionOrderId, CreateOutputDTO dto)
         {
-            var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductCode == dto.ProductCode);
+            var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductName == dto.ProductName);
 
             if (product == null)
             {
                 product = new Product
                 {
-                    ProductCode = dto.ProductCode,
                     ProductName = dto.ProductName,
                     UOM = dto.Uom
                 };
@@ -237,19 +189,18 @@ namespace SEP490.Modules.Accountant.Services
             }
 
             var existingProduct = await _context.Products
-                .FirstOrDefaultAsync(p => p.ProductCode.ToUpper() == dto.ProductCode.ToUpper());
+                .FirstOrDefaultAsync(p => p.ProductName.ToUpper() == dto.ProductName.ToUpper());
 
             if (existingProduct == null)
             {
-                Console.WriteLine($"Không tìm thấy product với mã {dto.ProductCode}. Không gán product_id.");
+                Console.WriteLine($"Không tìm thấy product với mã {dto.ProductName}. Không gán product_id.");
             }
 
             var material = new ProductionMaterial
             {
                 ProductionId = output.ProductId,
-                ProductionName = output.Product.ProductCode,
+                ProductionName = output.Product.ProductName,
                 ProductionOutputId = output.Id,
-                CostObject = dto.ProductCode,
                 CostItem = dto.ProductName,
                 UOM = dto.Uom,
                 Amount = dto.TotalQuantity,

@@ -2,7 +2,6 @@
 {
     public class CreateOutputDTO
     {
-        public string ProductCode { get; set; }
         public string? ProductName { get; set; }
         public string? Uom { get; set; }
         public decimal Quantity { get; set; }
