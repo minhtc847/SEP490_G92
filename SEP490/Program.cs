@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SEP490.Common.Services;
 using SEP490.DB;
+using SEP490.Hubs;
 using SEP490.Modules.Auth.Middleware;
 using SEP490.Modules.Auth.Services;
 using SEP490.Modules.LLMChat.Services;
@@ -46,6 +47,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddHttpClient<ZaloChatService>();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
+builder.Services.AddSignalR();
 
 // Register all services that inherit from BaseService
 var baseType = typeof(BaseService);
@@ -97,5 +99,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<OrderHub>("/orderHub");
 
 app.Run();

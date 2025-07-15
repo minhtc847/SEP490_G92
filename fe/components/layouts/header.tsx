@@ -34,6 +34,7 @@ import IconMenuMore from '@/components/icon/menu/icon-menu-more';
 import { usePathname, useRouter } from 'next/navigation';
 import { getTranslation } from '@/i18n';
 import { logout, selectUser } from '@/store/authSlice';
+import * as signalR from '@microsoft/signalr';
 
 const Header = () => {
     const pathname = usePathname();
@@ -140,6 +141,7 @@ const Header = () => {
             time: '9h Ago',
         },
     ]);
+    
 
     const removeNotification = (value: number) => {
         setNotifications(notifications.filter((user) => user.id !== value));

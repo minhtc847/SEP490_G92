@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using SEP490.Modules.ProductionOrders.Services;
 using SEP490.DB.Models;
 using SEP490.Modules.ProductionOrders.DTO;
+using Microsoft.AspNetCore.SignalR;
+using SEP490.Modules.LLMChat.Services;
+using SEP490.Hubs;
 
 namespace SEP490.Modules.ProductionOrders.Controllers
 {
@@ -11,9 +14,11 @@ namespace SEP490.Modules.ProductionOrders.Controllers
     public class ProductionOrdersController : ControllerBase
     {
         private readonly IProductionOrdersService _productionOrdersService;
-        public ProductionOrdersController(IProductionOrdersService productionOrdersService)
+        private readonly IHubContext<OrderHub> _hubContext;
+        public ProductionOrdersController(IProductionOrdersService productionOrdersService, IHubContext<OrderHub> hubContext)
         {
             _productionOrdersService = productionOrdersService;
+            _hubContext = hubContext;
         }
 
         [HttpGet("by-plan/{productionPlanId}")]
@@ -46,6 +51,12 @@ namespace SEP490.Modules.ProductionOrders.Controllers
             var order = await _productionOrdersService.CreateProductionOrderAsync(planId);
             if (order == null)
                 return NotFound($"Không tìm thấy kế hoạch sản xuất với Id {planId}");
+            await _hubContext.Clients.All.SendAsync("OrderCreated", new
+            {
+                message = "Đơn hàng mới đã được tạo",
+                ordercode = order.ProductionOrderCode,
+                createAt = DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+            });
 
             return Ok(order);
         }
