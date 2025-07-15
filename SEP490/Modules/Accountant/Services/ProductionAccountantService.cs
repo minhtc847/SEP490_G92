@@ -125,7 +125,7 @@ namespace SEP490.Modules.Accountant.Services
                 return null;
             }
 
-            //var productCode = output.Product.ProductCode.ToUpper().Trim();
+            var productCode = output.Product.ProductCode.ToUpper().Trim();
             var totalQuantity = output.Amount ?? 0;
 
             var materials = await _context.ProductionMaterials
@@ -134,7 +134,7 @@ namespace SEP490.Modules.Accountant.Services
                 .GroupBy(m => new { m.CostObject, m.CostItem, m.UOM })
                 .Select(g => new MaterialAccountantDTO
                 {
-                    //ProductCode = g.Key.CostObject,
+                    ProductCode = g.Key.CostObject,
                     ProductName = g.Key.CostItem,
                     Uom = g.Key.UOM,
                     QuantityPer = g.Sum(m => m.Amount ?? 0),
@@ -147,7 +147,7 @@ namespace SEP490.Modules.Accountant.Services
                 Product = new ProductionOrderProductDTO
                 {
                     OutputId = output.Id,
-                    //ProductCode = output.Product.ProductCode,
+                    ProductCode = output.Product.ProductCode,
                     ProductName = output.Product.ProductName,
                     Uom = output.Product.UOM,
                     Quantity = (int)totalQuantity
