@@ -81,7 +81,7 @@ namespace SEP490.Modules.Accountant.Services
                 return null;
             }
 
-            //var productCode = output.Product.ProductCode.ToUpper().Trim();
+            
             var totalQuantity = output.Amount ?? 0;
 
             var materials = await _context.ProductionMaterials
