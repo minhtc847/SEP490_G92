@@ -158,8 +158,8 @@ namespace SEP490.Modules.Production_plans.Services
                     Kinh5 = glass5mm,
                     LoaiButyl = butylType,
                     IsKinhCuongLuc = prod.IsCuongLuc ? 1 : 0,
-                    TongKeoNano = (product.GlassStructure.AdhesiveType ?? "").ToLower() == "nano" ? tongKeo : 0,
-                    TongKeoMem = (product.GlassStructure.AdhesiveType ?? "").ToLower() == "mềm" ? tongKeo : 0,
+                    TongKeoNano = (product.GlassStructure.AdhesiveType ?? "").ToLower() == "nano" ? tongKeo * prod.Quantity : 0,
+                    TongKeoMem = (product.GlassStructure.AdhesiveType ?? "").ToLower() == "mềm" ? tongKeo * prod.Quantity : 0,
                     DoDaiButyl = doDaiButyl
                 };
                 _context.ProductionPlanDetails.Add(planDetail);

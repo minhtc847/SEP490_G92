@@ -34,7 +34,9 @@ const CutGlassModal = ({ isOpen, onClose, products, materialProducts, production
         if (isOpen) {
             const initialQuantities: { [productId: number]: number } = {};
             products.forEach((product) => {
-                initialQuantities[product.id] = 0;
+                // Default to remaining quantity
+                const remainingQuantity = product.totalQuantity - product.daCatKinh;
+                initialQuantities[product.id] = remainingQuantity;
             });
             setProductQuantities(initialQuantities);
             updateFinishedProducts(initialQuantities);

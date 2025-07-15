@@ -57,7 +57,9 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
         if (isOpen) {
             const initialQuantities: { [productId: number]: number } = {};
             products.forEach((product) => {
-                initialQuantities[product.id] = 0;
+                // Default to remaining quantity
+                const remainingQuantity = product.totalQuantity - product.daDoKeo;
+                initialQuantities[product.id] = remainingQuantity;
             });
             setProductQuantities(initialQuantities);
         }
