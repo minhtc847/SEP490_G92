@@ -158,8 +158,8 @@ export interface ProductionPlanMaterialProduct {
   id: number;
   productName: string;
   productCode: string;
-  width: number;
-  height: number;
+  width: string;
+  height: string;
   quantity: number;
   thickness: number;
   glueLayers: number;

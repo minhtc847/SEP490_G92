@@ -85,8 +85,8 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
                 
                 if (materialProduct) {
                     const gluePerUnit = calculateTotalGlue(
-                        materialProduct.width,
-                        materialProduct.height,
+                        parseFloat(materialProduct.width) || 0,
+                        parseFloat(materialProduct.height) || 0,
                         materialProduct.thickness,
                         materialProduct.glass4mm,
                         materialProduct.glass5mm
