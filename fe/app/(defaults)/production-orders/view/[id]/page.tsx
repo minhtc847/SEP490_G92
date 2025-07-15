@@ -840,9 +840,9 @@ export default function ProductionOrderView({ params }: { params: { id: string }
               ) : currentMaterials.length > 0 ? (
                 currentMaterials.map((material, index) => (
                   <tr
-                    key={`${selectedProduct}-${material.productCode}-${index}`}
+                    key={`${selectedProduct}-${material.productName}-${index}`}
                     className={`cursor-pointer transition-colors ${
-                      selectedMaterial?.productCode === material.productCode
+                      selectedMaterial?.productName === material.productName
                         ? "bg-[#e8f5e8] border-l-4 border-[#28a745] font-bold"
                         : "hover:bg-blue-50"
                     }`}
