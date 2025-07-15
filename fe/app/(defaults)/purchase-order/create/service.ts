@@ -74,6 +74,7 @@ export type OrderItem = {
     thickness: number;
     quantity: number;
     unitPrice: number;
+    uom?: string;
     glassStructureId?: number;
     isFromDatabase?: boolean;
 };
@@ -105,7 +106,7 @@ export const loadOptions = async (inputValue: string, selectedProductIds: number
     const result = await searchProducts(inputValue);
 
     return result.map((p) => ({
-        label: `${p.productCode} - ${p.productName}`,
+        label: `${p.productName}`,
         value: p.id,
         isDisabled: selectedProductIds.includes(p.id),
         product: {
@@ -122,7 +123,7 @@ export const loadOptions = async (inputValue: string, selectedProductIds: number
 };
 
 export const searchProducts = async (query: string): Promise<ProductSearchResult[]> => {
-    const res = await axios.get(`/api/orders/search?query=${query}`);
+    const res = await axios.get(`/api/orders/search-nvl?query=${query}`);
     return res.data;
 };
 
@@ -131,10 +132,20 @@ export const createPurchaseOrder = async (dto: CreatePurchaseOrderDto) => {
   return response.data;
 };
 
+export const getAllCustomerNames = async (): Promise<string[]> => {
+    const res = await axios.get('/api/orders/all-customer-names');
+    return res.data;
+};
+
+export const getAllProductNames = async (): Promise<string[]> => {
+    const res = await axios.get('/api/orders/all-product-names');
+    return res.data;
+};
+
 export const loadCustomerOptions = async (inputValue: string): Promise<CustomerOption[]> => {
     const result = await searchCustomers(inputValue);
     return result.map((c) => ({
-        label: `${c.customer.customerCode} - ${c.customer.customerName}`,
+        label: `${c.customer.customerName}`,
         value: c.customer.id,
         customer: c.customer,
     }));
@@ -146,7 +157,7 @@ export const getNextPurchaseOrderCode = async (): Promise<string> => {
 };
 
 export const searchCustomers = async (query: string): Promise<CustomerOption[]> => {
-    const res = await axios.get(`/api/orders/search-customer?query=${query}`);
+    const res = await axios.get(`/api/orders/search-supplier?query=${query}`);
     return res.data.map((c: any) => ({
         label: `${c.customerCode} - ${c.customerName}`,
         value: c.id,

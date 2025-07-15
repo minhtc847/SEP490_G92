@@ -89,11 +89,42 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
         }
 
         [HttpGet("search-customer")]
-        public IActionResult SearchCustomer(string query)
+        public IActionResult SearchCustomer(string? query)
         {
+            query = query?.Trim() ?? string.Empty;
+
             var result = _context.Customers
-                .Where(c => c.CustomerCode.Contains(query) || c.CustomerName.Contains(query))
-                .Select(c => new {
+                .AsNoTracking()
+                .Where(c => !c.IsSupplier &&                            
+                            (query == ""                                  
+                             || EF.Functions.Like(c.CustomerCode!, $"%{query}%")  
+                             || EF.Functions.Like(c.CustomerName!, $"%{query}%"))) 
+                .Select(c => new
+                {
+                    c.Id,
+                    c.CustomerCode,
+                    c.CustomerName,
+                    c.Address,
+                    c.Phone,
+                    c.Discount
+                })
+                .ToList();
+
+            return Ok(result);
+        }
+
+        [HttpGet("search-supplier")]
+        public IActionResult SearchSupplier(string? query)
+        {
+            query = query?.Trim() ?? string.Empty;
+
+            var result = _context.Customers
+                .AsNoTracking()
+                .Where(c => c.IsSupplier &&                                     
+                            (query == ""                                        
+                             || EF.Functions.Like(c.CustomerName!, $"%{query}%")))
+                .Select(c => new
+                {
                     c.Id,
                     c.CustomerCode,
                     c.CustomerName,
@@ -154,6 +185,30 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
 
             return Ok(result);
         }
+
+        [HttpGet("search-nvl")]
+        public IActionResult SearchRawMaterials(string query)
+        {
+            var result = _context.Products
+                .Where(p =>
+                    (p.ProductCode.Contains(query) || p.ProductName.Contains(query)) &&
+                    p.ProductType == "NVL") 
+                .Select(p => new
+                {
+                    p.Id,
+                    p.ProductCode,
+                    p.ProductName,
+                    p.Height,
+                    p.Width,
+                    p.Thickness,
+                    p.UnitPrice,
+                    p.GlassStructureId
+                })
+                .ToList();
+
+            return Ok(result);
+        }
+
 
         [HttpGet("check-code")]
         public IActionResult CheckProductCode(string code)

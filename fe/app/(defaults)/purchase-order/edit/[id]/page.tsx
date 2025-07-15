@@ -1,109 +1,121 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import AsyncSelect from 'react-select/async';
-import {
-    createProduct,
-    checkProductNameExists,
-    createPurchaseOrder,
-    getNextPurchaseOrderCode,
-    loadCustomerOptions,
-    loadOptions,
-    searchCustomers,
-    searchProducts,
-    CustomerOption,
-    ProductOption,
-    OrderItem,
-    getAllCustomerNames,
-    getAllProductNames,
-} from './service';
 
-const toPositiveInt = (v: string | number): number | null => {
+import { loadCustomerOptions, loadOptions, checkProductNameExists, createProduct, CustomerOption, ProductOption, getPurchaseOrderById, updatePurchaseOrder, UpdatePurchaseOrderDto } from './service';
+
+const toPositiveInt = (v: string | number | null): number | null => {
+    if (v === null || v === '') return null;
     const n = typeof v === 'string' ? Number(v) : v;
     return Number.isInteger(n) && n > 0 ? n : null;
 };
-const toPositiveNumber = (v: string | number): number | null => {
+const toPositiveNumber = (v: string | number | null): number | null => {
+    if (v === null || v === '') return null;
     const n = typeof v === 'string' ? Number(v) : v;
     return Number.isFinite(n) && n > 0 ? n : null;
 };
 const PRODUCT_NAME_REGEX = /^Kính .+ KT: \d+\*\d+\*\d+ mm$/;
 
-const PurchaseOrderCreatePage = () => {
+export type OrderItem = {
+    id: number;
+    productId?: number | null;
+    productName: string;
+    width: number | null;
+    height: number | null;
+    thickness: number | null;
+    quantity: number;
+    uom?: string;
+    isFromDatabase?: boolean;
+};
+
+const PurchaseOrderEditPage = () => {
     const router = useRouter();
+    const { id } = useParams<{ id: string }>();
+    const orderId = Number(id);
+
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const [isCustomerLocked, setIsCustomerLocked] = useState(false);
     const [customerNames, setCustomerNames] = useState<string[]>([]);
+    const [isCustomerNameDuplicate, setIsCustomerNameDuplicate] = useState(false);
     const [productNames, setProductNames] = useState<string[]>([]);
+    const [isProductNameDuplicate, setIsProductNameDuplicate] = useState(false);
+
+    const [selectedProduct, setSelectedProduct] = useState<ProductOption | null>(null);
+    const [showAddProductForm, setShowAddProductForm] = useState(false);
+    const [newProductForm, setNewProductForm] = useState({
+        productName: '',
+        width: null as number | null,
+        height: null as number | null,
+        thickness: null as number | null,
+        quantity: 1,
+    });
 
     const [form, setForm] = useState({
         customer: '',
         description: '',
-        createdDate: new Date().toISOString().split('T')[0],
         orderCode: '',
-        status: 'Chưa thực hiện',
+        status: '',
+        createdDate: '',
         items: [] as OrderItem[],
     });
-
-    const [showAddProductForm, setShowAddProductForm] = useState(false);
-    const [newProductForm, setNewProductForm] = useState({
-        productName: '',
-        width: 0,
-        height: 0,
-        thickness: 0,
-        quantity: 1,
-        glassStructureId: undefined as number | undefined,
-    });
-    const [isProductNameDuplicate, setIsProductNameDuplicate] = useState(false);
-
-    const [selectedProduct, setSelectedProduct] = useState<ProductOption | null>(null);
-
-    const [isCustomerNameDuplicate, setIsCustomerNameDuplicate] = useState(false);
 
     useEffect(() => {
         (async () => {
             try {
-                const [code, productRes, customerRes] = await Promise.all([getNextPurchaseOrderCode(), searchProducts(''), searchCustomers('')]);
-                setForm((f) => ({ ...f, orderCode: code }));
-                setProductNames(productRes.map((p) => p.productName));
-                setCustomerNames(customerRes.map((c) => c.customer.customerName));
-            } catch (err) {
-                console.error('Init error:', err);
+                const po = await getPurchaseOrderById(orderId);
+                setForm({
+                    customer: po.customerName ?? '',
+                    description: po.description ?? '',
+                    orderCode: po.code ?? '',
+                    status: po.status ?? 'Chưa thực hiện',
+                    createdDate: po.date ? new Date(po.date).toISOString().split('T')[0] : '',
+                    items: po.purchaseOrderDetails.map((d, idx) => ({
+                        id: Date.now() + idx,
+                        productId: d.productId ?? null,
+                        productName: d.productName ?? '',
+                        width: d.width ? Number(d.width) : null,
+                        height: d.height ? Number(d.height) : null,
+                        thickness: d.thickness ? Number(d.thickness) : null,
+                        quantity: d.quantity ?? 1,
+                        isFromDatabase: !!d.productId,
+                    })),
+                });
+            } catch (err: any) {
+                setError(err.message || 'Lỗi tải dữ liệu');
+            } finally {
+                setLoading(false);
             }
         })();
-        getAllCustomerNames().then(setCustomerNames);
-        getAllProductNames().then(setProductNames);
+    }, [orderId]);
+
+    useEffect(() => {
+        import('./service').then(async (svc) => {
+            const [allCus, allProds] = await Promise.all([svc.getAllCustomerNames(), svc.getAllProductNames()]);
+            setCustomerNames(allCus);
+            setProductNames(allProds);
+        });
     }, []);
 
-    const handleCustomerChange = (val: string) => setForm((f) => ({ ...f, customer: val }));
+    const handleCustomerNameChange = (v: string) => {
+        const dup = customerNames.includes(v.trim()) && v.trim() !== form.customer;
+        setIsCustomerNameDuplicate(dup);
+        setForm((f) => ({ ...f, customer: v }));
+    };
 
-    const handleItemChange = (idx: number, field: keyof OrderItem, val: string | number) => {
+    const handleItemChange = (idx: number, field: keyof OrderItem, val: string | number | null) => {
         setForm((f) => {
             const items = [...f.items];
-            items[idx] = {
-                ...items[idx],
-                [field]: field === 'productName' ? val.toString() : Number(val),
-            } as OrderItem;
+            items[idx] = { ...items[idx], [field]: field === 'productName' ? String(val) : val === '' ? null : Number(val) } as OrderItem;
             return { ...f, items };
         });
     };
 
-    const handleCustomerNameChange = (value: string) => {
-        const isDuplicate = customerNames.includes(value.trim());
-        setIsCustomerNameDuplicate(isDuplicate);
-
-        setForm((prev) => ({
-            ...prev,
-            customer: value,
-        }));
-    };
-
-    const removeItem = (idx: number) =>
-        setForm((f) => {
-            const items = [...f.items];
-            items.splice(idx, 1);
-            return { ...f, items };
-        });
+    const removeItem = (idx: number) => setForm((f) => ({ ...f, items: f.items.filter((_, i) => i !== idx) }));
 
     const handleProductNameChange = (name: string) => {
         setIsProductNameDuplicate(productNames.includes(name.trim()));
@@ -117,18 +129,12 @@ const PurchaseOrderCreatePage = () => {
             if (isProductNameDuplicate) throw new Error('Tên sản phẩm đã tồn tại');
             if (await checkProductNameExists(newProductForm.productName)) throw new Error('Tên sản phẩm đã tồn tại, vui lòng chọn tên khác!');
 
-            const w = toPositiveNumber(newProductForm.width);
-            const h = toPositiveNumber(newProductForm.height);
-            const t = toPositiveInt(newProductForm.thickness);
-            if (!w || !h || !t) throw new Error('Rộng/Cao/Dày phải > 0');
-
             const payload = {
                 productName: newProductForm.productName,
-                width: newProductForm.width.toString(),
-                height: newProductForm.height.toString(),
+                width: newProductForm.width?.toString() ?? null,
+                height: newProductForm.height?.toString() ?? null,
                 thickness: newProductForm.thickness,
                 unitPrice: 0,
-                ...(newProductForm.glassStructureId && { glassStructureId: newProductForm.glassStructureId }),
             };
             const p = await createProduct(payload);
 
@@ -136,17 +142,15 @@ const PurchaseOrderCreatePage = () => {
                 id: Date.now(),
                 productId: p.id,
                 productName: p.productName,
-                width: Number(p.width),
-                height: Number(p.height),
-                thickness: Number(p.thickness),
+                width: p.width ? Number(p.width) : null,
+                height: p.height ? Number(p.height) : null,
+                thickness: p.thickness ? Number(p.thickness) : null,
                 quantity: 1,
-                unitPrice: 0,
-                glassStructureId: p.glassStructureId,
                 isFromDatabase: true,
             };
             setForm((f) => ({ ...f, items: [...f.items, newItem] }));
             setShowAddProductForm(false);
-            setNewProductForm({ productName: '', width: 0, height: 0, thickness: 0, quantity: 1, glassStructureId: undefined });
+            setNewProductForm({ productName: '', width: null, height: null, thickness: null, quantity: 1 });
         } catch (err: any) {
             alert(err.message || 'Lỗi tạo sản phẩm');
         }
@@ -154,48 +158,46 @@ const PurchaseOrderCreatePage = () => {
 
     const handleSave = async () => {
         try {
-            if (!form.customer.trim()) throw new Error('Vui lòng nhập tên nhà cung cấp');
-            if (isCustomerNameDuplicate) throw new Error('Tên nhà cung cấp đã tồn tại');
+            setSaving(true);
 
-            const validItems = form.items.filter((i) => i.productName.trim());
-            if (!validItems.length) throw new Error('Chưa có sản phẩm hợp lệ');
+            const products: UpdatePurchaseOrderDto['products'] = form.items.map((it) => ({
+                productId: it.productId ?? undefined,
+                productName: it.productName.trim(),
+                width: toPositiveNumber(it.width),
+                height: toPositiveNumber(it.height),
+                thickness: toPositiveNumber(it.thickness),
+                quantity: toPositiveInt(it.quantity) ?? 1,
+            }));
 
-            const products = validItems.map((p, i) => {
-                const width = toPositiveNumber(p.width);
-                const height = toPositiveNumber(p.height);
-                const thick = toPositiveNumber(p.thickness);
-                const qty = toPositiveInt(p.quantity);
-                if (!width || !height || !thick) throw new Error(`Sản phẩm #${i + 1}: Rộng/Cao/Dày phải > 0`);
-                if (!qty) throw new Error(`Sản phẩm #${i + 1}: Số lượng phải > 0`);
-                return { productName: p.productName.trim(), width, height, thickness: thick, quantity: qty };
-            });
-
-            const dto = {
+            const dto: UpdatePurchaseOrderDto = {
                 customerName: form.customer.trim(),
-                code: form.orderCode,
                 description: form.description,
-                date: form.createdDate,
                 status: form.status,
                 products,
             };
-            const res = await createPurchaseOrder(dto);
-            alert('Tạo đơn hàng mua thành công!');
-            router.push(`/purchase-order/${res.id}`);
+
+            await updatePurchaseOrder(orderId, dto);
+            alert('Cập nhật thành công!');
+            router.push(`/purchase-order/${orderId}`);
         } catch (err: any) {
-            console.error('Create PO error:', err?.response?.data || err);
-            alert(err.message || 'Tạo đơn hàng mua thất bại');
+            console.error('Update PO error:', err?.response?.data || err);
+            alert(err.message || 'Cập nhật thất bại');
+        } finally {
+            setSaving(false);
         }
     };
 
+    if (loading) return <div className="p-6">Đang tải...</div>;
+    if (error) return <div className="p-6 text-red-500">{error}</div>;
+
     return (
         <div className="max-w-6xl mx-auto p-6 space-y-6">
-            <h1 className="text-2xl font-bold">Tạo đơn hàng mua</h1>
+            <h1 className="text-2xl font-bold">Chỉnh sửa đơn hàng mua</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label className="block mb-1 font-medium">Tên nhà cung cấp</label>
-                    <input disabled={isCustomerLocked} className="input input-bordered w-full" value={form.customer} onChange={(e) => handleCustomerNameChange(e.target.value)} />
-                    {isCustomerNameDuplicate && <p className="text-red-500 text-sm mt-1">Tên nhà cung cấp đã tồn tại. Vui lòng nhập tên khác.</p>}
+                    <input disabled={true} className="input input-bordered w-full" value={form.customer} onChange={(e) => handleCustomerNameChange(e.target.value)} />
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Ngày tạo</label>
@@ -217,34 +219,6 @@ const PurchaseOrderCreatePage = () => {
                 <div className="md:col-span-2">
                     <label className="block mb-1 font-medium">Mô tả / Ghi chú</label>
                     <textarea className="textarea textarea-bordered w-full" rows={3} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
-                </div>
-            </div>
-            <div>
-                <label className="block mb-1 font-medium">Nhà cung cấp có sẵn</label>
-                <div className="flex items-center gap-2">
-                    <AsyncSelect<CustomerOption>
-                        cacheOptions
-                        defaultOptions
-                        loadOptions={loadCustomerOptions}
-                        placeholder="Tìm nhà cung cấp có sẵn..."
-                        onChange={(opt) => {
-                            if (!opt) return;
-                            setForm((f) => ({ ...f, customer: opt.customer.customerName }));
-                            setIsCustomerLocked(true);
-                        }}
-                        styles={{ container: (base) => ({ ...base, width: 300 }) }}
-                    />
-                    {isCustomerLocked && (
-                        <button
-                            className="btn btn-sm btn-outline text-red-500"
-                            onClick={() => {
-                                setIsCustomerLocked(false);
-                                setForm((f) => ({ ...f, customer: '' }));
-                            }}
-                        >
-                            ✕ Xoá KH
-                        </button>
-                    )}
                 </div>
             </div>
 
@@ -324,12 +298,10 @@ const PurchaseOrderCreatePage = () => {
                                 id: Date.now(),
                                 productId: p.id,
                                 productName: p.productName,
-                                width: Number(p.width),
-                                height: Number(p.height),
-                                thickness: Number(p.thickness),
+                                width: p.width ? Number(p.width) : null,
+                                height: p.height ? Number(p.height) : null,
+                                thickness: p.thickness ? Number(p.thickness) : null,
                                 quantity: 1,
-                                unitPrice: 0,
-                                glassStructureId: p.glassStructureId,
                                 isFromDatabase: true,
                             };
                             setForm((f) => ({ ...f, items: [...f.items, newItem] }));
@@ -341,6 +313,7 @@ const PurchaseOrderCreatePage = () => {
                     <button onClick={() => setShowAddProductForm(true)} className="btn btn-outline btn-sm mb-6">
                         + Thêm sản phẩm
                     </button>
+
                     {showAddProductForm && (
                         <div className="border rounded-lg p-4 mb-6 bg-gray-50">
                             <h4 className="text-lg font-semibold mb-2">Thêm sản phẩm mới</h4>
@@ -369,8 +342,8 @@ const PurchaseOrderCreatePage = () => {
                                     <input
                                         className="input input-sm input-bordered w-full"
                                         type="number"
-                                        value={newProductForm.width}
-                                        onChange={(e) => setNewProductForm((prev) => ({ ...prev, width: +e.target.value }))}
+                                        value={newProductForm.width ?? ''}
+                                        onChange={(e) => setNewProductForm((prev) => ({ ...prev, width: e.target.value === '' ? 0 : +e.target.value }))}
                                     />
                                 </div>
 
@@ -379,8 +352,8 @@ const PurchaseOrderCreatePage = () => {
                                     <input
                                         className="input input-sm input-bordered w-full"
                                         type="number"
-                                        value={newProductForm.height}
-                                        onChange={(e) => setNewProductForm((prev) => ({ ...prev, height: +e.target.value }))}
+                                        value={newProductForm.height ?? ''}
+                                        onChange={(e) => setNewProductForm((prev) => ({ ...prev, height: e.target.value === '' ? 0 : +e.target.value }))}
                                     />
                                 </div>
 
@@ -389,14 +362,14 @@ const PurchaseOrderCreatePage = () => {
                                     <input
                                         className="input input-sm input-bordered w-full"
                                         type="number"
-                                        value={newProductForm.thickness}
-                                        onChange={(e) => setNewProductForm((prev) => ({ ...prev, thickness: +e.target.value }))}
+                                        value={newProductForm.thickness ?? ''}
+                                        onChange={(e) => setNewProductForm((prev) => ({ ...prev, thickness: e.target.value === '' ? 0 : +e.target.value }))}
                                     />
                                 </div>
 
                                 <div>
                                     <label className="block mb-1 font-medium">Diện tích (m²)</label>
-                                    <div className="input input-sm bg-gray-100 flex items-center">{((newProductForm.width * newProductForm.height) / 1_000_000).toFixed(2)}</div>
+                                    <div className="input input-sm bg-gray-100 flex items-center">{(((newProductForm.width ?? 0) * (newProductForm.height ?? 0)) / 1_000_000).toFixed(2)}</div>
                                 </div>
                             </div>
 
@@ -417,12 +390,12 @@ const PurchaseOrderCreatePage = () => {
                 <button className="btn btn-secondary" onClick={() => router.back()}>
                     ◀ Quay lại
                 </button>
-                <button className="btn btn-primary" onClick={handleSave}>
-                    Tạo đơn hàng mua
+                <button className="btn btn-primary" disabled={saving} onClick={handleSave}>
+                    {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
                 </button>
             </div>
         </div>
     );
 };
 
-export default PurchaseOrderCreatePage;
+export default PurchaseOrderEditPage;
