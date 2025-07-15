@@ -176,7 +176,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             return product;
         }
 
-        public int CreateOrder(CreateOrderDto dto)
+        public async Task<int> CreateOrder(CreateOrderDto dto)
         {
             var customer = _context.Customers
                 .FirstOrDefault(c => c.CustomerName == dto.CustomerName && c.Phone == dto.Phone);

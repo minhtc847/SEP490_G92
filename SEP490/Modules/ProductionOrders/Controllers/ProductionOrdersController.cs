@@ -51,9 +51,11 @@ namespace SEP490.Modules.ProductionOrders.Controllers
             var order = await _productionOrdersService.CreateProductionOrderAsync(planId);
             if (order == null)
                 return NotFound($"Không tìm thấy kế hoạch sản xuất với Id {planId}");
+
+            var role = User.FindFirst("roleName")?.Value ?? "Kế toán";
             await _hubContext.Clients.All.SendAsync("OrderCreated", new
             {
-                message = "Đơn hàng mới đã được tạo",
+                message = $"{role} vừa tạo 1 lệnh sản xuất mới",
                 ordercode = order.ProductionOrderCode,
                 createAt = DateTime.Now.ToString("dd/MM/yyyy HH:mm")
             });
@@ -103,5 +105,6 @@ namespace SEP490.Modules.ProductionOrders.Controllers
             var result = _productionOrdersService.CalculateProduct(productionOrderId, productId);
             return Ok(result);
         }
+
     }
 }

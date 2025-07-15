@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SEP490.DB;
 using SEP490.DB.Models;
+using SEP490.Hubs;
 using SEP490.Modules.OrderModule.ManageOrder.DTO;
 using SEP490.Modules.OrderModule.ManageOrder.Services;
 using System.Text.RegularExpressions;
@@ -14,11 +16,13 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
     {
         private readonly SEP490DbContext _context;
         private readonly IOrderService _orderService;
+        private readonly IHubContext<OrderHub> _hubContext;
 
-        public OrderController(SEP490DbContext context, IOrderService orderService)
+        public OrderController(SEP490DbContext context, IOrderService orderService, IHubContext<OrderHub> hubContext)
         {
             _context = context;
             _orderService = orderService;
+            _hubContext = hubContext;
         }
 
         [HttpGet("all-customer-names")]
@@ -114,15 +118,24 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateOrder([FromBody] CreateOrderDto dto)
+        public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
         {
             try
             {
-                var orderId = _orderService.CreateOrder(dto); 
+                var orderId = await _orderService.CreateOrder(dto); 
                 if (orderId <= 0) 
                 {
                     return BadRequest("Tạo đơn hàng thất bại.");
                 }
+                var role = User.FindFirst("roleName")?.Value ?? "Kế toán";
+                var order = await _context.SaleOrders.FindAsync(orderId);
+
+                await _hubContext.Clients.All.SendAsync("SaleOrderCreated", new
+                {
+                    message = $"{role} vừa tạo đơn bán hàng",
+                    orderCode = order?.OrderCode ?? "N/A",
+                    createAt = DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+                });
                 return Ok(new { message = "Tạo đơn hàng thành công.", id = orderId });
             }
             catch (Exception ex)

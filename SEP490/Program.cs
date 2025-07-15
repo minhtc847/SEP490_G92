@@ -100,5 +100,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<OrderHub>("/orderHub");
+app.MapHub<SaleOrderHub>("/saleOrderHub");
 
 app.Run();

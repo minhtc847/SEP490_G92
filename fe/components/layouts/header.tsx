@@ -35,6 +35,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import { getTranslation } from '@/i18n';
 import { logout, selectUser } from '@/store/authSlice';
 import * as signalR from '@microsoft/signalr';
+type NotificationItem = {
+    id: number;
+    profile: string;
+    message: string;
+    time: string;
+};
 
 const Header = () => {
     const pathname = usePathname();
@@ -44,32 +50,39 @@ const Header = () => {
     const user = useSelector(selectUser);
 
     useEffect(() => {
-        const selector = document.querySelector('ul.horizontal-menu a[href="' + window.location.pathname + '"]');
-        if (selector) {
-            const all: any = document.querySelectorAll('ul.horizontal-menu .nav-link.active');
-            for (let i = 0; i < all.length; i++) {
-                all[0]?.classList.remove('active');
-            }
-
-            let allLinks = document.querySelectorAll('ul.horizontal-menu a.active');
-            for (let i = 0; i < allLinks.length; i++) {
-                const element = allLinks[i];
-                element?.classList.remove('active');
-            }
-            selector?.classList.add('active');
-
-            const ul: any = selector.closest('ul.sub-menu');
-            if (ul) {
-                let ele: any = ul.closest('li.menu').querySelectorAll('.nav-link');
-                if (ele) {
-                    ele = ele[0];
-                    setTimeout(() => {
-                        ele?.classList.add('active');
-                    });
-                }
-            }
-        }
-    }, [pathname]);
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("https://localhost:7075/saleOrderHub", {
+                withCredentials: false
+            })
+            .withAutomaticReconnect()
+            .build();
+    
+        connection
+            .start()
+            .then(() => console.log("✅ Connected to SaleOrder SignalR Hub"))
+            .catch((err) => console.error("❌ SaleOrder SignalR Connection Error:", err));
+    
+            connection.on("SaleOrderCreated", (data) => {
+                console.log("New Sale Order Created:", data); 
+            
+                const newNotification = {
+                    id: Date.now(),
+                    profile: 'user-profile.jpeg',
+                    message: `<strong>${data.message}</strong> — mã: <strong>${data.orderCode}</strong>`,
+                    time: data.createAt || "Vừa xong",
+                };
+            
+                const updated = [newNotification, ...notifications];
+                setNotifications(updated);
+                localStorage.setItem("notifications", JSON.stringify(updated));
+            });
+            
+    
+        return () => {
+            connection.stop();
+        };
+    }, []);
+    
 
     const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass) === 'rtl';
 
@@ -121,31 +134,30 @@ const Header = () => {
         setMessages(messages.filter((user) => user.id !== value));
     };
 
-    const [notifications, setNotifications] = useState([
-        {
-            id: 1,
-            profile: 'user-profile.jpeg',
-            message: '<strong class="text-sm mr-1">John Doe</strong>invite you to <strong>Prototyping</strong>',
-            time: '45 min ago',
-        },
-        {
-            id: 2,
-            profile: 'profile-34.jpeg',
-            message: '<strong class="text-sm mr-1">Adam Nolan</strong>mentioned you to <strong>UX Basics</strong>',
-            time: '9h Ago',
-        },
-        {
-            id: 3,
-            profile: 'profile-16.jpeg',
-            message: '<strong class="text-sm mr-1">Anna Morgan</strong>Upload a file',
-            time: '9h Ago',
-        },
-    ]);
+    const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('notifications');
+            return saved ? JSON.parse(saved) as NotificationItem[] : [];
+        }
+        return [];
+    });
     
+    
+    const addNotification = (notification: NotificationItem) => {
+        setNotifications((prev) => {
+            const updated = [notification, ...prev];
+            localStorage.setItem('notifications', JSON.stringify(updated));
+            return updated;
+        });
+    };
 
     const removeNotification = (value: number) => {
-        setNotifications(notifications.filter((user) => user.id !== value));
+        const updated = notifications.filter((n) => n.id !== value);
+        setNotifications(updated);
+        localStorage.setItem('notifications', JSON.stringify(updated));
     };
+    
+    
 
     const [search, setSearch] = useState(false);
 
