@@ -6,7 +6,7 @@ import { Fragment } from "react";
 import sortBy from "lodash/sortBy";
 
 // API endpoints
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://localhost:7075/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://localhost:7075/api/CuttingGlassManagement";
 
 // DTO types
 interface ProductDto {
@@ -82,7 +82,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
 
   // Fetch danh sách thành phẩm cho autocomplete
   useEffect(() => {
-    fetch(`${API_BASE}/cuttingglassmanagement/products/thanhpham`)
+    fetch(`${API_BASE}/products/thanhpham`)
       .then((res) => res.json())
       .then((data) => setThanhPhamProducts(data));
   }, []);
@@ -91,7 +91,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
   useEffect(() => {
     if (!productionOrderId) return;
     setLoading(true);
-    fetch(`${API_BASE}/cuttingglassmanagement/summary/${productionOrderId}`)
+    fetch(`${API_BASE}/summary/${productionOrderId}`)
       .then((res) => res.json())
       .then((data) => {
         setSummary(data);
@@ -147,7 +147,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
       let product = selectedProduct;
       // Nếu sản phẩm chưa tồn tại, tạo mới
       if (!product) {
-        const productRes = await fetch(`${API_BASE}/cuttingglassmanagement/create-product`, {
+        const productRes = await fetch(`${API_BASE}/create-product`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -185,7 +185,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
             cancelButtonText: 'Không',
           });
           if (result.isConfirmed) {
-            await fetch(`${API_BASE}/cuttingglassmanagement/update-cut-glass-output/${duplicate.id}`, {
+            await fetch(`${API_BASE}/update-cut-glass-output/${duplicate.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -198,7 +198,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
             setForm({ isGlassOutput: false, productName: '', quantity: '', isDC: false, note: '', selectedMaterialId: '', itemType: 'material' });
             setSelectedProduct(null);
             setProductSearch("");
-            fetch(`${API_BASE}/cuttingglassmanagement/summary/${productionOrderId}`)
+            fetch(`${API_BASE}/summary/${productionOrderId}`)
               .then((res) => res.json())
               .then((data) => setSummary(data));
             return;
@@ -215,7 +215,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
           }
         }
         if (!productionOutputId) {
-          const outputRes = await fetch(`${API_BASE}/cuttingglassmanagement/create-production-output`, {
+          const outputRes = await fetch(`${API_BASE}/create-production-output`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -227,7 +227,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
           const output = await outputRes.json();
           productionOutputId = output.id;
         }
-        await fetch(`${API_BASE}/cuttingglassmanagement/create-cut-glass-output`, {
+        await fetch(`${API_BASE}/create-cut-glass-output`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -258,7 +258,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
             cancelButtonText: 'Không',
           });
           if (result.isConfirmed) {
-            await fetch(`${API_BASE}/cuttingglassmanagement/update-cut-glass-output/${duplicateBanThanhPham.id}`, {
+            await fetch(`${API_BASE}/update-cut-glass-output/${duplicateBanThanhPham.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -271,7 +271,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
             setForm({ isGlassOutput: false, productName: '', quantity: '', isDC: false, note: '', selectedMaterialId: '', itemType: 'material' });
             setSelectedProduct(null);
             setProductSearch("");
-            fetch(`${API_BASE}/cuttingglassmanagement/summary/${productionOrderId}`)
+            fetch(`${API_BASE}/summary/${productionOrderId}`)
               .then((res) => res.json())
               .then((data) => setSummary(data));
             return;
@@ -291,7 +291,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
         }
         // Nếu không tìm thấy ProductionOutput, tạo mới với ProductionOrderId=null
         if (!productionOutputId) {
-          const outputRes = await fetch(`${API_BASE}/cuttingglassmanagement/create-production-output`, {
+          const outputRes = await fetch(`${API_BASE}/create-production-output`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -304,7 +304,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
           productionOutputId = output.id;
         }
         // Tạo CutGlassInvoiceOutput cho bán thành phẩm (có liên kết với material)
-        await fetch(`${API_BASE}/cuttingglassmanagement/create-cut-glass-output`, {
+        await fetch(`${API_BASE}/create-cut-glass-output`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -326,7 +326,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
             cancelButtonText: 'Không',
           });
           if (result.isConfirmed) {
-            await fetch(`${API_BASE}/cuttingglassmanagement/update-material/${duplicate.id}`, {
+            await fetch(`${API_BASE}/update-material/${duplicate.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -339,7 +339,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
             setForm({ isGlassOutput: false, productName: '', quantity: '', isDC: false, note: '', selectedMaterialId: '', itemType: 'material' });
             setSelectedProduct(null);
             setProductSearch("");
-            fetch(`${API_BASE}/cuttingglassmanagement/summary/${productionOrderId}`)
+            fetch(`${API_BASE}/summary/${productionOrderId}`)
               .then((res) => res.json())
               .then((data) => setSummary(data));
             return;
@@ -347,7 +347,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
             return;
           }
         }
-        const materialRes = await fetch(`${API_BASE}/cuttingglassmanagement/create-material`, {
+        const materialRes = await fetch(`${API_BASE}/create-material`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -364,7 +364,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
       setForm({ isGlassOutput: false, productName: '', quantity: '', isDC: false, note: '', selectedMaterialId: '', itemType: 'material' });
       setSelectedProduct(null);
       setProductSearch("");
-      fetch(`${API_BASE}/cuttingglassmanagement/summary/${productionOrderId}`)
+      fetch(`${API_BASE}/summary/${productionOrderId}`)
         .then((res) => res.json())
         .then((data) => setSummary(data));
     } catch (e) {
@@ -393,7 +393,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
     if (!editingItem) return;
     try {
       if (editingItem.hasOwnProperty('isDC')) {
-        await fetch(`${API_BASE}/cuttingglassmanagement/update-cut-glass-output/${editingItem.id}`, {
+        await fetch(`${API_BASE}/update-cut-glass-output/${editingItem.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -402,7 +402,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
           }),
         });
       } else {
-        await fetch(`${API_BASE}/cuttingglassmanagement/update-material/${editingItem.id}`, {
+        await fetch(`${API_BASE}/update-material/${editingItem.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -418,7 +418,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
       setForm({ isGlassOutput: false, productName: '', quantity: '', isDC: false, note: '', selectedMaterialId: '', itemType: 'material' });
       setSelectedProduct(null);
       setProductSearch("");
-      fetch(`${API_BASE}/cuttingglassmanagement/summary/${productionOrderId}`)
+      fetch(`${API_BASE}/summary/${productionOrderId}`)
         .then((res) => res.json())
         .then((data) => {
           setSummary(data);
@@ -440,16 +440,16 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
     if (result.isConfirmed) {
       try {
         if (type === 'glassOutput') {
-          await fetch(`${API_BASE}/cuttingglassmanagement/delete-cut-glass-output/${item.id}`, {
+          await fetch(`${API_BASE}/delete-cut-glass-output/${item.id}`, {
             method: 'DELETE',
           });
         } else {
-          await fetch(`${API_BASE}/cuttingglassmanagement/delete-material/${item.id}`, {
+          await fetch(`${API_BASE}/delete-material/${item.id}`, {
             method: 'DELETE',
           });
         }
         Swal.fire({ title: 'Xóa thành công!', icon: 'success' });
-        fetch(`${API_BASE}/cuttingglassmanagement/summary/${productionOrderId}`)
+        fetch(`${API_BASE}/summary/${productionOrderId}`)
           .then((res) => res.json())
           .then((data) => setSummary(data));
       } catch (e) {
@@ -666,7 +666,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
                         >
                           <option value="">-- Chọn nguyên vật liệu --</option>
                           {summary.materials.map((m: any) => (
-                            <option key={m.id} value={m.id}>{m.ProductName || m.productName}</option>
+                            <option key={m.id} value={m.ProductName || m.productName}>{m.ProductName || m.productName}</option>
                           ))}
                         </select>
                       </div>
