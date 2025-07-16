@@ -34,12 +34,9 @@ namespace SEP490.Modules.ProductionOrders.Controllers
                 .Where(x => x.productionOrderId == productionOrderId)
                 .Include(x => x.Product)
                 .ToListAsync();
-            // Kính dư (CutGlassInvoiceOutput, IsDC=true)
+            // Kính dư & bán thành phẩm: chỉ lấy theo productionOrderId
             var glassOutputs = await _context.CutGlassInvoiceOutputs
-                .Where(x =>
-                    x.IsDC == true
-                    || (x.IsDC == false && x.ProductionOutput.ProductionOrderId == productionOrderId)
-                )
+                .Where(x => x.ProductionOutput.ProductionOrderId == productionOrderId)
                 .Include(x => x.ProductionOutput)
                 .ThenInclude(po => po.Product)
                 .ToListAsync();
