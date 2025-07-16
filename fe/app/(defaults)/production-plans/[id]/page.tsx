@@ -196,6 +196,11 @@ const ProductionPlanDetailPage = () => {
     const toggleTabs = (tab: string) => setTabs(tab);
     const [materialLoading, setMaterialLoading] = useState(false);
 
+    const statusBadgeMap: Record<string, string> = {
+        'Đang sản xuất': 'badge-outline-warning',
+        'Đã hoàn thành': 'badge-outline-success',
+        'Đã hủy': 'badge-outline-danger',
+    };
 
 
     useEffect(() => {
@@ -465,15 +470,14 @@ const ProductionPlanDetailPage = () => {
                                 <th>Ngày lên lệnh SX</th>
                                 <th>Loại</th>
                                 <th>Mô tả</th>
-                                <th>Đã xuất kho NVL</th>
-                                <th>Đã nhập kho TP</th>
+                                <th style={{ minWidth: '120px' }}>Trạng thái</th>
                                 <th>Xem chi tiết</th>
                             </tr>
                         </thead>
                         <tbody>
                             {productionOrders.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="text-center py-4">
+                                    <td colSpan={6} className="text-center py-4">
                                         Không có dữ liệu lệnh sản xuất
                                     </td>
                                 </tr>
@@ -484,11 +488,10 @@ const ProductionPlanDetailPage = () => {
                                         <td>{item.orderDate ? new Date(item.orderDate).toLocaleDateString() : '-'}</td>
                                         <td>{item.type}</td>
                                         <td>{item.description}</td>
-                                        <td>
-                                            <input type="checkbox" checked={item.isMaterialExported} disabled className="form-checkbox" />
-                                        </td>
-                                        <td>
-                                            <input type="checkbox" checked={item.isProductImported} disabled className="form-checkbox" />
+                                        <td style={{ minWidth: '150px' }}>
+                                            <span className={`badge ${statusBadgeMap[item.productionStatus || ''] || 'badge-outline-secondary'}`}>
+                                                {item.productionStatus || '-'}
+                                            </span>
                                         </td>
                                         <td>
                                             <Link href={`/production-orders/view/${item.id}`} className="btn btn-sm btn-outline-primary">

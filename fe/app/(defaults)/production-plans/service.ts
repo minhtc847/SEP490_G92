@@ -103,9 +103,7 @@ export interface ProductionOrderListItem {
   orderDate: string;
   type: string;
   description: string;
-  isMaterialExported: boolean;
-  isProductImported: boolean;
-  
+  productionStatus?: string;
 }
 
 
@@ -140,9 +138,7 @@ export async function fetchProductionOrdersByPlanId(id: number | string): Promis
     orderDate: item.orderDate,
     type: item.type,
     description: item.description,
-    isMaterialExported: item.statusDaXuatKhoNVL,
-    isProductImported: item.statusDaNhapKhoTP,
-    
+    productionStatus: item.productionStatus,
   }));
 }
 

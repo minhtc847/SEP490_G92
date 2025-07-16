@@ -20,14 +20,14 @@ namespace SEP490.Modules.ProductionOrders.Services
         {
             var productionOrders = await _context.ProductionOrders
                 .Where(po => po.ProductionPlanId == productionPlanId)
+                .OrderByDescending(po => po.OrderDate)
                 .Select(po => new ProductionOrdersByPlanDto
                 {
                     ProductionOrderId = po.Id,
                     OrderDate = po.OrderDate,
                     Type = po.Type,
                     Description = po.Description,
-                    StatusDaXuatKhoNVL = po.StatusDaXuatKhoNVL,
-                    StatusDaNhapKhoTP = po.StatusDaNhapKhoTP,
+                    ProductionStatus = po.ProductionStatus
                 })
                 .ToListAsync();
 
