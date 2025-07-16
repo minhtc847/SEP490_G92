@@ -7,7 +7,6 @@ namespace SEP490.DB.Models
     {
         public int Id { get; set; }
         public List<ProductsDTO> Products { get; set; }
-        public List<GlueButylDto> GlueButyls { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public int? EmployeeId { get; set; }
         public Employee? Employee { get; set; }

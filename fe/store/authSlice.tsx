@@ -19,6 +19,7 @@ interface AuthState {
 
 // Helper function to get user from localStorage
 const getUserFromStorage = (): User | null => {
+    if (typeof window === 'undefined') return null;
     try {
         const userStr = localStorage.getItem('user');
         return userStr ? JSON.parse(userStr) : null;
@@ -28,10 +29,15 @@ const getUserFromStorage = (): User | null => {
     }
 };
 
+const getTokenFromStorage = (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('token');
+};
+
 const initialState: AuthState = {
-    user: getUserFromStorage(),
-    token: localStorage.getItem('token'),
-    isAuthenticated: !!localStorage.getItem('token'),
+    user: null, // Không truy cập localStorage ở đây
+    token: null,
+    isAuthenticated: false,
     loading: false,
     error: null,
 };
@@ -49,8 +55,10 @@ const authSlice = createSlice({
             state.isAuthenticated = true;
             state.user = action.payload.user;
             state.token = action.payload.token;
-            localStorage.setItem('token', action.payload.token);
-            localStorage.setItem('user', JSON.stringify(action.payload.user));
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('token', action.payload.token);
+                localStorage.setItem('user', JSON.stringify(action.payload.user));
+            }
         },
         loginFailure: (state, action: PayloadAction<string>) => {
             state.loading = false;
@@ -60,16 +68,17 @@ const authSlice = createSlice({
             state.user = null;
             state.token = null;
             state.isAuthenticated = false;
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+            }
         },
         clearError: (state) => {
             state.error = null;
         },
         restoreAuth: (state) => {
-            const token = localStorage.getItem('token');
-            const user = getUserFromStorage();
-            
+            const token = typeof window !== 'undefined' ? getTokenFromStorage() : null;
+            const user = typeof window !== 'undefined' ? getUserFromStorage() : null;
             if (token && user) {
                 state.token = token;
                 state.user = user;
@@ -79,8 +88,10 @@ const authSlice = createSlice({
                 state.token = null;
                 state.user = null;
                 state.isAuthenticated = false;
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
+                if (typeof window !== 'undefined') {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                }
             }
         },
     },

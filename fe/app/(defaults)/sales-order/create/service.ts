@@ -190,7 +190,7 @@ export const getNextOrderCode = async (): Promise<string> => {
 export const loadCustomerOptions = async (inputValue: string): Promise<CustomerOption[]> => {
     const result = await searchCustomers(inputValue);
     return result.map((c) => ({
-        label: `${c.customer.customerCode} - ${c.customer.customerName}`,
+        label: `${c.customer.customerName}`,
         value: c.customer.id,
         customer: c.customer,
     }));
@@ -200,7 +200,7 @@ export const loadOptions = async (inputValue: string, selectedProductIds: number
     const result = await searchProducts(inputValue);
 
     return result.map((p) => ({
-        label: `${p.productCode} - ${p.productName}`,
+        label: `${p.productName}`,
         value: p.id,
         isDisabled: selectedProductIds.includes(p.id),
         product: {

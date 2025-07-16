@@ -4,6 +4,7 @@
     {
         public string Name { get; set; }
         public int Quantity { get; set; }   
+        public GlueButylDto[] GlueButyls { get; set; }
     }
     public class GlueButylDto
     {

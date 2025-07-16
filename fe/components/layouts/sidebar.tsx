@@ -131,7 +131,7 @@ const Sidebar = () => {
                             </li>
                             {isFactoryManager() && (
                                 <li>
-                                    <Link href="/purchasing-units">Đơn Mua</Link>
+                                    <Link href="/purchase-order">Đơn Mua</Link>
                                 </li>
                             )}
                         </ul>
@@ -160,9 +160,6 @@ const Sidebar = () => {
                             </li>
                             <li>
                                 <Link href="/production-orders">Các lệnh sản xuất</Link>
-                            </li>
-                            <li>
-                                <Link href="/production-orders/view">Danh sách lệnh sản xuất cho kế toán</Link>
                             </li>
                         </ul>
                     </AnimateHeight>
@@ -215,6 +212,18 @@ const Sidebar = () => {
                     </Link>
                 </li>
             );
+            items.push(
+                <li key="delivery" className="menu nav-item">
+                    <Link href="/delivery" className="nav-link group w-full">
+                        <div className="flex items-center">
+                            <IconMenuInvoice className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Giao hàng
+                            </span>
+                        </div>
+                    </Link>
+                </li>
+            );
         }
 
         // Glue Management - Factory Manager and Production Staff
@@ -236,9 +245,6 @@ const Sidebar = () => {
                         <ul className="sub-menu text-gray-500">
                             <li>
                                 <Link href="/glue-formula">Công thức keo</Link>
-                            </li>
-                            <li>
-                                <Link href="/glue-structure">Cấu trúc keo</Link>
                             </li>
                         </ul>
                     </AnimateHeight>

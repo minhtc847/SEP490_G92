@@ -14,21 +14,29 @@ interface GlueButylExportModalComponentProps {
         id: number
         name: string
     }[]
+    onSuccess: () => void
 }
 interface GlueButylExportRequest {
     products: Product[]
-    glueButyls: Chemical[]
     employeeId: number
     productionOrderId: number
     type: string
 }
-const GlueButylExportModalComponent: React.FC<GlueButylExportModalComponentProps> = ({ products, type, productionOrderId, employees }) => {
+const GlueButylExportModalComponent: React.FC<GlueButylExportModalComponentProps> = ({ products, type, productionOrderId, employees, onSuccess }) => {
     const [addExportModal, setExportModal] = useState(false);
 
     const [formProducts, setFormProducts] = useState<Product[]>(
-        products.map((p) => ({ ...p, quantity: 0 }))
+        products.map((p) => ({
+            ...p,
+            quantity: 0,
+            glueButyls: [
+                { type: 'Keo silicone', uom: 'kg', quantity: 0 },
+                { type: 'Butyl sealant', uom: 'kg', quantity: 0 },
+                { type: 'Chất xúc tác', uom: 'kg', quantity: 0 },
+            ]
+        }))
     );
-
+    console.log(formProducts)
     const [uoms, setUoms] = useState<string[]>(['kg', 'm', 'lit']);
 
     const [formChemicals, setFormChemicals] = useState<Chemical[]>([
@@ -38,6 +46,24 @@ const GlueButylExportModalComponent: React.FC<GlueButylExportModalComponentProps
     ]);
 
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | ''>('');
+
+    const handleChangeProductChemical = (
+        productIdx: number,
+        chemIdx: number,
+        field: keyof Chemical,
+        value: string | number
+    ) => {
+        const updatedProducts = [...formProducts];
+        const chem = updatedProducts[productIdx].glueButyls[chemIdx];
+
+        if (field === 'quantity') {
+            chem[field] = Number(value);
+        } else {
+            chem[field] = String(value);
+        }
+
+        setFormProducts(updatedProducts);
+    };
 
     const handleChangeProductQuantity = (index: number, quantity: number) => {
         const newProducts = [...formProducts];
@@ -57,33 +83,32 @@ const GlueButylExportModalComponent: React.FC<GlueButylExportModalComponentProps
             return;
         }
 
-        // Validate product quantities
+        // Validate each product
         for (let i = 0; i < formProducts.length; i++) {
-            const quantity = formProducts[i].quantity;
+            const product = formProducts[i];
             const max = products[i].quantity;
 
-            if (quantity < 0) {
-                alert(`Sản phẩm "${formProducts[i].name}" phải có số lượng lớn hơn 0.`);
+            if (product.quantity < 0) {
+                alert(`Sản phẩm "${product.name}" phải có số lượng lớn hơn 0.`);
                 return;
             }
 
-            if (quantity > max) {
-                alert(`Số lượng sản phẩm "${formProducts[i].name}" không được vượt quá ${max}.`);
+            if (product.quantity > max) {
+                alert(`Số lượng sản phẩm "${product.name}" không được vượt quá ${max}.`);
                 return;
             }
-        }
 
-        // Validate chemical quantities (optional, you can remove if not needed)
-        for (let chem of formChemicals) {
-            if (chem.quantity < 0) {
-                alert(`Hóa chất "${chem.type}" phải có số lượng lớn hơn 0.`);
-                return;
+            // Validate each chemical within the product
+            for (let chem of product.glueButyls) {
+                if (chem.quantity < 0) {
+                    alert(`Hóa chất "${chem.type}" của sản phẩm "${product.name}" phải có số lượng lớn hơn 0.`);
+                    return;
+                }
             }
         }
 
         const payload: GlueButylExportRequest = {
             products: formProducts,
-            glueButyls: formChemicals,
             employeeId: selectedEmployeeId,
             productionOrderId,
             type,
@@ -93,11 +118,13 @@ const GlueButylExportModalComponent: React.FC<GlueButylExportModalComponentProps
             await createPhieuXuatKeoButylData(payload);
             alert('Tạo phiếu xuất kho thành công!');
             setExportModal(false);
+            onSuccess?.();
         } catch (err) {
             alert('Lỗi khi tạo phiếu xuất kho!');
             console.error(err);
         }
     };
+
 
     return (
         <div>
@@ -148,45 +175,52 @@ const GlueButylExportModalComponent: React.FC<GlueButylExportModalComponentProps
                                         <div>
                                             <label className="block mb-1">Danh sách sản phẩm</label>
                                             {formProducts.map((product, idx) => (
-                                                <div key={idx} className="flex items-center gap-2 mb-2">
-                                                    <span
-                                                        className="w-2/3">{product.name} (Tối đa: {products[idx].quantity})</span>
-                                                    <input
-                                                        type="number"
-                                                        className="form-input w-1/3"
-                                                        min={1}
-                                                        max={products[idx].quantity}
-                                                        value={product.quantity}
-                                                        onChange={(e) => handleChangeProductQuantity(idx, Number(e.target.value))}
-                                                        placeholder="Số lượng"
-                                                    />
-                                                </div>
-                                            ))}
-                                        </div>
+                                                <div key={idx} className="border p-4 rounded mb-4 bg-gray-50 dark:bg-white/5">
+                                                    <div className="flex items-center gap-2 mb-2">
+      <span className="w-2/3 font-medium">
+        {product.name} (Tối đa: {products[idx].quantity})
+      </span>
+                                                        <input
+                                                            type="number"
+                                                            className="form-input w-1/3"
+                                                            min={0}
+                                                            max={products[idx].quantity}
+                                                            value={product.quantity}
+                                                            onChange={(e) => handleChangeProductQuantity(idx, Number(e.target.value))}
+                                                            placeholder="Số lượng"
+                                                        />
+                                                    </div>
 
-                                        <div>
-                                            <label className="block mb-1">Hóa chất</label>
-                                            {formChemicals.map((chem, idx) => (
-                                                <div key={idx} className="flex items-center gap-2 mb-2">
-                                                    <span className="w-1/4">{chem.type}</span>
-                                                    <select
-                                                        className="form-select w-1/4"
-                                                        value={chem.uom}
-                                                        onChange={(e) => handleChangeChemical(idx, 'uom', e.target.value)}
-                                                    >
-                                                        {uoms.map((uom) => (
-                                                            <option key={uom} value={uom}>
-                                                                {uom}
-                                                            </option>
+                                                    <div className="ml-4">
+                                                        <label className="block mb-1 text-sm text-gray-600">Hóa chất</label>
+                                                        {product.glueButyls.map((chem, chemIdx) => (
+                                                            <div key={chemIdx} className="flex items-center gap-2 mb-2">
+                                                                <span className="w-1/4 text-sm">{chem.type}</span>
+                                                                <select
+                                                                    className="form-select w-1/4"
+                                                                    value={chem.uom}
+                                                                    onChange={(e) =>
+                                                                        handleChangeProductChemical(idx, chemIdx, 'uom', e.target.value)
+                                                                    }
+                                                                >
+                                                                    {uoms.map((uom) => (
+                                                                        <option key={uom} value={uom}>
+                                                                            {uom}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                                <input
+                                                                    type="number"
+                                                                    className="form-input w-1/4"
+                                                                    value={chem.quantity}
+                                                                    onChange={(e) =>
+                                                                        handleChangeProductChemical(idx, chemIdx, 'quantity', Number(e.target.value))
+                                                                    }
+                                                                    placeholder="Số lượng"
+                                                                />
+                                                            </div>
                                                         ))}
-                                                    </select>
-                                                    <input
-                                                        type="number"
-                                                        className="form-input w-1/4"
-                                                        value={chem.quantity}
-                                                        onChange={(e) => handleChangeChemical(idx, 'quantity', Number(e.target.value))}
-                                                        placeholder="Số lượng"
-                                                    />
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>

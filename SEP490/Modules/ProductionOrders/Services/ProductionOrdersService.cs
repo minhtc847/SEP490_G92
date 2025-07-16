@@ -20,20 +20,53 @@ namespace SEP490.Modules.ProductionOrders.Services
         {
             var productionOrders = await _context.ProductionOrders
                 .Where(po => po.ProductionPlanId == productionPlanId)
+                .OrderByDescending(po => po.OrderDate)
                 .Select(po => new ProductionOrdersByPlanDto
                 {
                     ProductionOrderId = po.Id,
                     OrderDate = po.OrderDate,
                     Type = po.Type,
                     Description = po.Description,
-                    StatusDaXuatKhoNVL = po.StatusDaXuatKhoNVL,
-                    StatusDaNhapKhoTP = po.StatusDaNhapKhoTP,
+                    ProductionStatus = po.ProductionStatus
                 })
                 .ToListAsync();
 
             return productionOrders;
         }
 
+        public async Task<List<ProductionOrdersByPlanDto>> GetAllProductionOrdersAsync()
+        {
+            var productionOrders = await _context.ProductionOrders
+                .OrderByDescending(po => po.OrderDate)
+                .Select(po => new ProductionOrdersByPlanDto
+                {
+                    ProductionOrderId = po.Id,
+                    OrderDate = po.OrderDate,
+                    Type = po.Type,
+                    Description = po.Description,
+                    ProductionStatus = po.ProductionStatus
+                })
+                .ToListAsync();
+            return productionOrders;
+        }
+
+        public async Task<List<ProductionOutputDto>> GetProductionOutputsByOrderIdAsync(int productionOrderId)
+        {
+            var outputs = await _context.ProductionOutputs
+                .Where(po => po.ProductionOrderId == productionOrderId)
+                .Select(po => new ProductionOutputDto
+                {
+                    Id = po.Id,
+                    ProductId = po.ProductId,
+                    ProductName = po.ProductName,
+                    Amount = po.Amount,
+                    Done = po.Done,
+                    Note = po.Status,
+                    ProductionOrderId = po.ProductionOrderId
+                })
+                .ToListAsync();
+            return outputs;
+        }
 
     }
 }

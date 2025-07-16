@@ -76,32 +76,32 @@ const SalesOrderCreatePage = () => {
     });
 
     useEffect(() => {
-        const area = (newProductForm.width * newProductForm.height) / 1_000_000;
-        const structure = glassStructures.find((gs) => gs.id === newProductForm.glassStructureId);
-
-        const unitPrice = +(area * (structure?.unitPrice || 0)).toFixed(0);
-
-        const fetchOrderCode = async () => {
+        const loadInitial = async () => {
             try {
-                const code = await getNextOrderCode();
+                const [code, structures, customers, products] = await Promise.all([getNextOrderCode(), getGlassStructures(), getAllCustomerNames(), getAllProductNames()]);
+
                 setForm((prev) => ({ ...prev, orderCode: code }));
-            } catch (error) {
-                console.error('Lỗi khi lấy mã đơn hàng:', error);
+                setGlassStructures(structures);
+                setCustomerNames(customers);
+                setProductNames(products);
+            } catch (err) {
+                console.error('Lỗi load dữ liệu:', err);
             }
         };
 
-        fetchOrderCode();
+        loadInitial();
+    }, []); 
 
-        getGlassStructures().then(setGlassStructures).catch(console.error);
+    useEffect(() => {
+        if (!glassStructures.length) return;
 
-        getAllCustomerNames().then(setCustomerNames);
+        const area = (newProductForm.width * newProductForm.height) / 1_000_000;
+        const structure = glassStructures.find((gs) => gs.id === newProductForm.glassStructureId);
+        const unitPrice = +(area * (structure?.unitPrice ?? 0)).toFixed(0);
 
-        getAllProductNames().then(setProductNames);
-
-        setNewProductForm((prev) => ({
-            ...prev,
-            unitPrice,
-        }));
+        if (unitPrice !== newProductForm.unitPrice) {
+            setNewProductForm((prev) => ({ ...prev, unitPrice }));
+        }
     }, [newProductForm.width, newProductForm.height, newProductForm.glassStructureId, glassStructures]);
 
     const handleProductNameChange = (value: string) => {
@@ -259,7 +259,7 @@ const SalesOrderCreatePage = () => {
             <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
                     <label className="block mb-1 font-medium">Tên khách hàng</label>
-                    <input disabled={isCustomerLocked} className="input input-bordered w-full" value={form.customer} onChange={(e) => handleCustomerNameChange(e.target.value)} />
+                    <input disabled={isCustomerLocked} className="input input-bordered w-full" value={form.customer} required onChange={(e) => handleCustomerNameChange(e.target.value)} />
                     {isCustomerNameDuplicate && <p className="text-red-500 text-sm mt-1">Tên khách hàng đã tồn tại. Vui lòng nhập tên khác.</p>}
                 </div>
                 <div>
@@ -305,7 +305,7 @@ const SalesOrderCreatePage = () => {
                             cacheOptions
                             defaultOptions
                             loadOptions={loadCustomerOptions}
-                            placeholder="Tìm theo mã hoặc tên khách hàng"
+                            placeholder="Tìm khách hàng có sẵn..."
                             onChange={(option: CustomerOption | null) => {
                                 if (!option) return;
                                 const c = option.customer;
@@ -356,81 +356,29 @@ const SalesOrderCreatePage = () => {
                             <th>Đơn giá</th>
                             <th>Diện tích (m²)</th>
                             <th>Thành tiền</th>
-                            <th>Cấu trúc kính</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         {form.orderItems.map((item, index) => {
-                            const area = (item.width * item.height) / 1_000_000;
-                            const total = item.quantity * item.unitPrice;
+                            const width = Number(item.width) || 0;
+                            const height = Number(item.height) || 0;
+                            const area = (width * height) / 1_000_000;
+                            const total = (item.quantity ?? 0) * (item.unitPrice ?? 0);
+
                             return (
-                                <tr key={item.id}>
+                                <tr key={index}>
                                     <td>{index + 1}</td>
-                                    <td>
-                                        <input
-                                            disabled={item.isFromDatabase}
-                                            value={item.productName}
-                                            onChange={(e) => handleItemChange(index, 'productName', e.target.value)}
-                                            className="input input-sm"
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            disabled={item.isFromDatabase}
-                                            value={item.width}
-                                            onChange={(e) => handleItemChange(index, 'width', +e.target.value)}
-                                            className="input input-sm"
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            disabled={item.isFromDatabase}
-                                            value={item.height}
-                                            onChange={(e) => handleItemChange(index, 'height', +e.target.value)}
-                                            className="input input-sm"
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            disabled={item.isFromDatabase}
-                                            value={item.thickness}
-                                            onChange={(e) => handleItemChange(index, 'thickness', +e.target.value)}
-                                            className="input input-sm"
-                                        />
-                                    </td>
+                                    <td>{item.productName}</td>
+                                    <td className="text-right">{width.toLocaleString()}</td>
+                                    <td className="text-right">{height.toLocaleString()}</td>
+                                    <td className="text-right">{(item.thickness ?? 0).toLocaleString()}</td>
                                     <td>
                                         <input type="number" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', +e.target.value)} className="input input-sm" />
                                     </td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            disabled={item.isFromDatabase}
-                                            value={item.unitPrice}
-                                            onChange={(e) => handleItemChange(index, 'unitPrice', +e.target.value)}
-                                            className="input input-sm"
-                                        />
-                                    </td>
-                                    <td>{area.toFixed(2)}</td>
-                                    <td>{total.toLocaleString()} đ</td>
-                                    <td>
-                                        <select
-                                            disabled={item.isFromDatabase}
-                                            className="select select-sm"
-                                            value={item.glassStructureId || ''}
-                                            onChange={(e) => handleItemChange(index, 'glassStructureId', +e.target.value)}
-                                        >
-                                            <option value="">-- Chọn --</option>
-                                            {glassStructures.map((gs) => (
-                                                <option key={gs.id} value={gs.id}>
-                                                    {gs.productName}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </td>
+                                    <td className="text-right">{(item.unitPrice ?? 0).toLocaleString()}</td>
+                                    <td className="text-right">{area.toFixed(2)}</td>
+                                    <td className="text-right">{total.toLocaleString()} đ</td>
                                     <td>
                                         <button onClick={() => removeItem(index)} className="btn btn-sm btn-error">
                                             Xoá
@@ -455,7 +403,7 @@ const SalesOrderCreatePage = () => {
                                 form.orderItems.map((item) => item.productId),
                             )
                         }
-                        placeholder="Thêm sản phẩm theo mã hoặc tên"
+                        placeholder="Thêm sản phẩm có sẵn..."
                         onChange={(option: ProductOption | null) => {
                             if (!option) return;
                             const p = option.product;

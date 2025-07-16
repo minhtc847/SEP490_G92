@@ -15,6 +15,8 @@ import {
     CustomerOption,
     ProductOption,
     OrderItem,
+    getAllCustomerNames,
+    getAllProductNames,
 } from './service';
 
 const toPositiveInt = (v: string | number): number | null => {
@@ -25,7 +27,7 @@ const toPositiveNumber = (v: string | number): number | null => {
     const n = typeof v === 'string' ? Number(v) : v;
     return Number.isFinite(n) && n > 0 ? n : null;
 };
-const PRODUCT_NAME_REGEX = /^Kính .+ phút, KT: \d+\*\d+\*\d+ mm, .+$/;
+const PRODUCT_NAME_REGEX = /^Kính .+ KT: \d+\*\d+\*\d+ mm$/;
 
 const PurchaseOrderCreatePage = () => {
     const router = useRouter();
@@ -69,6 +71,8 @@ const PurchaseOrderCreatePage = () => {
                 console.error('Init error:', err);
             }
         })();
+        getAllCustomerNames().then(setCustomerNames);
+        getAllProductNames().then(setProductNames);
     }, []);
 
     const handleCustomerChange = (val: string) => setForm((f) => ({ ...f, customer: val }));
@@ -150,8 +154,8 @@ const PurchaseOrderCreatePage = () => {
 
     const handleSave = async () => {
         try {
-            if (!form.customer.trim()) throw new Error('Vui lòng nhập tên khách hàng');
-            if (isCustomerNameDuplicate) throw new Error('Tên khách hàng đã tồn tại');
+            if (!form.customer.trim()) throw new Error('Vui lòng nhập tên nhà cung cấp');
+            if (isCustomerNameDuplicate) throw new Error('Tên nhà cung cấp đã tồn tại');
 
             const validItems = form.items.filter((i) => i.productName.trim());
             if (!validItems.length) throw new Error('Chưa có sản phẩm hợp lệ');
@@ -189,23 +193,19 @@ const PurchaseOrderCreatePage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block mb-1 font-medium">Tên khách hàng</label>
+                    <label className="block mb-1 font-medium">Tên nhà cung cấp</label>
                     <input disabled={isCustomerLocked} className="input input-bordered w-full" value={form.customer} onChange={(e) => handleCustomerNameChange(e.target.value)} />
-                    {isCustomerNameDuplicate && <p className="text-red-500 text-sm mt-1">Tên khách hàng đã tồn tại. Vui lòng nhập tên khác.</p>}
+                    {isCustomerNameDuplicate && <p className="text-red-500 text-sm mt-1">Tên nhà cung cấp đã tồn tại. Vui lòng nhập tên khác.</p>}
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Ngày tạo</label>
                     <input className="input input-bordered w-full bg-gray-100" value={form.createdDate} readOnly />
                 </div>
                 <div>
-                    <label className="block mb-1 font-medium">Mã đơn hàng</label>
-                    <input className="input input-bordered w-full" value={form.orderCode} readOnly />
-                </div>
-                <div>
                     <label className="block mb-1 font-medium">Trạng thái</label>
                     <select className="select select-bordered w-full" value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
-                        <option value="Chưa thực hiện">Chưa thực hiện</option>
-                        <option value="Đang thực hiện">Đang thực hiện</option>
+                        <option value="Chờ đặt hàng">Chờ đặt hàng</option>
+                        <option value="Đã đặt hàng">Đã đặt hàng</option>
                         <option value="Hoàn thành">Hoàn thành</option>
                         <option value="Đã huỷ">Đã huỷ</option>
                     </select>
@@ -216,13 +216,13 @@ const PurchaseOrderCreatePage = () => {
                 </div>
             </div>
             <div>
-                <label className="block mb-1 font-medium">Khách hàng có sẵn</label>
+                <label className="block mb-1 font-medium">Nhà cung cấp có sẵn</label>
                 <div className="flex items-center gap-2">
                     <AsyncSelect<CustomerOption>
                         cacheOptions
                         defaultOptions
                         loadOptions={loadCustomerOptions}
-                        placeholder="Tìm KH..."
+                        placeholder="Tìm nhà cung cấp có sẵn..."
                         onChange={(opt) => {
                             if (!opt) return;
                             setForm((f) => ({ ...f, customer: opt.customer.customerName }));
@@ -245,50 +245,57 @@ const PurchaseOrderCreatePage = () => {
             </div>
 
             <div className="overflow-x-auto">
-                <table className="table table-zebra min-w-[900px]">
-                    <thead>
+                <table className="w-full border-collapse border text-sm mb-6">
+                    <thead className="bg-gray-100">
                         <tr>
-                            <th>STT</th>
-                            <th>Tên SP</th>
-                            <th>Rộng</th>
-                            <th>Cao</th>
-                            <th>Dày</th>
-                            <th>Số lượng</th>
-                            <th></th>
+                            <th className="border p-2">STT</th>
+                            <th className="border p-2">Tên SP</th>
+                            <th className="border p-2">Rộng (mm)</th>
+                            <th className="border p-2">Cao (mm)</th>
+                            <th className="border p-2">Dày (mm)</th>
+                            <th className="border p-2">Số lượng</th>
+                            <th className="border p-2">Đơn vị</th>
+                            <th className="border p-2">Diện tích (m²)</th>
+                            <th className="border p-2 w-20"></th> {/* cột xoá */}
                         </tr>
                     </thead>
+
                     <tbody>
-                        {form.items.map((it, idx) => (
-                            <tr key={it.id}>
-                                <td>{idx + 1}</td>
-                                <td>
-                                    <input className="input input-sm" disabled={it.isFromDatabase} value={it.productName} onChange={(e) => handleItemChange(idx, 'productName', e.target.value)} />
-                                </td>
-                                <td>
-                                    <input type="number" className="input input-sm" disabled={it.isFromDatabase} value={it.width} onChange={(e) => handleItemChange(idx, 'width', +e.target.value)} />
-                                </td>
-                                <td>
-                                    <input type="number" className="input input-sm" disabled={it.isFromDatabase} value={it.height} onChange={(e) => handleItemChange(idx, 'height', +e.target.value)} />
-                                </td>
-                                <td>
-                                    <input
-                                        type="number"
-                                        className="input input-sm"
-                                        disabled={it.isFromDatabase}
-                                        value={it.thickness}
-                                        onChange={(e) => handleItemChange(idx, 'thickness', +e.target.value)}
-                                    />
-                                </td>
-                                <td>
-                                    <input type="number" className="input input-sm" value={it.quantity} onChange={(e) => handleItemChange(idx, 'quantity', +e.target.value)} />
-                                </td>
-                                <td>
-                                    <button className="btn btn-sm btn-error" onClick={() => removeItem(idx)}>
-                                        Xoá
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
+                        {form.items.map((it, idx) => {
+                            const width = it.width ?? 0;
+                            const height = it.height ?? 0;
+                            const areaM2 = (width * height) / 1_000_000;
+
+                            return (
+                                <tr key={it.id}>
+                                    <td className="border p-2 text-center">{idx + 1}</td>
+
+                                    <td className="border p-2">{it.productName}</td>
+
+                                    <td className="border p-2 text-right">{width.toLocaleString()}</td>
+
+                                    <td className="border p-2 text-right">{height.toLocaleString()}</td>
+
+                                    <td className="border p-2 text-right">{(it.thickness ?? 0).toLocaleString()}</td>
+
+                                    {/* cột chỉnh số lượng */}
+                                    <td className="border p-2 text-right">
+                                        <input type="number" className="input input-xs w-20" value={it.quantity} min={1} onChange={(e) => handleItemChange(idx, 'quantity', +e.target.value)} />
+                                    </td>
+
+                                    <td className="border p-2">{it.uom || 'Tấm'}</td>
+
+                                    <td className="border p-2 text-right">{areaM2.toFixed(2)}</td>
+
+                                    {/* nút xoá */}
+                                    <td className="border p-2 text-center">
+                                        <button className="btn btn-xs btn-error" onClick={() => removeItem(idx)}>
+                                            Xoá
+                                        </button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
@@ -298,7 +305,7 @@ const PurchaseOrderCreatePage = () => {
                     <AsyncSelect<ProductOption>
                         cacheOptions
                         defaultOptions
-                        placeholder="Thêm sản phẩm..."
+                        placeholder="Thêm sản phẩm có sẵn..."
                         value={selectedProduct}
                         loadOptions={(input) =>
                             loadOptions(
@@ -334,10 +341,10 @@ const PurchaseOrderCreatePage = () => {
                         <div className="border rounded-lg p-4 mb-6 bg-gray-50">
                             <h4 className="text-lg font-semibold mb-2">Thêm sản phẩm mới</h4>
                             <p className="text-sm text-gray-500 italic mb-2">
-                                ⚠️ Tên sản phẩm phải theo định dạng: <strong>Kính [loại] phút, KT: [rộng]*[cao]*[dày] mm, [mô tả thêm]</strong>
+                                ⚠️ Tên sản phẩm phải theo định dạng: <strong>Kính [loại kính] KT: [rộng]*[cao]*[dày] mm</strong>
                                 <br />
                                 <span>
-                                    Ví dụ: <code>Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng</code>
+                                    Ví dụ: <code>Kính cường lực tôi trắng KT: 200*200*5 mm</code>
                                 </span>
                             </p>
 

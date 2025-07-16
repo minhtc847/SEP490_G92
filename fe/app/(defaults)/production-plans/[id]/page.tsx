@@ -15,12 +15,12 @@ import {
     ProductionPlanDetail, ProductionPlanProductDetail, fetchProductionOrdersByPlanId,
     ProductionOrderListItem, fetchProductionPlanMaterialDetail, ProductionPlanMaterialDetail, ProductionPlanMaterialProduct,
     createCutGlassOrder, CutGlassOrderData, createGlueGlassOrder, GlueGlassOrderData,
-    createPourGlueOrder, PourGlueOrderData,
-    fetchExportInvoicesByPlanId, ExportInvoiceListItem
+    createPourGlueOrder, PourGlueOrderData
 } from '../service';
 import CutGlassModal from '@/components/VNG/manager/production-orders/modals/CutGlassModal';
 import GlueGlassModal from '@/components/VNG/manager/production-orders/modals/GlueGlassModal';
 import PourGlueModal from '@/components/VNG/manager/production-orders/modals/PourGlueModal';
+import ListOutputsPP from '@/components/VNG/manager/production-plans/list-outputs-of-pp/list-outputs-pp-components';
 
 const ProductionPlanDetailPage = () => {
     const { id } = useParams();
@@ -35,12 +35,7 @@ const ProductionPlanDetailPage = () => {
     const [pourGlueModalOpen, setPourGlueModalOpen] = useState(false);
     const [materialDetail, setMaterialDetail] = useState<ProductionPlanMaterialDetail | null>(null);
     
-    // Warehouse tab states
-    const [exportInvoices, setExportInvoices] = useState<ExportInvoiceListItem[]>([]);
-    const [warehouseLoading, setWarehouseLoading] = useState(false);
-    const [warehousePage, setWarehousePage] = useState(1);
-    const [warehousePageSize, setWarehousePageSize] = useState(10);
-    const [warehouseRecords, setWarehouseRecords] = useState<ExportInvoiceListItem[]>([]);
+
     
     const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass === 'rtl');
 
@@ -145,13 +140,13 @@ const ProductionPlanDetailPage = () => {
                 setPourGlueModalOpen(false);
                 
                 // Show success message (you can use a toast notification here)
-                alert('Lệnh đổ keo đã được tạo thành công!');
+                alert('Lệnh sản xuất keo và lệnh đổ keo đã được tạo thành công!');
             } else {
-                alert('Có lỗi xảy ra khi tạo lệnh đổ keo!');
+                alert('Có lỗi xảy ra khi tạo lệnh sản xuất!');
             }
         } catch (error) {
             console.error('Error creating pour glue order:', error);
-            alert('Có lỗi xảy ra khi tạo lệnh đổ keo!');
+            alert('Có lỗi xảy ra khi tạo lệnh sản xuất!');
         }
     };
 
@@ -202,32 +197,12 @@ const ProductionPlanDetailPage = () => {
     const toggleTabs = (tab: string) => setTabs(tab);
     const [materialLoading, setMaterialLoading] = useState(false);
 
-    // Fetch export invoices when warehouse tab is selected
-    useEffect(() => {
-        if (tabs === 'warehouse' && id) {
-            setWarehouseLoading(true);
-            fetchExportInvoicesByPlanId(id as string)
-                .then((data) => {
-                    setExportInvoices(data);
-                    setWarehouseLoading(false);
-                })
-                .catch((error) => {
-                    console.error('Error fetching export invoices:', error);
-                    setWarehouseLoading(false);
-                });
-        }
-    }, [tabs, id]);
+    const statusBadgeMap: Record<string, string> = {
+        'Đang sản xuất': 'badge-outline-warning',
+        'Đã hoàn thành': 'badge-outline-success',
+        'Đã hủy': 'badge-outline-danger',
+    };
 
-    // Handle warehouse pagination
-    useEffect(() => {
-        setWarehousePage(1);
-    }, [warehousePageSize]);
-
-    useEffect(() => {
-        const from = (warehousePage - 1) * warehousePageSize;
-        const to = from + warehousePageSize;
-        setWarehouseRecords([...exportInvoices.slice(from, to)]);
-    }, [warehousePage, warehousePageSize, exportInvoices]);
 
     useEffect(() => {
         if (!id) return;
@@ -290,12 +265,13 @@ const ProductionPlanDetailPage = () => {
                         <li className="mr-2">
                             <button
                                 type="button"
-                                className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'warehouse' ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
-                                onClick={() => toggleTabs('warehouse')}
+                                className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'outputs' ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
+                                onClick={() => toggleTabs('outputs')}
                             >
-                                Phiếu xuất kho
+                                Trạng thái sản xuất
                             </button>
                         </li>
+
                     </ul>
                 </div>
                 {tabs === 'plan' && (
@@ -452,71 +428,9 @@ const ProductionPlanDetailPage = () => {
                         )}
                     </div>
                 )}
-                {tabs === 'warehouse' && (
+                {tabs === 'outputs' && (
                     <div>
-                        <div className="mb-4.5 flex flex-col gap-5 px-5 md:flex-row md:items-center">
-                            <div className="flex items-center gap-2">
-                                <h3 className="text-lg font-semibold">Danh sách phiếu xuất kho</h3>
-                            </div>
-                        </div>
-                        {warehouseLoading ? (
-                            <div className="flex items-center justify-center py-8">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                            </div>
-                        ) : (
-                            <div className="datatables pagination-padding">
-                                <DataTable
-                                    className="table-hover whitespace-nowrap"
-                                    records={warehouseRecords}
-                                    columns={[
-                                        {
-                                            accessor: 'index',
-                                            title: 'STT',
-                                            width: 70,
-                                            render: (_, index) => <span>{index + 1}</span>,
-                                        },
-                                        {
-                                            accessor: 'exportDate',
-                                            title: 'Ngày xuất',
-                                            render: ({ exportDate }) => (
-                                                <div>{exportDate ? new Date(exportDate).toLocaleDateString() : '-'}</div>
-                                            ),
-                                        },
-                                        {
-                                            accessor: 'employeeName',
-                                            title: 'Người xuất',
-                                        },
-                                        {
-                                            accessor: 'note',
-                                            title: 'Ghi chú',
-                                        },
-                                        {
-                                            accessor: 'action',
-                                            title: 'Thao tác',
-                                            textAlignment: 'center',
-                                            width: 100,
-                                            render: ({ id }) => (
-                                                <div className="mx-auto flex w-max items-center gap-4">
-                                                    <Link href={`/mockup/manager/ware-house-slips/${id}`} className="flex hover:text-primary" title="Xem chi tiết">
-                                                        <IconEye />
-                                                    </Link>
-                                                </div>
-                                            ),
-                                        },
-                                    ]}
-                                    highlightOnHover
-                                    totalRecords={exportInvoices.length}
-                                    recordsPerPage={warehousePageSize}
-                                    page={warehousePage}
-                                    onPageChange={(p) => setWarehousePage(p)}
-                                    recordsPerPageOptions={[10, 20, 30, 50, 100]}
-                                    onRecordsPerPageChange={setWarehousePageSize}
-                                    paginationText={({ from, to, totalRecords }) =>
-                                        `Hiển thị ${from} đến ${to} trong tổng số ${totalRecords} bản ghi`
-                                    }
-                                />
-                            </div>
-                        )}
+                        <ListOutputsPP productionPlanId={Number(id)} />
                     </div>
                 )}
             </div>
@@ -570,15 +484,14 @@ const ProductionPlanDetailPage = () => {
                                 <th>Ngày lên lệnh SX</th>
                                 <th>Loại</th>
                                 <th>Mô tả</th>
-                                <th>Đã xuất kho NVL</th>
-                                <th>Đã nhập kho TP</th>
+                                <th style={{ minWidth: '120px' }}>Trạng thái</th>
                                 <th>Xem chi tiết</th>
                             </tr>
                         </thead>
                         <tbody>
                             {productionOrders.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="text-center py-4">
+                                    <td colSpan={6} className="text-center py-4">
                                         Không có dữ liệu lệnh sản xuất
                                     </td>
                                 </tr>
@@ -589,11 +502,10 @@ const ProductionPlanDetailPage = () => {
                                         <td>{item.orderDate ? new Date(item.orderDate).toLocaleDateString() : '-'}</td>
                                         <td>{item.type}</td>
                                         <td>{item.description}</td>
-                                        <td>
-                                            <input type="checkbox" checked={item.isMaterialExported} disabled className="form-checkbox" />
-                                        </td>
-                                        <td>
-                                            <input type="checkbox" checked={item.isProductImported} disabled className="form-checkbox" />
+                                        <td style={{ minWidth: '150px' }}>
+                                            <span className={`badge ${statusBadgeMap[item.productionStatus || ''] || 'badge-outline-secondary'}`}>
+                                                {item.productionStatus || '-'}
+                                            </span>
                                         </td>
                                         <td>
                                             <Link href={`/production-orders/view/${item.id}`} className="btn btn-sm btn-outline-primary">

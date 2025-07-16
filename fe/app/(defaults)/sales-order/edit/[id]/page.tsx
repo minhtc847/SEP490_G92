@@ -331,62 +331,24 @@ const SalesOrderEditPage = () => {
                     </thead>
                     <tbody>
                         {form.orderItems.map((item, index) => {
-                            const area = (Number(item.width) * Number(item.height)) / 1_000_000;
-                            const total = item.quantity * item.unitPrice;
+                            const width = Number(item.width) || 0;
+                            const height = Number(item.height) || 0;
+                            const area = (width * height) / 1_000_000;
+                            const total = (item.quantity ?? 0) * (item.unitPrice ?? 0);
 
                             return (
                                 <tr key={index}>
                                     <td>{index + 1}</td>
-                                    <td>
-                                        <input
-                                            disabled={item.productId !== 0}
-                                            type="text"
-                                            value={item.productName}
-                                            onChange={(e) => handleItemChange(index, 'productName', e.target.value)}
-                                            className="input input-sm"
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            disabled={item.productId !== 0}
-                                            type="number"
-                                            value={item.width}
-                                            onChange={(e) => handleItemChange(index, 'width', +e.target.value)}
-                                            className="input input-sm"
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            disabled={item.productId !== 0}
-                                            type="number"
-                                            value={item.height}
-                                            onChange={(e) => handleItemChange(index, 'height', +e.target.value)}
-                                            className="input input-sm"
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            disabled={item.productId !== 0}
-                                            type="number"
-                                            value={item.thickness}
-                                            onChange={(e) => handleItemChange(index, 'thickness', +e.target.value)}
-                                            className="input input-sm"
-                                        />
-                                    </td>
+                                    <td>{item.productName}</td>
+                                    <td className="text-right">{width.toLocaleString()}</td>
+                                    <td className="text-right">{height.toLocaleString()}</td>
+                                    <td className="text-right">{(item.thickness ?? 0).toLocaleString()}</td>
                                     <td>
                                         <input type="number" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', +e.target.value)} className="input input-sm" />
                                     </td>
-                                    <td>
-                                        <input
-                                            disabled={item.productId !== 0}
-                                            type="number"
-                                            value={item.unitPrice}
-                                            onChange={(e) => handleItemChange(index, 'unitPrice', +e.target.value)}
-                                            className="input input-sm"
-                                        />
-                                    </td>
-                                    <td>{area.toFixed(2)}</td>
-                                    <td>{total.toLocaleString()} đ</td>
+                                    <td className="text-right">{(item.unitPrice ?? 0).toLocaleString()}</td>
+                                    <td className="text-right">{area.toFixed(2)}</td>
+                                    <td className="text-right">{total.toLocaleString()} đ</td>
                                     <td>
                                         <button onClick={() => removeItem(index)} className="btn btn-sm btn-error">
                                             Xoá
@@ -411,7 +373,7 @@ const SalesOrderEditPage = () => {
                                 form.orderItems.map((i) => i.productId),
                             )
                         }
-                        placeholder="Thêm sản phẩm theo mã hoặc tên"
+                        placeholder="Thêm sản phẩm có sẵn..."
                         onChange={(option) => {
                             if (!option) return;
                             const p = option.product;

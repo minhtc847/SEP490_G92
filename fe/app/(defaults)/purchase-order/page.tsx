@@ -141,10 +141,10 @@ const PurchaseOrderPage = () => {
                         }}
                     >
                         <option value="">Tất cả trạng thái</option>
-                        <option value="Đã tạo">Đã tạo</option>
-                        <option value="Đã mua">Đã mua</option>
-                        {/* <option value="Hoàn thành">Hoàn thành</option>
-                        <option value="Đã huỷ">Đã huỷ</option> */}
+                        <option value="Chờ đặt hàng">Chờ đặt hàng</option>
+                        <option value="Đã đặt hàng">Đã đặt hàng</option>
+                        <option value="Hoàn thành">Đã nhập hàng</option>
+                        {/* <option value="Đã huỷ">Đã huỷ</option> */}
                     </select>
                 </div>
             </div>
@@ -188,9 +188,26 @@ const PurchaseOrderPage = () => {
                                 <td className="border px-3 py-2">{order.description || '-'}</td>
                                 <td className="border px-3 py-2">{order.date ? new Date(order.date).toLocaleDateString('vi-VN') : ''}</td>
                                 <td className="border px-3 py-2">{order.totalValue != null ? `${order.totalValue.toLocaleString()}₫` : '0₫'}</td>
-                                <td className="border px-3 py-2">
-                                    <span className={`bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs`}>{order.status}</span>
+                                <td>
+                                    <span
+                                        className={`badge ${
+                                            order.status === 'Chờ đặt hàng'
+                                                ? 'badge-outline-warning'
+                                                : order.status === 'Đã đặt hàng'
+                                                  ? 'badge-outline-info'
+                                                  : order.status === 'Hoàn thành'
+                                                    ? 'badge-outline-success'
+                                                    : order.status === 'Đã huỷ'
+                                                      ? 'badge-outline-danger'
+                                                      : 'badge-outline-default'
+                                        }`}
+                                    >
+                                        {order.status}
+                                    </span>
                                 </td>
+                                {/* <td className="border px-3 py-2">
+                                    <span className={`bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs`}>{order.status}</span>
+                                </td> */}
                                 <td className="border px-3 py-2">{order.customerName || '-'}</td>
                                 <td className="border px-3 py-2 space-x-2">
                                     <button onClick={() => router.push(`/purchase-order/${order.id}`)} className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">

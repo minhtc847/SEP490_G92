@@ -6,7 +6,6 @@
         public DateTime OrderDate { get; set; }
         public string? Type { get; set; }
         public string? Description { get; set; }
-        public bool StatusDaXuatKhoNVL { get; set; }
-        public bool StatusDaNhapKhoTP { get; set; }
+        public string? ProductionStatus { get; set; }
     }
 }

@@ -123,11 +123,20 @@ namespace SEP490.Modules.Production_plans.Services
                 if (glass4mm < 0) glass4mm = 0;
                 int butylType = (int)(product.GlassStructure.AdhesiveThickness ?? 0);
 
-                decimal width = Convert.ToDecimal(product.Width);
-                decimal height = Convert.ToDecimal(product.Height);
+                // Parse width and height from string to decimal
+                if (!decimal.TryParse(product.Width, out decimal width) || !decimal.TryParse(product.Height, out decimal height))
+                {
+                    throw new Exception($"Invalid width or height for product {product.ProductName}");
+                }
+
                 decimal areaKeo = ((width - 20) * (height - 20)) / 1_000_000M;
                 decimal doDayKeo = prod.Thickness - (glass4mm * 4) - (glass5mm * 5);
                 decimal tongKeo = areaKeo * doDayKeo * 1.2M;
+
+                // Debug logging
+                Console.WriteLine($"Product: {product.ProductName}, Width: {width}, Height: {height}, Thickness: {prod.Thickness}");
+                Console.WriteLine($"Glass4mm: {glass4mm}, Glass5mm: {glass5mm}, AreaKeo: {areaKeo}, DoDayKeo: {doDayKeo}, TongKeo: {tongKeo}");
+                Console.WriteLine($"AdhesiveType: {product.GlassStructure.AdhesiveType}");
 
                 // Tính độ dài butyl = (dài + rộng) * 2 * số lớp keo (chuyển từ mm sang m)
                 decimal doDaiButyl = ((width + height) * 2 * prod.GlueLayers) / 1000M;
@@ -149,8 +158,8 @@ namespace SEP490.Modules.Production_plans.Services
                     Kinh5 = glass5mm,
                     LoaiButyl = butylType,
                     IsKinhCuongLuc = prod.IsCuongLuc ? 1 : 0,
-                    TongKeoNano = (product.GlassStructure.AdhesiveType ?? "").ToLower() == "nano" ? tongKeo : 0,
-                    TongKeoMem = (product.GlassStructure.AdhesiveType ?? "").ToLower() == "mềm" ? tongKeo : 0,
+                    TongKeoNano = (product.GlassStructure.AdhesiveType ?? "").ToLower() == "nano" ? tongKeo * prod.Quantity : 0,
+                    TongKeoMem = (product.GlassStructure.AdhesiveType ?? "").ToLower() == "mềm" ? tongKeo * prod.Quantity : 0,
                     DoDaiButyl = doDaiButyl
                 };
                 _context.ProductionPlanDetails.Add(planDetail);
@@ -177,6 +186,7 @@ namespace SEP490.Modules.Production_plans.Services
         {
             var planDetails = await _context.ProductionPlanDetails
                 .Include(pd => pd.Product)
+                    .ThenInclude(p => p.GlassStructure)
                 .Where(pd => pd.ProductionPlanId == id)
                 .ToListAsync();
 
@@ -196,8 +206,8 @@ namespace SEP490.Modules.Production_plans.Services
                 Id = pd.Id,
                 ProductName = pd.Product.ProductName ?? string.Empty,
                 ProductCode = pd.Product.ProductCode,
-                Width = pd.Product.Width,
-                Height = pd.Product.Height,
+                Width = pd.Product.Width ?? "0",
+                Height = pd.Product.Height ?? "0",
                 Quantity = pd.Quantity,
                 Thickness = pd.Doday ?? 0,
                 GlueLayers = pd.SoLopKeo ?? 0,
@@ -205,11 +215,30 @@ namespace SEP490.Modules.Production_plans.Services
                 Glass4mm = pd.Kinh4 ?? 0,
                 Glass5mm = pd.Kinh5 ?? 0,
                 ButylType = pd.LoaiButyl ?? 0,
-                TotalGlue = pd.TongKeoNano ?? 0 + pd.TongKeoMem ?? 0,
+                TotalGlue = (pd.TongKeoNano ?? 0) + (pd.TongKeoMem ?? 0),
                 ButylLength = pd.DoDaiButyl ?? 0,
-                IsCuongLuc = (pd.IsKinhCuongLuc ?? 0) == 1
+                IsCuongLuc = (pd.IsKinhCuongLuc ?? 0) == 1,
+                AdhesiveType = pd.Product.GlassStructure?.AdhesiveType ?? string.Empty
             }).ToList();
             return dto;
+        }
+
+        public async Task<List<ProductionPlanOutputDto>> GetProductionPlanOutputsAsync(int productionPlanId)
+        {
+            var outputs = await _context.ProductionOutputs
+    .Where(o => o.ProductionOrder.ProductionPlanId == productionPlanId)
+    .Select(o => new ProductionPlanOutputDto
+    {
+        OutputId = o.Id,
+        ProductId = o.ProductId,
+        ProductName = o.Product.ProductName,
+        TotalAmount = o.Amount,
+        Done = o.Done,
+        Broken = o.Broken,
+        BrokenDescription = o.BrokenDescription
+    })
+    .ToListAsync();
+            return outputs;
         }
     }
 }

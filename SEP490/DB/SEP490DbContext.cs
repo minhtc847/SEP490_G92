@@ -29,18 +29,10 @@ namespace SEP490.DB
                 v => JsonSerializer.Deserialize<List<ProductsDTO>>(v, (JsonSerializerOptions)null)
             );
 
-            var glueButylConverter = new ValueConverter<List<GlueButylDto>, string>(
-                v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
-                v => JsonSerializer.Deserialize<List<GlueButylDto>>(v, (JsonSerializerOptions)null)
-            );
-
             modelBuilder.Entity<GlueButylExportInvoice>()
                 .Property(e => e.Products)
                 .HasConversion(productConverter);
 
-            modelBuilder.Entity<GlueButylExportInvoice>()
-                .Property(e => e.GlueButyls)
-                .HasConversion(glueButylConverter);
         }
 
         // Define DbSet properties for your entities here
@@ -65,11 +57,10 @@ namespace SEP490.DB
         public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
         public DbSet<PurchaseOrderDetail> PurchaseOrderDetails { get; set; }
         public DbSet<ZaloToken> ZaloTokens { get; set; }
-        public DbSet<DeliveryHistoryDetail> DeliveryHistoryDetails { get; set; }
         public DbSet<ChemicalExportDetail> ChemicalExportDetails { get; set; }
         public DbSet<CutGlassInvoiceMaterial> CutGlassInvoiceMaterials { get; set; }
         public DbSet<CutGlassInvoiceOutput> CutGlassInvoiceOutputs { get; set; }
-        public DbSet<ExportInvoice> ExportInvoices { get; set; }
         public DbSet<GlueButylExportInvoice> GlueButylExportInvoices { get; set; }
+        public DbSet<Formular> Formulars { get; set; }
     }
 }

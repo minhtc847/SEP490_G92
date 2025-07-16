@@ -59,14 +59,14 @@ const CustomersListPage = () => {
     return (
         <div className="panel">
             <div className="mb-5">
-                <h2 className="text-xl font-semibold mb-4">Danh sách khách hàng</h2>
+                <h2 className="text-xl font-semibold mb-4">Danh sách khách hàng và nhà cung cấp</h2>
 
-                {/* Tìm kiếm và bộ lọc */}
                 <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-2">
-                        <input type="text" placeholder="Tìm kiếm theo tên hoặc mã KH..." className="form-input w-60" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                        <select className="form-select w-48" value={customerTypeFilter} onChange={(e) => setCustomerTypeFilter(e.target.value as any)}>
-                            <option value="all">Tất cả</option>
+                    <div className="flex w-full max-w-[710px] gap-3">
+                        <input type="text" placeholder="Tìm kiếm theo tên khách hàng" className="form-input flex-1 min-w-[200px]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+
+                        <select className="form-select w-68 sm:w-56" value={customerTypeFilter} onChange={(e) => setCustomerTypeFilter(e.target.value as any)}>
+                            <option value="all">Khách hàng và nhà cung cấp</option>
                             <option value="customer">Khách hàng</option>
                             <option value="supplier">Nhà cung cấp</option>
                         </select>
@@ -79,28 +79,15 @@ const CustomersListPage = () => {
                         </button>
                     </Link>
                 </div>
-
-                {/* Thống kê */}
-                <div className="mb-4 flex gap-2">
-                    <span className="badge bg-primary">Tổng: {customers.length}</span>
-                    <span className="badge bg-info">
-                        <IconUser className="w-3 h-3 mr-1" />
-                        KH: {customers.filter((c) => !c.isSupplier).length}
-                    </span>
-                    <span className="badge bg-warning">
-                        <IconUsers className="w-3 h-3 mr-1" />
-                        NCC: {customers.filter((c) => c.isSupplier).length}
-                    </span>
-                </div>
+                <br />
 
                 {/* Bảng */}
                 <div className="table-responsive">
                     <table className="table-hover">
                         <thead>
                             <tr>
-                                <th>Mã</th>
                                 <th>Tên</th>
-                                <th>ĐT</th>
+                                <th>SĐT</th>
                                 <th>Địa chỉ</th>
                                 <th>Loại</th>
                                 <th>Chiết khấu</th>
@@ -110,7 +97,6 @@ const CustomersListPage = () => {
                         <tbody>
                             {filtered.map((c) => (
                                 <tr key={c.id}>
-                                    <td className="text-primary font-bold">{c.customerCode}</td>
                                     <td>{c.customerName}</td>
                                     <td>{c.phone}</td>
                                     <td>{c.address}</td>

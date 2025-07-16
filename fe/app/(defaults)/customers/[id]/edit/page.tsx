@@ -146,18 +146,18 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
                             </Link>
                             <div>
                                 <h1 className="text-2xl font-bold">Chỉnh sửa khách hàng</h1>
-                                <p className="text-gray-500">Mã khách hàng: {customer.customerCode}</p>
+                                {/* <p className="text-gray-500">Mã khách hàng: {customer.customerCode}</p> */}
                             </div>
                         </div>
-                        <span className={`badge ${formData.customerType === 'customer' ? 'bg-info' : 'bg-warning'}`}>{formData.customerType === 'customer' ? 'Khách hàng' : 'Nhà cung cấp'}</span>
+                        {/* <span className={`badge ${formData.customerType === 'customer' ? 'bg-info' : 'bg-warning'}`}>{formData.customerType === 'customer' ? 'Khách hàng' : 'Nhà cung cấp'}</span> */}
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="space-y-4">
-                            <label className="block font-medium">Mã khách hàng</label>
+                            {/* <label className="block font-medium">Mã khách hàng</label>
                             <div className="flex gap-2">
                                 <input readOnly name="customerCode" value={formData.customerCode} onChange={handleChange} className="form-input flex-1" />
-                            </div>
+                            </div> */}
 
                             <label className="block font-medium">Tên khách hàng *</label>
                             <input name="customerName" required value={formData.customerName} onChange={handleChange} className="form-input" />
@@ -176,8 +176,8 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
                                 <option value="supplier">Nhà cung cấp</option>
                             </select>
 
-                            <label className="block font-medium">Người liên hệ</label>
-                            <input name="contactPerson" value={formData.contactPerson} onChange={handleChange} className="form-input" />
+                            {/* <label className="block font-medium">Người liên hệ</label> */}
+                            {/* <input name="contactPerson" value={formData.contactPerson} onChange={handleChange} className="form-input" /> */}
 
                             <label className="block font-medium">Chiết khấu (%)</label>
                             <input name="discount" type="number" min="0" max="100" value={formData.discount * 100} onChange={handleChange} className="form-input" />

@@ -6,13 +6,13 @@ import { createProductionPlanFromSaleOrder, ProductionPlanProductInput, getGlass
 
 const PAGE_SIZES = [10, 20, 30, 50, 100];
 
-function calculateTotalGlue(width: number, height: number, thickness: number, glass4mm: number, glass5mm: number) {
+function calculateTotalGlue(width: number, height: number, thickness: number, glass4mm: number, glass5mm: number, quantity: number) {
     // Diện tích keo (m2)
     const areaKeo = ((width - 20) * (height - 20)) / 1_000_000;
     // Độ dày keo
     const doDayKeo = thickness - (glass4mm * 4) - (glass5mm * 5);
     // Tổng keo
-    return areaKeo * doDayKeo * 1.2;
+    return areaKeo * doDayKeo * 1.2 * quantity;
 }
 
 const CreateProductionPlanManager = () => {
@@ -72,8 +72,8 @@ const CreateProductionPlanManager = () => {
     }, [orderId]);
 
     // Tính tổng keo nano/mềm dựa vào adhesiveType
-    const totalKeoNano = products.filter(p => p.adhesiveType?.toLowerCase() === 'nano').reduce((sum, p) => sum + calculateTotalGlue(p.width, p.height, p.thickness, p.glass4mm, p.glass5mm), 0);
-    const totalKeoMem = products.filter(p => p.adhesiveType?.toLowerCase() === 'mềm').reduce((sum, p) => sum + calculateTotalGlue(p.width, p.height, p.thickness, p.glass4mm, p.glass5mm), 0);
+    const totalKeoNano = products.filter(p => p.adhesiveType?.toLowerCase() === 'nano').reduce((sum, p) => sum + calculateTotalGlue(p.width, p.height, p.thickness, p.glass4mm, p.glass5mm, p.quantity), 0);
+    const totalKeoMem = products.filter(p => p.adhesiveType?.toLowerCase() === 'mềm').reduce((sum, p) => sum + calculateTotalGlue(p.width, p.height, p.thickness, p.glass4mm, p.glass5mm, p.quantity), 0);
 
     const handleChange = (idx: number, field: keyof ProductionPlanProductInput, value: any) => {
         setProducts((prev) => prev.map((p, i) => i === idx ? { ...p, [field]: value } : p));
@@ -145,7 +145,7 @@ const CreateProductionPlanManager = () => {
                         { accessor: 'glass5mm', title: 'Kính 5', render: (r, idx) => <input type="number" value={r.glass5mm} onChange={e => handleChange(idx, 'glass5mm', Number(e.target.value))} className="input input-sm w-20" /> },
                         { accessor: 'butylType', title: 'Loại butyl', render: (r, idx) => <input type="number" value={r.butylType} onChange={e => handleChange(idx, 'butylType', Number(e.target.value))} className="input input-sm w-20" /> },
                         { accessor: 'isCuongLuc', title: 'CL', render: (r, idx) => <input type="checkbox" checked={r.isCuongLuc} onChange={e => handleChange(idx, 'isCuongLuc', e.target.checked)} /> },
-                        { accessor: 'totalGlue', title: 'Tổng keo(kg)', render: (r) => calculateTotalGlue(r.width, r.height, r.thickness, r.glass4mm, r.glass5mm).toFixed(2) },
+                        { accessor: 'totalGlue', title: 'Tổng keo(kg)', render: (r) => calculateTotalGlue(r.width, r.height, r.thickness, r.glass4mm, r.glass5mm, r.quantity).toFixed(2) },
                     ]}
                     totalRecords={products.length}
                     recordsPerPage={pageSize}

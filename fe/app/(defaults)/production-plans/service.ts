@@ -103,20 +103,10 @@ export interface ProductionOrderListItem {
   orderDate: string;
   type: string;
   description: string;
-  isMaterialExported: boolean;
-  isProductImported: boolean;
-
+  productionStatus?: string;
 }
 
-export interface ExportInvoiceListItem {
-  id: number;
-  employeeName: string;
-  exportDate: string;
-  note: string;
-  status: number;
-  totalAmount: number;
-  productionOrderId: number;
-}
+
 
 export interface CutGlassOrderData {
   productionPlanId: number;
@@ -148,15 +138,14 @@ export async function fetchProductionOrdersByPlanId(id: number | string): Promis
     orderDate: item.orderDate,
     type: item.type,
     description: item.description,
-    isMaterialExported: item.statusDaXuatKhoNVL,
-    isProductImported: item.statusDaNhapKhoTP,
-
+    productionStatus: item.productionStatus,
   }));
 }
 
 export interface Product {
     name: string;
     quantity: number;
+    glueButyls: Chemical[];
 }
 
 export interface Chemical {
@@ -171,7 +160,6 @@ export interface PhieuXuatKeoButylData {
     productionOrderId: number;
     createdAt: string;
     products: Product[];
-    glueButyls: Chemical[];
 }
 
 export async function fetchPhieuXuatKeoButylData(id: number | string): Promise<PhieuXuatKeoButylData> {
@@ -191,8 +179,8 @@ export interface ProductionPlanMaterialProduct {
   id: number;
   productName: string;
   productCode: string;
-  width: number;
-  height: number;
+  width: string;
+  height: string;
   quantity: number;
   thickness: number;
   glueLayers: number;
@@ -203,6 +191,7 @@ export interface ProductionPlanMaterialProduct {
   totalGlue: number;
   butylLength: number;
   isCuongLuc: boolean;
+  adhesiveType: string;
 }
 
 export interface ProductionPlanMaterialDetail {
@@ -222,15 +211,3 @@ export async function fetchProductionPlanMaterialDetail(id: number | string): Pr
   return response.data;
 }
 
-export async function fetchExportInvoicesByPlanId(id: number | string): Promise<ExportInvoiceListItem[]> {
-  const response = await axios.get(`/api/ExportInvoice/by-production-plan/${id}`);
-  return response.data.map((item: any) => ({
-    id: item.id,
-    employeeName: item.employeeName,
-    exportDate: item.exportDate,
-    note: item.note,
-    status: item.status,
-    totalAmount: item.totalAmount,
-    productionOrderId: item.productionOrderId
-  }));
-}

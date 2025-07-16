@@ -45,7 +45,8 @@ const ProductEditPage = () => {
 
         try {
             await deleteProduct(String(formData.id));
-            router.push(`/products?deleted=${encodeURIComponent(formData.productName ?? '')}`);
+            alert(`Xoá sản phẩm ${formData.productName ?? ''} thành công!`);
+            router.push('/products');
         } catch (err) {
             console.error('Lỗi khi xoá sản phẩm:', err);
             alert('Xoá sản phẩm thất bại!');

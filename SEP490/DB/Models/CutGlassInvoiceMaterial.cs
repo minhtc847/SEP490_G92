@@ -3,13 +3,14 @@
     public class CutGlassInvoiceMaterial
     {
         public int Id { get; set; }
-        public int ExportInvoiceId { get; set; }
-        public string materialName { get; set; }
-        public int materialType { get; set; } // 4ly, 5ly
-
         public int quantity { get; set; } // So luong
         public string? note { get; set; } = string.Empty;
+        public int productionOrderId { get; set; }
+        public int productId { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
-        public ExportInvoice ExportInvoice { get; set; } = null!;
+        public ProductionOrder? ProductionOrder { get; set; } = null!;
+        public Product? Product { get; set; } = null!;
     }
 }

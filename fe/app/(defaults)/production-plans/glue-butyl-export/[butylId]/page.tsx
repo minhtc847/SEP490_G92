@@ -38,26 +38,26 @@ const WareHouseSlipDetailPage: React.FC<WareHouseSlipDetailPageProps> = ({ param
 
         fetchData();
     }, [butylId]);
-    useEffect(() => {
-        if (!detail) return;
+    // useEffect(() => {
+    //     if (!detail) return;
+    //
+    //     const fetchData = async () => {
+    //         try {
+    //             setLoading(true);
+    //             const [planDetail] = await Promise.all([
+    //                 fetchProductionPlanDetail(detail.productionOrderId),
+    //             ]);
+    //             setPlanDetail(planDetail);
+    //         } catch (err) {
+    //             console.error('Lỗi khi fetch dữ liệu glue-butyl:', err);
+    //         } finally {
+    //             setLoading(false);
+    //         }
+    //     };
 
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                const [planDetail] = await Promise.all([
-                    fetchProductionPlanDetail(detail.productionPlanId),
-                ]);
-                setPlanDetail(planDetail);
-            } catch (err) {
-                console.error('Lỗi khi fetch dữ liệu glue-butyl:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [detail]);
-    return detail ? <PhieuXuatKeoButylManager data={detail} planDetail={planDetail} /> : <div>Loading...</div>;
+    //     fetchData();
+    // }, [detail]);
+    return detail ? <PhieuXuatKeoButylManager data={detail} /> : <div>Loading...</div>;
 };
 
 export default WareHouseSlipDetailPage;

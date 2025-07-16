@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using OpenQA.Selenium.DevTools.V135.Browser;
 using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.DB.Models;
@@ -10,24 +9,45 @@ namespace SEP490.Modules.GlueButylExport.Services
     public class GlueButylExportService : BaseService, IGlueButylExportService
     {
         private readonly SEP490DbContext _context;
+
         public GlueButylExportService(SEP490DbContext context)
         {
             _context = context;
         }
+
         public async Task AddGlueButylExport(CreateNewDTO createNewDTO)
         {
-            ProductionOrder? productionOrder = await _context.ProductionOrders.FindAsync(createNewDTO.ProductionOrderId) ?? throw new Exception("Production plan not found.");
-            GlueButylExportInvoice invoice = new GlueButylExportInvoice
+            var productionOrder = await _context.ProductionOrders.FindAsync(createNewDTO.ProductionOrderId)
+                ?? throw new Exception("Production order not found.");
+
+            var invoice = new GlueButylExportInvoice
             {
                 ProductionOrderId = createNewDTO.ProductionOrderId,
                 Products = createNewDTO.Products,
                 EmployeeId = createNewDTO.EmployeeId,
-                Note = createNewDTO.Note,
-                GlueButyls = createNewDTO.GlueButyls
+                Note = createNewDTO.Note
             };
+            foreach (var product in createNewDTO.Products)
+            {
+                if (product.Quantity >0)
+                {
+                    var productionOutput = await _context.ProductionOutputs
+                        .FirstOrDefaultAsync(x => x.ProductName == product.Name && x.ProductionOrderId == createNewDTO.ProductionOrderId);
+                    if (productionOutput != null)
+                    {
+                        productionOutput.Done += product.Quantity;
+                    }
+                    else
+                    {
+                        throw new Exception($"Production output for product {product.Name} not found.");
+                    }
+                    _context.ProductionOutputs.Update(productionOutput);
+                }
+            }
             _context.GlueButylExportInvoices.Add(invoice);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
+
         public async Task<List<GlueButylExportResponseDTO>> getAllExportByProductionOrderId(int productionOrderId)
         {
             var exports = await _context.GlueButylExportInvoices
@@ -42,7 +62,6 @@ namespace SEP490.Modules.GlueButylExport.Services
                 EmployeeName = x.Employee?.FullName,
                 Note = x.Note,
                 Products = x.Products,
-                GlueButyls = x.GlueButyls,
                 ProductionOrderId = x.ProductionOrderId ?? 0
             }).ToList();
         }
@@ -54,9 +73,7 @@ namespace SEP490.Modules.GlueButylExport.Services
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (export == null)
-            {
                 throw new Exception("Glue Butyl Export not found.");
-            }
 
             return new GlueButylExportResponseDTO
             {
@@ -65,7 +82,6 @@ namespace SEP490.Modules.GlueButylExport.Services
                 EmployeeName = export.Employee?.FullName,
                 Note = export.Note,
                 Products = export.Products,
-                GlueButyls = export.GlueButyls,
                 ProductionOrderId = export.ProductionOrderId ?? 0
             };
         }

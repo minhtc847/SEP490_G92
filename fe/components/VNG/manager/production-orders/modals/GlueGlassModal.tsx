@@ -34,7 +34,9 @@ const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productio
         if (isOpen) {
             const initialQuantities: { [productId: number]: number } = {};
             products.forEach((product) => {
-                initialQuantities[product.id] = 0;
+                // Default to remaining quantity
+                const remainingQuantity = product.totalQuantity - product.daGhepKinh;
+                initialQuantities[product.id] = remainingQuantity;
             });
             setProductQuantities(initialQuantities);
             updateFinishedProducts(initialQuantities);

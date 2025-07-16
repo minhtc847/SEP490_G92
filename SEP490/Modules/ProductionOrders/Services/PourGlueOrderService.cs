@@ -102,7 +102,6 @@ namespace SEP490.Modules.ProductionOrders.Services
                     ProductName = product.ProductName,
                     UOM = "tấm",
                     Amount = quantity,
-                    CostObject = null,
                     ProductionOrderId = productionOrderId
                 });
             }
