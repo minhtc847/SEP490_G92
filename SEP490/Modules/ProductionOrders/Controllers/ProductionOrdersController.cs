@@ -27,5 +27,16 @@ namespace SEP490.Modules.ProductionOrders.Controllers
             return Ok(orders);
         }
 
+        [HttpGet("all")]
+        public async Task<ActionResult<List<ProductionOrdersByPlanDto>>> GetAll()
+        {
+            var orders = await _productionOrdersService.GetAllProductionOrdersAsync();
+            if (orders == null || !orders.Any())
+            {
+                return NotFound("No production orders found");
+            }
+            return Ok(orders);
+        }
+
     }
 }

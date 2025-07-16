@@ -34,6 +34,22 @@ namespace SEP490.Modules.ProductionOrders.Services
             return productionOrders;
         }
 
+        public async Task<List<ProductionOrdersByPlanDto>> GetAllProductionOrdersAsync()
+        {
+            var productionOrders = await _context.ProductionOrders
+                .OrderByDescending(po => po.OrderDate)
+                .Select(po => new ProductionOrdersByPlanDto
+                {
+                    ProductionOrderId = po.Id,
+                    OrderDate = po.OrderDate,
+                    Type = po.Type,
+                    Description = po.Description,
+                    ProductionStatus = po.ProductionStatus
+                })
+                .ToListAsync();
+            return productionOrders;
+        }
+
 
     }
 }

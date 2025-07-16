@@ -6,5 +6,6 @@ namespace SEP490.Modules.ProductionOrders.Services
     public interface IProductionOrdersService
     {
         Task<List<ProductionOrdersByPlanDto>> GetProductionOrdersByPlanIdAsync(int productionPlanId);
+        Task<List<ProductionOrdersByPlanDto>> GetAllProductionOrdersAsync();
     }
 }
