@@ -1,45 +1,47 @@
 'use client';
+import { PhieuXuatKeoButylData, ProductionPlanDetail } from "@/app/(defaults)/production-plans/service";
+import Link from "next/link";
 import React from "react";
 
-interface Product {
-  name: string;
-  quantity: number;
-}
-
-interface Chemical {
-  name: string;
-  unit: string;
-  quantity: number;
-}
-
-interface PhieuXuatKeoButylData {
-  products: Product[];
-  chemicals: Chemical[];
-}
-
 const sampleData: PhieuXuatKeoButylData = {
-  products: [
-    { name: "Kính cường lực 5mm", quantity: 10 },
-    { name: "Kính dán 8mm", quantity: 5 },
-  ],
-  chemicals: [
-    { name: "Keo silicone", unit: "kg", quantity: 20 },
-    { name: "Butyl sealant", unit: "m", quantity: 100 },
-    { name: "Chất xúc tác", unit: "lít", quantity: 2 },
-  ],
+    products: [
+        { name: 'Kính cường lực 5mm', quantity: 10 },
+        { name: 'Kính dán 8mm', quantity: 5 }
+    ],
+    glueButyls: [
+        { type: 'Keo silicone', uom: 'kg', quantity: 20 },
+        { type: 'Butyl sealant', uom: 'm', quantity: 100 },
+        { type: 'Chất xúc tác', uom: 'lít', quantity: 2 }
+    ],
+    id: 0,
+    employeeName: '',
+    productionPlanId: 0,
+    createdAt: ''
 };
 
-const PhieuXuatKeoButylManager: React.FC = () => {
+
+interface PhieuXuatKeoButylManagerProps {
+    data: PhieuXuatKeoButylData;
+    planDetail: ProductionPlanDetail | null
+}
+
+const PhieuXuatKeoButylManager:  React.FC<PhieuXuatKeoButylManagerProps> = ({ data, planDetail }) => {
   return (
     <div className="panel">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Phiếu Xuất Keo/Butyl - Chi Tiết</h1>
-      </div>
+        <div className="mb-6">
+            <h1 className="text-2xl font-bold">Phiếu Xuất Keo/Butyl - Chi Tiết</h1>
+            <h3 className="text-lg font-semibold mb-3 text-white-dark">Đơn hàng: <span className="text-primary"><Link
+                href={`/production-plans/${data.productionPlanId}`}>{planDetail?.orderCode}</Link></span></h3>
+            <h3 className="text-lg font-semibold mb-3 text-white-dark">Ngày tạo: <span
+                className="text-dark">{data.createdAt.slice(0, 10)}</span></h3>
+            <h3 className="text-lg font-semibold mb-3 text-white-dark">Nhân viên xuất kho: <span
+                className="text-dark">{data.employeeName}</span></h3>
+        </div>
 
-      {/* Bảng Thành Phẩm */}
-      <div className="mb-8">
-        <h3 className="text-lg font-semibold mb-3">Thành Phẩm</h3>
-        <div className="overflow-x-auto">
+        {/* Bảng Thành Phẩm */}
+        <div className="mb-8">
+            <h3 className="text-lg font-semibold mb-3">Thành Phẩm</h3>
+            <div className="overflow-x-auto">
           <table className="w-full border-collapse border border-gray-300">
             <thead className="bg-gray-100">
               <tr>
@@ -48,7 +50,7 @@ const PhieuXuatKeoButylManager: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {sampleData.products.map((p, i) => (
+              {data.products.map((p, i) => (
                 <tr key={i}>
                   <td className="border border-gray-300 p-2">{p.name}</td>
                   <td className="border border-gray-300 p-2">{p.quantity}</td>
@@ -72,10 +74,10 @@ const PhieuXuatKeoButylManager: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {sampleData.chemicals.map((c, i) => (
+              {data.glueButyls.map((c, i) => (
                 <tr key={i}>
-                  <td className="border border-gray-300 p-2">{c.name}</td>
-                  <td className="border border-gray-300 p-2">{c.unit}</td>
+                  <td className="border border-gray-300 p-2">{c.type}</td>
+                  <td className="border border-gray-300 p-2">{c.uom}</td>
                   <td className="border border-gray-300 p-2">{c.quantity}</td>
                 </tr>
               ))}
