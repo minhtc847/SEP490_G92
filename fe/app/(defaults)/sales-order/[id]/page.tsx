@@ -118,14 +118,9 @@ const handleExportToExcel = async () => {
         worksheet.addRow(['ĐẠI DIỆN BÊN MUA', '', '', '', '', '', 'ĐẠI DIỆN BÊN BÁN']);
 
         worksheet.columns.forEach((column) => {
-            if (!column) return;
-            let maxLength = 0;
-            column.eachCell?.({ includeEmpty: true }, (cell) => {
-                const val = cell.value ? cell.value.toString() : '';
-                maxLength = Math.max(maxLength, val.length);
-            });
-            column.width = maxLength + 4;
+        column.width = 15; 
         });
+
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
