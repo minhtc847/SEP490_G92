@@ -132,21 +132,7 @@ const PriceQuotePage = () => {
                     className="input input-bordered w-full md:w-1/3 pl-4 pr-4 py-2 rounded-lg shadow-sm"
                 />
                 <div className="flex flex-wrap items-center gap-4">
-                    <select
-                        className="select select-bordered ..."
-                        value={categoryFilter}
-                        onChange={(e) => {
-                            setCategoryFilter(e.target.value);
-                            setCurrentPage(1);
-                        }}
-                    >
-                        <option value="">Tất cả phân loại</option>
-                        {Array.from(new Set(quotes.map((q) => q.category))).map((cat) => (
-                            <option key={cat} value={cat}>
-                                {cat}
-                            </option>
-                        ))}
-                    </select>
+
 
                     <select
                         className="select select-bordered ..."
@@ -204,7 +190,6 @@ const PriceQuotePage = () => {
                     <thead>
                         <tr>
                             <th>Tên</th>
-                            <th>Phân loại</th>
                             <th>Chủng loại</th>
                             <th>Đơn giá</th>
                             <th>Hành động</th>
@@ -214,7 +199,6 @@ const PriceQuotePage = () => {
                         {paginatedQuotes.map((item, index) => (
                             <tr key={index}>
                                 <td>{item.productName}</td>
-                                <td>{item.category}</td>
                                 <td>{item.productCode}</td>
                                 <td>{item.unitPrice.toLocaleString()}₫</td>
                                 <td className="flex gap-2">

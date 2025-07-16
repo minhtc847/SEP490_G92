@@ -65,7 +65,7 @@ const PriceQuoteEditPage = () => {
             <h2 className="text-xl font-bold mb-6">Chỉnh sửa báo giá</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {['productCode', 'productName', 'category', 'edgeType', 'adhesiveType', 'composition'].map((field) => (
+                    {['productCode', 'productName', 'edgeType', 'adhesiveType', 'composition'].map((field) => (
                         <div key={field}>
                             <label className="block font-medium text-gray-700 mb-1 capitalize">{field}</label>
                             <input type="text" name={field} value={(formData as any)[field]} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />

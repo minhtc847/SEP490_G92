@@ -80,17 +80,6 @@ const PriceQuoteCreatePage = () => {
                         <input type="text" name="productName" value={formData.productName} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" required />
                     </div>
                     <div>
-                        <label className="block font-medium text-gray-700 mb-1">Phân loại</label>
-                        <select name="category" value={formData.category} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" required>
-                            <option value="">-- Chọn phân loại --</option>
-                            {categories.map((cat) => (
-                                <option key={cat} value={cat}>
-                                    {cat}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
                         <label className="block font-medium text-gray-700 mb-1">Cạnh</label>
                         <input type="text" name="edgeType" value={formData.edgeType} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" required />
                     </div>
