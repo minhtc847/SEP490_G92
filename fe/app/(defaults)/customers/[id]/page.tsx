@@ -63,7 +63,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className={`badge ${customer.customerType === 'customer' ? 'bg-info' : 'bg-warning'}`}>{customer.customerType === 'customer' ? 'Khách hàng' : 'Nhà cung cấp'}</span>
+                    {/* <span className={`badge ${customer.customerType === 'customer' ? 'bg-info' : 'bg-warning'}`}>{customer.customerType === 'customer' ? 'Khách hàng' : 'Nhà cung cấp'}</span> */}
                     <Link href={`/customers/${customer.id}/edit`}>
                         <button className="btn btn-primary">
                             <IconEdit className="mr-2" />
@@ -83,10 +83,10 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                         </h3>
 
                         <div className="space-y-4">
-                            <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
+                            {/* <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
                                 <span className="text-gray-600 font-medium">Mã khách hàng:</span>
                                 <span className="col-span-2 font-semibold text-primary">{customer.customerCode ?? '-'}</span>
-                            </div>
+                            </div> */}
 
                             <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
                                 <span className="text-gray-600 font-medium">Tên:</span>

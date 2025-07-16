@@ -77,7 +77,8 @@ const ProductListPage = () => {
 
         try {
             await deleteProduct(id);
-            router.push(`/products?deleted=${encodeURIComponent(name ?? '')}`);
+            alert(`Xoá sản phẩm ${name ?? ''} thành công!`);
+            router.refresh(); 
         } catch (err) {
             console.error('Lỗi khi xoá sản phẩm:', err);
             alert('Xoá sản phẩm thất bại!');

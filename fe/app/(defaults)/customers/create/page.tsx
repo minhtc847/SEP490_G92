@@ -106,13 +106,13 @@ const CustomerCreatePage = () => {
                     </div>
 
                     <div className="pt-4 border-t">
-                        <h3 className="text-lg font-medium mb-4">Thông tin liên hệ</h3>
+                        {/* <h3 className="text-lg font-medium mb-4">Thông tin liên hệ</h3> */}
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div>
+                            {/* <div>
                                 <label className="block text-sm font-medium mb-1">Người liên hệ</label>
                                 <input type="text" className="form-input" value={formData.contactPerson} onChange={(e) => handleInputChange('contactPerson', e.target.value)} />
-                            </div>
+                            </div> */}
 
                             <div>
                                 <label className="block text-sm font-medium mb-1">SĐT liên hệ</label>

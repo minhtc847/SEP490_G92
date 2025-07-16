@@ -196,7 +196,6 @@ export const getAllCustomerNames = async (): Promise<string[]> => {
   return res.data;
 };
 
-// ---------------- Misc ----------------
 export const getNextPurchaseOrderCode = async (): Promise<string> => {
   const res = await axios.get('/api/purchaseorder/next-code');
   return res.data;
