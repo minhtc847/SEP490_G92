@@ -265,7 +265,7 @@ const ProductionPlanDetailPage = () => {
                         <li className="mr-2">
                             <button
                                 type="button"
-                                className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'plandetail' ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
+                                className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'outputs' ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
                                 onClick={() => toggleTabs('outputs')}
                             >
                                 Trạng thái sản xuất
