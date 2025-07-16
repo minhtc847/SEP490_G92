@@ -16,9 +16,9 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
     {
         private readonly SEP490DbContext _context;
         private readonly IOrderService _orderService;
-        private readonly IHubContext<OrderHub> _hubContext;
+        private readonly IHubContext<SaleOrderHub> _hubContext;
 
-        public OrderController(SEP490DbContext context, IOrderService orderService, IHubContext<OrderHub> hubContext)
+        public OrderController(SEP490DbContext context, IOrderService orderService, IHubContext<SaleOrderHub> hubContext)
         {
             _context = context;
             _orderService = orderService;
@@ -93,11 +93,42 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
         }
 
         [HttpGet("search-customer")]
-        public IActionResult SearchCustomer(string query)
+        public IActionResult SearchCustomer(string? query)
         {
+            query = query?.Trim() ?? string.Empty;
+
             var result = _context.Customers
-                .Where(c => c.CustomerCode.Contains(query) || c.CustomerName.Contains(query))
-                .Select(c => new {
+                .AsNoTracking()
+                .Where(c => !c.IsSupplier &&
+                            (query == ""
+                             || EF.Functions.Like(c.CustomerCode!, $"%{query}%")
+                             || EF.Functions.Like(c.CustomerName!, $"%{query}%")))
+                .Select(c => new
+                {
+                    c.Id,
+                    c.CustomerCode,
+                    c.CustomerName,
+                    c.Address,
+                    c.Phone,
+                    c.Discount
+                })
+                .ToList();
+
+            return Ok(result);
+        }
+
+        [HttpGet("search-supplier")]
+        public IActionResult SearchSupplier(string? query)
+        {
+            query = query?.Trim() ?? string.Empty;
+
+            var result = _context.Customers
+                .AsNoTracking()
+                .Where(c => c.IsSupplier &&
+                            (query == ""
+                             || EF.Functions.Like(c.CustomerName!, $"%{query}%")))
+                .Select(c => new
+                {
                     c.Id,
                     c.CustomerCode,
                     c.CustomerName,
@@ -122,21 +153,25 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
         {
             try
             {
-                var orderId = await _orderService.CreateOrder(dto); 
-                if (orderId <= 0) 
+                var orderId = await _orderService.CreateOrderAsync(dto);
+                if (orderId <= 0)
                 {
                     return BadRequest("Tạo đơn hàng thất bại.");
                 }
                 var role = User.FindFirst("roleName")?.Value ?? "Kế toán";
                 var order = await _context.SaleOrders.FindAsync(orderId);
+                var orderCode = order?.OrderCode ?? "N/A";
 
                 await _hubContext.Clients.All.SendAsync("SaleOrderCreated", new
                 {
                     message = $"{role} vừa tạo đơn bán hàng",
-                    orderCode = order?.OrderCode ?? "N/A",
-                    createAt = DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+                    orderCode = orderCode,
+                    createAt = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy")
                 });
+
                 return Ok(new { message = "Tạo đơn hàng thành công.", id = orderId });
+
+                
             }
             catch (Exception ex)
             {
@@ -167,6 +202,30 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
 
             return Ok(result);
         }
+
+        [HttpGet("search-nvl")]
+        public IActionResult SearchRawMaterials(string query)
+        {
+            var result = _context.Products
+                .Where(p =>
+                    (p.ProductCode.Contains(query) || p.ProductName.Contains(query)) &&
+                    p.ProductType == "NVL")
+                .Select(p => new
+                {
+                    p.Id,
+                    p.ProductCode,
+                    p.ProductName,
+                    p.Height,
+                    p.Width,
+                    p.Thickness,
+                    p.UnitPrice,
+                    p.GlassStructureId
+                })
+                .ToList();
+
+            return Ok(result);
+        }
+
 
         [HttpGet("check-code")]
         public IActionResult CheckProductCode(string code)
