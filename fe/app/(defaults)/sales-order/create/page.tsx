@@ -305,7 +305,7 @@ const SalesOrderCreatePage = () => {
                             cacheOptions
                             defaultOptions
                             loadOptions={loadCustomerOptions}
-                            placeholder="Tìm theo mã hoặc tên khách hàng"
+                            placeholder="Tìm khách hàng có sẵn..."
                             onChange={(option: CustomerOption | null) => {
                                 if (!option) return;
                                 const c = option.customer;
@@ -356,81 +356,29 @@ const SalesOrderCreatePage = () => {
                             <th>Đơn giá</th>
                             <th>Diện tích (m²)</th>
                             <th>Thành tiền</th>
-                            <th>Cấu trúc kính</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         {form.orderItems.map((item, index) => {
-                            const area = (item.width * item.height) / 1_000_000;
-                            const total = item.quantity * item.unitPrice;
+                            const width = Number(item.width) || 0;
+                            const height = Number(item.height) || 0;
+                            const area = (width * height) / 1_000_000;
+                            const total = (item.quantity ?? 0) * (item.unitPrice ?? 0);
+
                             return (
-                                <tr key={item.id}>
+                                <tr key={index}>
                                     <td>{index + 1}</td>
-                                    <td>
-                                        <input
-                                            disabled={item.isFromDatabase}
-                                            value={item.productName}
-                                            onChange={(e) => handleItemChange(index, 'productName', e.target.value)}
-                                            className="input input-sm"
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            disabled={item.isFromDatabase}
-                                            value={item.width}
-                                            onChange={(e) => handleItemChange(index, 'width', +e.target.value)}
-                                            className="input input-sm"
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            disabled={item.isFromDatabase}
-                                            value={item.height}
-                                            onChange={(e) => handleItemChange(index, 'height', +e.target.value)}
-                                            className="input input-sm"
-                                        />
-                                    </td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            disabled={item.isFromDatabase}
-                                            value={item.thickness}
-                                            onChange={(e) => handleItemChange(index, 'thickness', +e.target.value)}
-                                            className="input input-sm"
-                                        />
-                                    </td>
+                                    <td>{item.productName}</td>
+                                    <td className="text-right">{width.toLocaleString()}</td>
+                                    <td className="text-right">{height.toLocaleString()}</td>
+                                    <td className="text-right">{(item.thickness ?? 0).toLocaleString()}</td>
                                     <td>
                                         <input type="number" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', +e.target.value)} className="input input-sm" />
                                     </td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            disabled={item.isFromDatabase}
-                                            value={item.unitPrice}
-                                            onChange={(e) => handleItemChange(index, 'unitPrice', +e.target.value)}
-                                            className="input input-sm"
-                                        />
-                                    </td>
-                                    <td>{area.toFixed(2)}</td>
-                                    <td>{total.toLocaleString()} đ</td>
-                                    <td>
-                                        <select
-                                            disabled={item.isFromDatabase}
-                                            className="select select-sm"
-                                            value={item.glassStructureId || ''}
-                                            onChange={(e) => handleItemChange(index, 'glassStructureId', +e.target.value)}
-                                        >
-                                            <option value="">-- Chọn --</option>
-                                            {glassStructures.map((gs) => (
-                                                <option key={gs.id} value={gs.id}>
-                                                    {gs.productName}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </td>
+                                    <td className="text-right">{(item.unitPrice ?? 0).toLocaleString()}</td>
+                                    <td className="text-right">{area.toFixed(2)}</td>
+                                    <td className="text-right">{total.toLocaleString()} đ</td>
                                     <td>
                                         <button onClick={() => removeItem(index)} className="btn btn-sm btn-error">
                                             Xoá
@@ -455,7 +403,7 @@ const SalesOrderCreatePage = () => {
                                 form.orderItems.map((item) => item.productId),
                             )
                         }
-                        placeholder="Thêm sản phẩm theo mã hoặc tên"
+                        placeholder="Thêm sản phẩm có sẵn..."
                         onChange={(option: ProductOption | null) => {
                             if (!option) return;
                             const p = option.product;

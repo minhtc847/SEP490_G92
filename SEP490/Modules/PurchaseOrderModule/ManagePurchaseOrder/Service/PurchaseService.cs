@@ -161,6 +161,70 @@ namespace SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.Service
             return true;
         }
 
+        public async Task<bool> UpdatePurchaseOrderAsync(int id, UpdatePurchaseOrderDto dto)
+        {
+            var order = await _context.PurchaseOrders
+                .Include(po => po.PurchaseOrderDetails)
+                .FirstOrDefaultAsync(po => po.Id == id);
+
+            if (order == null)
+                return false;
+
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.CustomerName == dto.CustomerName);
+            if (customer == null)
+            {
+                customer = new Customer { CustomerName = dto.CustomerName };
+                _context.Customers.Add(customer);
+                await _context.SaveChangesAsync();
+            }
+
+            order.CustomerId = customer.Id;
+            order.Description = dto.Description;
+            order.Status = dto.Status;
+            order.Date = DateTime.Now; 
+
+            _context.PurchaseOrderDetails.RemoveRange(order.PurchaseOrderDetails);
+
+            foreach (var p in dto.Products)
+            {
+                Product? product = null;
+
+                if (p.ProductId.HasValue)
+                {
+                    product = await _context.Products.FindAsync(p.ProductId.Value);
+                }
+
+                if (product == null)
+                {
+                    product = new Product
+                    {
+                        ProductName = p.ProductName,
+                        Width = p.Width?.ToString(),
+                        Height = p.Height?.ToString(),
+                        Thickness = p.Thickness,
+                        UOM = "Tấm",
+                        ProductType = "NVL"
+                    };
+                    _context.Products.Add(product);
+                    await _context.SaveChangesAsync();
+                }
+
+                var detail = new PurchaseOrderDetail
+                {
+                    PurchaseOrderId = order.Id,
+                    ProductId = product.Id,
+                    ProductName = p.ProductName,
+                    Unit = "Tấm",
+                    Quantity = p.Quantity,
+                    UnitPrice = 0
+                };
+                _context.PurchaseOrderDetails.Add(detail);
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
         public async Task<Product> CreateProductAsync(CreateProductV3Dto dto)
         {
             bool isNameExisted = await _context.Products.AnyAsync(p => p.ProductName == dto.ProductName);

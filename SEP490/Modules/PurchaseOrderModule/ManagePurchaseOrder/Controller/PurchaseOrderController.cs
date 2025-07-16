@@ -64,5 +64,16 @@ namespace SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.Controller
             return Ok(new { message = "Deleted successfully." });
         }
 
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdatePurchaseOrderDto dto)
+        {
+            var result = await _purchaseOrderService.UpdatePurchaseOrderAsync(id, dto);
+            if (!result)
+                return NotFound(new { message = "Không tìm thấy đơn hàng mua để cập nhật." });
+
+            return Ok(new { message = "Cập nhật thành công." });
+        }
+
+
     }
 }
