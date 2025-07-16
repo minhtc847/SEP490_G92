@@ -102,10 +102,17 @@ export default function CuttingGlassPage() {
   // Sort effects
   useEffect(() => {
     if (summary.outputs && summary.outputs.length > 0) {
-      const data = sortBy(summary.outputs, outputsSortStatus.columnAccessor);
+      // Lọc ra các output KHÔNG phải kính dư
+      const glassOutputIds = (summary.glassOutputs || [])
+        .filter((g: any) => g.isDC)
+        .map((g: any) => g.productionOutputId);
+      const filteredOutputs = summary.outputs.filter(
+        (o: any) => !glassOutputIds.includes(o.id)
+      );
+      const data = sortBy(filteredOutputs, outputsSortStatus.columnAccessor);
       setSortedOutputs(outputsSortStatus.direction === 'desc' ? data.reverse() : data);
     }
-  }, [summary.outputs, outputsSortStatus]);
+  }, [summary.outputs, summary.glassOutputs, outputsSortStatus]);
 
   useEffect(() => {
     if (summary.materials && summary.materials.length > 0) {
@@ -155,7 +162,8 @@ export default function CuttingGlassPage() {
       if (!product) return;
       // --- CHECK DUPLICATE LOGIC ---
       if (form.itemType === 'kinhDu') {
-        if (!form.selectedMaterialId) {
+        // Bắt buộc phải chọn nguyên vật liệu
+        if (!form.selectedMaterialId || isNaN(Number(form.selectedMaterialId))) {
           Swal.fire({ title: 'Vui lòng chọn nguyên vật liệu!', icon: 'warning' });
           return;
         }
@@ -223,7 +231,7 @@ export default function CuttingGlassPage() {
             body: JSON.stringify({
               productId: product!.id,
               amount: form.quantity,
-              productionOrderId: null,
+              productionOrderId: null, // revert lại null
             }),
           });
           const output = await outputRes.json();
@@ -242,6 +250,11 @@ export default function CuttingGlassPage() {
           }),
         });
       } else if (form.itemType === 'banThanhPham') {
+        // Bắt buộc phải chọn nguyên vật liệu
+        if (!form.selectedMaterialId || isNaN(Number(form.selectedMaterialId))) {
+          Swal.fire({ title: 'Vui lòng chọn nguyên vật liệu!', icon: 'warning' });
+          return;
+        }
         // Check duplicate cho bán thành phẩm
         const duplicateBanThanhPham = summary.glassOutputs.find((g: any) => 
           (g.productId === product.id || g.productName === product.productName) && 
@@ -302,12 +315,12 @@ export default function CuttingGlassPage() {
           const output = await outputRes.json();
           productionOutputId = output.id;
         }
-        // Tạo CutGlassInvoiceOutput cho bán thành phẩm (không cần materialId)
+        // Tạo CutGlassInvoiceOutput cho bán thành phẩm (có liên kết với material)
         await fetch(`${API_BASE}/cuttingglassmanagement/create-cut-glass-output`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            cutGlassInvoiceMaterialId: null, // Bán thành phẩm không cần liên kết với material
+            cutGlassInvoiceMaterialId: Number(form.selectedMaterialId),
             productionOutputId: productionOutputId,
             quantity: form.quantity,
             isDC: false,
@@ -497,7 +510,7 @@ export default function CuttingGlassPage() {
         </button>
       </div>
       <div className="datatables">
-        <h6 className="font-bold mb-2">Thành phẩm mục tiêu</h6>
+        {/* <h6 className="font-bold mb-2">Thành phẩm mục tiêu</h6>
         <DataTable
           noRecordsText={loading ? 'Đang tải...' : 'Không có thành phẩm mục tiêu nào'}
           highlightOnHover
@@ -511,7 +524,7 @@ export default function CuttingGlassPage() {
           ]}
           sortStatus={outputsSortStatus}
           onSortStatusChange={setOutputsSortStatus}
-        />
+        /> */}
         <h6 className="font-bold mt-6 mb-2">Nguyên vật liệu</h6>
         <DataTable
           noRecordsText={loading ? 'Đang tải...' : 'Không có nguyên vật liệu nào'}
@@ -523,6 +536,8 @@ export default function CuttingGlassPage() {
             { accessor: 'productName', title: 'Tên nguyên vật liệu', sortable: true },
             { accessor: 'quantity', title: 'Số lượng', sortable: true },
             { accessor: 'note', title: 'Ghi chú', sortable: true },
+            { accessor: 'createdAt', title: 'Ngày tạo', render: (item: any) => item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : '' },
+            { accessor: 'updatedAt', title: 'Ngày cập nhật', render: (item: any) => item.updatedAt ? new Date(item.updatedAt).toLocaleString('vi-VN') : '' },
             {
               accessor: 'actions',
               title: 'Thao tác',
@@ -568,6 +583,8 @@ export default function CuttingGlassPage() {
             },
             { accessor: 'quantity', title: 'Số lượng', sortable: true },
             { accessor: 'note', title: 'Ghi chú', sortable: true },
+            { accessor: 'createdAt', title: 'Ngày tạo', render: (item: any) => item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : '' },
+            { accessor: 'updatedAt', title: 'Ngày cập nhật', render: (item: any) => item.updatedAt ? new Date(item.updatedAt).toLocaleString('vi-VN') : '' },
             {
               accessor: 'actions',
               title: 'Thao tác',
@@ -626,6 +643,64 @@ export default function CuttingGlassPage() {
                     </button>
                   </div>
                   <div className="p-5">
+                    {/* 1. Loại */}
+                    {!isEditing && (
+                      <div className="mb-4">
+                        <label className="block mb-1">Loại</label>
+                        <div className="flex gap-2">
+                          <label className="flex items-center">
+                            <input
+                              type="radio"
+                              name="itemType"
+                              value="material"
+                              checked={form.itemType === 'material'}
+                              onChange={() => setForm(f => ({ ...f, itemType: 'material' }))}
+                              className="form-radio"
+                            />
+                            Nguyên vật liệu
+                          </label>
+                          <label className="flex items-center">
+                            <input
+                              type="radio"
+                              name="itemType"
+                              value="banThanhPham"
+                              checked={form.itemType === 'banThanhPham'}
+                              onChange={() => setForm(f => ({ ...f, itemType: 'banThanhPham' }))}
+                              className="form-radio"
+                            />
+                            Bán thành phẩm
+                          </label>
+                          <label className="flex items-center">
+                            <input
+                              type="radio"
+                              name="itemType"
+                              value="kinhDu"
+                              checked={form.itemType === 'kinhDu'}
+                              onChange={() => setForm(f => ({ ...f, itemType: 'kinhDu' }))}
+                              className="form-radio"
+                            />
+                            Kính dư
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                    {/* 2. Chọn nguyên vật liệu */}
+                    {!isEditing && (form.itemType === 'kinhDu' || form.itemType === 'banThanhPham') && (
+                      <div className="mb-4">
+                        <label className="block mb-1">Chọn nguyên vật liệu</label>
+                        <select
+                          className="form-input"
+                          value={form.selectedMaterialId}
+                          onChange={(e) => setForm((f) => ({ ...f, selectedMaterialId: e.target.value }))}
+                        >
+                          <option value="">-- Chọn nguyên vật liệu --</option>
+                          {summary.materials.map((m: any) => (
+                            <option key={m.id} value={m.ProductName || m.productName}>{m.ProductName || m.productName}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    {/* 3. Tên sản phẩm / kính dư / nguyên vật liệu hoặc Chọn thành phẩm mục tiêu */}
                     {!isEditing && (
                       <div className="mb-4">
                         <label className="block mb-1">
@@ -678,6 +753,7 @@ export default function CuttingGlassPage() {
                         </datalist>
                       </div>
                     )}
+                    {/* Các trường còn lại giữ nguyên */}
                     <div className="mb-4">
                       <label className="block mb-1">Số lượng</label>
                       <input
@@ -687,63 +763,6 @@ export default function CuttingGlassPage() {
                         onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
                       />
                     </div>
-                    {!isEditing && (
-                      <div className="mb-4">
-                        <label className="block mb-1">Loại</label>
-                        <div className="flex gap-2">
-                          <label className="flex items-center">
-                            <input
-                              type="radio"
-                              name="itemType"
-                              value="material"
-                              checked={form.itemType === 'material'}
-                              onChange={() => setForm(f => ({ ...f, itemType: 'material' }))}
-                              className="form-radio"
-                            />
-                            Nguyên vật liệu
-                          </label>
-                          <label className="flex items-center">
-                            <input
-                              type="radio"
-                              name="itemType"
-                              value="banThanhPham"
-                              checked={form.itemType === 'banThanhPham'}
-                              onChange={() => setForm(f => ({ ...f, itemType: 'banThanhPham' }))}
-                              className="form-radio"
-                            />
-                            Bán thành phẩm
-                          </label>
-                          <label className="flex items-center">
-                            <input
-                              type="radio"
-                              name="itemType"
-                              value="kinhDu"
-                              checked={form.itemType === 'kinhDu'}
-                              onChange={() => setForm(f => ({ ...f, itemType: 'kinhDu' }))}
-                              className="form-radio"
-                            />
-                            Kính dư
-                          </label>
-                        </div>
-                      </div>
-                    )}
-                    {!isEditing && form.itemType === 'kinhDu' && (
-                      <>
-                        <div className="mb-4">
-                          <label className="block mb-1">Chọn nguyên vật liệu</label>
-                          <select
-                            className="form-input"
-                            value={form.selectedMaterialId}
-                            onChange={(e) => setForm((f) => ({ ...f, selectedMaterialId: e.target.value }))}
-                          >
-                            <option value="">-- Chọn nguyên vật liệu --</option>
-                            {summary.materials.map((m: any) => (
-                              <option key={m.id} value={m.ProductName || m.productName}>{m.ProductName || m.productName}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </>
-                    )}
                     <div className="mb-4">
                       <label className="block mb-1">Ghi chú</label>
                       <input

@@ -34,12 +34,45 @@ namespace SEP490.Modules.ProductionOrders.Controllers
                 .Where(x => x.productionOrderId == productionOrderId)
                 .Include(x => x.Product)
                 .ToListAsync();
-            // Kính dư & bán thành phẩm: chỉ lấy theo productionOrderId
+            // Kính dư: chỉ lấy các kính dư có material gắn với lệnh sản xuất này
             var glassOutputs = await _context.CutGlassInvoiceOutputs
-                .Where(x => x.ProductionOutput.ProductionOrderId == productionOrderId)
+                .Where(x => x.IsDC == true &&
+                    x.CutGlassInvoiceMaterial != null &&
+                    x.CutGlassInvoiceMaterial.productionOrderId == productionOrderId)
+                .Include(x => x.ProductionOutput)
+                .ThenInclude(po => po.Product)
+                .Include(x => x.CutGlassInvoiceMaterial)
+                .ToListAsync();
+            // Bán thành phẩm: lấy như cũ
+            var banThanhPhamOutputs = await _context.CutGlassInvoiceOutputs
+                .Where(x => x.IsDC == false && x.ProductionOutput.ProductionOrderId == productionOrderId)
                 .Include(x => x.ProductionOutput)
                 .ThenInclude(po => po.Product)
                 .ToListAsync();
+            var glassOutputDtos = glassOutputs.Select(x => new {
+                x.Id,
+                x.ProductionOutputId,
+                ProductName = x.ProductionOutput?.Product?.ProductName,
+                x.Quantity,
+                x.IsDC,
+                x.Note,
+                MaterialId = x.CutGlassInvoiceMaterialId,
+                MaterialName = x.CutGlassInvoiceMaterial?.Product?.ProductName,
+                x.CreatedAt,
+                x.UpdatedAt
+            }).ToList();
+            var banThanhPhamDtos = banThanhPhamOutputs.Select(x => new {
+                x.Id,
+                x.ProductionOutputId,
+                ProductName = x.ProductionOutput?.Product?.ProductName,
+                x.Quantity,
+                x.IsDC,
+                x.Note,
+                MaterialId = (int?)null,
+                MaterialName = (string)null,
+                x.CreatedAt,
+                x.UpdatedAt
+            }).ToList();
             return Ok(new {
                 outputs = outputs.Select(x => new {
                     x.Id,
@@ -53,16 +86,11 @@ namespace SEP490.Modules.ProductionOrders.Controllers
                     x.productId,
                     ProductName = x.Product?.ProductName,
                     x.quantity,
-                    x.note
+                    x.note,
+                    x.CreatedAt,
+                    x.UpdatedAt
                 }),
-                glassOutputs = glassOutputs.Select(x => new {
-                    x.Id,
-                    x.ProductionOutputId,
-                    ProductName = x.ProductionOutput?.Product?.ProductName,
-                    x.Quantity,
-                    x.IsDC,
-                    x.Note
-                })
+                glassOutputs = ((IEnumerable<object>)glassOutputDtos).Concat(banThanhPhamDtos).ToList()
             });
         }
 
@@ -107,6 +135,8 @@ namespace SEP490.Modules.ProductionOrders.Controllers
         [HttpPost("create-material")]
         public async Task<ActionResult<CutGlassInvoiceMaterial>> CreateMaterial([FromBody] CutGlassInvoiceMaterial material)
         {
+            material.CreatedAt = DateTime.Now;
+            material.UpdatedAt = DateTime.Now;
             _context.CutGlassInvoiceMaterials.Add(material);
             await _context.SaveChangesAsync();
             return Ok(material);
@@ -121,7 +151,9 @@ namespace SEP490.Modules.ProductionOrders.Controllers
                 ProductionOutputId = dto.ProductionOutputId,
                 Quantity = (int)dto.Quantity,
                 IsDC = dto.IsDC,
-                Note = dto.Note
+                Note = dto.Note,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
             _context.CutGlassInvoiceOutputs.Add(output);
             await _context.SaveChangesAsync();
@@ -139,6 +171,7 @@ namespace SEP490.Modules.ProductionOrders.Controllers
 
             material.quantity = dto.Quantity;
             material.note = dto.Note;
+            material.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
             return Ok(material);
@@ -155,6 +188,7 @@ namespace SEP490.Modules.ProductionOrders.Controllers
 
             output.Quantity = dto.Quantity;
             output.Note = dto.Note;
+            output.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
             return Ok(output);

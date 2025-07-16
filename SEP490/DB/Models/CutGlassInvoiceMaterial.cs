@@ -7,6 +7,8 @@
         public string? note { get; set; } = string.Empty;
         public int productionOrderId { get; set; }
         public int productId { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
         public ProductionOrder? ProductionOrder { get; set; } = null!;
         public Product? Product { get; set; } = null!;
