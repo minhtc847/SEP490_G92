@@ -61,12 +61,40 @@ namespace SEP490.Modules.ProductionOrders.Services
                     ProductName = po.ProductName,
                     Amount = po.Amount,
                     Done = po.Done,
-                    Note = po.Status,
+                    Broken = po.Broken,
+                    ReasonBroken = po.BrokenDescription,
                     ProductionOrderId = po.ProductionOrderId
                 })
                 .ToListAsync();
             return outputs;
         }
 
+        public async Task<bool> ReportBrokenOutputAsync(int outputId, ReportBrokenOutputDto dto)
+        {
+            var output = await _context.ProductionOutputs.Include(o => o.ProductionOrder).FirstOrDefaultAsync(o => o.Id == outputId);
+            if (output == null || dto.Broken <= 0) return false;
+
+            // Update broken count
+            output.Broken = (output.Broken ?? 0) + dto.Broken;
+            // Update reason
+            if (!string.IsNullOrWhiteSpace(dto.ReasonBroken))
+            {
+                if (string.IsNullOrWhiteSpace(output.BrokenDescription))
+                    output.BrokenDescription = dto.ReasonBroken;
+                else if (!output.BrokenDescription.Contains(dto.ReasonBroken))
+                    output.BrokenDescription += ", " + dto.ReasonBroken;
+            }
+            // Update done
+            output.Done = Math.Max((output.Done ?? 0) - dto.Broken, 0);
+
+            // Update production order status
+            if (output.ProductionOrder != null)
+            {
+                output.ProductionOrder.ProductionStatus = "Đang sản xuất";
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

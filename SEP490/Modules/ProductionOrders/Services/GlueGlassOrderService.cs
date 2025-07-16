@@ -207,7 +207,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                 // Calculate material quantities
                 var kinh4Quantity = kinh4PerProduct * outputQuantity;
                 var kinh5Quantity = kinh5PerProduct * outputQuantity;
-                var keoQuantity = 87.5m; // Default quantity for keo
+                var keoQuantity = 0.2m; // Default quantity for keo
 
                 // Create materials based on whether it's tempered glass or not
                 var glassPrefix = isCuongLuc ? "Kính cường lực tôi trắng KT:" : "Kính trắng KT:";
@@ -256,7 +256,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                     ProductionId = keoProduct.Id,
                     ProductionName = keoName,
                     ProductionOutputId = output.Id,
-                    UOM = "kg",
+                    UOM = "ml",
                     Amount = keoQuantity,
                     CostObject = null,
                     CostItem = null,

@@ -226,19 +226,24 @@ namespace SEP490.Modules.Production_plans.Services
         public async Task<List<ProductionPlanOutputDto>> GetProductionPlanOutputsAsync(int productionPlanId)
         {
             var outputs = await _context.ProductionOutputs
-    .Where(o => o.ProductionOrder.ProductionPlanId == productionPlanId)
-    .Select(o => new ProductionPlanOutputDto
-    {
-        OutputId = o.Id,
-        ProductId = o.ProductId,
-        ProductName = o.Product.ProductName,
-        TotalAmount = o.Amount,
-        Done = o.Done,
-        Broken = o.Broken,
-        BrokenDescription = o.BrokenDescription
-    })
-    .ToListAsync();
-            return outputs;
+                .Where(o => o.ProductionOrder.ProductionPlanId == productionPlanId)
+                .ToListAsync();
+
+            var grouped = outputs
+                .GroupBy(o => o.ProductId)
+                .Select(g => new ProductionPlanOutputDto
+                {
+                    OutputId = g.Min(o => o.Id),
+                    ProductId = g.Key,
+                    ProductName = g.FirstOrDefault()?.ProductName,
+                    TotalAmount = g.Sum(o => o.Amount ?? 0),
+                    Done = g.Sum(o => o.Done ?? 0),
+                    Broken = g.Sum(o => o.Broken ?? 0),
+                    BrokenDescription = string.Join(", ", g.Select(o => o.BrokenDescription).Where(desc => !string.IsNullOrEmpty(desc)).Distinct())
+                })
+                .ToList();
+
+            return grouped;
         }
     }
 }

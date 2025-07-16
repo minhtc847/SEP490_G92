@@ -49,5 +49,14 @@ namespace SEP490.Modules.ProductionOrders.Controllers
             return Ok(outputs);
         }
 
+        [HttpPut("outputs/{outputId}/report-broken")]
+        public async Task<IActionResult> ReportBrokenOutput(int outputId, [FromBody] ReportBrokenOutputDto dto)
+        {
+            var result = await _productionOrdersService.ReportBrokenOutputAsync(outputId, dto);
+            if (!result)
+                return NotFound("Không tìm thấy thành phẩm hoặc số lượng không hợp lệ.");
+            return Ok(new { message = "Báo hỏng thành công." });
+        }
+
     }
 }

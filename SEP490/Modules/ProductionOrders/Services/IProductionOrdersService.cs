@@ -9,5 +9,6 @@ namespace SEP490.Modules.ProductionOrders.Services
         Task<List<ProductionOrdersByPlanDto>> GetAllProductionOrdersAsync();
 
         Task<List<ProductionOutputDto>> GetProductionOutputsByOrderIdAsync(int productionOrderId);
+        Task<bool> ReportBrokenOutputAsync(int outputId, ReportBrokenOutputDto dto);
     }
 }

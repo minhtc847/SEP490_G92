@@ -51,7 +51,7 @@ const ListOutputsPP: React.FC<ListOutputsPPProps> = ({ productionPlanId }) => {
                   <td>{item.broken ?? 0}</td>
                   <td>{item.brokenDescription ?? ''}</td>
                   <td>
-                    <button className="btn btn-sm btn-primary">Hành động</button>
+                    <button className="btn btn-sm btn-primary">Báo hỏng</button>
                   </td>
                 </tr>
               ))
