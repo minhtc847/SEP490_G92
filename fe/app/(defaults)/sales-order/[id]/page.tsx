@@ -3,6 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getOrderDetailById, OrderDetailDto } from '@/app/(defaults)/sales-order/[id]/service';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExcelJS from 'exceljs';
 
 const SalesOrderDetailPage = () => {
     const params = useParams();
@@ -31,6 +34,107 @@ const SalesOrderDetailPage = () => {
     if (loading) return <div className="p-6">Đang tải dữ liệu...</div>;
     if (!order) return <div className="p-6 text-red-600">Không tìm thấy đơn hàng với ID: {id}</div>;
 
+const handleExportToExcel = async () => {
+        if (!order) return;
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('XacNhanDonHang');
+
+        worksheet.mergeCells('A1', 'J1');
+        worksheet.getCell('A1').value = 'XÁC NHẬN ĐƠN HÀNG';
+        worksheet.getCell('A1').font = { size: 14, bold: true };
+        worksheet.getCell('A1').alignment = { horizontal: 'center' };
+
+        worksheet.addRow([]);
+        worksheet.addRow(['Kính gửi:', order.customerName, '', '', 'Ngày:', new Date(order.orderDate).toLocaleDateString()]);
+        worksheet.addRow(['Địa chỉ:', order.address]);
+        worksheet.addRow(['Điện thoại:', order.phone]);
+        worksheet.addRow([]);
+        worksheet.addRow(['Công ty cổ phần kính VNG Trân trọng gửi đến Quý khách bảng xác nhận đơn đặt hàng kính chống cháy như sau :']);
+
+        worksheet.addRow([]);
+
+        const headerRow = worksheet.addRow([
+            'Stt', 'Ký hiệu', 'Tên sản phẩm', 'Đơn vị', 'SL',
+            'Dày kính (mm)', 'Rộng(mm)', 'Cao(mm)', 'Đơn giá (VND/m2)', 'Thành tiền (VND)'
+        ]);
+
+        headerRow.eachCell((cell) => {
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: '305496' }
+            };
+            cell.font = { color: { argb: 'FFFFFF' }, bold: true };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' },
+            };
+        });
+
+        order.products.forEach((item, idx) => {
+            const row = worksheet.addRow([
+                idx + 1,
+                item.productCode,
+                item.productName,
+                'Tấm',
+                item.quantity,
+                item.thickness,
+                item.width,
+                item.height,
+                item.unitPrice,
+                item.totalAmount,
+            ]);
+            row.eachCell((cell) => {
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' },
+                };
+            });
+        });
+
+        worksheet.addRow([]);
+        const total = order.products.reduce((sum, item) => sum + item.totalAmount, 0);
+        const discountAmount = total * order.discount;
+        const finalAmount = total - discountAmount;
+
+        worksheet.addRow(['Tổng giá trị đơn hàng:', '', '', '', '', '', '', '', '', total]);
+        worksheet.addRow(['Chiết khấu:', `${(order.discount * 100).toFixed(0)}%`, '', '', '', '', '', '', '', -discountAmount]);
+        worksheet.addRow(['Thành tiền sau chiết khấu:', '', '', '', '', '', '', '', '', finalAmount]);
+
+        worksheet.addRow([]);
+        worksheet.addRow(['Ghi chú:']);
+        worksheet.addRow(['- Đơn giá đã bao gồm chi phí vận chuyển, chưa bao gồm thuế VAT và chi phí kiểm định.']);
+        worksheet.addRow(['- Thời gian giao hàng: 5 ngày tính từ ngày chốt đơn hàng.']);
+        worksheet.addRow(['- Thời gian bảo hành: VNG-N 24 tháng, VNG-MB 12 tháng.']);
+        worksheet.addRow(['- Thanh toán 70% khi đặt hàng, 30% sau giao hàng.']);
+
+        worksheet.addRow([]);
+        worksheet.addRow(['ĐẠI DIỆN BÊN MUA', '', '', '', '', '', 'ĐẠI DIỆN BÊN BÁN']);
+
+        worksheet.columns.forEach((column) => {
+            if (!column) return;
+            let maxLength = 0;
+            column.eachCell?.({ includeEmpty: true }, (cell) => {
+                const val = cell.value ? cell.value.toString() : '';
+                maxLength = Math.max(maxLength, val.length);
+            });
+            column.width = maxLength + 4;
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        saveAs(blob, `XacNhanDonHang_${order.orderCode}.xlsx`);
+    };
+
+    if (loading) return <div className="p-6">Đang tải dữ liệu...</div>;
+    if (!order) return <div className="p-6 text-red-600">Không tìm thấy đơn hàng với ID: {id}</div>;
+
     const { customerName, address, phone, orderDate, orderCode, discount, products, totalAmount, totalQuantity } = order;
 
     const handleBack = () => router.push('/sales-order');
@@ -46,8 +150,8 @@ const SalesOrderDetailPage = () => {
                     <button onClick={() => alert('Đồng bộ thành công vào MISA!')} className="px-4 py-1 bg-green-600 text-white rounded">
                         🔄 Update MISA
                     </button>
-                    <button onClick={() => alert('Đang tạo file PDF...')} className="px-4 py-1 bg-gray-600 text-white rounded">
-                        🧾 Xuất PDF
+                    <button onClick={handleExportToExcel} className="px-4 py-1 bg-gray-600 text-white rounded">
+                        📊 Xuất Excel
                     </button>
                     <button onClick={() => router.push(`/production-orders/create?orderId=${id}`)} className="px-4 py-1 bg-yellow-500 text-black rounded">
                         🏭 Tạo lệnh sản xuất
