@@ -93,7 +93,6 @@ namespace SEP490.Modules.ProductionOrders.Services
                         ProductName = keoNanoProduct.ProductName ?? "Keo Nano",
                         UOM = "kg",
                         Amount = request.TotalKeoNano,
-                        CostObject = null,
                         ProductionOrderId = productionOrderId
                     });
                 }
@@ -111,7 +110,6 @@ namespace SEP490.Modules.ProductionOrders.Services
                         ProductName = keoMemProduct.ProductName ?? "Chất đông keo (Keo Mềm)",
                         UOM = "kg",
                         Amount = request.TotalKeoMem,
-                        CostObject = null,
                         ProductionOrderId = productionOrderId
                     });
                 }
