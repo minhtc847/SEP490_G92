@@ -213,7 +213,7 @@ const Sidebar = () => {
                 </li>
             );
             items.push(
-                <li key="quotes" className="menu nav-item">
+                <li key="delivery" className="menu nav-item">
                     <Link href="/delivery" className="nav-link group w-full">
                         <div className="flex items-center">
                             <IconMenuInvoice className="shrink-0 group-hover:!text-primary" />

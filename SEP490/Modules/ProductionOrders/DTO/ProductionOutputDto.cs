@@ -8,6 +8,6 @@ namespace SEP490.Modules.ProductionOrders.DTO
         public decimal? Amount { get; set; }
         public int? Done { get; set; }
         public string? Note { get; set; }
-        public int ProductionOrderId { get; set; }
+        public int? ProductionOrderId { get; set; }
     }
 } 
