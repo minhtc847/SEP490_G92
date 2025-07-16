@@ -76,32 +76,32 @@ const SalesOrderCreatePage = () => {
     });
 
     useEffect(() => {
-        const area = (newProductForm.width * newProductForm.height) / 1_000_000;
-        const structure = glassStructures.find((gs) => gs.id === newProductForm.glassStructureId);
-
-        const unitPrice = +(area * (structure?.unitPrice || 0)).toFixed(0);
-
-        const fetchOrderCode = async () => {
+        const loadInitial = async () => {
             try {
-                const code = await getNextOrderCode();
+                const [code, structures, customers, products] = await Promise.all([getNextOrderCode(), getGlassStructures(), getAllCustomerNames(), getAllProductNames()]);
+
                 setForm((prev) => ({ ...prev, orderCode: code }));
-            } catch (error) {
-                console.error('Lỗi khi lấy mã đơn hàng:', error);
+                setGlassStructures(structures);
+                setCustomerNames(customers);
+                setProductNames(products);
+            } catch (err) {
+                console.error('Lỗi load dữ liệu:', err);
             }
         };
 
-        fetchOrderCode();
+        loadInitial();
+    }, []); 
 
-        getGlassStructures().then(setGlassStructures).catch(console.error);
+    useEffect(() => {
+        if (!glassStructures.length) return;
 
-        getAllCustomerNames().then(setCustomerNames);
+        const area = (newProductForm.width * newProductForm.height) / 1_000_000;
+        const structure = glassStructures.find((gs) => gs.id === newProductForm.glassStructureId);
+        const unitPrice = +(area * (structure?.unitPrice ?? 0)).toFixed(0);
 
-        getAllProductNames().then(setProductNames);
-
-        setNewProductForm((prev) => ({
-            ...prev,
-            unitPrice,
-        }));
+        if (unitPrice !== newProductForm.unitPrice) {
+            setNewProductForm((prev) => ({ ...prev, unitPrice }));
+        }
     }, [newProductForm.width, newProductForm.height, newProductForm.glassStructureId, glassStructures]);
 
     const handleProductNameChange = (value: string) => {
@@ -259,7 +259,7 @@ const SalesOrderCreatePage = () => {
             <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
                     <label className="block mb-1 font-medium">Tên khách hàng</label>
-                    <input disabled={isCustomerLocked} className="input input-bordered w-full" value={form.customer} onChange={(e) => handleCustomerNameChange(e.target.value)} />
+                    <input disabled={isCustomerLocked} className="input input-bordered w-full" value={form.customer} required onChange={(e) => handleCustomerNameChange(e.target.value)} />
                     {isCustomerNameDuplicate && <p className="text-red-500 text-sm mt-1">Tên khách hàng đã tồn tại. Vui lòng nhập tên khác.</p>}
                 </div>
                 <div>

@@ -35,9 +35,9 @@ namespace SEP490.Modules.Zalo.Controllers
             orderService = _orderService;
         }
         [HttpPost]
-        public ActionResult<string> StoreDevelopedZaloToken([FromBody]DevTokenRequest devTokenRequest)
+        public ActionResult<string> StoreDevelopedZaloToken([FromBody] DevTokenRequest devTokenRequest)
         {
-             
+
             try
             {
                 zaloAuthService.StoreDevAccessToken(devTokenRequest.AccessToken, devTokenRequest.RefreshToken);
@@ -107,7 +107,7 @@ namespace SEP490.Modules.Zalo.Controllers
                 Products = createProductDtos
             };
 
-            orderService.CreateOrder(createOrderDto);
+            //orderService.CreateOrder(createOrderDto);
 
             return Ok(forwardResponse);
         }

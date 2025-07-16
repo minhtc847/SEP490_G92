@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SEP490.DB;
 using SEP490.DB.Models;
+using SEP490.Hubs;
 using SEP490.Modules.OrderModule.ManageOrder.DTO;
 using SEP490.Modules.OrderModule.ManageOrder.Services;
 using System.Text.RegularExpressions;
@@ -14,11 +16,13 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
     {
         private readonly SEP490DbContext _context;
         private readonly IOrderService _orderService;
+        private readonly IHubContext<SaleOrderHub> _hubContext;
 
-        public OrderController(SEP490DbContext context, IOrderService orderService)
+        public OrderController(SEP490DbContext context, IOrderService orderService, IHubContext<SaleOrderHub> hubContext)
         {
             _context = context;
             _orderService = orderService;
+            _hubContext = hubContext;
         }
 
         [HttpGet("all-customer-names")]
@@ -95,10 +99,10 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
 
             var result = _context.Customers
                 .AsNoTracking()
-                .Where(c => !c.IsSupplier &&                            
-                            (query == ""                                  
-                             || EF.Functions.Like(c.CustomerCode!, $"%{query}%")  
-                             || EF.Functions.Like(c.CustomerName!, $"%{query}%"))) 
+                .Where(c => !c.IsSupplier &&
+                            (query == ""
+                             || EF.Functions.Like(c.CustomerCode!, $"%{query}%")
+                             || EF.Functions.Like(c.CustomerName!, $"%{query}%")))
                 .Select(c => new
                 {
                     c.Id,
@@ -120,8 +124,8 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
 
             var result = _context.Customers
                 .AsNoTracking()
-                .Where(c => c.IsSupplier &&                                     
-                            (query == ""                                        
+                .Where(c => c.IsSupplier &&
+                            (query == ""
                              || EF.Functions.Like(c.CustomerName!, $"%{query}%")))
                 .Select(c => new
                 {
@@ -145,16 +149,44 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateOrder([FromBody] CreateOrderDto dto)
+        public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
         {
             try
             {
-                var orderId = _orderService.CreateOrder(dto); 
-                if (orderId <= 0) 
+                var orderId = await _orderService.CreateOrderAsync(dto);
+                if (orderId <= 0)
                 {
                     return BadRequest("Tạo đơn hàng thất bại.");
                 }
+                var role = User.FindFirst("roleName")?.Value ?? "Kế toán";
+                string message;
+
+                switch (role)
+                {
+                    case "Chủ xưởng":
+                        message = "Chủ xưởng vừa tạo đơn bán hàng";
+                        break;
+                    case "Kế toán":
+                        message = "Kế toán vừa tạo đơn bán hàng";
+                        break;
+                    default:
+                        message = $"{role} vừa tạo đơn bán hàng";
+                        break;
+                }
+
+                var order = await _context.SaleOrders.FindAsync(orderId);
+                var orderCode = order?.OrderCode ?? "N/A";
+
+                await _hubContext.Clients.All.SendAsync("SaleOrderCreated", new
+                {
+                    message = message,
+                    orderCode = orderCode,
+                    createAt = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy")
+                });
+
                 return Ok(new { message = "Tạo đơn hàng thành công.", id = orderId });
+
+                
             }
             catch (Exception ex)
             {
@@ -192,7 +224,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
             var result = _context.Products
                 .Where(p =>
                     (p.ProductCode.Contains(query) || p.ProductName.Contains(query)) &&
-                    p.ProductType == "NVL") 
+                    p.ProductType == "NVL")
                 .Select(p => new
                 {
                     p.Id,

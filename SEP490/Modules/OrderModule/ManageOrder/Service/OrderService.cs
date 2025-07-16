@@ -1,7 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.DB.Models;
+using SEP490.Hubs;
 using SEP490.Modules.OrderModule.ManageOrder.DTO;
 using System.Text.RegularExpressions;
 
@@ -10,10 +12,11 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
     public class OrderService : BaseService, IOrderService
     {
         private readonly SEP490DbContext _context;
-
-        public OrderService(SEP490DbContext context)
+        private readonly IHubContext<SaleOrderHub> _hubContext;
+        public OrderService(SEP490DbContext context, IHubContext<SaleOrderHub> hubContext)
         {
             _context = context;
+            _hubContext = hubContext;
         }
 
         public List<OrderDto> GetAllOrders()
@@ -53,7 +56,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                     x.Status,
                     x.CustomerName,
                     x.Discount
-                }) 
+                })
                 .Select(g => new OrderDto
                 {
                     Id = g.Key.Id,
@@ -89,13 +92,13 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
 
             var products = _context.Products.ToList();
 
-            var glassStructures = _context.GlassStructures.ToList(); 
+            var glassStructures = _context.GlassStructures.ToList();
 
             var productDtos = (from od in orderDetails
                                join dp in detailProducts on od.Id equals dp.OrderDetailId
                                join p in products on dp.ProductId equals p.Id
                                join g in glassStructures on p.GlassStructureId equals g.Id into gs
-                               from g in gs.DefaultIfEmpty() 
+                               from g in gs.DefaultIfEmpty()
                                select new ProductInOrderDto
                                {
                                    ProductId = p.Id,
@@ -106,10 +109,10 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                                    Thickness = p.Thickness ?? 0,
                                    AreaM2 = Math.Round(((decimal.TryParse(p.Height, out var h) ? h : 0) * (decimal.TryParse(p.Width, out var w) ? w : 0)) / 1_000_000, 4),
                                    UnitPrice = g != null
-                                        ? Math.Round(((decimal.TryParse(p.Height, out var h1) ? h1 : 0) * (decimal.TryParse(p.Width, out var w1) ? w1 : 0)) / 1_000_000 * (g.UnitPrice ?? 0), 2): 0,
+                                        ? Math.Round(((decimal.TryParse(p.Height, out var h1) ? h1 : 0) * (decimal.TryParse(p.Width, out var w1) ? w1 : 0)) / 1_000_000 * (g.UnitPrice ?? 0), 2) : 0,
                                    Quantity = dp.Quantity ?? 0,
                                    TotalAmount = g != null
-                                        ? Math.Round(((decimal.TryParse(p.Height, out var h2) ? h2 : 0) * (decimal.TryParse(p.Width, out var w2) ? w2 : 0)) / 1_000_000 * (g.UnitPrice ?? 0) * (dp.Quantity ?? 0), 2): 0,
+                                        ? Math.Round(((decimal.TryParse(p.Height, out var h2) ? h2 : 0) * (decimal.TryParse(p.Width, out var w2) ? w2 : 0)) / 1_000_000 * (g.UnitPrice ?? 0) * (dp.Quantity ?? 0), 2) : 0,
 
                                    GlassStructureId = g?.Id,
                                    GlassStructureCode = g?.ProductCode,
@@ -178,10 +181,10 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             return product;
         }
 
-        public int CreateOrder(CreateOrderDto dto)
+        public async Task<int> CreateOrderAsync(CreateOrderDto dto)
         {
-            var customer = _context.Customers
-                .FirstOrDefault(c => c.CustomerName == dto.CustomerName && c.Phone == dto.Phone);
+            var customer = await _context.Customers
+                .FirstOrDefaultAsync(c => c.CustomerName == dto.CustomerName && c.Phone == dto.Phone);
 
             if (customer == null)
             {
@@ -193,7 +196,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                     Discount = dto.Discount
                 };
                 _context.Customers.Add(customer);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
             }
 
             var order = new SaleOrder
@@ -204,14 +207,14 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 Status = dto.Status
             };
             _context.SaleOrders.Add(order);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             var detail = new OrderDetail
             {
                 SaleOrderId = order.Id
             };
             _context.OrderDetails.Add(detail);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             foreach (var p in dto.Products)
             {
@@ -225,9 +228,10 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 _context.OrderDetailProducts.Add(odp);
             }
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return order.Id;
         }
+
         public bool UpdateOrderDetailById(int orderId, UpdateOrderDetailDto dto)
         {
             var order = _context.SaleOrders
@@ -277,15 +281,15 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 Product product;
 
 
-                    product = _context.Products.FirstOrDefault(p => p.Id == pDto.ProductId);
-                    if (product == null) continue;
+                product = _context.Products.FirstOrDefault(p => p.Id == pDto.ProductId);
+                if (product == null) continue;
 
-                    product.ProductCode = pDto.ProductCode;
-                    product.ProductName = pDto.ProductName;
-                    product.Height = pDto.Height;
-                    product.Width = pDto.Width;
-                    product.Thickness = pDto.Thickness;
-                    product.UnitPrice = pDto.UnitPrice;
+                product.ProductCode = pDto.ProductCode;
+                product.ProductName = pDto.ProductName;
+                product.Height = pDto.Height;
+                product.Width = pDto.Width;
+                product.Thickness = pDto.Thickness;
+                product.UnitPrice = pDto.UnitPrice;
 
                 var existingOrderDetailProduct = orderDetail.OrderDetailProducts
                     .FirstOrDefault(odp => odp.ProductId == product.Id);
