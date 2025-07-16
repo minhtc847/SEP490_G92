@@ -157,6 +157,33 @@ namespace SEP490.Modules.ProductionOrders.Services
                 {
                     prodOutput.Done = totalDone;
                     await _context.SaveChangesAsync();
+
+                    // Kiểm tra tất cả các ProductionOutput của ProductionOrder
+                    if (prodOutput.ProductionOrderId.HasValue)
+                    {
+                        var prodOrderId = prodOutput.ProductionOrderId.Value;
+                        var allOutputs = await _context.ProductionOutputs
+                            .Where(po => po.ProductionOrderId == prodOrderId)
+                            .ToListAsync();
+
+                        bool allDone = allOutputs.All(po =>
+                            po.Amount.HasValue && po.Done.HasValue && po.Amount.Value == po.Done.Value && po.Amount.Value > 0
+                        );
+
+                        var prodOrder = await _context.ProductionOrders.FindAsync(prodOrderId);
+                        if (prodOrder != null)
+                        {
+                            if (allDone)
+                            {
+                                prodOrder.ProductionStatus = "Đã hoàn thành";
+                            }
+                            else
+                            {
+                                prodOrder.ProductionStatus = "Đang sản xuất";
+                            }
+                            await _context.SaveChangesAsync();
+                        }
+                    }
                 }
             }
             return output;
@@ -199,6 +226,33 @@ namespace SEP490.Modules.ProductionOrders.Services
                 {
                     prodOutput.Done = totalDone;
                     await _context.SaveChangesAsync();
+
+                    // Kiểm tra tất cả các ProductionOutput của ProductionOrder
+                    if (prodOutput.ProductionOrderId.HasValue)
+                    {
+                        var prodOrderId = prodOutput.ProductionOrderId.Value;
+                        var allOutputs = await _context.ProductionOutputs
+                            .Where(po => po.ProductionOrderId == prodOrderId)
+                            .ToListAsync();
+
+                        bool allDone = allOutputs.All(po =>
+                            po.Amount.HasValue && po.Done.HasValue && po.Amount.Value == po.Done.Value && po.Amount.Value > 0
+                        );
+
+                        var prodOrder = await _context.ProductionOrders.FindAsync(prodOrderId);
+                        if (prodOrder != null)
+                        {
+                            if (allDone)
+                            {
+                                prodOrder.ProductionStatus = "Đã hoàn thành";
+                            }
+                            else
+                            {
+                                prodOrder.ProductionStatus = "Đang sản xuất";
+                            }
+                            await _context.SaveChangesAsync();
+                        }
+                    }
                 }
             }
             return output;

@@ -101,31 +101,18 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
 
   // Sort effects
   useEffect(() => {
-    if (summary.outputs && summary.outputs.length > 0) {
-      // Lọc ra các output KHÔNG phải kính dư
-      const glassOutputIds = (summary.glassOutputs || [])
-        .filter((g: any) => g.isDC)
-        .map((g: any) => g.productionOutputId);
-      const filteredOutputs = summary.outputs.filter(
-        (o: any) => !glassOutputIds.includes(o.id)
-      );
-      const data = sortBy(filteredOutputs, outputsSortStatus.columnAccessor);
-      setSortedOutputs(outputsSortStatus.direction === 'desc' ? data.reverse() : data);
-    }
+    const data = sortBy(summary.outputs, outputsSortStatus.columnAccessor);
+    setSortedOutputs(outputsSortStatus.direction === 'desc' ? data.reverse() : data);
   }, [summary.outputs, summary.glassOutputs, outputsSortStatus]);
 
   useEffect(() => {
-    if (summary.materials && summary.materials.length > 0) {
-      const data = sortBy(summary.materials, materialsSortStatus.columnAccessor);
-      setSortedMaterials(materialsSortStatus.direction === 'desc' ? data.reverse() : data);
-    }
+    const data = sortBy(summary.materials, materialsSortStatus.columnAccessor);
+    setSortedMaterials(materialsSortStatus.direction === 'desc' ? data.reverse() : data);
   }, [summary.materials, materialsSortStatus]);
 
   useEffect(() => {
-    if (summary.glassOutputs && summary.glassOutputs.length > 0) {
-      const data = sortBy(summary.glassOutputs, glassOutputsSortStatus.columnAccessor);
-      setSortedGlassOutputs(glassOutputsSortStatus.direction === 'desc' ? data.reverse() : data);
-    }
+    const data = sortBy(summary.glassOutputs, glassOutputsSortStatus.columnAccessor);
+    setSortedGlassOutputs(glassOutputsSortStatus.direction === 'desc' ? data.reverse() : data);
   }, [summary.glassOutputs, glassOutputsSortStatus]);
 
   // Thêm kính dư tự do hoặc nguyên vật liệu/thành phẩm
