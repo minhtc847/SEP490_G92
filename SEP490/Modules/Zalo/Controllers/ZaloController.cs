@@ -107,7 +107,7 @@ namespace SEP490.Modules.Zalo.Controllers
                 Products = createProductDtos
             };
 
-            orderService.CreateOrder(createOrderDto);
+            //orderService.CreateOrder(createOrderDto);
 
             return Ok(forwardResponse);
         }

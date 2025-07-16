@@ -145,12 +145,12 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateOrder([FromBody] CreateOrderDto dto)
+        public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
         {
             try
             {
-                var orderId = _orderService.CreateOrder(dto); 
-                if (orderId <= 0) 
+                var orderId = await _orderService.CreateOrderAsync(dto);
+                if (orderId <= 0)
                 {
                     return BadRequest("Tạo đơn hàng thất bại.");
                 }

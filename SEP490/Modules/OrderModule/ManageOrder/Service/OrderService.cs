@@ -178,10 +178,10 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             return product;
         }
 
-        public int CreateOrder(CreateOrderDto dto)
+        public async Task<int> CreateOrderAsync(CreateOrderDto dto)
         {
-            var customer = _context.Customers
-                .FirstOrDefault(c => c.CustomerName == dto.CustomerName && c.Phone == dto.Phone);
+            var customer = await _context.Customers
+                .FirstOrDefaultAsync(c => c.CustomerName == dto.CustomerName && c.Phone == dto.Phone);
 
             if (customer == null)
             {
@@ -193,7 +193,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                     Discount = dto.Discount
                 };
                 _context.Customers.Add(customer);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
             }
 
             var order = new SaleOrder
@@ -204,14 +204,14 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 Status = dto.Status
             };
             _context.SaleOrders.Add(order);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             var detail = new OrderDetail
             {
                 SaleOrderId = order.Id
             };
             _context.OrderDetails.Add(detail);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             foreach (var p in dto.Products)
             {
@@ -225,9 +225,10 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 _context.OrderDetailProducts.Add(odp);
             }
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return order.Id;
         }
+
         public bool UpdateOrderDetailById(int orderId, UpdateOrderDetailDto dto)
         {
             var order = _context.SaleOrders
