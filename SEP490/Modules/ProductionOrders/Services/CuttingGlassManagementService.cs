@@ -144,6 +144,21 @@ namespace SEP490.Modules.ProductionOrders.Services
             };
             _context.CutGlassInvoiceOutputs.Add(output);
             await _context.SaveChangesAsync();
+
+            // Nếu là bán thành phẩm (isDC == false), cập nhật ProductionOutput.done
+            if (!dto.IsDC)
+            {
+                // Lấy tổng quantity của tất cả CutGlassInvoiceOutput (isDC=false) cùng ProductionOutputId
+                var totalDone = await _context.CutGlassInvoiceOutputs
+                    .Where(x => x.ProductionOutputId == dto.ProductionOutputId && x.IsDC == false)
+                    .SumAsync(x => (int?)x.Quantity) ?? 0;
+                var prodOutput = await _context.ProductionOutputs.FindAsync(dto.ProductionOutputId);
+                if (prodOutput != null)
+                {
+                    prodOutput.Done = totalDone;
+                    await _context.SaveChangesAsync();
+                }
+            }
             return output;
         }
 
@@ -172,6 +187,20 @@ namespace SEP490.Modules.ProductionOrders.Services
             output.Note = dto.Note;
             output.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
+
+            // Nếu là bán thành phẩm (isDC == false), cập nhật ProductionOutput.done
+            if (!output.IsDC)
+            {
+                var totalDone = await _context.CutGlassInvoiceOutputs
+                    .Where(x => x.ProductionOutputId == output.ProductionOutputId && x.IsDC == false)
+                    .SumAsync(x => (int?)x.Quantity) ?? 0;
+                var prodOutput = await _context.ProductionOutputs.FindAsync(output.ProductionOutputId);
+                if (prodOutput != null)
+                {
+                    prodOutput.Done = totalDone;
+                    await _context.SaveChangesAsync();
+                }
+            }
             return output;
         }
 

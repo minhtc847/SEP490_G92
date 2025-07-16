@@ -666,7 +666,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
                         >
                           <option value="">-- Chọn nguyên vật liệu --</option>
                           {summary.materials.map((m: any) => (
-                            <option key={m.id} value={m.ProductName || m.productName}>{m.ProductName || m.productName}</option>
+                            <option key={m.id} value={m.id}>{m.ProductName || m.productName}</option>
                           ))}
                         </select>
                       </div>
