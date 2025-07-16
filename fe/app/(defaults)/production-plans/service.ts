@@ -142,6 +142,39 @@ export async function fetchProductionOrdersByPlanId(id: number | string): Promis
   }));
 }
 
+export interface Product {
+    name: string;
+    quantity: number;
+    glueButyls: Chemical[];
+}
+
+export interface Chemical {
+    type: string;
+    uom: string;
+    quantity: number;
+}
+
+export interface PhieuXuatKeoButylData {
+    id: number;
+    employeeName: string;
+    productionOrderId: number;
+    createdAt: string;
+    products: Product[];
+}
+
+export async function fetchPhieuXuatKeoButylData(id: number | string): Promise<PhieuXuatKeoButylData> {
+  const response = await axios.get(`/api/GlueButylExport/get-by-id/${id}`);
+  return response.data;
+}
+
+export async function fetchAllPhieuXuatKeoButylData(id: number | string): Promise<PhieuXuatKeoButylData[]> {
+  const response = await axios.get(`/api/GlueButylExport/get-all/${id}`);
+  return response.data;
+}
+export async function createPhieuXuatKeoButylData(data: any) {
+  const response = await axios.post('/api/GlueButylExport/add', data);
+  return response.data;
+}
 export interface ProductionPlanMaterialProduct {
   id: number;
   productName: string;

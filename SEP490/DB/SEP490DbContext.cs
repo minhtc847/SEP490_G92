@@ -1,5 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SEP490.DB.Models;
+using SEP490.Modules.GlueButylExport.DTO;
+using System.Text.Json;
 
 namespace SEP490.DB
 {
@@ -20,7 +23,16 @@ namespace SEP490.DB
             modelBuilder.Entity<PurchaseOrder>()
                 .HasOne(po => po.Customer)
                 .WithMany(c => c.PurchaseOrders)
-                .HasForeignKey(po => po.CustomerId); 
+                .HasForeignKey(po => po.CustomerId);
+            var productConverter = new ValueConverter<List<ProductsDTO>, string>(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                v => JsonSerializer.Deserialize<List<ProductsDTO>>(v, (JsonSerializerOptions)null)
+            );
+
+            modelBuilder.Entity<GlueButylExportInvoice>()
+                .Property(e => e.Products)
+                .HasConversion(productConverter);
+
         }
 
         // Define DbSet properties for your entities here

@@ -48,7 +48,8 @@ namespace SEP490.Modules.Accountant.Services
                     OutputId = po.Id,
                     ProductName = po.ProductName,
                     Uom = po.UOM,
-                    Quantity = po.Amount ?? 0
+                    Quantity = po.Amount ?? 0,
+                    Done = po.Done ?? 0
                 })
                 .ToList();
 

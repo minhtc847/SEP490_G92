@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation"
 import ListOutputsPO from '@/components/VNG/manager/production-orders/list-outputs-of-po/list-outputs-po-components';
 import CuttingGlassPage from "@/app/(defaults)/cutting-glass/CuttingGlassPage";
 
+import GlueButylExportModalComponent from "@/components/VNG/manager/glue-butyl-export-modal-component";
+import { Chemical, PhieuXuatKeoButylData, Product, fetchAllPhieuXuatKeoButylData } from "@/app/(defaults)/production-plans/service";
+import ListExportsPO from "@/components/VNG/manager/production-plans/list-export-glue-components";
+
+
 interface MaterialItem {
   id?: number;
   productName: string
@@ -19,6 +24,7 @@ interface ProductItem {
   productName: string
   uom: string
   quantity: number
+  done?: number
 }
 
 interface ApiResponse {
@@ -79,14 +85,38 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   const [showProductAddSuggestions, setShowProductAddSuggestions] = useState(false)
   const [isLoadingProductAddSuggestions, setIsLoadingProductAddSuggestions] = useState(false)
 
-  const productsWithMaterials = ["VT00372", "VT00090"]
+  const productsWithMaterials = ["VT00372", "VT00090"];
+  const [exportGlueButylProducts, setExportGlueButylProducts] = useState<Product[]>([]);
+    const defaultChemicals: Chemical[] = [
+        { type: 'Keo silicone', uom: 'kg', quantity: 0 },
+        { type: 'Butyl sealant', uom: 'kg', quantity: 0 },
+        { type: 'Chất xúc tác', uom: 'kg', quantity: 0 },
+    ];
+    const [refreshFlag, setRefreshFlag] = useState(0);
+
+  const employees = [{
+    id: 1,
+    name: 'Tran Cao Minh',
+  },
+  {
+      id: 2,
+      name: 'Nguyen Tuan Kiet',
+  }]
 
   useEffect(() => {
     fetch(`https://localhost:7075/api/ProductionAccountantControllers/production-ordersDetails/${params.id}`)
       .then((res) => res.json())
       .then((data: ProductItem[]) => {
         console.log(" Dữ liệu thành phẩm nhận được:", data) // Debug log
-        setFinishedProducts(data || [])
+
+        setFinishedProducts(data || []);
+          setExportGlueButylProducts(
+              (data || []).map(item => ({
+                  name: item.productName,
+                  quantity: item.quantity - (item.done ?? 0), // Default `item.done` to 0 if null or undefined
+                  glueButyls: defaultChemicals.map(c => ({ ...c })), // Deep copy to prevent shared reference
+              }))
+          );
         if (data && data.length > 0) {
           const productWithMaterials = data.find((p) => p.productName === "VT00372") || data[0]
           // Ưu tiên outputId, nếu không có thì dùng id
@@ -97,7 +127,11 @@ export default function ProductionOrderView({ params }: { params: { id: string }
         }
       })
       .catch((err) => console.error(" Lỗi khi fetch thành phẩm:", err))
-  }, [params.id])
+  }, [params.id,refreshFlag])
+
+    const handleExportSuccess = () => {
+        setRefreshFlag(prev => prev + 1);
+    };
 
   useEffect(() => {
     if (!selectedProduct) return
@@ -777,46 +811,49 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
 
       <div className="mb-5">
-        <ul className="flex flex-wrap -mb-px border-b border-[#e0e6ed] dark:border-[#191e3a]">
-          <li className="mr-2">
-            <button
-              type="button"
-              className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'po' ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
-              onClick={() => toggleTabs('po')}
-            >
-              Lệnh sản xuất
-            </button>
-          </li>
-          <li className="mr-2">
-            <button
-              type="button"
-              className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'outputs' ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
-              onClick={() => toggleTabs('outputs')}
-            >
-              Tình trạng sản xuất
-            </button>
-          </li>
-          
-          <li className="mr-2">
-            <button
-              type="button"
-              className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'cut-glass' ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
-              onClick={() => toggleTabs('cut-glass')}
-            >
-              Cắt kính
-            </button>
-          </li>
-
-        </ul>
+          <ul className="flex flex-wrap -mb-px border-b border-[#e0e6ed] dark:border-[#191e3a]">
+              <li className="mr-2">
+                  <button
+                      type="button"
+                      className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'po' ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
+                      onClick={() => toggleTabs('po')}
+                  >
+                      Lệnh sản xuất
+                  </button>
+              </li>
+              <li className="mr-2">
+                  <button
+                      type="button"
+                      className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'outputs' ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
+                      onClick={() => toggleTabs('outputs')}
+                  >
+                      Tình trạng sản xuất
+                  </button>
+              </li>
+              {/* Thêm các tab khác nếu cần */}
+              <li className="mr-2">
+                  <button
+                      type="button"
+                      className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'chemical' ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
+                      onClick={() => toggleTabs('chemical')}
+                  >
+                      Xuất hoá chất
+                  </button>
+              </li>
+          </ul>
       </div>
 
-      {tabs === 'po' && (
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-xl font-bold text-[#4361ee]">{orderDescription}</h1>
+        {tabs === 'po' && (
+            <div>
+                <div className="flex justify-between items-center mb-4">
+                    <h1 className="text-xl font-bold text-[#4361ee]">{orderDescription}</h1>
 
-            <div className="flex items-center gap-4">
-              <select className="px-4 py-2 border border-[#4361ee] text-[#4361ee] rounded shadow-sm focus:ring-2 focus:ring-[#4361ee] focus:outline-none text-sm">
+                    <div className="flex items-center gap-4">
+                        {exportGlueButylProducts.length > 0 && (
+                            <GlueButylExportModalComponent products={exportGlueButylProducts} type={'Ghép Kính'}
+                                                           productionOrderId={Number(params.id)} employees={employees} onSuccess={handleExportSuccess}></GlueButylExportModalComponent>
+                )}
+                    <select className="px-4 py-2 border border-[#4361ee] text-[#4361ee] rounded shadow-sm focus:ring-2 focus:ring-[#4361ee] focus:outline-none text-sm">
                 <option value="">Chọn thao tác</option>
                 <option value="xuat-hoa-chat">Xuất hóa chất</option>
                 <option value="xuat-keo-bytul">Xuất keo bytul</option>
@@ -1009,19 +1046,27 @@ export default function ProductionOrderView({ params }: { params: { id: string }
           </div>
         </div>
       )}
-
-      {tabs === 'cut-glass' && (
+      
+        {tabs === 'cut-glass' && (
         <div>
           <div>
             <CuttingGlassPage productionOrderId={Number(params.id)} />
           </div>
         </div>
-      )}
+      	)}
 
-      {/* POPUP THÊM THÀNH PHẨM */}
-      {showAddProductModal && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        {tabs === 'chemical' && (
+            <div>
+                <div>
+                    <ListExportsPO productionOrderId={Number(params.id)} />
+                </div>
+            </div>
+        )}
+        
+        {/* POPUP THÊM THÀNH PHẨM */}
+        {showAddProductModal && (
+            <div
+                className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
           onClick={(e) => {
             if (e.target === e.currentTarget) closeAddProductModal()
           }}
