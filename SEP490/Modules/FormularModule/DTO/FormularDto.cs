@@ -8,8 +8,7 @@ namespace SEP490.Modules.FormularModule.DTO
         public double Ratio { get; set; }
         public string? Description { get; set; }
         public int? ProductId { get; set; }
-        public string? ProductName { get; set; }
-        public double Mass { get; set; } = 0;
+
     }
 
     public class FormularGroupDto
