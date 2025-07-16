@@ -451,7 +451,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
     : sortedGlassOutputs;
 
   return (
-    <div className="panel mt-6">
+    <div>
       <h5 className="mb-5 text-lg font-semibold dark:text-white-light">Phiếu cắt kính - Lệnh sản xuất #{productionOrderId}</h5>
       <div className="mb-4 flex justify-end">
         <button className="btn btn-primary" onClick={() => {

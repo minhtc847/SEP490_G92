@@ -7,7 +7,7 @@ import { sortBy } from 'lodash';
 import { DataTableSortStatus, DataTable } from 'mantine-datatable';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
-import { fetchProductionPlanList, ProductionPlan } from './service';
+import { fetchProductionPlanList, ProductionPlan, deleteProductionPlan } from './service';
 
 const statusMap: Record<string, { tooltip: string; color: string }> = {
     'Đang sản xuất': { tooltip: 'Đang sản xuất', color: 'warning' },
@@ -84,13 +84,18 @@ const ProductionPlansPage = () => {
         setPage(1);
     }, [sortStatus]);
 
-    const deleteRow = (id: any = null) => {
+    const deleteRow = async (id: any = null) => {
         if (window.confirm('Bạn có chắc chắn muốn xóa kế hoạch sản xuất này?')) {
             if (id) {
-                setRecords(items.filter((item) => item.id !== id));
-                setInitialRecords(items.filter((item) => item.id !== id));
-                setItems(items.filter((item) => item.id !== id));
-                setSearch('');
+                try {
+                    await deleteProductionPlan(id);
+                    setRecords(items.filter((item) => item.id !== id));
+                    setInitialRecords(items.filter((item) => item.id !== id));
+                    setItems(items.filter((item) => item.id !== id));
+                    setSearch('');
+                } catch (error: any) {
+                    alert(error?.message || 'Xoá kế hoạch sản xuất thất bại!');
+                }
             }
         }
     };

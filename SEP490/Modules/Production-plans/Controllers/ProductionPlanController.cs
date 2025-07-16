@@ -70,5 +70,14 @@ namespace SEP490.Modules.Production_plans.Controllers
             
             return Ok(result);
         }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteProductionPlan(int id)
+        {
+            var result = await _productionPlanService.DeleteProductionPlanAsync(id);
+            if (!result)
+                return StatusCode(500, new { message = "Xoá kế hoạch sản xuất thất bại!" });
+            return Ok(new { message = "Xoá kế hoạch sản xuất thành công!" });
+        }
     }
 }

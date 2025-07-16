@@ -178,3 +178,7 @@ export async function fetchProductionPlanMaterialDetail(id: number | string): Pr
   return response.data;
 }
 
+export async function deleteProductionPlan(id: number): Promise<void> {
+  await axios.delete(`/api/ProductionPlan/${id}`);
+}
+

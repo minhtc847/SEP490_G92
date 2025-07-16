@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import type React from "react"
 import { useRouter } from "next/navigation"
 import ListOutputsPO from '@/components/VNG/manager/production-orders/list-outputs-of-po/list-outputs-po-components';
+import CuttingGlassPage from "@/app/(defaults)/cutting-glass/CuttingGlassPage";
 
 interface MaterialItem {
   id?: number;
@@ -795,7 +796,17 @@ export default function ProductionOrderView({ params }: { params: { id: string }
               Tình trạng sản xuất
             </button>
           </li>
-          {/* Thêm các tab khác nếu cần */}
+          
+          <li className="mr-2">
+            <button
+              type="button"
+              className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'cut-glass' ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
+              onClick={() => toggleTabs('cut-glass')}
+            >
+              Cắt kính
+            </button>
+          </li>
+
         </ul>
       </div>
 
@@ -998,6 +1009,15 @@ export default function ProductionOrderView({ params }: { params: { id: string }
           </div>
         </div>
       )}
+
+      {tabs === 'cut-glass' && (
+        <div>
+          <div>
+            <CuttingGlassPage productionOrderId={Number(params.id)} />
+          </div>
+        </div>
+      )}
+
       {/* POPUP THÊM THÀNH PHẨM */}
       {showAddProductModal && (
         <div

@@ -245,5 +245,54 @@ namespace SEP490.Modules.Production_plans.Services
 
             return grouped;
         }
+
+        public async Task<bool> DeleteProductionPlanAsync(int id)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Get all production orders for this plan
+                var productionOrders = await _context.ProductionOrders.Where(po => po.ProductionPlanId == id).ToListAsync();
+                var productionOrderIds = productionOrders.Select(po => po.Id).ToList();
+
+                // Get all outputs for these orders
+                var outputs = await _context.ProductionOutputs.Where(o => o.ProductionOrderId != null && productionOrderIds.Contains(o.ProductionOrderId.Value)).ToListAsync();
+                var outputIds = outputs.Select(o => o.Id).ToList();
+
+                // Delete all materials for these outputs
+                var materials = await _context.ProductionMaterials.Where(m => outputIds.Contains(m.ProductionOutputId)).ToListAsync();
+                _context.ProductionMaterials.RemoveRange(materials);
+
+                // Delete all outputs
+                _context.ProductionOutputs.RemoveRange(outputs);
+
+                // Delete all production order details
+                var orderDetails = await _context.ProductionOrderDetails.Where(d => productionOrderIds.Contains(d.productionOrderId)).ToListAsync();
+                _context.ProductionOrderDetails.RemoveRange(orderDetails);
+
+                // Delete all production orders
+                _context.ProductionOrders.RemoveRange(productionOrders);
+
+                // Delete all plan details
+                var planDetails = await _context.ProductionPlanDetails.Where(pd => pd.ProductionPlanId == id).ToListAsync();
+                _context.ProductionPlanDetails.RemoveRange(planDetails);
+
+                // Delete the plan
+                var plan = await _context.ProductionPlans.FindAsync(id);
+                if (plan != null)
+                {
+                    _context.ProductionPlans.Remove(plan);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
+        }
     }
 }
