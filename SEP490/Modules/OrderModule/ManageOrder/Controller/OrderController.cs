@@ -159,12 +159,27 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
                     return BadRequest("Tạo đơn hàng thất bại.");
                 }
                 var role = User.FindFirst("roleName")?.Value ?? "Kế toán";
+                string message;
+
+                switch (role)
+                {
+                    case "Chủ xưởng":
+                        message = "Chủ xưởng vừa tạo đơn bán hàng";
+                        break;
+                    case "Kế toán":
+                        message = "Kế toán vừa tạo đơn bán hàng";
+                        break;
+                    default:
+                        message = $"{role} vừa tạo đơn bán hàng";
+                        break;
+                }
+
                 var order = await _context.SaleOrders.FindAsync(orderId);
                 var orderCode = order?.OrderCode ?? "N/A";
 
                 await _hubContext.Clients.All.SendAsync("SaleOrderCreated", new
                 {
-                    message = $"{role} vừa tạo đơn bán hàng",
+                    message = message,
                     orderCode = orderCode,
                     createAt = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy")
                 });
