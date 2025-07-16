@@ -81,6 +81,10 @@ namespace SEP490.Modules.ProductionOrders.Services
         {
             var productionOutputs = new List<ProductionOutput>();
 
+            // Prepare for material creation
+            var productionMaterials = new List<ProductionMaterial>();
+
+            // First, create outputs in memory
             foreach (var kvp in request.ProductQuantities)
             {
                 if (kvp.Value <= 0) continue;
@@ -88,6 +92,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                 // Get the production plan detail to find the actual product
                 var planDetail = await _context.ProductionPlanDetails
                     .Include(pd => pd.Product)
+                    .ThenInclude(p => p.GlassStructure)
                     .FirstOrDefaultAsync(pd => pd.Id == kvp.Key);
 
                 if (planDetail?.Product == null) continue;
@@ -95,19 +100,90 @@ namespace SEP490.Modules.ProductionOrders.Services
                 var product = planDetail.Product;
                 var quantity = kvp.Value;
 
-                // Create Production Output
-                productionOutputs.Add(new ProductionOutput
+                // Create Production Output (not saved yet)
+                var output = new ProductionOutput
                 {
                     ProductId = product.Id,
                     ProductName = product.ProductName,
                     UOM = "tấm",
                     Amount = quantity,
-                    ProductionOrderId = productionOrderId
-                });
+                    ProductionOrderId = productionOrderId,
+                    OutputFor = planDetail.Id
+                };
+                productionOutputs.Add(output);
             }
 
+            // Save outputs to get their IDs
             await _context.ProductionOutputs.AddRangeAsync(productionOutputs);
             await _context.SaveChangesAsync();
+
+            // Fetch outputs with IDs (they are tracked, so we can use productionOutputs list)
+            foreach (var output in productionOutputs)
+            {
+                // Find the corresponding planDetail
+                var planDetail = await _context.ProductionPlanDetails
+                    .Include(pd => pd.Product)
+                    .ThenInclude(p => p.GlassStructure)
+                    .FirstOrDefaultAsync(pd => pd.Id == output.OutputFor);
+                if (planDetail?.Product == null) continue;
+
+                // --- Material 1 ---
+                var material1ProductName = (output.ProductName ?? "") + " chưa đổ keo";
+                var material1Product = await _context.Products.FirstOrDefaultAsync(p => p.ProductName == material1ProductName);
+                if (material1Product != null)
+                {
+                    productionMaterials.Add(new ProductionMaterial
+                    {
+                        ProductionId = material1Product.Id,
+                        ProductionOutputId = output.Id,
+                        ProductId = material1Product.Id,
+                        ProductionName = material1Product.ProductName,
+                        UOM = material1Product.UOM,
+                        Amount = output.Amount
+                    });
+                }
+
+                // --- Material 2 ---
+                var adhesiveType = planDetail.Product.GlassStructure?.AdhesiveType?.Trim().ToLower();
+                if (adhesiveType == "nano")
+                {
+                    var glueProduct = await _context.Products.FirstOrDefaultAsync(p => p.Id == 3);
+                    if (glueProduct != null)
+                    {
+                        productionMaterials.Add(new ProductionMaterial
+                        {
+                            ProductionId = 3,
+                            ProductionOutputId = output.Id,
+                            ProductId = 3,
+                            ProductionName = glueProduct.ProductName,
+                            UOM = glueProduct.UOM,
+                            Amount = planDetail.TongKeoNano
+                        });
+                    }
+                }
+                else if (adhesiveType == "mềm")
+                {
+                    var glueProduct = await _context.Products.FirstOrDefaultAsync(p => p.Id == 2);
+                    if (glueProduct != null)
+                    {
+                        productionMaterials.Add(new ProductionMaterial
+                        {
+                            ProductionId = 2,
+                            ProductionOutputId = output.Id,
+                            ProductId = 2,
+                            ProductionName = glueProduct.ProductName,
+                            UOM = glueProduct.UOM,
+                            Amount = planDetail.TongKeoMem
+                        });
+                    }
+                }
+            }
+
+            if (productionMaterials.Count > 0)
+            {
+                await _context.ProductionMaterials.AddRangeAsync(productionMaterials);
+                await _context.SaveChangesAsync();
+            }
         }
 
         private async Task CreateProductionOrderDetailsAsync(PourGlueOrderDto request, int productionOrderId)
