@@ -4,10 +4,9 @@ namespace SEP490.DB.Models
     {
         public int Id { get; set; }
         public string Type { get; set; } = string.Empty;
-        public string ChemicalName { get; set; } = string.Empty;
         public double Ratio { get; set; }
         public string? Description { get; set; }
-        public int? GlassStructureId { get; set; }
-        public GlassStructure? GlassStructure { get; set; }
+        public int? ProductId { get; set; }
+        public Product? Product { get; set; }
     }
 } 
