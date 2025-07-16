@@ -128,11 +128,11 @@ namespace SEP490.Modules.Production_plans.Services
                 {
                     throw new Exception($"Invalid width or height for product {product.ProductName}");
                 }
-                
+
                 decimal areaKeo = ((width - 20) * (height - 20)) / 1_000_000M;
                 decimal doDayKeo = prod.Thickness - (glass4mm * 4) - (glass5mm * 5);
                 decimal tongKeo = areaKeo * doDayKeo * 1.2M;
-                
+
                 // Debug logging
                 Console.WriteLine($"Product: {product.ProductName}, Width: {width}, Height: {height}, Thickness: {prod.Thickness}");
                 Console.WriteLine($"Glass4mm: {glass4mm}, Glass5mm: {glass5mm}, AreaKeo: {areaKeo}, DoDayKeo: {doDayKeo}, TongKeo: {tongKeo}");
@@ -221,6 +221,24 @@ namespace SEP490.Modules.Production_plans.Services
                 AdhesiveType = pd.Product.GlassStructure?.AdhesiveType ?? string.Empty
             }).ToList();
             return dto;
+        }
+
+        public async Task<List<ProductionPlanOutputDto>> GetProductionPlanOutputsAsync(int productionPlanId)
+        {
+            var outputs = await _context.ProductionOutputs
+    .Where(o => o.ProductionOrder.ProductionPlanId == productionPlanId)
+    .Select(o => new ProductionPlanOutputDto
+    {
+        OutputId = o.Id,
+        ProductId = o.ProductId,
+        ProductName = o.Product.ProductName,
+        TotalAmount = o.Amount,
+        Done = o.Done,
+        Broken = o.Broken,
+        BrokenDescription = o.BrokenDescription
+    })
+    .ToListAsync();
+            return outputs;
         }
     }
 }

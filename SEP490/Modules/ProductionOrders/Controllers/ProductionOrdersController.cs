@@ -38,5 +38,16 @@ namespace SEP490.Modules.ProductionOrders.Controllers
             return Ok(orders);
         }
 
+        [HttpGet("{productionOrderId}/outputs")]
+        public async Task<ActionResult<List<ProductionOutputDto>>> GetOutputsByOrderId(int productionOrderId)
+        {
+            var outputs = await _productionOrdersService.GetProductionOutputsByOrderIdAsync(productionOrderId);
+            if (outputs == null || !outputs.Any())
+            {
+                return NotFound("No production outputs found for this production order");
+            }
+            return Ok(outputs);
+        }
+
     }
 }

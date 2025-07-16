@@ -50,6 +50,23 @@ namespace SEP490.Modules.ProductionOrders.Services
             return productionOrders;
         }
 
+        public async Task<List<ProductionOutputDto>> GetProductionOutputsByOrderIdAsync(int productionOrderId)
+        {
+            var outputs = await _context.ProductionOutputs
+                .Where(po => po.ProductionOrderId == productionOrderId)
+                .Select(po => new ProductionOutputDto
+                {
+                    Id = po.Id,
+                    ProductId = po.ProductId,
+                    ProductName = po.ProductName,
+                    Amount = po.Amount,
+                    Done = po.Done,
+                    Note = po.Status,
+                    ProductionOrderId = po.ProductionOrderId
+                })
+                .ToListAsync();
+            return outputs;
+        }
 
     }
 }

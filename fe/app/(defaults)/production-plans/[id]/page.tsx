@@ -20,6 +20,7 @@ import {
 import CutGlassModal from '@/components/VNG/manager/production-orders/modals/CutGlassModal';
 import GlueGlassModal from '@/components/VNG/manager/production-orders/modals/GlueGlassModal';
 import PourGlueModal from '@/components/VNG/manager/production-orders/modals/PourGlueModal';
+import ListOutputsPP from '@/components/VNG/manager/production-plans/list-outputs-of-pp/list-outputs-pp-components';
 
 const ProductionPlanDetailPage = () => {
     const { id } = useParams();
@@ -261,6 +262,15 @@ const ProductionPlanDetailPage = () => {
                                 Chi tiết vật tư
                             </button>
                         </li>
+                        <li className="mr-2">
+                            <button
+                                type="button"
+                                className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'plandetail' ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
+                                onClick={() => toggleTabs('outputs')}
+                            >
+                                Trạng thái sản xuất
+                            </button>
+                        </li>
 
                     </ul>
                 </div>
@@ -418,7 +428,11 @@ const ProductionPlanDetailPage = () => {
                         )}
                     </div>
                 )}
-
+                {tabs === 'outputs' && (
+                    <div>
+                        <ListOutputsPP productionPlanId={Number(id)} />
+                    </div>
+                )}
             </div>
 
             <div className="panel mt-6">
