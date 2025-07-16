@@ -68,8 +68,8 @@ namespace SEP490.Modules.ProductionOrders.Controllers
                 x.Quantity,
                 x.IsDC,
                 x.Note,
-                MaterialId = (int?)null,
-                MaterialName = (string)null,
+                MaterialId = x.CutGlassInvoiceMaterialId,
+                MaterialName = x.CutGlassInvoiceMaterial?.Product?.ProductName,
                 x.CreatedAt,
                 x.UpdatedAt
             }).ToList();
