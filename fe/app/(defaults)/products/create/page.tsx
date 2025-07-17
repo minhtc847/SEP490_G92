@@ -23,6 +23,23 @@ const ProductCreatePage = () => {
     const router = useRouter();
     const [glassStructures, setGlassStructures] = useState<GlassStructure[]>([]);
     const [isProductNameDuplicate, setIsProductNameDuplicate] = useState(false);
+    const [isProductNameDuplicateNVL, setIsProductNameDuplicateNVL] = useState(false);
+
+    const [newFinishedProductForm, setNewFinishedProductForm] = useState({
+        productName: '',
+        width: 0,
+        height: 0,
+        thickness: 0,
+        unitPrice: 0,
+        glassStructureId: undefined as number | undefined,
+    });
+
+    const [newMaterialProductForm, setNewMaterialProductForm] = useState({
+        productName: '',
+        width: 0,
+        height: 0,
+        thickness: 0,
+    });
 
     const [form, setForm] = useState({
         customer: '',
@@ -31,15 +48,6 @@ const ProductCreatePage = () => {
         status: '',
         createdDate: '',
         items: [] as OrderItem[],
-    });
-
-    const [newProductForm, setNewProductForm] = useState({
-        productName: '',
-        width: 0,
-        height: 0,
-        thickness: 0,
-        unitPrice: 0,
-        glassStructureId: undefined as number | undefined,
     });
 
     const [showAddProductForm, setShowAddProductForm] = useState(false);
@@ -51,24 +59,30 @@ const ProductCreatePage = () => {
         })();
     }, []);
 
-    const handleProductNameChange = async (val: string) => {
+    const handleMaterialProductNameChange = async (val: string) => {
+        const exists = await checkProductNameExists(val.trim());
+        setIsProductNameDuplicateNVL(exists);
+        setNewMaterialProductForm((prev) => ({ ...prev, productName: val }));
+    };
+
+    const handleFinishedProductNameChange = async (val: string) => {
         const exists = await checkProductNameExists(val.trim());
         setIsProductNameDuplicate(exists);
-        setNewProductForm((prev) => ({ ...prev, productName: val }));
+        setNewFinishedProductForm((prev) => ({ ...prev, productName: val }));
     };
 
     const handleSaveProduct = async () => {
         try {
-            if (!newProductForm.productName.trim()) throw new Error('Vui lòng nhập tên sản phẩm');
-            if (!PRODUCT_NAME_REGEX.test(newProductForm.productName)) throw new Error('Tên sản phẩm sai định dạng');
-            if (isProductNameDuplicate) throw new Error('Tên sản phẩm đã tồn tại');
-            if (await checkProductNameExists(newProductForm.productName)) throw new Error('Tên sản phẩm đã tồn tại, vui lòng chọn tên khác!');
+            if (!newMaterialProductForm.productName.trim()) throw new Error('Vui lòng nhập tên sản phẩm');
+            if (!PRODUCT_NAME_REGEX.test(newMaterialProductForm.productName)) throw new Error('Tên sản phẩm sai định dạng');
+            if (isProductNameDuplicateNVL) throw new Error('Tên sản phẩm đã tồn tại');
+            if (await checkProductNameExists(newMaterialProductForm.productName)) throw new Error('Tên sản phẩm đã tồn tại, vui lòng chọn tên khác!');
 
             const payload = {
-                productName: newProductForm.productName,
-                width: newProductForm.width?.toString() ?? null,
-                height: newProductForm.height?.toString() ?? null,
-                thickness: newProductForm.thickness,
+                productName: newMaterialProductForm.productName,
+                width: newMaterialProductForm.width?.toString() ?? null,
+                height: newMaterialProductForm.height?.toString() ?? null,
+                thickness: newMaterialProductForm.thickness,
                 unitPrice: 0,
             };
             const p = await createProductNVL(payload);
@@ -85,9 +99,10 @@ const ProductCreatePage = () => {
             };
             setForm((f) => ({ ...f, items: [...f.items, newItem] }));
             setShowAddProductForm(false);
-            setNewProductForm({ productName: '', width: 0, height: 0, thickness: 0, unitPrice: 0, glassStructureId: undefined });
+            setNewMaterialProductForm({ productName: '', width: 0, height: 0, thickness: 0 });
+
             alert(`Đã tạo sản phẩm thành công: ${p.productName}`);
-            router.push('/products');
+            router.push(`/products/${p.id}`);
         } catch (err: any) {
             alert(err.message || 'Lỗi tạo sản phẩm');
         }
@@ -99,28 +114,28 @@ const ProductCreatePage = () => {
             return;
         }
         const regex = /^Kính .+ phút, KT: \d+\*\d+\*\d+ mm, .+$/;
-        if (!regex.test(newProductForm.productName)) {
+        if (!regex.test(newFinishedProductForm.productName)) {
             alert('Tên sản phẩm sai định dạng.\n\nVí dụ đúng: Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng');
             return;
         }
-        if (!newProductForm.glassStructureId) {
+        if (!newFinishedProductForm.glassStructureId) {
             alert('Vui lòng chọn cấu trúc kính.');
             return;
         }
 
         const payload = {
-            productName: newProductForm.productName,
-            width: newProductForm.width.toString(),
-            height: newProductForm.height.toString(),
-            thickness: newProductForm.thickness,
+            productName: newFinishedProductForm.productName,
+            width: newFinishedProductForm.width.toString(),
+            height: newFinishedProductForm.height.toString(),
+            thickness: newFinishedProductForm.thickness,
             unitPrice: 0,
-            glassStructureId: newProductForm.glassStructureId,
+            glassStructureId: newFinishedProductForm.glassStructureId,
         };
 
         try {
             const res = await createProduct(payload);
             alert('Đã tạo sản phẩm: ' + res.productName);
-            setNewProductForm({ productName: '', width: 0, height: 0, thickness: 0, unitPrice: 0, glassStructureId: undefined });
+            router.push(`/products/${res.id}`);
         } catch (e) {
             console.error(e);
             alert('Tạo sản phẩm thất bại');
@@ -146,25 +161,30 @@ const ProductCreatePage = () => {
                         <label className="block mb-1 font-medium">Tên sản phẩm</label>
                         <input
                             className="input input-bordered w-full"
-                            value={newProductForm.productName}
-                            onChange={(e) => handleProductNameChange(e.target.value)}
+                            value={newFinishedProductForm.productName}
+                            onChange={(e) => handleFinishedProductNameChange(e.target.value)}
                             placeholder="VD: Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng"
                         />
-                        {isProductNameDuplicate && <p className="text-red-500 text-sm">Tên sản phẩm đã tồn tại.</p>}
+                        {isProductNameDuplicate && <p className="text-red-500 text-sm">Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.</p>}
                     </div>
 
                     <div className="grid grid-cols-3 gap-4">
                         <div>
                             <label className="block mb-1 font-medium">Rộng (mm)</label>
-                            <input type="number" className="input input-bordered w-full" value={newProductForm.width} onChange={(e) => setNewProductForm((p) => ({ ...p, width: +e.target.value }))} />
+                            <input
+                                type="number"
+                                className="input input-bordered w-full"
+                                value={newFinishedProductForm.width}
+                                onChange={(e) => setNewFinishedProductForm((p) => ({ ...p, width: +e.target.value }))}
+                            />
                         </div>
                         <div>
                             <label className="block mb-1 font-medium">Cao (mm)</label>
                             <input
                                 type="number"
                                 className="input input-bordered w-full"
-                                value={newProductForm.height}
-                                onChange={(e) => setNewProductForm((p) => ({ ...p, height: +e.target.value }))}
+                                value={newFinishedProductForm.height}
+                                onChange={(e) => setNewFinishedProductForm((p) => ({ ...p, height: +e.target.value }))}
                             />
                         </div>
                         <div>
@@ -172,8 +192,8 @@ const ProductCreatePage = () => {
                             <input
                                 type="number"
                                 className="input input-bordered w-full"
-                                value={newProductForm.thickness}
-                                onChange={(e) => setNewProductForm((p) => ({ ...p, thickness: +e.target.value }))}
+                                value={newFinishedProductForm.thickness}
+                                onChange={(e) => setNewFinishedProductForm((p) => ({ ...p, thickness: +e.target.value }))}
                             />
                         </div>
                     </div>
@@ -186,22 +206,22 @@ const ProductCreatePage = () => {
                             loadOptions={(input, cb) =>
                                 cb(glassStructures.filter((g) => g.productName.toLowerCase().includes(input.toLowerCase())).map((g) => ({ label: g.productName, value: g.id })))
                             }
-                            onChange={(opt) => setNewProductForm((p) => ({ ...p, glassStructureId: opt ? opt.value : undefined }))}
-                            value={glassStructures.filter((g) => g.id === newProductForm.glassStructureId).map((g) => ({ label: g.productName, value: g.id }))[0] || null}
+                            onChange={(opt) => setNewFinishedProductForm((p) => ({ ...p, glassStructureId: opt ? opt.value : undefined }))}
+                            value={glassStructures.filter((g) => g.id === newFinishedProductForm.glassStructureId).map((g) => ({ label: g.productName, value: g.id }))[0] || null}
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block mb-1 font-medium">Diện tích (m²)</label>
-                            <div className="input input-bordered bg-gray-100">{((newProductForm.width * newProductForm.height) / 1_000_000).toFixed(2)}</div>
+                            <div className="input input-bordered bg-gray-100">{((newFinishedProductForm.width * newFinishedProductForm.height) / 1_000_000).toFixed(2)}</div>
                         </div>
                         <div>
                             <label className="block mb-1 font-medium">Đơn giá (₫)</label>
                             <div className="input input-bordered bg-gray-100">
                                 {(() => {
-                                    const area = (newProductForm.width * newProductForm.height) / 1_000_000;
-                                    const s = glassStructures.find((g) => g.id === newProductForm.glassStructureId);
+                                    const area = (newFinishedProductForm.width * newFinishedProductForm.height) / 1_000_000;
+                                    const s = glassStructures.find((g) => g.id === newFinishedProductForm.glassStructureId);
                                     return ((s?.unitPrice || 0) * area).toFixed(0);
                                 })()}
                             </div>
@@ -209,7 +229,7 @@ const ProductCreatePage = () => {
                     </div>
 
                     <div className="mt-4 flex gap-4">
-                        <button className="btn btn-sm btn-primary" onClick={handleSaveProduct}>
+                        <button className="btn btn-sm btn-primary" onClick={handleSave}>
                             Lưu sản phẩm
                         </button>
                     </div>
@@ -234,10 +254,10 @@ const ProductCreatePage = () => {
                             <input
                                 className="input input-sm input-bordered w-full"
                                 placeholder="VD: Kính EI60 phút, KT: 300*500*30 mm, ..."
-                                value={newProductForm.productName}
-                                onChange={(e) => handleProductNameChange(e.target.value)}
+                                value={newMaterialProductForm.productName}
+                                onChange={(e) => handleMaterialProductNameChange(e.target.value)}
                             />
-                            {isProductNameDuplicate && <p className="text-red-500 text-sm mt-1">Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.</p>}
+                            {isProductNameDuplicateNVL && <p className="text-red-500 text-sm mt-1">Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.</p>}
                         </div>
 
                         <div>
@@ -245,8 +265,8 @@ const ProductCreatePage = () => {
                             <input
                                 className="input input-sm input-bordered w-full"
                                 type="number"
-                                value={newProductForm.width ?? ''}
-                                onChange={(e) => setNewProductForm((prev) => ({ ...prev, width: e.target.value === '' ? 0 : +e.target.value }))}
+                                value={newMaterialProductForm.width ?? ''}
+                                onChange={(e) => setNewMaterialProductForm((prev) => ({ ...prev, width: e.target.value === '' ? 0 : +e.target.value }))}
                             />
                         </div>
 
@@ -255,8 +275,8 @@ const ProductCreatePage = () => {
                             <input
                                 className="input input-sm input-bordered w-full"
                                 type="number"
-                                value={newProductForm.height ?? ''}
-                                onChange={(e) => setNewProductForm((prev) => ({ ...prev, height: e.target.value === '' ? 0 : +e.target.value }))}
+                                value={newMaterialProductForm.height ?? ''}
+                                onChange={(e) => setNewMaterialProductForm((prev) => ({ ...prev, height: e.target.value === '' ? 0 : +e.target.value }))}
                             />
                         </div>
 
@@ -265,14 +285,14 @@ const ProductCreatePage = () => {
                             <input
                                 className="input input-sm input-bordered w-full"
                                 type="number"
-                                value={newProductForm.thickness ?? ''}
-                                onChange={(e) => setNewProductForm((prev) => ({ ...prev, thickness: e.target.value === '' ? 0 : +e.target.value }))}
+                                value={newMaterialProductForm.thickness ?? ''}
+                                onChange={(e) => setNewMaterialProductForm((prev) => ({ ...prev, thickness: e.target.value === '' ? 0 : +e.target.value }))}
                             />
                         </div>
 
                         <div>
                             <label className="block mb-1 font-medium">Diện tích (m²)</label>
-                            <div className="input input-sm bg-gray-100 flex items-center">{(((newProductForm.width ?? 0) * (newProductForm.height ?? 0)) / 1_000_000).toFixed(2)}</div>
+                            <div className="input input-sm bg-gray-100 flex items-center">{(((newMaterialProductForm.width ?? 0) * (newMaterialProductForm.height ?? 0)) / 1_000_000).toFixed(2)}</div>
                         </div>
                     </div>
 
