@@ -271,9 +271,19 @@ const Sidebar = () => {
         // User Management - Factory Manager only
         if (isFactoryManager()) {
             items.push(
-
+                <li key="materials" className="menu nav-item">
+                    <Link href="/materials-chat" className="nav-link group w-full">
+                        <div className="flex items-center">
+                            <IconMenuChat className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Tài Liệu Chatbot
+                            </span>
+                        </div>
+                    </Link>
+                </li>
             );
         }
+
         return items;
     };
 
