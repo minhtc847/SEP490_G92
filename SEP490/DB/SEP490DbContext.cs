@@ -70,6 +70,5 @@ namespace SEP490.DB
         public DbSet<InvoiceDetails> InvoiceDetails { get; set; }
         public DbSet<Payments> Payments { get; set; }
         public DbSet<ProductionDefects> ProductionDefects { get; set; }
-
     }
 }
