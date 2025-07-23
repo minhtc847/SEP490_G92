@@ -10,6 +10,7 @@ public class Product
     public string? Width { get; set; }
     public decimal? Thickness { get; set; }
     public decimal? Weight { get; set; }
+    public double quantity { get; set; } // Assuming this is the quantity of the product
     public decimal? UnitPrice { get; set; }
     public int? GlassStructureId { get; set; }
     public GlassStructure? GlassStructure { get; set; } 
