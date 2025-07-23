@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SEP490.DB.Models
 {
-    public class Material
+    public class DocumentMaterial
     {
         public int Id { get; set; }
         public string Name { get; set; }

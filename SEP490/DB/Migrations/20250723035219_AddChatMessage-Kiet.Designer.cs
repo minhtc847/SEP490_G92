@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SEP490.DB;
 
@@ -10,9 +11,10 @@ using SEP490.DB;
 namespace SEP490.DB.Migrations
 {
     [DbContext(typeof(SEP490DbContext))]
-    partial class SEP490DbContextModelSnapshot : ModelSnapshot
+    [Migration("20250723035219_AddChatMessage-Kiet")]
+    partial class AddChatMessageKiet
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -400,50 +402,6 @@ namespace SEP490.DB.Migrations
                     b.ToTable("delivery_histories", (string)null);
                 });
 
-            modelBuilder.Entity("SEP490.DB.Models.DocumentMaterial", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    b.Property<int>("ChunkCount")
-                        .HasColumnType("int")
-                        .HasColumnName("chunk_count");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("content");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("longtext")
-                        .HasColumnName("description");
-
-                    b.Property<string>("FilePath")
-                        .HasColumnType("longtext")
-                        .HasColumnName("file_path");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("name");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("status");
-
-                    b.HasKey("Id")
-                        .HasName("pk_document_materials");
-
-                    b.ToTable("document_materials", (string)null);
-                });
-
             modelBuilder.Entity("SEP490.DB.Models.Employee", b =>
                 {
                     b.Property<int>("Id")
@@ -724,6 +682,50 @@ namespace SEP490.DB.Migrations
                         .HasDatabaseName("ix_invoice_details_invoice_id");
 
                     b.ToTable("invoice_details", (string)null);
+                });
+
+            modelBuilder.Entity("SEP490.DB.Models.Material", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    b.Property<int>("ChunkCount")
+                        .HasColumnType("int")
+                        .HasColumnName("chunk_count");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("content");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext")
+                        .HasColumnName("description");
+
+                    b.Property<string>("FilePath")
+                        .HasColumnType("longtext")
+                        .HasColumnName("file_path");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_materials");
+
+                    b.ToTable("materials", (string)null);
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.OrderDetail", b =>
