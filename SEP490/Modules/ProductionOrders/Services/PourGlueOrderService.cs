@@ -68,11 +68,6 @@ namespace SEP490.Modules.ProductionOrders.Services
                 Type = "Đổ keo",
                 Description = description,
                 StatusDaNhapMisa = false,
-                StatusDaLapDuPhieuNhap = false,
-                StatusDaLapDuPhieuXuat = false,
-                StatusDaXuatKhoNVL = false,
-                StatusDaNhapKhoTP = false,
-                ProductionStatus = "Đang sản xuất",
                 ProductionPlanId = request.ProductionPlanId
             };
         }
@@ -105,7 +100,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                 {
                     ProductId = product.Id,
                     ProductName = product.ProductName,
-                    UOM = "tấm",
+                    //UOM = "tấm",
                     Amount = quantity,
                     ProductionOrderId = productionOrderId,
                     OutputFor = planDetail.Id
@@ -134,11 +129,11 @@ namespace SEP490.Modules.ProductionOrders.Services
                 {
                     productionMaterials.Add(new ProductionMaterial
                     {
-                        ProductionId = material1Product.Id,
+                        //ProductionId = material1Product.Id,
                         ProductionOutputId = output.Id,
                         ProductId = material1Product.Id,
-                        ProductionName = material1Product.ProductName,
-                        UOM = material1Product.UOM,
+                        //ProductionName = material1Product.ProductName,
+                        //UOM = material1Product.UOM,
                         Amount = output.Amount
                     });
                 }
@@ -152,11 +147,11 @@ namespace SEP490.Modules.ProductionOrders.Services
                     {
                         productionMaterials.Add(new ProductionMaterial
                         {
-                            ProductionId = 3,
+                            //ProductionId = 3,
                             ProductionOutputId = output.Id,
                             ProductId = 3,
-                            ProductionName = glueProduct.ProductName,
-                            UOM = glueProduct.UOM,
+                            //ProductionName = glueProduct.ProductName,
+                            //UOM = glueProduct.UOM,
                             Amount = planDetail.TongKeoNano
                         });
                     }
@@ -168,11 +163,11 @@ namespace SEP490.Modules.ProductionOrders.Services
                     {
                         productionMaterials.Add(new ProductionMaterial
                         {
-                            ProductionId = 2,
+                            //ProductionId = 2,
                             ProductionOutputId = output.Id,
                             ProductId = 2,
-                            ProductionName = glueProduct.ProductName,
-                            UOM = glueProduct.UOM,
+                            //ProductionName = glueProduct.ProductName,
+                            //UOM = glueProduct.UOM,
                             Amount = planDetail.TongKeoMem
                         });
                     }
@@ -205,7 +200,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                     {
                         ProductId = planDetail.ProductId,
                         Quantity = kvp.Value,
-                        TrangThai = null,
+                        //TrangThai = null,
                         productionOrderId = productionOrderId
                     });
                 }

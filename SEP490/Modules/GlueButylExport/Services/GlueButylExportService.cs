@@ -35,7 +35,7 @@ namespace SEP490.Modules.GlueButylExport.Services
                         .FirstOrDefaultAsync(x => x.ProductName == product.Name && x.ProductionOrderId == createNewDTO.ProductionOrderId);
                     if (productionOutput != null)
                     {
-                        productionOutput.Done += product.Quantity;
+                        //productionOutput.Done += product.Quantity;
                     }
                     else
                     {

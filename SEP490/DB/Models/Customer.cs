@@ -11,10 +11,13 @@ public class Customer
     public string? Phone { get; set; }
     public decimal? Discount { get; set; }
     public bool IsSupplier { get; set; }
-
-    public string? ZaloId { get; set; }
-    public string? ZaloName { get; set; }
-    public string? TagName { get; set; }
+    public PartnerType PartnerType { get; set; } // Enum
     public ICollection<SaleOrder> SaleOrders { get; set; } = new List<SaleOrder>();
     public ICollection<PurchaseOrder> PurchaseOrders { get; set; } = new List<PurchaseOrder>();
+}
+
+public enum PartnerType
+{
+    Customer,
+    Vendor
 }

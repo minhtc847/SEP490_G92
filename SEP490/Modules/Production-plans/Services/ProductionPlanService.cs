@@ -51,10 +51,10 @@ namespace SEP490.Modules.Production_plans.Services
                 Phone = plan.Customer.Phone,
                 OrderCode = "DH" + plan.SaleOrder.Id,
                 OrderDate = plan.SaleOrder.OrderDate,
-                DeliveryStatus = plan.SaleOrder.DeliveryStatus,
+                //DeliveryStatus = plan.SaleOrder.DeliveryStatus,
                 PlanDate = plan.PlanDate,
                 Status = plan.Status,
-                Quantity = plan.Quantity,
+                //Quantity = plan.Quantity,
                 Done = plan.ProductionPlanDetails.Sum(x => x.Done)
             };
         }
@@ -69,12 +69,7 @@ namespace SEP490.Modules.Production_plans.Services
                     Id = pd.Id,
                     ProductName = pd.Product.ProductName ?? string.Empty,
                     TotalQuantity = pd.Quantity,
-                    InProduction = pd.Producing ?? 0,
                     Completed = pd.Done,
-                    DaCatKinh = pd.DaCatKinh ?? 0,
-                    DaGhepKinh = pd.DaGhepKinh ?? 0,
-                    DaTronKeo = pd.DaTronKeo ?? 0,
-                    DaDoKeo = pd.DaDoKeo ?? 0,
                     DaGiao = pd.DaGiao ?? 0
                 })
                 .ToListAsync();
@@ -98,10 +93,10 @@ namespace SEP490.Modules.Production_plans.Services
             var plan = new ProductionPlan
             {
                 SaleOrderId = saleOrder.Id,
-                CustomerId = saleOrder.CustomerId,
+                //CustomerId = saleOrder.CustomerId,
                 PlanDate = DateTime.Now,
                 Status = "Đang sản xuất",
-                Quantity = dto.Products.Sum(p => p.Quantity)
+                //Quantity = dto.Products.Sum(p => p.Quantity)
             };
             _context.ProductionPlans.Add(plan);
             await _context.SaveChangesAsync();
@@ -174,10 +169,10 @@ namespace SEP490.Modules.Production_plans.Services
                 Phone = saleOrder.Customer.Phone,
                 OrderCode = saleOrder.OrderCode ?? "",
                 OrderDate = saleOrder.OrderDate,
-                DeliveryStatus = saleOrder.DeliveryStatus,
+                //DeliveryStatus = saleOrder.DeliveryStatus,
                 PlanDate = plan.PlanDate,
                 Status = plan.Status,
-                Quantity = plan.Quantity,
+                //Quantity = plan.Quantity,
                 Done = 0
             };
         }
@@ -237,9 +232,8 @@ namespace SEP490.Modules.Production_plans.Services
                     ProductId = g.Key,
                     ProductName = g.FirstOrDefault()?.ProductName,
                     TotalAmount = g.Sum(o => o.Amount ?? 0),
-                    Done = g.Sum(o => o.Done ?? 0),
-                    Broken = g.Sum(o => o.Broken ?? 0),
-                    BrokenDescription = string.Join(", ", g.Select(o => o.BrokenDescription).Where(desc => !string.IsNullOrEmpty(desc)).Distinct())
+                    Done = g.Sum(o => o.Finished ?? 0),
+                    Broken = g.Sum(o => o.Defected ?? 0)
                 })
                 .ToList();
 

@@ -34,7 +34,7 @@ namespace SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.Service
                     Date = po.Date,
                     Description = po.Description,
                     TotalValue = po.TotalValue,
-                    Status = po.Status,
+                    //Status = po.Status,
                     SupplierName = po.Supplier != null ? po.Supplier.CustomerName : null,
                     CustomerName = po.Customer != null ? po.Customer.CustomerName : null,
                     EmployeeName = po.Employee != null ? po.Employee.FullName : null
@@ -62,7 +62,7 @@ namespace SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.Service
                 Date = order.Date,
                 Description = order.Description,
                 TotalValue = order.TotalValue,
-                Status = order.Status,
+                //Status = order.Status,
                 SupplierName = order.Supplier?.CustomerName,
                 CustomerName = order.Customer?.CustomerName,
                 EmployeeName = order.Employee?.FullName,
@@ -109,7 +109,7 @@ namespace SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.Service
                 Code = string.IsNullOrWhiteSpace(dto.Code) ? GetNextPurchaseOrderCode() : dto.Code,
                 Date = dto.Date,
                 Description = dto.Description,
-                Status = dto.Status
+                //Status = dto.Status
             };
             _context.PurchaseOrders.Add(order);
             await _context.SaveChangesAsync();       
@@ -180,7 +180,7 @@ namespace SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.Service
 
             order.CustomerId = customer.Id;
             order.Description = dto.Description;
-            order.Status = dto.Status;
+            //order.Status = dto.Status;
             order.Date = DateTime.Now; 
 
             _context.PurchaseOrderDetails.RemoveRange(order.PurchaseOrderDetails);

@@ -20,19 +20,7 @@ namespace SEP490.Modules.Zalo.Services
 
         public async Task<LLMResponse> ForwardMessagesAsync(List<MessageResponse> messages)
         {
-            // 1. Save messages to messagehistory
-            foreach (var msg in messages)
-            {
-                var history = new HistoryMessage
-                {
-                    SenderId = msg.SenderId,
-                    SenderType = msg.UserType,
-                    MessageType = msg.MessageType,
-                    Content = msg.MessageContent,
-                    SendTime = msg.SendTime
-                };
-                _context.HistoryMessages.Add(history);
-            }
+           
             await _context.SaveChangesAsync();
 
             // 2. Prepare payload

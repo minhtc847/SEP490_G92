@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SEP490.DB;
 
@@ -10,9 +11,10 @@ using SEP490.DB;
 namespace SEP490.DB.Migrations
 {
     [DbContext(typeof(SEP490DbContext))]
-    partial class SEP490DbContextModelSnapshot : ModelSnapshot
+    [Migration("20250723031642_UpdateDatabaseNew-Kiet")]
+    partial class UpdateDatabaseNewKiet
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -238,136 +240,6 @@ namespace SEP490.DB.Migrations
                     b.ToTable("cut_glass_invoice_outputs", (string)null);
                 });
 
-            modelBuilder.Entity("SEP490.DB.Models.Debts", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    b.Property<int>("CustomerId")
-                        .HasColumnType("int")
-                        .HasColumnName("customer_id");
-
-                    b.Property<DateTime?>("DueDate")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("due_date");
-
-                    b.Property<int?>("InvoiceId")
-                        .HasColumnType("int")
-                        .HasColumnName("invoice_id");
-
-                    b.Property<int>("InvoiceType")
-                        .HasColumnType("int")
-                        .HasColumnName("invoice_type");
-
-                    b.Property<DateTime>("LastUpdated")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("last_updated");
-
-                    b.Property<decimal>("PaidAmount")
-                        .HasColumnType("decimal(65,30)")
-                        .HasColumnName("paid_amount");
-
-                    b.Property<decimal>("RemainingAmount")
-                        .HasColumnType("decimal(65,30)")
-                        .HasColumnName("remaining_amount");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int")
-                        .HasColumnName("status");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasColumnType("decimal(65,30)")
-                        .HasColumnName("total_amount");
-
-                    b.HasKey("Id")
-                        .HasName("pk_debts");
-
-                    b.HasIndex("CustomerId")
-                        .HasDatabaseName("ix_debts_customer_id");
-
-                    b.HasIndex("InvoiceId")
-                        .HasDatabaseName("ix_debts_invoice_id");
-
-                    b.ToTable("debts", (string)null);
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.Delivery", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("created_at");
-
-                    b.Property<DateTime>("DeliveryDate")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("delivery_date");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("longtext")
-                        .HasColumnName("note");
-
-                    b.Property<int>("SalesOrderId")
-                        .HasColumnType("int")
-                        .HasColumnName("sales_order_id");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int")
-                        .HasColumnName("status");
-
-                    b.HasKey("Id")
-                        .HasName("pk_deliveries");
-
-                    b.HasIndex("SalesOrderId")
-                        .HasDatabaseName("ix_deliveries_sales_order_id");
-
-                    b.ToTable("deliveries", (string)null);
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.DeliveryDetail", b =>
-                {
-                    b.Property<int>("DeliveryDetailId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("delivery_detail_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("created_at");
-
-                    b.Property<int>("DeliveryId")
-                        .HasColumnType("int")
-                        .HasColumnName("delivery_id");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("longtext")
-                        .HasColumnName("note");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int")
-                        .HasColumnName("product_id");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int")
-                        .HasColumnName("quantity");
-
-                    b.HasKey("DeliveryDetailId")
-                        .HasName("pk_delivery_details");
-
-                    b.HasIndex("DeliveryId")
-                        .HasDatabaseName("ix_delivery_details_delivery_id");
-
-                    b.HasIndex("ProductId")
-                        .HasDatabaseName("ix_delivery_details_product_id");
-
-                    b.ToTable("delivery_details", (string)null);
-                });
-
             modelBuilder.Entity("SEP490.DB.Models.DeliveryHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -435,45 +307,6 @@ namespace SEP490.DB.Migrations
                         .HasName("pk_employees");
 
                     b.ToTable("employees", (string)null);
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.FinishedGoods", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("completed_at");
-
-                    b.Property<int?>("ProductId")
-                        .HasColumnType("int")
-                        .HasColumnName("product_id");
-
-                    b.Property<int?>("ProductionOrderId")
-                        .HasColumnType("int")
-                        .HasColumnName("production_order_id");
-
-                    b.Property<string>("QualityLevel")
-                        .HasColumnType("longtext")
-                        .HasColumnName("quality_level");
-
-                    b.Property<decimal?>("Quantity")
-                        .HasColumnType("decimal(65,30)")
-                        .HasColumnName("quantity");
-
-                    b.HasKey("Id")
-                        .HasName("pk_finished_goods");
-
-                    b.HasIndex("ProductId")
-                        .HasDatabaseName("ix_finished_goods_product_id");
-
-                    b.HasIndex("ProductionOrderId")
-                        .HasDatabaseName("ix_finished_goods_production_order_id");
-
-                    b.ToTable("finished_goods", (string)null);
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.Formular", b =>
@@ -602,94 +435,6 @@ namespace SEP490.DB.Migrations
                     b.ToTable("glue_butyl_export_invoices", (string)null);
                 });
 
-            modelBuilder.Entity("SEP490.DB.Models.Invoice", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    b.Property<int>("CustomerId")
-                        .HasColumnType("int")
-                        .HasColumnName("customer_id");
-
-                    b.Property<DateTime?>("DueDate")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("due_date");
-
-                    b.Property<DateTime>("InvoiceDate")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("invoice_date");
-
-                    b.Property<int>("InvoiceType")
-                        .HasColumnType("int")
-                        .HasColumnName("invoice_type");
-
-                    b.Property<int?>("RelatedOrderId")
-                        .HasColumnType("int")
-                        .HasColumnName("related_order_id");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int")
-                        .HasColumnName("status");
-
-                    b.Property<decimal?>("Subtotal")
-                        .HasColumnType("decimal(65,30)")
-                        .HasColumnName("subtotal");
-
-                    b.Property<decimal?>("Tax")
-                        .HasColumnType("decimal(65,30)")
-                        .HasColumnName("tax");
-
-                    b.Property<decimal?>("TotalAmount")
-                        .HasColumnType("decimal(65,30)")
-                        .HasColumnName("total_amount");
-
-                    b.HasKey("Id")
-                        .HasName("pk_invoices");
-
-                    b.HasIndex("CustomerId")
-                        .HasDatabaseName("ix_invoices_customer_id");
-
-                    b.ToTable("invoices", (string)null);
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.InvoiceDetails", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    b.Property<int>("InvoiceId")
-                        .HasColumnType("int")
-                        .HasColumnName("invoice_id");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int")
-                        .HasColumnName("product_id");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int")
-                        .HasColumnName("quantity");
-
-                    b.Property<decimal>("Total")
-                        .HasColumnType("decimal(65,30)")
-                        .HasColumnName("total");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(65,30)")
-                        .HasColumnName("unit_price");
-
-                    b.HasKey("Id")
-                        .HasName("pk_invoice_details");
-
-                    b.HasIndex("InvoiceId")
-                        .HasDatabaseName("ix_invoice_details_invoice_id");
-
-                    b.ToTable("invoice_details", (string)null);
-                });
-
             modelBuilder.Entity("SEP490.DB.Models.Material", b =>
                 {
                     b.Property<int>("Id")
@@ -789,53 +534,6 @@ namespace SEP490.DB.Migrations
                     b.ToTable("order_detail_products", (string)null);
                 });
 
-            modelBuilder.Entity("SEP490.DB.Models.Payments", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(65,30)")
-                        .HasColumnName("amount");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("created_at");
-
-                    b.Property<int>("CustomerId")
-                        .HasColumnType("int")
-                        .HasColumnName("customer_id");
-
-                    b.Property<int>("InvoiceId")
-                        .HasColumnType("int")
-                        .HasColumnName("invoice_id");
-
-                    b.Property<int>("InvoiceType")
-                        .HasColumnType("int")
-                        .HasColumnName("invoice_type");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("longtext")
-                        .HasColumnName("note");
-
-                    b.Property<DateTime>("PaymentDate")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("payment_date");
-
-                    b.HasKey("Id")
-                        .HasName("pk_payments");
-
-                    b.HasIndex("CustomerId")
-                        .HasDatabaseName("ix_payments_customer_id");
-
-                    b.HasIndex("InvoiceId")
-                        .HasDatabaseName("ix_payments_invoice_id");
-
-                    b.ToTable("payments", (string)null);
-                });
-
             modelBuilder.Entity("SEP490.DB.Models.Product", b =>
                 {
                     b.Property<int>("Id")
@@ -890,53 +588,6 @@ namespace SEP490.DB.Migrations
                         .HasDatabaseName("ix_products_glass_structure_id");
 
                     b.ToTable("products", (string)null);
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.ProductionDefects", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    b.Property<string>("DefectStage")
-                        .HasColumnType("longtext")
-                        .HasColumnName("defect_stage");
-
-                    b.Property<string>("DefectType")
-                        .HasColumnType("longtext")
-                        .HasColumnName("defect_type");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("longtext")
-                        .HasColumnName("note");
-
-                    b.Property<int?>("ProductId")
-                        .HasColumnType("int")
-                        .HasColumnName("product_id");
-
-                    b.Property<int?>("ProductionOrderId")
-                        .HasColumnType("int")
-                        .HasColumnName("production_order_id");
-
-                    b.Property<int?>("Quantity")
-                        .HasColumnType("int")
-                        .HasColumnName("quantity");
-
-                    b.Property<DateTime?>("ReportedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("reported_at");
-
-                    b.HasKey("Id")
-                        .HasName("pk_production_defects");
-
-                    b.HasIndex("ProductId")
-                        .HasDatabaseName("ix_production_defects_product_id");
-
-                    b.HasIndex("ProductionOrderId")
-                        .HasDatabaseName("ix_production_defects_production_order_id");
-
-                    b.ToTable("production_defects", (string)null);
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.ProductionMaterial", b =>
@@ -1518,58 +1169,6 @@ namespace SEP490.DB.Migrations
                     b.Navigation("ProductionOutput");
                 });
 
-            modelBuilder.Entity("SEP490.DB.Models.Debts", b =>
-                {
-                    b.HasOne("SEP490.DB.Models.Customer", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_debts_customers_customer_id");
-
-                    b.HasOne("SEP490.DB.Models.Invoice", "Invoice")
-                        .WithMany()
-                        .HasForeignKey("InvoiceId")
-                        .HasConstraintName("fk_debts_invoices_invoice_id");
-
-                    b.Navigation("Customer");
-
-                    b.Navigation("Invoice");
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.Delivery", b =>
-                {
-                    b.HasOne("SEP490.DB.Models.SaleOrder", "SalesOrder")
-                        .WithMany()
-                        .HasForeignKey("SalesOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_deliveries_sale_orders_sales_order_id");
-
-                    b.Navigation("SalesOrder");
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.DeliveryDetail", b =>
-                {
-                    b.HasOne("SEP490.DB.Models.Delivery", "Delivery")
-                        .WithMany()
-                        .HasForeignKey("DeliveryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_delivery_details_deliveries_delivery_id");
-
-                    b.HasOne("SEP490.DB.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_delivery_details_products_product_id");
-
-                    b.Navigation("Delivery");
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("SEP490.DB.Models.DeliveryHistory", b =>
                 {
                     b.HasOne("SEP490.DB.Models.ProductionPlanDetail", "ProductionPlanDetail")
@@ -1580,23 +1179,6 @@ namespace SEP490.DB.Migrations
                         .HasConstraintName("fk_delivery_histories_production_plan_details_production_plan_d");
 
                     b.Navigation("ProductionPlanDetail");
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.FinishedGoods", b =>
-                {
-                    b.HasOne("SEP490.DB.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .HasConstraintName("fk_finished_goods_products_product_id");
-
-                    b.HasOne("SEP490.DB.Models.ProductionOrder", "ProductionOrder")
-                        .WithMany()
-                        .HasForeignKey("ProductionOrderId")
-                        .HasConstraintName("fk_finished_goods_production_orders_production_order_id");
-
-                    b.Navigation("Product");
-
-                    b.Navigation("ProductionOrder");
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.Formular", b =>
@@ -1624,30 +1206,6 @@ namespace SEP490.DB.Migrations
                     b.Navigation("Employee");
 
                     b.Navigation("ProductionOrder");
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.Invoice", b =>
-                {
-                    b.HasOne("SEP490.DB.Models.Customer", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_invoices_customers_customer_id");
-
-                    b.Navigation("Customer");
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.InvoiceDetails", b =>
-                {
-                    b.HasOne("SEP490.DB.Models.Invoice", "Invoice")
-                        .WithMany()
-                        .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_invoice_details_invoices_invoice_id");
-
-                    b.Navigation("Invoice");
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.OrderDetail", b =>
@@ -1683,27 +1241,6 @@ namespace SEP490.DB.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("SEP490.DB.Models.Payments", b =>
-                {
-                    b.HasOne("SEP490.DB.Models.Customer", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_payments_customers_customer_id");
-
-                    b.HasOne("SEP490.DB.Models.Invoice", "Invoice")
-                        .WithMany()
-                        .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_payments_invoices_invoice_id");
-
-                    b.Navigation("Customer");
-
-                    b.Navigation("Invoice");
-                });
-
             modelBuilder.Entity("SEP490.DB.Models.Product", b =>
                 {
                     b.HasOne("SEP490.DB.Models.GlassStructure", "GlassStructure")
@@ -1712,23 +1249,6 @@ namespace SEP490.DB.Migrations
                         .HasConstraintName("fk_products_glass_structures_glass_structure_id");
 
                     b.Navigation("GlassStructure");
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.ProductionDefects", b =>
-                {
-                    b.HasOne("SEP490.DB.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .HasConstraintName("fk_production_defects_products_product_id");
-
-                    b.HasOne("SEP490.DB.Models.ProductionOrder", "ProductionOrder")
-                        .WithMany()
-                        .HasForeignKey("ProductionOrderId")
-                        .HasConstraintName("fk_production_defects_production_orders_production_order_id");
-
-                    b.Navigation("Product");
-
-                    b.Navigation("ProductionOrder");
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.ProductionMaterial", b =>

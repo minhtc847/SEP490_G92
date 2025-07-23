@@ -55,11 +55,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                 Type = "Cắt kính",
                 Description = description,
                 StatusDaNhapMisa = false,
-                StatusDaLapDuPhieuNhap = false,
-                StatusDaLapDuPhieuXuat = false,
-                StatusDaXuatKhoNVL = false,
-                StatusDaNhapKhoTP = false,
-                ProductionStatus = "Đang sản xuất",
+
                 ProductionPlanId = request.ProductionPlanId
             };
         }
@@ -98,10 +94,10 @@ namespace SEP490.Modules.ProductionOrders.Services
                 {
                     ProductId = productId,
                     ProductName = finishedProduct.ProductName,
-                    UOM = "tấm",
+                    //UOM = "tấm",
                     Amount = finishedProduct.Quantity,
                     ProductionOrderId = productionOrderId,
-                    OutputFor = finishedProduct.OutputFor
+
                 });
             }
 
@@ -131,7 +127,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                         {
                             ProductId = planDetail.ProductId, // Sử dụng ProductId thực từ bảng Product
                             Quantity = kvp.Value, // Số lượng sản phẩm gốc cần cắt
-                            TrangThai = null,
+                            //TrangThai = null,
                             productionOrderId = productionOrderId
                         });
                     }

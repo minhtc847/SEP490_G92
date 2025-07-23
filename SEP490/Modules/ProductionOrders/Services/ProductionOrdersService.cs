@@ -27,7 +27,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                     OrderDate = po.OrderDate,
                     Type = po.Type,
                     Description = po.Description,
-                    ProductionStatus = po.ProductionStatus
+                    //ProductionStatus = po.ProductionStatus
                 })
                 .ToListAsync();
 
@@ -44,7 +44,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                     OrderDate = po.OrderDate,
                     Type = po.Type,
                     Description = po.Description,
-                    ProductionStatus = po.ProductionStatus
+                    //ProductionStatus = po.ProductionStatus
                 })
                 .ToListAsync();
             return productionOrders;
@@ -60,9 +60,8 @@ namespace SEP490.Modules.ProductionOrders.Services
                     ProductId = po.ProductId,
                     ProductName = po.ProductName,
                     Amount = po.Amount,
-                    Done = po.Done,
-                    Broken = po.Broken,
-                    ReasonBroken = po.BrokenDescription,
+                    Done = po.Finished,
+                    Broken = po.Defected,
                     ProductionOrderId = po.ProductionOrderId
                 })
                 .ToListAsync();
@@ -75,22 +74,15 @@ namespace SEP490.Modules.ProductionOrders.Services
             if (output == null || dto.Broken <= 0) return false;
 
             // Update broken count
-            output.Broken = (output.Broken ?? 0) + dto.Broken;
-            // Update reason
-            if (!string.IsNullOrWhiteSpace(dto.ReasonBroken))
-            {
-                if (string.IsNullOrWhiteSpace(output.BrokenDescription))
-                    output.BrokenDescription = dto.ReasonBroken;
-                else if (!output.BrokenDescription.Contains(dto.ReasonBroken))
-                    output.BrokenDescription += ", " + dto.ReasonBroken;
-            }
+            output.Defected = (output.Defected ?? 0) + dto.Broken;
+
             // Update done
-            output.Done = Math.Max((output.Done ?? 0) - dto.Broken, 0);
+            output.Finished = Math.Max((output.Finished ?? 0) - dto.Broken, 0);
 
             // Update production order status
             if (output.ProductionOrder != null)
             {
-                output.ProductionOrder.ProductionStatus = "Đang sản xuất";
+                //output.ProductionOrder.ProductionStatus = "Đang sản xuất";
             }
 
             await _context.SaveChangesAsync();

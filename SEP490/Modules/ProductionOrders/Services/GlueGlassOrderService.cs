@@ -58,11 +58,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                 Type = "Ghép kính",
                 Description = description,
                 StatusDaNhapMisa = false,
-                StatusDaLapDuPhieuNhap = false,
-                StatusDaLapDuPhieuXuat = false,
-                StatusDaXuatKhoNVL = false,
-                StatusDaNhapKhoTP = false,
-                ProductionStatus = "Đang sản xuất",
+
                 ProductionPlanId = request.ProductionPlanId
             };
         }
@@ -101,7 +97,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                 {
                     ProductId = productId,
                     ProductName = finishedProduct.ProductName,
-                    UOM = "tấm",
+                    //UOM = "tấm",
                     Amount = finishedProduct.Quantity,
                     ProductionOrderId = productionOrderId,
                     OutputFor = finishedProduct.OutputFor
@@ -134,7 +130,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                         {
                             ProductId = planDetail.ProductId, // Sử dụng ProductId thực từ bảng Product
                             Quantity = kvp.Value, // Số lượng sản phẩm gốc cần ghép
-                            TrangThai = null,
+                            //TrangThai = null,
                             productionOrderId = productionOrderId
                         });
                     }
@@ -220,13 +216,13 @@ namespace SEP490.Modules.ProductionOrders.Services
                     var glass5Product = await GetOrCreateProductAsync(glass5Name);
                     materials.Add(new ProductionMaterial
                     {
-                        ProductionId = glass5Product.Id,
-                        ProductionName = glass5Name,
+                        //ProductionId = glass5Product.Id,
+                        //ProductionName = glass5Name,
                         ProductionOutputId = output.Id,
-                        UOM = "tấm",
+                        //UOM = "tấm",
                         Amount = kinh5Quantity,
-                        CostObject = null,
-                        CostItem = null,
+                        //CostObject = null,
+                        //CostItem = null,
                         ProductId = glass5Product.Id
                     });
                 }
@@ -238,13 +234,13 @@ namespace SEP490.Modules.ProductionOrders.Services
                     var glass4Product = await GetOrCreateProductAsync(glass4Name);
                     materials.Add(new ProductionMaterial
                     {
-                        ProductionId = glass4Product.Id,
-                        ProductionName = glass4Name,
+                        //ProductionId = glass4Product.Id,
+                        //ProductionName = glass4Name,
                         ProductionOutputId = output.Id,
-                        UOM = "tấm",
+                        //UOM = "tấm",
                         Amount = kinh4Quantity,
-                        CostObject = null,
-                        CostItem = null,
+                        //CostObject = null,
+                        //CostItem = null,
                         ProductId = glass4Product.Id
                     });
                 }
@@ -253,13 +249,13 @@ namespace SEP490.Modules.ProductionOrders.Services
                 var keoProduct = await GetOrCreateProductAsync(keoName);
                 materials.Add(new ProductionMaterial
                 {
-                    ProductionId = keoProduct.Id,
-                    ProductionName = keoName,
+                    //ProductionId = keoProduct.Id,
+                    //ProductionName = keoName,
                     ProductionOutputId = output.Id,
-                    UOM = "ml",
+                    //UOM = "ml",
                     Amount = keoQuantity,
-                    CostObject = null,
-                    CostItem = null,
+                    //CostObject = null,
+                    //CostItem = null,
                     ProductId = keoProduct.Id
                 });
             }

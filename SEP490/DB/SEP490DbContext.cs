@@ -51,7 +51,6 @@ namespace SEP490.DB
         public DbSet<ProductionOrderDetail> ProductionOrderDetails { get; set; }
         public DbSet<ProductionPlanDetail> ProductionPlanDetails { get; set; }
         public DbSet<Employee> Employees { get; set; }
-        public DbSet<HistoryMessage> HistoryMessages { get; set; }
         public DbSet<ProductionOutput> ProductionOutputs { get; set; }
         public DbSet<ProductionMaterial> ProductionMaterials { get; set; }
         public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
@@ -63,5 +62,14 @@ namespace SEP490.DB
         public DbSet<GlueButylExportInvoice> GlueButylExportInvoices { get; set; }
         public DbSet<Formular> Formulars { get; set; }
         public DbSet<Material> Materials { get; set; }
+        public DbSet<Debts> Debts { get; set; }
+        public DbSet<Delivery> Deliveries { get; set; }
+        public DbSet<DeliveryDetail> DeliveryDetails { get; set; }
+        public DbSet<FinishedGoods> FinishedGoods { get; set; }
+        public DbSet<Invoice> Invoices { get; set; }
+        public DbSet<InvoiceDetails> InvoiceDetails { get; set; }
+        public DbSet<Payments> Payments { get; set; }
+        public DbSet<ProductionDefects> ProductionDefects { get; set; }
+
     }
 }

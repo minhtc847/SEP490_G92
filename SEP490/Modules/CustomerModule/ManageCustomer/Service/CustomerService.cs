@@ -46,10 +46,7 @@ namespace SEP490.Modules.CustomerModule.ManageCustomer.Service
                 ContactPerson = customer.ContactPerson,
                 Phone = customer.Phone,
                 Discount = customer.Discount,
-                IsSupplier = customer.IsSupplier,
-                ZalopId = customer.ZaloId,
-                ZaloName = customer.ZaloName,
-                TagName = customer.TagName
+                IsSupplier = customer.IsSupplier
             };
         }
         public Customer AddCustomer(UpdateCustomerDto dto)
@@ -64,10 +61,7 @@ namespace SEP490.Modules.CustomerModule.ManageCustomer.Service
                 ContactPerson = dto.ContactPerson,
                 Phone = dto.Phone,
                 Discount = dto.Discount,
-                IsSupplier = dto.IsSupplier,
-                ZaloId = dto.ZalopId,
-                ZaloName = dto.ZaloName,
-                TagName = dto.TagName
+                IsSupplier = dto.IsSupplier
             };
 
             _context.Customers.Add(customer);
@@ -90,9 +84,6 @@ namespace SEP490.Modules.CustomerModule.ManageCustomer.Service
             customer.Phone = dto.Phone;
             customer.Discount = dto.Discount;
             customer.IsSupplier = dto.IsSupplier;
-            customer.ZaloId = dto.ZalopId;
-            customer.ZaloName = dto.ZaloName;
-            customer.TagName = dto.TagName;
 
             _context.SaveChanges();
             return true;

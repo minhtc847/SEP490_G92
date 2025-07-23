@@ -32,7 +32,7 @@ namespace SEP490.Modules.Accountant.Services
                     TotalAmount = _context.ProductionOutputs
                         .Where(poOut => poOut.ProductionOrderId == po.Id)
                         .Sum(poOut => (int?)poOut.Amount ?? 0),
-                    Status = po.ProductionStatus,
+                    //Status = po.Status,
 
                 })
                 .ToList();
@@ -47,9 +47,9 @@ namespace SEP490.Modules.Accountant.Services
                 {
                     OutputId = po.Id,
                     ProductName = po.ProductName,
-                    Uom = po.UOM,
+                    //Uom = po.UOM,
                     Quantity = po.Amount ?? 0,
-                    Done = po.Done ?? 0
+                    //Done = po.Done ?? 0
                 })
                 .ToList();
 
@@ -91,7 +91,7 @@ namespace SEP490.Modules.Accountant.Services
                 {
                     Id = m.Id, 
                     ProductName = m.Product.ProductName,
-                    Uom = m.UOM,
+                    //Uom = m.UOM,
                     QuantityPer = m.Amount ?? 0,
                     TotalQuantity = m.Amount ?? 0
                 })
@@ -122,7 +122,7 @@ namespace SEP490.Modules.Accountant.Services
             }
 
             output.ProductName = dto.ProductName;
-            output.UOM = dto.Uom;
+            //output.UOM = dto.Uom;
             output.Amount = dto.Amount;
 
             await _context.SaveChangesAsync();
@@ -138,7 +138,7 @@ namespace SEP490.Modules.Accountant.Services
             if (product == null) return false;
 
             d.Product.ProductName = product.ProductName;
-            d.UOM = dto.Uom;
+            //d.UOM = dto.Uom;
             d.Amount = dto.Amount;
 
             await _context.SaveChangesAsync();
@@ -164,7 +164,7 @@ namespace SEP490.Modules.Accountant.Services
             {
                 ProductId = product.Id,
                 ProductName = dto.ProductName,
-                UOM = dto.Uom,
+                //UOM = dto.Uom,
                 Amount = dto.Quantity,
                 ProductionOrderId = productionOrderId
             };
@@ -199,10 +199,10 @@ namespace SEP490.Modules.Accountant.Services
 
             var material = new ProductionMaterial
             {
-                ProductionId = output.ProductId,
-                ProductionName = output.Product.ProductName,
+                //ProductionId = output.ProductId,
+                //ProductionName = output.Product.ProductName,
                 ProductionOutputId = output.Id,
-                UOM = dto.Uom,
+                //UOM = dto.Uom,
                 Amount = dto.TotalQuantity,
                 ProductId = existingProduct?.Id ?? 0
             };

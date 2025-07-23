@@ -142,11 +142,11 @@ namespace SEP490.Modules.ProductionOrders.Services
                 var keoAmount = await CalculateAdhesiveAmount(glassProductId);
                 materials.Add(new ProductionMaterial
                 {
-                    ProductionId = keoProductId,
+                    //ProductionId = keoProductId,
                     ProductionOutputId = productionOutputId,
-                    ProductionName = keoProduct.ProductName,
+                    //ProductionName = keoProduct.ProductName,
                     Product = glassProduct,
-                    UOM = keoProduct.UOM,
+                    //UOM = keoProduct.UOM,
                     Amount = keoAmount
                 });
             }
@@ -157,11 +157,11 @@ namespace SEP490.Modules.ProductionOrders.Services
             {
                 materials.Add(new ProductionMaterial
                 {
-                    ProductionId = siliconProduct.Id,
+                    //ProductionId = siliconProduct.Id,
                     ProductionOutputId = productionOutputId,
-                    ProductionName = siliconProduct.ProductName,
+                   // ProductionName = siliconProduct.ProductName,
                     Product = glassProduct,
-                    UOM = siliconProduct.UOM,
+                    //UOM = siliconProduct.UOM,
                     Amount = null
                 });
             }
@@ -176,11 +176,11 @@ namespace SEP490.Modules.ProductionOrders.Services
                     var butylLength = await CalculateButylLength(glassProductId);
                     materials.Add(new ProductionMaterial
                     {
-                        ProductionId = butylProduct.Id,
+                        //ProductionId = butylProduct.Id,
                         ProductionOutputId = productionOutputId,
-                        ProductionName = butylProduct.ProductName,
+                        //ProductionName = butylProduct.ProductName,
                         Product = glassProduct,
-                        UOM = butylProduct.UOM,
+                        //UOM = butylProduct.UOM,
                         Amount = butylLength
                     });
                 }

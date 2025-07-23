@@ -155,7 +155,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                 var prodOutput = await _context.ProductionOutputs.FindAsync(dto.ProductionOutputId);
                 if (prodOutput != null)
                 {
-                    prodOutput.Done = totalDone;
+                    prodOutput.Finished = totalDone;
                     await _context.SaveChangesAsync();
 
                     // Kiểm tra tất cả các ProductionOutput của ProductionOrder
@@ -167,7 +167,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                             .ToListAsync();
 
                         bool allDone = allOutputs.All(po =>
-                            po.Amount.HasValue && po.Done.HasValue && po.Amount.Value == po.Done.Value && po.Amount.Value > 0
+                            po.Amount.HasValue && po.Finished.HasValue && po.Amount.Value == po.Finished.Value && po.Amount.Value > 0
                         );
 
                         var prodOrder = await _context.ProductionOrders.FindAsync(prodOrderId);
@@ -175,11 +175,11 @@ namespace SEP490.Modules.ProductionOrders.Services
                         {
                             if (allDone)
                             {
-                                prodOrder.ProductionStatus = "Đã hoàn thành";
+                                //prodOrder.ProductionStatus = "Đã hoàn thành";
                             }
                             else
                             {
-                                prodOrder.ProductionStatus = "Đang sản xuất";
+                                //prodOrder.ProductionStatus = "Đang sản xuất";
                             }
                             await _context.SaveChangesAsync();
                         }
@@ -224,7 +224,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                 var prodOutput = await _context.ProductionOutputs.FindAsync(output.ProductionOutputId);
                 if (prodOutput != null)
                 {
-                    prodOutput.Done = totalDone;
+                    prodOutput.Finished = totalDone;
                     await _context.SaveChangesAsync();
 
                     // Kiểm tra tất cả các ProductionOutput của ProductionOrder
@@ -236,7 +236,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                             .ToListAsync();
 
                         bool allDone = allOutputs.All(po =>
-                            po.Amount.HasValue && po.Done.HasValue && po.Amount.Value == po.Done.Value && po.Amount.Value > 0
+                            po.Amount.HasValue && po.Finished.HasValue && po.Amount.Value == po.Finished.Value && po.Amount.Value > 0
                         );
 
                         var prodOrder = await _context.ProductionOrders.FindAsync(prodOrderId);
@@ -244,11 +244,11 @@ namespace SEP490.Modules.ProductionOrders.Services
                         {
                             if (allDone)
                             {
-                                prodOrder.ProductionStatus = "Đã hoàn thành";
+                                //prodOrder.ProductionStatus = "Đã hoàn thành";
                             }
                             else
                             {
-                                prodOrder.ProductionStatus = "Đang sản xuất";
+                                //prodOrder.ProductionStatus = "Đang sản xuất";
                             }
                             await _context.SaveChangesAsync();
                         }

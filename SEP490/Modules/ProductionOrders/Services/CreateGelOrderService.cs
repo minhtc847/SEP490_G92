@@ -68,11 +68,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                 Type = "Sản xuất keo",
                 Description = description,
                 StatusDaNhapMisa = false,
-                StatusDaLapDuPhieuNhap = false,
-                StatusDaLapDuPhieuXuat = false,
-                StatusDaXuatKhoNVL = false,
-                StatusDaNhapKhoTP = false,
-                ProductionStatus = "Đang sản xuất",
+
                 ProductionPlanId = request.ProductionPlanId
             };
         }
@@ -96,10 +92,10 @@ namespace SEP490.Modules.ProductionOrders.Services
                     if (product == null) continue;
                     productionMaterials.Add(new ProductionMaterial
                     {
-                        ProductionId = formular.ProductId.Value,
+                        //ProductionId = formular.ProductId.Value,
                         ProductionOutputId = productionOutputId,
                         ProductId = formular.ProductId.Value,
-                        UOM = product.UOM,
+                        //UOM = product.UOM,
                         Amount = (decimal)outputAmount * (decimal)formular.Ratio / 100m
                     });
                 }
@@ -115,7 +111,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                     {
                         ProductId = keoNanoProduct.Id,
                         ProductName = keoNanoProduct.ProductName ?? "Keo Nano",
-                        UOM = "kg",
+                        //UOM = "kg",
                         Amount = request.TotalKeoNano,
                         ProductionOrderId = productionOrderId
                     };
@@ -137,7 +133,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                     {
                         ProductId = keoMemProduct.Id,
                         ProductName = keoMemProduct.ProductName ?? "Chất đông keo (Keo Mềm)",
-                        UOM = "kg",
+                        //UOM = "kg",
                         Amount = request.TotalKeoMem,
                         ProductionOrderId = productionOrderId
                     };
@@ -176,7 +172,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                     {
                         ProductId = planDetail.ProductId,
                         Quantity = kvp.Value,
-                        TrangThai = null,
+                        //TrangThai = null,
                         productionOrderId = productionOrderId
                     });
                 }
