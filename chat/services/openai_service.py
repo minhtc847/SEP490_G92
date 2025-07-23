@@ -1,17 +1,14 @@
-from flask import request
 import openai
 import os
 
 # Load OpenAI API key from environment variable
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-def get_chat_response(prompt):
+async def get_openai_response(prompt: str) -> str:
     try:
-        response = openai.ChatCompletion.create(
+        response = await openai.ChatCompletion.acreate(
             model="gpt-3.5-turbo",
-            messages=[
-                {"role": "user", "content": prompt}
-            ]
+            messages=[{"role": "user", "content": prompt}]
         )
         return response.choices[0].message['content']
     except Exception as e:

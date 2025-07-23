@@ -1,3 +1,5 @@
+import uuid
+import datetime
 from chromadb import Client
 from chromadb.config import Settings
 
@@ -5,22 +7,35 @@ class ChromaDBService:
     def __init__(self):
         self.client = Client(Settings(chroma_db_impl="duckdb+parquet", persist_directory="path/to/chromadb"))
 
-    def add_message(self, collection_name, message):
-        collection = self.client.get_or_create_collection(collection_name)
-        collection.add(documents=[message], metadatas=[{"source": "chat"}])
+    async def add_message(self, conversation_id, content, role):
+        collection = self.client.get_or_create_collection(conversation_id)
+        msg_id = str(uuid.uuid4())
+        created_at = datetime.datetime.utcnow().isoformat()
+        message = {
+            "id": msg_id,
+            "role": role,
+            "content": content,
+            "createdAt": created_at,
+            "conversationId": conversation_id
+        }
+        collection.add(documents=[message], metadatas=[{"source": "chat"}], ids=[msg_id])
+        return message
 
-    def update_message(self, collection_name, message_id, new_message):
-        collection = self.client.get_collection(collection_name)
-        collection.update(ids=[message_id], documents=[new_message])
+    async def get_messages(self, conversation_id):
+        collection = self.client.get_or_create_collection(conversation_id)
+        docs = collection.get_all()
+        # Giả sử docs là list[dict]
+        return docs
 
-    def delete_message(self, collection_name, message_id):
-        collection = self.client.get_collection(collection_name)
-        collection.delete(ids=[message_id])
+    async def get_conversations(self, user_id=None):
+        # Giả sử mỗi conversation là một collection, chỉ demo trả về list các collection
+        collections = self.client.list_collections()
+        # Nếu có user_id thì filter theo metadata (cần lưu user_id khi tạo conversation)
+        return [{"id": c.name, "title": c.name} for c in collections]
 
-    def get_messages(self, collection_name):
-        collection = self.client.get_collection(collection_name)
-        return collection.get_all()  # Assuming this returns all messages in the collection
+# Singleton instance
+chromadb_service = ChromaDBService()
 
-    def search_messages(self, collection_name, query):
-        collection = self.client.get_collection(collection_name)
-        return collection.query(query=query)  # Assuming this performs a search based on the query
+add_message = chromadb_service.add_message
+get_messages = chromadb_service.get_messages
+get_conversations = chromadb_service.get_conversations

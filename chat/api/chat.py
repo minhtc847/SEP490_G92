@@ -1,48 +1,56 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from typing import List, Optional
 from services.openai_service import get_openai_response
 from services.chromadb_service import (
     add_message,
     update_message,
     delete_message,
-    get_messages
+    get_messages,
+    get_conversations
 )
 
 router = APIRouter()
 
-class Message(BaseModel):
-    user_id: str
+class ChatRequest(BaseModel):
+    message: str
+    conversationId: str
+    userId: Optional[str] = None
+
+class MessageModel(BaseModel):
+    id: str
+    role: str
     content: str
+    createdAt: str
+    conversationId: str
 
-@router.post("/chat/send")
-async def send_message(message: Message):
+class ConversationModel(BaseModel):
+    id: str
+    title: str
+
+@router.get("/conversations", response_model=List[ConversationModel])
+async def list_conversations(userId: Optional[str] = None):
     try:
-        response = await get_openai_response(message.content)
-        await add_message(user_id=message.user_id, content=message.content)
-        return {"response": response}
+        return await get_conversations(userId)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.put("/chat/update/{message_id}")
-async def update_chat_message(message_id: str, message: Message):
+@router.get("/conversations/{conversation_id}/messages", response_model=List[MessageModel])
+async def get_conversation_messages(conversation_id: str):
     try:
-        await update_message(message_id=message_id, user_id=message.user_id, content=message.content)
-        return {"detail": "Message updated successfully"}
+        return await get_messages(conversation_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/chat/delete/{message_id}")
-async def delete_chat_message(message_id: str):
+@router.post("/chat", response_model=dict)
+async def send_message(req: ChatRequest):
     try:
-        await delete_message(message_id=message_id)
-        return {"detail": "Message deleted successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/chat/messages/{user_id}")
-async def get_chat_messages(user_id: str):
-    try:
-        messages = await get_messages(user_id=user_id)
-        return {"messages": messages}
+        # Lưu message user
+        user_msg = await add_message(req.conversationId, req.message, role="user")
+        # Gọi bot
+        reply = await get_openai_response(req.message)
+        # Lưu message bot
+        bot_msg = await add_message(req.conversationId, reply, role="assistant")
+        return {"reply": reply}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
