@@ -1,4 +1,6 @@
-﻿namespace SEP490.Modules.Production_plans.DTO
+﻿using SEP490.DB.Models;
+
+namespace SEP490.Modules.Production_plans.DTO
 {
     public class ProductionPlanDetailViewDTO
     {
@@ -10,7 +12,7 @@
         // Sale order info
         public string OrderCode { get; set; } = string.Empty; // "DH" + SaleOrder.Id
         public DateTime OrderDate { get; set; }
-        public string? DeliveryStatus { get; set; }
+        public DeliveryStatus? DeliveryStatus { get; set; }
 
         // Production plan info
         public DateTime PlanDate { get; set; }

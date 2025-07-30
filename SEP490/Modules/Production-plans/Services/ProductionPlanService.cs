@@ -93,10 +93,10 @@ namespace SEP490.Modules.Production_plans.Services
             var plan = new ProductionPlan
             {
                 SaleOrderId = saleOrder.Id,
-                //CustomerId = saleOrder.CustomerId,
+                Customer = saleOrder.Customer,
                 PlanDate = DateTime.Now,
                 Status = "Đang sản xuất",
-                //Quantity = dto.Products.Sum(p => p.Quantity)
+                
             };
             _context.ProductionPlans.Add(plan);
             await _context.SaveChangesAsync();
@@ -149,6 +149,7 @@ namespace SEP490.Modules.Production_plans.Services
                     Doday = prod.Thickness,
                     SoLopKeo = prod.GlueLayers,
                     SoLopKinh = prod.GlassLayers,
+                    UOM = UOM.Tấm,
                     Kinh4 = glass4mm,
                     Kinh5 = glass5mm,
                     LoaiButyl = butylType,
@@ -169,10 +170,9 @@ namespace SEP490.Modules.Production_plans.Services
                 Phone = saleOrder.Customer.Phone,
                 OrderCode = saleOrder.OrderCode ?? "",
                 OrderDate = saleOrder.OrderDate,
-                //DeliveryStatus = saleOrder.DeliveryStatus,
+                DeliveryStatus = saleOrder.DeliveryStatus,
                 PlanDate = plan.PlanDate,
                 Status = plan.Status,
-                //Quantity = plan.Quantity,
                 Done = 0
             };
         }

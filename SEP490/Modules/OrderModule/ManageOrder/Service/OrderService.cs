@@ -63,7 +63,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                     CustomerName = g.Key.CustomerName,
                     OrderCode = g.Key.OrderCode,
                     OrderDate = g.Key.OrderDate.Date,
-                    //Status = g.Key.Status,
+                    Status = g.Key.Status,
                     Discount = g.Key.Discount ?? 0,
                     OriginalTotalAmount = g.Sum(x => x.UnitPrice * x.Quantity),
                     TotalAmount = g.Sum(x => x.UnitPrice * x.Quantity) - (g.Sum(x => x.UnitPrice * x.Quantity) * (g.Key.Discount ?? 0))
@@ -135,7 +135,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             {
                 OrderCode = order.OrderCode,
                 OrderDate = order.OrderDate,
-                //Status = order.Status,
+                Status = order.Status,
                 CustomerName = order.Customer?.CustomerName,
                 Address = order.Customer?.Address,
                 Phone = order.Customer?.Phone,
@@ -204,7 +204,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 CustomerId = customer.Id,
                 OrderCode = dto.OrderCode,
                 OrderDate = dto.OrderDate,
-                //Status = dto.Status
+                Status = Enum.Parse<Status>(dto.Status)
             };
             _context.SaleOrders.Add(order);
             await _context.SaveChangesAsync();
@@ -250,7 +250,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 order.Customer.Discount = dto.Discount;
             }
 
-            //order.Status = dto.Status;
+            order.Status = Enum.Parse<Status>(dto.Status);
 
             var orderDetail = order.OrderDetails.FirstOrDefault();
             if (orderDetail == null)
