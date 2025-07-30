@@ -97,7 +97,7 @@ const SalesOrderSummary = () => {
 
             return true;
         })
-        .filter((order) => (statusFilter ? order.status === statusFilter : true))
+        .filter((order) => (statusFilter ? order.status === parseInt(statusFilter) : true))
         .sort((a, b) => {
             if (sortAmount === 'asc') return a.totalAmount - b.totalAmount;
             if (sortAmount === 'desc') return b.totalAmount - a.totalAmount;
@@ -189,10 +189,10 @@ const SalesOrderSummary = () => {
                         }}
                     >
                         <option value="">Tất cả trạng thái</option>
-                        <option value="Chưa thực hiện">Chưa thực hiện</option>
-                        <option value="Đang thực hiện">Đang thực hiện</option>
-                        <option value="Hoàn thành">Hoàn thành</option>
-                        <option value="Đã huỷ">Đã huỷ</option>
+                        <option value="0">Chưa thực hiện</option>
+                        <option value="1">Đang thực hiện</option>
+                        <option value="2">Hoàn thành</option>
+                        <option value="3">Đã huỷ</option>
                     </select>
                 </div>
             </div>
@@ -240,18 +240,18 @@ const SalesOrderSummary = () => {
                                 <td>
                                     <span
                                         className={`badge ${
-                                            order.status === 'Chưa thực hiện'
+                                            order.status === 0
                                                 ? 'badge-outline-warning'
-                                                : order.status === 'Đang thực hiện'
+                                                : order.status === 1
                                                   ? 'badge-outline-info'
-                                                  : order.status === 'Hoàn thành'
+                                                  : order.status === 2
                                                     ? 'badge-outline-success'
-                                                    : order.status === 'Đã huỷ'
+                                                    : order.status === 3
                                                       ? 'badge-outline-danger'
                                                       : 'badge-outline-default'
                                         }`}
                                     >
-                                        {order.status}
+                                        {order.status === 0 ? 'Chưa thực hiện' : order.status === 1 ? 'Đang thực hiện' : order.status === 2 ? 'Hoàn thành' : 'Đã huỷ'}
                                     </span>
                                 </td>
 

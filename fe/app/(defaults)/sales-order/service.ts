@@ -5,7 +5,7 @@ export interface OrderDto {
     customerName: string;
     orderCode: string;
     orderDate: string;
-    status: string;
+    status: number;
     totalAmount: number;
 }
 

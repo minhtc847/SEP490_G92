@@ -283,21 +283,7 @@ const Sidebar = () => {
             );
         }
 
-        // Messages - Factory Manager only
-        if (canView('messages')) {
-            items.push(
-                <li key="messages" className="menu nav-item">
-                    <Link href="/messages" className="nav-link group w-full">
-                        <div className="flex items-center">
-                            <IconMenuChat className="shrink-0 group-hover:!text-primary" />
-                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
-                                Tin Nhắn
-                            </span>
-                        </div>
-                    </Link>
-                </li>
-            );
-        }
+       
 
         // User Management - Factory Manager only
         if (isFactoryManager()) {
