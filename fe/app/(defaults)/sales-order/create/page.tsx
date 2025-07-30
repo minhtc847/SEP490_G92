@@ -71,7 +71,7 @@ const SalesOrderCreatePage = () => {
         orderDate: new Date().toISOString().split('T')[0],
         orderCode: '',
         discount: 0,
-        status: 'Chưa thực hiện',
+        status: 'Pending',
         orderItems: [] as OrderItem[],
     });
 
@@ -292,10 +292,10 @@ const SalesOrderCreatePage = () => {
                 <div>
                     <label className="block mb-1 font-medium">Trạng thái</label>
                     <select className="select select-bordered w-full" value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}>
-                        <option value="Chưa thực hiện">Chưa thực hiện</option>
-                        <option value="Đang thực hiện">Đang thực hiện</option>
-                        <option value="Hoàn thành">Hoàn thành</option>
-                        <option value="Đã huỷ">Đã huỷ</option>
+                        <option value="Pending">Chưa thực hiện</option>
+                        <option value="Processing">Đang thực hiện</option>
+                        <option value="Delivered">Hoàn thành</option>
+                        <option value="Cancelled">Đã huỷ</option>
                     </select>
                 </div>
                 <div>

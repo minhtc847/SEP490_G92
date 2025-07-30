@@ -1,4 +1,6 @@
-﻿namespace SEP490.Modules.OrderModule.ManageOrder.DTO
+﻿using SEP490.DB.Models;
+
+namespace SEP490.Modules.OrderModule.ManageOrder.DTO
 {
     public class ProductInOrderDto
     {
@@ -36,7 +38,7 @@
         public List<ProductInOrderDto> Products { get; set; } 
         public int TotalQuantity { get; set; }
         public decimal TotalAmount { get; set; }
-        public string? Status { get; set; }
+        public Status? Status { get; set; }
     }
 
 }
