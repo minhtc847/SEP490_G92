@@ -198,6 +198,37 @@ const Sidebar = () => {
             );
         }
 
+        // // Products - Factory Manager and Accountant
+        // if (canView('products')) {
+            items.push(
+                <li key="products" className="menu nav-item">
+                    <button type="button" className={`${currentMenu === "products" ? "active" : ""} nav-link group w-full`} onClick={() => toggleMenu("products")}>
+                        <div className="flex items-center">
+                            <IconMenuComponents className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Sản Phẩm
+                            </span>
+                        </div>
+                        <div className={currentMenu !== "products" ? "-rotate-90 rtl:rotate-90" : ""}>
+                            <IconCaretDown />
+                        </div>
+                    </button>
+                    <AnimateHeight duration={300} height={currentMenu === "products" ? "auto" : 0}>
+                        <ul className="sub-menu text-gray-500">
+                            <li>
+                                <Link href="/products">Danh Sách Sản Phẩm</Link>
+                            </li>
+                            {canCreate('products') && (
+                                <li>
+                                    <Link href="/products/create">Thêm Sản Phẩm</Link>
+                                </li>
+                            )}
+                        </ul>
+                    </AnimateHeight>
+                </li>
+            );
+        // }
+
         // Price Quotes - Factory Manager and Accountant
         if (canView('quotes')) {
             items.push(
