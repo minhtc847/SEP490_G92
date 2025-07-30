@@ -29,13 +29,15 @@ class DocumentService:
             print(f"Error extracting text from TXT: {e}")
             raise
     
-    async def extract_text(self, file_path: Path) -> str:
+    async def extract_text(self, file_path: str) -> str:
         """Extract text based on file extension"""
-        suffix = file_path.suffix.lower()
+        # Convert string to Path object
+        path = Path(file_path)
+        suffix = path.suffix.lower()
         
         if suffix == '.pdf':
-            return await self.extract_text_from_pdf(file_path)
+            return await self.extract_text_from_pdf(path)
         elif suffix == '.txt':
-            return await self.extract_text_from_txt(file_path)
+            return await self.extract_text_from_txt(path)
         else:
             raise ValueError(f"Unsupported file type: {suffix}. Only PDF and TXT are supported.")

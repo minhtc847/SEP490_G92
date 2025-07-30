@@ -1,28 +1,33 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 class Message(BaseModel):
-    id: Optional[int]
+    role: str
     content: str
-    sender: str
-    timestamp: str
+    timestamp: Optional[str] = None
 
 class Document(BaseModel):
-    id: Optional[int]
+    id: str
     title: str
     content: str
     created_at: str
     updated_at: str
 
 class ChatRequest(BaseModel):
-    message: str
+    question: str
     history: Optional[List[Message]] = []
+
+class Source(BaseModel):
+    chunk: str
+    metadata: Dict[str, Any]
+    relevance_score: Optional[float] = None
 
 class ChatResponse(BaseModel):
     response: str
-    suggestions: Optional[List[str]] = None
+    sources: Optional[List[Source]] = None
     status: str = "success"
+    method: Optional[str] = None  # "direct_gpt", "rag", "fallback", "error", "no_documents"
 
 class UpdateDocument(BaseModel):
     title: Optional[str]
