@@ -91,13 +91,14 @@ namespace SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.Service
         public async Task<int> CreatePurchaseOrderAsync(CreatePurchaseOrderDto dto)
         {
             var customer = await _context.Customers
-                .FirstOrDefaultAsync(c => c.CustomerName == dto.CustomerName);
+                .FirstOrDefaultAsync(c => c.CustomerName == dto.CustomerName && c.IsSupplier);
 
             if (customer == null)
             {
                 customer = new Customer
                 {
-                    CustomerName = dto.CustomerName
+                    CustomerName = dto.CustomerName,
+                    IsSupplier = true
                 };
                 _context.Customers.Add(customer);
                 await _context.SaveChangesAsync();         
@@ -227,35 +228,34 @@ namespace SEP490.Modules.PurchaseOrderModule.ManagePurchaseOrder.Service
 
         public async Task<Product> CreateProductAsync(CreateProductV3Dto dto)
         {
+            if (string.IsNullOrWhiteSpace(dto.ProductName))
+                throw new Exception("Tên sản phẩm là bắt buộc.");
+            if (string.IsNullOrWhiteSpace(dto.UOM))
+                throw new Exception("Đơn vị tính (UOM) là bắt buộc.");
+
             bool isNameExisted = await _context.Products.AnyAsync(p => p.ProductName == dto.ProductName);
             if (isNameExisted)
                 throw new Exception("Tên sản phẩm đã tồn tại!");
-
-            if (!decimal.TryParse(dto.Width, out var widthMm) || !decimal.TryParse(dto.Height, out var heightMm))
-                throw new Exception("Chiều rộng hoặc chiều cao không hợp lệ.");
-
-            var area = (widthMm * heightMm) / 1_000_000m;
-
-
 
             var product = new Product
             {
                 ProductCode = null,
                 ProductName = dto.ProductName,
-                ProductType = dto.ProductType ?? "nvl",
-                UOM = dto.UOM ?? "Tấm",
+                ProductType = dto.ProductType ?? "NVL",
+                UOM = dto.UOM,
                 Width = dto.Width,
                 Height = dto.Height,
                 Thickness = dto.Thickness,
-                Weight = null, 
-                UnitPrice = null,
-                GlassStructureId = null,
+                Weight = dto.Weight,
+                UnitPrice = dto.UnitPrice,
+                GlassStructureId = dto.GlassStructureId
             };
 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
             return product;
         }
+
         public string GetNextPurchaseOrderCode()
         {
             var codes = _context.PurchaseOrders

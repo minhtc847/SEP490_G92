@@ -40,6 +40,15 @@ const SalesOrderCreatePage = () => {
         }));
     };
 
+    const [newFinishedProductForm, setNewFinishedProductForm] = useState({
+        productName: '',
+        width: 0,
+        height: 0,
+        thickness: 0,
+        unitPrice: 0,
+        glassStructureId: undefined as number | undefined,
+    });
+
     const [showAddProductForm, setShowAddProductForm] = useState(false);
     const [newProductForm, setNewProductForm] = useState({
         productName: '',
@@ -90,7 +99,36 @@ const SalesOrderCreatePage = () => {
         };
 
         loadInitial();
-    }, []); 
+    }, []);
+
+    function extractDimensionsFromName(name: string): { width: number; height: number; thickness: number } | null {
+        const match = name.match(/KT:\s*(\d+)\*(\d+)\*(\d+)\s*mm/i);
+        if (!match) return null;
+
+        const [, width, height, thickness] = match;
+        return {
+            width: parseInt(width),
+            height: parseInt(height),
+            thickness: parseInt(thickness),
+        };
+    }
+
+    const handleFinishedProductNameChange = async (val: string) => {
+        const trimmed = val.trim();
+        const exists = await checkProductNameExists(trimmed);
+
+        setIsProductNameDuplicate(exists);
+
+        const dims = extractDimensionsFromName(trimmed);
+
+        setNewFinishedProductForm((prev) => ({
+            ...prev,
+            productName: val,
+            width: dims?.width ?? prev.width,
+            height: dims?.height ?? prev.height,
+            thickness: dims?.thickness ?? prev.thickness,
+        }));
+    };
 
     useEffect(() => {
         if (!glassStructures.length) return;
@@ -141,36 +179,36 @@ const SalesOrderCreatePage = () => {
             }
 
             const regex = /^Kính .+ phút, KT: \d+\*\d+\*\d+ mm, .+$/;
-            if (!regex.test(newProductForm.productName)) {
-                alert('Tên sản phẩm không đúng định dạng. Ví dụ: "Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng"');
+            if (!regex.test(newFinishedProductForm.productName)) {
+                alert('Tên sản phẩm sai định dạng.\n\nVí dụ đúng: Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng');
                 return;
             }
 
-            if (!newProductForm.productName.trim()) {
+            if (!newFinishedProductForm.productName.trim()) {
                 alert('Vui lòng nhập tên sản phẩm!');
                 return;
             }
 
-            const isExisted = await checkProductNameExists(newProductForm.productName);
+            const isExisted = await checkProductNameExists(newFinishedProductForm.productName);
             if (isExisted) {
                 alert('Tên sản phẩm đã tồn tại, vui lòng chọn tên khác!');
                 return;
             }
 
-            if (!newProductForm.glassStructureId) {
+            if (!newFinishedProductForm.glassStructureId) {
                 alert('Vui lòng chọn cấu trúc kính!');
                 return;
             }
 
             const payload = {
-                productName: newProductForm.productName,
-                width: newProductForm.width.toString(),
-                height: newProductForm.height.toString(),
-                thickness: newProductForm.thickness,
+                productName: newFinishedProductForm.productName,
+                width: newFinishedProductForm.width.toString(),
+                height: newFinishedProductForm.height.toString(),
+                thickness: newFinishedProductForm.thickness,
                 uom: 'Tấm',
                 productType: 'Thành Phẩm',
                 unitPrice: 0,
-                glassStructureId: newProductForm.glassStructureId,
+                glassStructureId: newFinishedProductForm.glassStructureId,
             };
 
             const newProduct = await createProduct(payload);
@@ -349,10 +387,11 @@ const SalesOrderCreatePage = () => {
                         <tr>
                             <th>STT</th>
                             <th>Tên SP</th>
-                            <th>Rộng</th>
+                            {/* <th>Rộng</th>
                             <th>Cao</th>
-                            <th>Dày</th>
+                            <th>Dày</th> */}
                             <th>Số lượng</th>
+                            <th>Đơn vị tính</th>
                             <th>Đơn giá</th>
                             <th>Diện tích (m²)</th>
                             <th>Thành tiền</th>
@@ -370,12 +409,13 @@ const SalesOrderCreatePage = () => {
                                 <tr key={index}>
                                     <td>{index + 1}</td>
                                     <td>{item.productName}</td>
-                                    <td className="text-right">{width.toLocaleString()}</td>
+                                    {/* <td className="text-right">{width.toLocaleString()}</td>
                                     <td className="text-right">{height.toLocaleString()}</td>
-                                    <td className="text-right">{(item.thickness ?? 0).toLocaleString()}</td>
+                                    <td className="text-right">{(item.thickness ?? 0).toLocaleString()}</td> */}
                                     <td>
                                         <input type="number" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', +e.target.value)} className="input input-sm" />
                                     </td>
+                                    <td >Tấm</td>
                                     <td className="text-right">{(item.unitPrice ?? 0).toLocaleString()}</td>
                                     <td className="text-right">{area.toFixed(2)}</td>
                                     <td className="text-right">{total.toLocaleString()} đ</td>
@@ -429,104 +469,85 @@ const SalesOrderCreatePage = () => {
                         + Thêm sản phẩm
                     </button>
                     {showAddProductForm && (
-                        <div className="border rounded-lg p-4 mb-6 bg-gray-50">
-                            <h4 className="text-lg font-semibold mb-2">Thêm sản phẩm mới</h4>
-                            <p className="text-sm text-gray-500 italic mb-2">
-                                ⚠️ Tên sản phẩm phải theo định dạng: <strong>Kính [loại] phút, KT: [rộng]*[cao]*[dày] mm, [mô tả thêm]</strong>
-                                <br />
-                                <span>
-                                    Ví dụ: <code>Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng</code>
-                                </span>
-                            </p>
+                        <div>
+                            <div>
+                                <h4 className="text-lg font-semibold mb-2">Thêm sản phẩm mới</h4>
+                                <p className="text-sm text-gray-500 italic mb-2">
+                                    ⚠️ Tên sản phẩm phải theo định dạng: <strong>Kính [loại] phút, KT: [rộng]*[cao]*[dày] mm, [mô tả thêm]</strong>
+                                    <br />
+                                    <span>
+                                        Ví dụ: <code>Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng</code>
+                                    </span>
+                                </p>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="col-span-full">
-                                    <label className="block mb-1 font-medium">Tên sản phẩm</label>
-                                    <input
-                                        className="input input-sm input-bordered w-full"
-                                        placeholder="VD: Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng"
-                                        value={newProductForm.productName}
-                                        onChange={(e) => handleProductNameChange(e.target.value)}
-                                    />
-                                    {isProductNameDuplicate && <p className="text-red-500 text-sm mt-1">Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.</p>}
-                                </div>
+                                <label className="block mb-1 font-medium">Tên sản phẩm</label>
+                                <input
+                                    className="input input-bordered w-full"
+                                    value={newFinishedProductForm.productName}
+                                    onChange={(e) => handleFinishedProductNameChange(e.target.value)}
+                                    placeholder="VD: Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng"
+                                />
+                                {isProductNameDuplicate && <p className="text-red-500 text-sm">Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.</p>}
+                            </div>
 
+                            <div className="grid grid-cols-3 gap-4">
                                 <div>
                                     <label className="block mb-1 font-medium">Rộng (mm)</label>
                                     <input
-                                        className="input input-sm input-bordered w-full"
+                                        disabled={true}
                                         type="number"
-                                        value={newProductForm.width}
-                                        onChange={(e) => setNewProductForm((prev) => ({ ...prev, width: +e.target.value }))}
+                                        className="input input-bordered w-full"
+                                        value={newFinishedProductForm.width}
+                                        onChange={(e) => setNewFinishedProductForm((p) => ({ ...p, width: +e.target.value }))}
                                     />
                                 </div>
-
                                 <div>
                                     <label className="block mb-1 font-medium">Cao (mm)</label>
                                     <input
-                                        className="input input-sm input-bordered w-full"
+                                        disabled={true}
                                         type="number"
-                                        value={newProductForm.height}
-                                        onChange={(e) => setNewProductForm((prev) => ({ ...prev, height: +e.target.value }))}
+                                        className="input input-bordered w-full"
+                                        value={newFinishedProductForm.height}
+                                        onChange={(e) => setNewFinishedProductForm((p) => ({ ...p, height: +e.target.value }))}
                                     />
                                 </div>
-
                                 <div>
                                     <label className="block mb-1 font-medium">Dày (mm)</label>
                                     <input
-                                        className="input input-sm input-bordered w-full"
+                                        disabled={true}
                                         type="number"
-                                        value={newProductForm.thickness}
-                                        onChange={(e) => setNewProductForm((prev) => ({ ...prev, thickness: +e.target.value }))}
+                                        className="input input-bordered w-full"
+                                        value={newFinishedProductForm.thickness}
+                                        onChange={(e) => setNewFinishedProductForm((p) => ({ ...p, thickness: +e.target.value }))}
                                     />
                                 </div>
+                            </div>
 
-                                <div className="md:col-span-2">
-                                    <label className="block mb-1 font-medium">Cấu trúc kính</label>
-                                    <AsyncSelect
-                                        cacheOptions
-                                        defaultOptions
-                                        placeholder="Tìm cấu trúc kính..."
-                                        value={
-                                            glassStructures
-                                                .filter((gs) => gs.id === newProductForm.glassStructureId)
-                                                .map((gs) => ({
-                                                    label: gs.productName,
-                                                    value: gs.id,
-                                                }))[0] || null
-                                        }
-                                        loadOptions={(inputValue, callback) => {
-                                            const filtered = glassStructures
-                                                .filter((gs) => gs.productName.toLowerCase().includes(inputValue.toLowerCase()))
-                                                .map((gs) => ({
-                                                    label: gs.productName,
-                                                    value: gs.id,
-                                                }));
-                                            callback(filtered);
-                                        }}
-                                        onChange={(option) => {
-                                            setNewProductForm((prev) => ({
-                                                ...prev,
-                                                glassStructureId: option ? option.value : undefined,
-                                            }));
-                                        }}
-                                        styles={{ container: (base) => ({ ...base, width: '100%' }) }}
-                                    />
-                                </div>
+                            <div>
+                                <label className="block mb-1 font-medium">Cấu trúc kính</label>
+                                <AsyncSelect
+                                    cacheOptions
+                                    defaultOptions
+                                    loadOptions={(input, cb) =>
+                                        cb(glassStructures.filter((g) => g.productName.toLowerCase().includes(input.toLowerCase())).map((g) => ({ label: g.productName, value: g.id })))
+                                    }
+                                    onChange={(opt) => setNewFinishedProductForm((p) => ({ ...p, glassStructureId: opt ? opt.value : undefined }))}
+                                    value={glassStructures.filter((g) => g.id === newFinishedProductForm.glassStructureId).map((g) => ({ label: g.productName, value: g.id }))[0] || null}
+                                />
+                            </div>
 
+                            <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block mb-1 font-medium">Diện tích (m²)</label>
-                                    <div className="input input-sm bg-gray-100 flex items-center">{((newProductForm.width * newProductForm.height) / 1_000_000).toFixed(2)}</div>
+                                    <div className="input input-bordered bg-gray-100">{((newFinishedProductForm.width * newFinishedProductForm.height) / 1_000_000).toFixed(2)}</div>
                                 </div>
-
                                 <div>
                                     <label className="block mb-1 font-medium">Đơn giá (₫)</label>
-                                    <div className="input input-sm bg-gray-100 flex items-center">
+                                    <div className="input input-bordered bg-gray-100">
                                         {(() => {
-                                            const area = (newProductForm.width * newProductForm.height) / 1_000_000;
-                                            const structure = glassStructures.find((gs) => gs.id === newProductForm.glassStructureId);
-                                            const price = (structure?.unitPrice || 0) * area;
-                                            return price.toFixed(0);
+                                            const area = (newFinishedProductForm.width * newFinishedProductForm.height) / 1_000_000;
+                                            const s = glassStructures.find((g) => g.id === newFinishedProductForm.glassStructureId);
+                                            return ((s?.unitPrice || 0) * area).toFixed(0);
                                         })()}
                                     </div>
                                 </div>

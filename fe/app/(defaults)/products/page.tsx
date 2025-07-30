@@ -157,7 +157,8 @@ const ProductListPage = () => {
                     <thead>
                         <tr>
                             <th>Tên sản phẩm</th>
-                            <th>Chủng loại</th>
+                            <th>Loại SP</th>
+                            <th>Số lượng</th>
                             <th>Đơn vị tính</th>
                             <th>Hành động</th>
                         </tr>
@@ -167,6 +168,7 @@ const ProductListPage = () => {
                             <tr key={product.id}>
                                 <td>{product.productName}</td>
                                 <td>{product.productType}</td>
+                                <td>{product.quantity}</td> 
                                 <td>{product.uom}</td>
                                 <td className="flex gap-2">
                                     <button onClick={() => router.push(`/products/${product.id}`)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-300 transition" title="Chi tiết">

@@ -211,7 +211,8 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
                     p.Width,
                     p.Thickness,
                     p.UnitPrice,
-                    p.GlassStructureId
+                    p.GlassStructureId,
+                    p.UOM
                 })
                 .ToList();
 
@@ -234,7 +235,8 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
                     p.Width,
                     p.Thickness,
                     p.UnitPrice,
-                    p.GlassStructureId
+                    p.GlassStructureId,
+                    p.UOM
                 })
                 .ToList();
 

@@ -12,4 +12,5 @@
     public decimal? UnitPrice { get; set; }
     public int? GlassStructureId { get; set; }
     public string GlassStructureProductName { get; set; } = string.Empty;
+    public double Quantity { get; set; }
 }

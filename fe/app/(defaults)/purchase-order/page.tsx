@@ -68,8 +68,10 @@ const PurchaseOrderPage = () => {
     }, []);
 
     const filteredOrders = orders
-        .filter((order) => order.customerName?.toLowerCase().includes(searchTerm.toLowerCase()))
-        .filter(order => order.description?.toLowerCase().includes(searchDescription.toLowerCase()))
+        .filter((order) => {
+            const combined = `${order.customerName ?? ''} ${order.description ?? ''}`.toLowerCase();
+            return combined.includes(searchTerm.toLowerCase());
+        })
         .filter((order) => (statusFilter ? order.status === statusFilter : true))
         .sort((a, b) => {
             if (sortAmount === 'asc') return (a.totalValue || 0) - (b.totalValue || 0);
@@ -94,10 +96,10 @@ const PurchaseOrderPage = () => {
 
             {/* Bộ lọc */}
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="flex flex-col md:flex-row gap-4 w-full md:w-2/3">
+                <div className="w-full md:w-2/3">
                     <input
                         type="text"
-                        placeholder="Tìm theo tên nhà cung cấp..."
+                        placeholder="Tìm theo tên nhà cung cấp hoặc mô tả..."
                         value={searchTerm}
                         onChange={(e) => {
                             setSearchTerm(e.target.value);
@@ -105,20 +107,10 @@ const PurchaseOrderPage = () => {
                         }}
                         className="input input-bordered w-full py-2 px-4 rounded-lg shadow-sm"
                     />
-                    <input
-                        type="text"
-                        placeholder="Tìm theo mô tả..."
-                        value={searchDescription}
-                        onChange={(e) => {
-                            setSearchDescription(e.target.value);
-                            setCurrentPage(1);
-                        }}
-                        className="input input-bordered w-full py-2 px-4 rounded-lg shadow-sm"
-                    />
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4">
-                    <select
+                    {/* <select
                         onChange={(e) => {
                             const val = e.target.value;
                             setSortAmount(val === 'asc' ? 'asc' : val === 'desc' ? 'desc' : null);
@@ -130,7 +122,7 @@ const PurchaseOrderPage = () => {
                         <option value="">Tổng tiền</option>
                         <option value="asc">Thấp → Cao</option>
                         <option value="desc">Cao → Thấp</option>
-                    </select>
+                    </select> */}
 
                     <select
                         className="select select-bordered py-2 px-4 rounded-lg shadow-sm"
@@ -149,7 +141,6 @@ const PurchaseOrderPage = () => {
                 </div>
             </div>
 
-            {/* Hiển thị thông tin dòng */}
             <div className="flex items-center gap-2 mb-3 text-sm text-gray-600">
                 <span>
                     Hiển thị {startIndex + 1} đến {Math.min(startIndex + itemsPerPage, filteredOrders.length)} trong tổng {filteredOrders.length} đơn hàng.
@@ -176,7 +167,7 @@ const PurchaseOrderPage = () => {
                         <tr>
                             <th className="border px-3 py-2">Mô tả</th>
                             <th className="border px-3 py-2">Ngày tạo</th>
-                            <th className="border px-3 py-2">Tổng tiền</th>
+                            {/* <th className="border px-3 py-2">Tổng tiền</th> */}
                             <th className="border px-3 py-2">Trạng thái</th>
                             <th className="border px-3 py-2">Nhà cung cấp</th>
                             <th className="border px-3 py-2">Hành động</th>
@@ -187,7 +178,7 @@ const PurchaseOrderPage = () => {
                             <tr key={order.id}>
                                 <td className="border px-3 py-2">{order.description || '-'}</td>
                                 <td className="border px-3 py-2">{order.date ? new Date(order.date).toLocaleDateString('vi-VN') : ''}</td>
-                                <td className="border px-3 py-2">{order.totalValue != null ? `${order.totalValue.toLocaleString()}₫` : '0₫'}</td>
+                                {/* <td className="border px-3 py-2">{order.totalValue != null ? `${order.totalValue.toLocaleString()}₫` : '0₫'}</td> */}
                                 <td>
                                     <span
                                         className={`badge ${

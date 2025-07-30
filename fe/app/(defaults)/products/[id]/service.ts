@@ -12,6 +12,7 @@ export interface ProductDetail {
     weight?: number;
     unitPrice?: number;
     glassStructureId: number;
+    quantity?: number;
 }
 
 export interface GlassStructureOption {

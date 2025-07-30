@@ -80,12 +80,12 @@ const PurchaseOrderDetailPage = () => {
                     <tr>
                         <th className="border p-2">STT</th>
                         <th className="border p-2">Tên SP</th>
-                        <th className="border p-2">Rộng (mm)</th>
+                        {/* <th className="border p-2">Rộng (mm)</th>
                         <th className="border p-2">Cao (mm)</th>
-                        <th className="border p-2">Dày (mm)</th>
+                        <th className="border p-2">Dày (mm)</th> */}
                         <th className="border p-2">Số lượng</th>
                         <th className="border p-2">Đơn vị</th>
-                        <th className="border p-2">Diện tích (m²)</th>
+                        {/* <th className="border p-2">Diện tích (m²)</th> */}
                     </tr>
                 </thead>
                 <tbody>
@@ -98,12 +98,12 @@ const PurchaseOrderDetailPage = () => {
                             <tr key={idx}>
                                 <td className="border p-2 text-center">{idx + 1}</td>
                                 <td className="border p-2">{item.productName}</td>
-                                <td className="border p-2 text-right">{width.toLocaleString()}</td>
+                                {/* <td className="border p-2 text-right">{width.toLocaleString()}</td>
                                 <td className="border p-2 text-right">{height.toLocaleString()}</td>
-                                <td className="border p-2 text-right">{(item.thickness ?? 0).toLocaleString()}</td>
+                                <td className="border p-2 text-right">{(item.thickness ?? 0).toLocaleString()}</td> */}
                                 <td className="border p-2 text-right">{(item.quantity ?? 0).toLocaleString()}</td>
                                 <td className="border p-2">{item.uom || '-'}</td>
-                                <td className="border p-2 text-right">{areaM2.toFixed(2)}</td>
+                                {/* <td className="border p-2 text-right">{areaM2.toFixed(2)}</td> */}
                             </tr>
                         );
                     })}

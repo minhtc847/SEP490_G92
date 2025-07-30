@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getPriceQuotes, PriceQuote } from '@/app/(defaults)/price-quotes/service';
+import { getPriceQuotes, PriceQuote, PriceQuoteDetail, deletePriceQuote } from '@/app/(defaults)/price-quotes/service';
 import IconEye from '@/components/icon/icon-eye';
 import IconEdit from '@/components/icon/icon-edit';
 import IconTrash from '@/components/icon/icon-trash-lines';
@@ -57,6 +57,7 @@ const PriceQuotePage = () => {
     const [message, setMessage] = useState('');
     const searchParams = useSearchParams();
     const deletedMessage = searchParams.get('deleted');
+    const [formData, setFormData] = useState<PriceQuoteDetail | null>(null);
     const successMessage = searchParams.get('success');
 
     useEffect(() => {
@@ -72,16 +73,25 @@ const PriceQuotePage = () => {
         fetch();
     }, []);
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         const deletedItem = quotes.find((q) => q.id === id);
-        if (deletedItem && confirm(`Bạn có chắc chắn muốn xóa báo giá: ${deletedItem.productName}?`)) {
-            setQuotes((prev) => prev.filter((q) => q.id !== id));
-            router.push(`/price-quotes?deleted=${encodeURIComponent(deletedItem.productName)}`);
+        if (!deletedItem) return;
+
+        const confirmDelete = confirm(`Bạn có chắc chắn muốn xoá báo giá: ${deletedItem.productName}?`);
+        if (!confirmDelete) return;
+
+        try {
+            await deletePriceQuote(id);
+            alert(`Đã xoá báo giá: ${deletedItem.productName}`);
+            router.refresh();
+        } catch (err) {
+            console.error('Lỗi khi xoá báo giá:', err);
+            alert('Xoá báo giá thất bại! Không thể xoá báo giá được sử dụng');
         }
     };
 
     const filteredQuotes = quotes
-        .filter((item) => item.productName.toLowerCase().includes(searchTerm.toLowerCase()))
+        .filter((item) => item.productName.toLowerCase().includes(searchTerm.toLowerCase()) || item.productCode.toLowerCase().includes(searchTerm.toLowerCase()))
         .filter((item) => (categoryFilter ? item.category === categoryFilter : true))
         .filter((item) => (typeFilter ? item.productCode === typeFilter : true))
         .sort((a, b) => {
@@ -107,23 +117,12 @@ const PriceQuotePage = () => {
                 </button>
             </div>
 
-            {successMessage && (
-                <div className="mb-4 p-3 rounded-xl bg-green-100 text-green-800 border border-green-300">
-                    Đã thêm báo giá thành công cho <strong>{successMessage}</strong>.
-                </div>
-            )}
-            {deletedMessage && (
-                <div className="mb-4 p-3 rounded-xl bg-red-100 text-red-800 border border-red-300">
-                    🗑️ Đã xoá báo giá thành công: <strong>{deletedMessage}</strong>
-                </div>
-            )}
-
             {message && <div className="mb-4 p-3 rounded bg-green-100 text-green-800 border border-green-300">{message}</div>}
 
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <input
                     type="text"
-                    placeholder="Tìm theo tên hàng..."
+                    placeholder="Tìm theo tên hoặc mã sản phẩm..."
                     value={searchTerm}
                     onChange={(e) => {
                         setSearchTerm(e.target.value);
@@ -132,20 +131,18 @@ const PriceQuotePage = () => {
                     className="input input-bordered w-full md:w-1/3 pl-4 pr-4 py-2 rounded-lg shadow-sm"
                 />
                 <div className="flex flex-wrap items-center gap-4">
-
-
                     <select
-                        className="select select-bordered ..."
-                        value={typeFilter}
+                        className="select select-bordered pl-4 pr-4 py-2 rounded-lg shadow-sm"
+                        value={categoryFilter}
                         onChange={(e) => {
-                            setTypeFilter(e.target.value);
+                            setCategoryFilter(e.target.value);
                             setCurrentPage(1);
                         }}
                     >
-                        <option value="">Tất cả mã sản phẩm</option>
-                        {Array.from(new Set(quotes.map((q) => q.productCode))).map((code) => (
-                            <option key={code} value={code}>
-                                {code}
+                        <option value="">Tất cả loại hàng</option>
+                        {Array.from(new Set(quotes.map((q) => q.category))).map((category) => (
+                            <option key={category} value={category}>
+                                {category}
                             </option>
                         ))}
                     </select>
@@ -190,7 +187,8 @@ const PriceQuotePage = () => {
                     <thead>
                         <tr>
                             <th>Tên</th>
-                            <th>Chủng loại</th>
+                            <th>Loại</th>
+                            <th>Mã SP</th>
                             <th>Đơn giá</th>
                             <th>Hành động</th>
                         </tr>
@@ -199,6 +197,7 @@ const PriceQuotePage = () => {
                         {paginatedQuotes.map((item, index) => (
                             <tr key={index}>
                                 <td>{item.productName}</td>
+                                <td>{item.category}</td>
                                 <td>{item.productCode}</td>
                                 <td>{item.unitPrice.toLocaleString()}₫</td>
                                 <td className="flex gap-2">

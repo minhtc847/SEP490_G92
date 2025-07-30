@@ -3,22 +3,51 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AsyncSelect from 'react-select/async';
-import { getProductById, updateProduct, deleteProduct, ProductDetail } from './service';
+import { getProductById, updateProduct, deleteProduct, ProductDetail, getGlassStructureById } from './service';
 import { searchGlassStructures, GlassStructureOption } from '@/app/(defaults)/products/edit/[id]/service';
 
 const ProductEditPage = () => {
     const { id } = useParams();
     const router = useRouter();
+    const [product, setProduct] = useState<ProductDetail | null>(null);
+    const [glassStructureName, setGlassStructureName] = useState<string>('');
     const [formData, setFormData] = useState<ProductDetail | null>(null);
+    const [glassStructureOptions, setGlassStructureOptions] = useState<GlassStructureOption[]>([]);
+    const [selectedGlassStructure, setSelectedGlassStructure] = useState<GlassStructureOption | null>(null);
 
     useEffect(() => {
-        if (id) {
-            getProductById(String(id))
-                .then(setFormData)
-                .catch((err) => {
-                    console.error('Lỗi khi tải sản phẩm:', err);
-                });
-        }
+        const fetchData = async () => {
+            try {
+                if (!id) return;
+
+                const productData = await getProductById(String(id));
+                setProduct(productData);
+
+                if (productData.glassStructureId) {
+                    const structure = await getGlassStructureById(productData.glassStructureId);
+                    if (structure?.productName) {
+                        setGlassStructureName(structure.productName);
+                    }
+                } else {
+                    setGlassStructureName('');
+                }
+
+                setFormData(productData);
+                if (productData.glassStructureId) {
+                    const options = await searchGlassStructures('');
+                    setGlassStructureOptions(options);
+                    const matched = options.find((opt) => opt.id === productData.glassStructureId);
+                    setSelectedGlassStructure(matched ?? null);
+                }
+
+                const allOptions = await searchGlassStructures('');
+                setGlassStructureOptions(allOptions);
+            } catch (err) {
+                console.error('Lỗi khi tải dữ liệu sản phẩm hoặc cấu trúc kính:', err);
+            }
+        };
+
+        fetchData();
     }, [id]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,15 +56,15 @@ const ProductEditPage = () => {
             prev
                 ? {
                       ...prev,
-                      [name]: ['thickness', 'weight', 'unitPrice'].includes(name) ? Number(value) : value,
+                      [name]: ['thickness', 'weight', 'unitPrice', 'quantity'].includes(name) ? Number(value) : value
                   }
                 : null,
         );
     };
 
     const handleStructureChange = (selected: GlassStructureOption | null) => {
-        if (!selected) return;
-        setFormData((prev) => (prev ? { ...prev, glassStructureId: selected.id } : null));
+        setSelectedGlassStructure(selected);
+        setFormData((prev) => (prev ? { ...prev, glassStructureId: selected ? selected.id : undefined } : null));
     };
 
     const handleDelete = async () => {
@@ -58,7 +87,8 @@ const ProductEditPage = () => {
         if (!formData) return;
         try {
             await updateProduct(formData.id, formData);
-            router.push(`/products?success=${encodeURIComponent(formData.productName ?? '')}`);
+            alert(`Cập nhật sản phẩm ${formData.productName ?? ''} thành công!`);
+            router.push(`/products/${formData.id}`);
         } catch (err) {
             console.error('Lỗi khi cập nhật sản phẩm:', err);
         }
@@ -77,8 +107,13 @@ const ProductEditPage = () => {
                     </div>
 
                     <div>
-                        <label className="block font-medium text-gray-700 mb-1">Chủng loại</label>
-                        <input type="text" name="productType" value={formData.productType ?? ''} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
+                        <label className="block font-medium text-gray-700 mb-1">Loại SP</label>
+                        <input disabled type="text" name="productType" value={formData.productType ?? ''} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
+                    </div>
+
+                    <div>
+                        <label className="block font-medium text-gray-700 mb-1">Số lượng</label>
+                        <input type="number" name="quantity" value={formData.quantity ?? ''} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
                     </div>
 
                     <div>
@@ -109,8 +144,12 @@ const ProductEditPage = () => {
                         <input type="number" name="unitPrice" value={formData.unitPrice ?? ''} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
                     </div>
 
-                    <div>
+                    <div className="block font-medium text-gray-700 mb-1">
                         <label className="block font-medium text-gray-700 mb-1">Cấu trúc kính</label>
+                        <input type="text" value={glassStructureName || ''} disabled className="w-full border px-3 py-2 rounded-lg bg-gray-100" />
+                    </div>
+                    <div className="block font-medium text-gray-700 mb-1">
+                        <label className="block font-medium text-gray-700 mb-1">Cấu trúc kính thay thế</label>
                         <AsyncSelect
                             cacheOptions
                             defaultOptions
@@ -119,6 +158,8 @@ const ProductEditPage = () => {
                             getOptionLabel={(e) => e.productName}
                             getOptionValue={(e) => String(e.id)}
                             placeholder="Tìm kiếm cấu trúc kính..."
+                            isClearable
+                            value={selectedGlassStructure}
                         />
                     </div>
                 </div>
@@ -127,7 +168,7 @@ const ProductEditPage = () => {
                     <button type="button" onClick={() => router.back()} className="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition">
                         ◀ Quay lại
                     </button>
-                    <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                    <button type="submit" onClick={handleSubmit} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
                         💾 Lưu thay đổi
                     </button>
                     <button type="button" onClick={handleDelete} className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">

@@ -11,7 +11,8 @@
         public decimal? Thickness { get; set; }
         public decimal? Weight { get; set; }
         public decimal? UnitPrice { get; set; }
-        public int GlassStructureId { get; set; }
+        public int? GlassStructureId { get; set; }
+        public double Quantity { get; set; }
     }
 
 }

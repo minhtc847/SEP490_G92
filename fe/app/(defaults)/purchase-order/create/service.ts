@@ -2,10 +2,8 @@ import axios from "@/setup/axios";
 
 export interface PurchaseOrderProductDto {
   productName: string;
-  width: number;
-  height: number;
-  thickness: number;
   quantity: number;
+  uom?: string;
 }
 
 export interface CreatePurchaseOrderDto {
@@ -15,6 +13,20 @@ export interface CreatePurchaseOrderDto {
   date: string; 
   status: string;
   products: PurchaseOrderProductDto[];
+}
+
+export interface ProductDetail {
+    id: number;
+    productName: string;
+    productType: string;
+    uom: string;
+    height: number;
+    width: number;
+    thickness: number;
+    weight: number;
+    unitPrice: number;
+    glassStructureId: number | null;
+    quantity: number | null; 
 }
 
 export interface CustomerOption {
@@ -39,6 +51,7 @@ export interface ProductSearchResult {
     thickness: number;
     unitPrice: number;
     glassStructureId?: number;
+    uom?: string;
 }
 
 export type ProductOption = {
@@ -53,14 +66,15 @@ export type ProductOption = {
         thickness: number;
         unitPrice: number;
         glassStructureId?: number;
+        uom?: string;
     };
 };
 
 export interface CreateProductDto {
     productName: string;
-    height: string;
-    width: string;
-    thickness: number;
+    height?: string | null;
+    width?: string | null;
+    thickness?: number | null;
     unitPrice: number;
     glassStructureId?: number | null;
 }
@@ -87,10 +101,11 @@ export interface ProductCreatedResponse {
     thickness: number;
     unitPrice: number;
     glassStructureId: number;
+    uom: string;
 }
 
-export const createProduct = async (payload: CreateProductDto): Promise<ProductCreatedResponse> => {
-    const res = await axios.post('/api/purchaseorder/product', payload);
+export const createProductNVL = async (payload: CreateProductDto): Promise<ProductCreatedResponse> => {
+    const res = await axios.post('/api/PurchaseOrder/product', payload);
     return res.data;
 };
 
@@ -100,7 +115,6 @@ export const checkProductNameExists = async (name: string): Promise<boolean> => 
     });
     return res.data.exists;
 };
-
 
 export const loadOptions = async (inputValue: string, selectedProductIds: number[] = []): Promise<ProductOption[]> => {
     const result = await searchProducts(inputValue);
@@ -118,6 +132,7 @@ export const loadOptions = async (inputValue: string, selectedProductIds: number
             thickness: p.thickness,
             unitPrice: p.unitPrice,
             glassStructureId: p.glassStructureId,
+            uom: p.uom,
         },
     }));
 };

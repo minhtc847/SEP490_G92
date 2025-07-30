@@ -12,6 +12,7 @@ export interface PurchaseOrderProductDto {
   height?: number | null;
   thickness?: number | null;
   quantity: number;
+  uom?: string;
 }
 
 export interface CreatePurchaseOrderDto {
@@ -83,6 +84,7 @@ export interface ProductSearchResult {
   height: string | null;
   thickness: number | null;
   unitPrice: number;
+  uom?: string;
 }
 
 export type ProductOption = {
@@ -96,6 +98,7 @@ export type ProductOption = {
     height: string | null;
     thickness: number | null;
     unitPrice: number;
+    uom?: string;
   };
 };
 
@@ -106,6 +109,7 @@ export interface CreateProductDto {
   thickness?: number | null;
   unitPrice: number;
   glassStructureId?: number | null;
+  uom?: string;
 }
 
 export interface ProductCreatedResponse {
@@ -116,6 +120,7 @@ export interface ProductCreatedResponse {
   thickness?: number | null;
   unitPrice: number;
   glassStructureId?: number | null;
+  uom?: string;
 }
 
 export const getPurchaseOrderById = async (id: number): Promise<PurchaseOrderWithDetailsDto> => {
@@ -134,10 +139,14 @@ export const createPurchaseOrder = async (dto: CreatePurchaseOrderDto) => {
 
 export const deletePurchaseOrder = async (id: number) => axios.delete(`/api/purchaseorder/${id}`);
 
-// ---------------- Product helpers ----------------
 export const searchProducts = async (query: string): Promise<ProductSearchResult[]> => {
   const res = await axios.get(`/api/orders/search-nvl`, { params: { query } });
   return res.data;
+};
+
+export const createProductNVL = async (payload: CreateProductDto): Promise<ProductCreatedResponse> => {
+    const res = await axios.post('/api/PurchaseOrder/product', payload);
+    return res.data;
 };
 
 export const loadOptions = async (inputValue: string, disabledIds: (number | string)[] = []): Promise<ProductOption[]> => {
@@ -154,6 +163,7 @@ export const loadOptions = async (inputValue: string, disabledIds: (number | str
       height: p.height,
       thickness: p.thickness,
       unitPrice: p.unitPrice,
+      uom: p.uom,
     },
   }));
 };

@@ -52,8 +52,9 @@ const PriceQuoteCreatePage = () => {
                 return;
             }
 
-            await createPriceQuote(formData);
-            router.push(`/price-quotes?success=${encodeURIComponent(formData.productName)}`);
+            const newQuote = await createPriceQuote(formData);
+            alert(`Đã tạo báo giá cho sản phẩm: ${formData.productName}`);
+            router.push(`/price-quotes/${newQuote.id}`);
         } catch (err: any) {
             console.error('Lỗi khi tạo báo giá:', err);
 
@@ -72,12 +73,16 @@ const PriceQuoteCreatePage = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block font-medium text-gray-700 mb-1">Mã sản phẩm</label>
-                        <input type="text" name="productCode" value={formData.productCode} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" required />
-                    </div>
-                    <div>
                         <label className="block font-medium text-gray-700 mb-1">Tên sản phẩm</label>
                         <input type="text" name="productName" value={formData.productName} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" required />
+                    </div>
+                    <div>
+                        <label className="block font-medium text-gray-700 mb-1">Loại sản phẩm</label>
+                        <input type="text" name="category" value={formData.category} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" required />
+                    </div>
+                    <div>
+                        <label className="block font-medium text-gray-700 mb-1">Mã sản phẩm</label>
+                        <input type="text" name="productCode" value={formData.productCode} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" required />
                     </div>
                     <div>
                         <label className="block font-medium text-gray-700 mb-1">Cạnh</label>
