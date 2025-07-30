@@ -8,6 +8,7 @@ import { DataTableSortStatus, DataTable } from 'mantine-datatable';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { fetchProductionPlanList, ProductionPlan, deleteProductionPlan } from './service';
+import { FiSearch } from 'react-icons/fi';
 
 const statusMap: Record<string, { tooltip: string; color: string }> = {
     'Đang sản xuất': { tooltip: 'Đang sản xuất', color: 'warning' },
@@ -116,13 +117,21 @@ const ProductionPlansPage = () => {
                             </Link>
                         </div>
                         <div className="ltr:ml-auto rtl:mr-auto">
-                            <input
-                                type="text"
-                                className="form-input w-auto"
-                                placeholder="Tìm kiếm..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
+                             <div className="relative w-fit">
+                                <input
+                                    type="text"
+                                    className="form-input w-auto"
+                                    placeholder="Tìm kiếm..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                />
+                                <button
+                                    type="button"
+                                    className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow z-10"
+                                >
+                                    <FiSearch className="text-white w-4 h-4" />
+                                </button>
+                                </div>
                         </div>
                     </div>
 

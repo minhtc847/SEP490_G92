@@ -11,6 +11,7 @@ import IconPlus from '@/components/icon/icon-plus';
 import IconUser from '@/components/icon/icon-user';
 import IconUsers from '@/components/icon/icon-users';
 import { CustomerListDto, getCustomerList, deleteCustomerById } from './service';
+import { FiSearch } from 'react-icons/fi';
 
 const CustomersListPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -63,8 +64,15 @@ const CustomersListPage = () => {
 
                 <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex w-full max-w-[710px] gap-3">
-                        <input type="text" placeholder="Tìm kiếm theo tên khách hàng" className="form-input flex-1 min-w-[200px]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-
+                        <div className="relative flex-1 min-w-[200px]">
+                            <input type="text" placeholder="Tìm kiếm theo tên khách hàng" className="form-input flex-1 min-w-[200px]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                            <button
+                                type="button"
+                                className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow z-10"
+                            >
+                                <FiSearch className="text-white w-4 h-4" />
+                            </button>
+                        </div>
                         <select className="form-select w-68 sm:w-56" value={customerTypeFilter} onChange={(e) => setCustomerTypeFilter(e.target.value as any)}>
                             <option value="all">Khách hàng và nhà cung cấp</option>
                             <option value="customer">Khách hàng</option>

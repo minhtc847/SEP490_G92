@@ -2,7 +2,7 @@
 {
     public class ProductWithMaterialsDTO
     {
-        public ProductionOrderProductDTO Product { get; set; } // giữ nguyên
+        public ProductionOrderProductDTO Product { get; set; } 
         public List<MaterialAccountantDTO> Materials { get; set; } = new();
     }
 
@@ -10,7 +10,7 @@
     {
         public int Id { get; set; }
         public string ProductName { get; set; }
-        public string Uom { get; set; }
+        public int Uom { get; set; }
         public decimal QuantityPer { get; set; }
         public decimal TotalQuantity { get; set; }
     }
