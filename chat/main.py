@@ -1,23 +1,24 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.chat import router as chat_router
-from api.documents import router as documents_router
+from api import chat, documents, health
+from config.settings import settings
 
-app = FastAPI()
+app = FastAPI(title="Chatbot API", version="1.0.0")
 
-# CORS configuration
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust this to your frontend's URL in production
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Include routers
-app.include_router(chat_router, prefix="/chat", tags=["chat"])
-app.include_router(documents_router, prefix="/documents", tags=["documents"])
+app.include_router(health.router, prefix="/health", tags=["health"])
+app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+app.include_router(documents.router, prefix="/api/documents", tags=["documents"])
 
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the Chat RAG Server!"}
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

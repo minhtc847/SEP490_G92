@@ -46,6 +46,7 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IZaloChatForwardService, ZaloChatForwardService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICuttingGlassManagementService, CuttingGlassManagementService>();
+builder.Services.AddScoped<IDocumentMaterialService, DocumentMaterialService>();
 builder.Services.AddHttpClient<ZaloChatService>();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();

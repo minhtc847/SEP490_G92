@@ -19,34 +19,45 @@ const MaterialForm: React.FC<MaterialFormProps> = ({ onSubmit, onCancel }) => {
   const [file, setFile] = useState<File | null>(null);
   const [text, setText] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!name.trim()) {
-      setError('Name is required');
-      return;
+    setLoading(true);
+
+    try {
+      if (!name.trim()) {
+        setError('Name is required');
+        return;
+      }
+      if (mode === 'file' && !file) {
+        setError('Please upload a PDF or .txt file');
+        return;
+      }
+      if (mode === 'text' && !text.trim()) {
+        setError('Please enter the material content');
+        return;
+      }
+
+      await onSubmit({
+        name: name.trim(),
+        description: description.trim() || undefined,
+        file: mode === 'file' ? file || undefined : undefined,
+        text: mode === 'text' ? text.trim() : undefined,
+      });
+    } catch (err) {
+      setError('Failed to submit material. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    if (mode === 'file' && !file) {
-      setError('Please upload a PDF or .txt file');
-      return;
-    }
-    if (mode === 'text' && !text.trim()) {
-      setError('Please enter the material content');
-      return;
-    }
-    onSubmit({
-      name: name.trim(),
-      description: description.trim() || undefined,
-      file: mode === 'file' ? file || undefined : undefined,
-      text: mode === 'text' ? text.trim() : undefined,
-    });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <h2 className="text-xl font-semibold mb-2">Add Material</h2>
       {error && <div className="text-red-600 text-sm mb-2">{error}</div>}
+      
       <div>
         <label className="block font-medium mb-1">Name <span className="text-red-500">*</span></label>
         <input
@@ -54,16 +65,20 @@ const MaterialForm: React.FC<MaterialFormProps> = ({ onSubmit, onCancel }) => {
           value={name}
           onChange={e => setName(e.target.value)}
           required
+          disabled={loading}
         />
       </div>
+      
       <div>
         <label className="block font-medium mb-1">Description</label>
         <input
           className="w-full border rounded px-3 py-2"
           value={description}
           onChange={e => setDescription(e.target.value)}
+          disabled={loading}
         />
       </div>
+      
       <div>
         <label className="block font-medium mb-1">Content Source <span className="text-red-500">*</span></label>
         <div className="flex items-center gap-4 mb-2">
@@ -74,6 +89,7 @@ const MaterialForm: React.FC<MaterialFormProps> = ({ onSubmit, onCancel }) => {
               value="file"
               checked={mode === 'file'}
               onChange={() => setMode('file')}
+              disabled={loading}
             />
             Upload file
           </label>
@@ -84,41 +100,55 @@ const MaterialForm: React.FC<MaterialFormProps> = ({ onSubmit, onCancel }) => {
               value="text"
               checked={mode === 'text'}
               onChange={() => setMode('text')}
+              disabled={loading}
             />
             Manual text
           </label>
         </div>
+        
         {mode === 'file' && (
-          <input
-            type="file"
-            accept=".pdf,.txt"
-            onChange={e => setFile(e.target.files?.[0] || null)}
-            className="block"
-          />
+          <div>
+            <input
+              type="file"
+              accept=".pdf,.txt,.docx"
+              onChange={e => setFile(e.target.files?.[0] || null)}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              disabled={loading}
+            />
+            <p className="text-xs text-gray-500 mt-1">Supported formats: PDF, TXT, DOCX (max 10MB)</p>
+          </div>
         )}
+        
         {mode === 'text' && (
-          <textarea
-            className="w-full border rounded px-3 py-2 mt-2"
-            rows={6}
-            value={text}
-            onChange={e => setText(e.target.value)}
-            placeholder="Enter material content here..."
-          />
+          <div>
+            <textarea
+              className="w-full border rounded px-3 py-2 mt-2"
+              rows={8}
+              value={text}
+              onChange={e => setText(e.target.value)}
+              placeholder="Enter material content here..."
+              disabled={loading}
+            />
+            <p className="text-xs text-gray-500 mt-1">Enter the material content that will be used for AI processing</p>
+          </div>
         )}
       </div>
-      <div className="flex justify-end gap-2 mt-4">
+      
+      <div className="flex justify-end gap-2 mt-6">
         <button
           type="button"
-          className="px-4 py-2 rounded border border-gray-300 bg-gray-100 hover:bg-gray-200"
+          className="px-4 py-2 rounded border border-gray-300 bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
           onClick={onCancel}
+          disabled={loading}
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={loading}
         >
-          Save
+          {loading ? 'Processing...' : 'Save'}
         </button>
       </div>
     </form>
