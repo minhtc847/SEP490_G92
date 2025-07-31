@@ -27,7 +27,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                     OrderDate = po.OrderDate,
                     Type = po.Type,
                     Description = po.Description,
-                    //ProductionStatus = po.ProductionStatus
+                    
                 })
                 .ToListAsync();
 
@@ -44,7 +44,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                     OrderDate = po.OrderDate,
                     Type = po.Type,
                     Description = po.Description,
-                    //ProductionStatus = po.ProductionStatus
+                    
                 })
                 .ToListAsync();
             return productionOrders;
@@ -82,7 +82,7 @@ namespace SEP490.Modules.ProductionOrders.Services
             // Update production order status
             if (output.ProductionOrder != null)
             {
-                //output.ProductionOrder.ProductionStatus = "Đang sản xuất";
+                output.ProductionOrder.Status = ProductionStatus.InProgress;
             }
 
             await _context.SaveChangesAsync();

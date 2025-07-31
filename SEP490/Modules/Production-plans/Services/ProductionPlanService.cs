@@ -51,10 +51,9 @@ namespace SEP490.Modules.Production_plans.Services
                 Phone = plan.Customer.Phone,
                 OrderCode = "DH" + plan.SaleOrder.Id,
                 OrderDate = plan.SaleOrder.OrderDate,
-                //DeliveryStatus = plan.SaleOrder.DeliveryStatus,
                 PlanDate = plan.PlanDate,
                 Status = plan.Status,
-                //Quantity = plan.Quantity,
+                //Quantity = plan.SaleOrder.,
                 Done = plan.ProductionPlanDetails.Sum(x => x.Done)
             };
         }

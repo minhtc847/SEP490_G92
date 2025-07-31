@@ -150,7 +150,6 @@ const ProductionPlanDetailPage = () => {
         }
     };
 
-    // Remove hardcoded items - will use real data from API
 
     const columns = [
         {
@@ -166,21 +165,7 @@ const ProductionPlanDetailPage = () => {
             label: 'Số lượng',
             class: 'ltr:text-right rtl:text-left',
         },
-        {
-            key: 'daCatKinh',
-            label: 'Đã cắt kính',
-            class: 'ltr:text-right rtl:text-left',
-        },
-        {
-            key: 'daGhepKinh',
-            label: 'Đã ghép kính',
-            class: 'ltr:text-right rtl:text-left',
-        },
-        {
-            key: 'daDoKeo',
-            label: 'Đã đổ keo',
-            class: 'ltr:text-right rtl:text-left',
-        },
+        
         {
             key: 'completed',
             label: 'Đã hoàn thành',
@@ -301,10 +286,7 @@ const ProductionPlanDetailPage = () => {
                                         <div className="text-white-dark">Ngày đặt hàng :</div>
                                         <div>{detail?.orderDate ? new Date(detail.orderDate).toLocaleDateString() : '-'}</div>
                                     </div>
-                                    <div className="flex w-full items-center justify-between">
-                                        <div className="text-white-dark">Tình trạng giao hàng :</div>
-                                        <div>{detail?.deliveryStatus || '-'}</div>
-                                    </div>
+                                    
                                 </div>
                                 <div className="xl:1/3 sm:w-1/2 lg:w-2/5">
                                     <div className="mb-2 flex w-full items-center justify-between">
@@ -317,7 +299,7 @@ const ProductionPlanDetailPage = () => {
                                     </div>
                                     <div className="mb-2 flex w-full items-center justify-between">
                                         <div className="text-white-dark">Tổng sản phẩm:</div>
-                                        <div>{detail?.quantity ?? '-'}</div>
+                                        <div>{detail?.totalQuantity ?? '-'}</div>
                                     </div>
                                     <div className="mb-2 flex w-full items-center justify-between">
                                         <div className="text-white-dark">Đã hoàn thành:</div>
@@ -359,9 +341,6 @@ const ProductionPlanDetailPage = () => {
                                                     <td>{item.id}</td>
                                                     <td>{item.productName}</td>
                                                     <td className="ltr:text-right rtl:text-left">{item.totalQuantity}</td>
-                                                    <td className="ltr:text-right rtl:text-left">{item.daCatKinh}</td>
-                                                    <td className="ltr:text-right rtl:text-left">{item.daGhepKinh}</td>
-                                                    <td className="ltr:text-right rtl:text-left">{item.daDoKeo}</td>
                                                     <td className="ltr:text-right rtl:text-left">{item.completed}</td>
                                                     <td className="ltr:text-right rtl:text-left">{item.daGiao}</td>
                                                 </tr>

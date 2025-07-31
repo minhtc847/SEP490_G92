@@ -91,11 +91,7 @@ export interface ProductionPlanProductDetail {
   totalQuantity: number;
   inProduction: number;
   completed: number;
-  daCatKinh: number;
-  daTronKeo: number;
   daGiao: number;
-  daGhepKinh: number;
-  daDoKeo: number;
 }
 
 export interface ProductionOrderListItem {
