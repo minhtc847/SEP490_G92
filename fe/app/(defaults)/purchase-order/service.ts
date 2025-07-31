@@ -21,3 +21,13 @@ export const getPurchaseOrders = async (): Promise<PurchaseOrderDto[]> => {
         throw error;
     }
 };
+
+export const deletePurchaseOrder = async (id: number): Promise<void> => {
+    try {
+        await axios.delete(`/api/PurchaseOrder/${id}`);
+    } catch (error) {
+        console.error("Lỗi khi xoá đơn hàng mua:", error);
+        throw error;
+    }
+};
+

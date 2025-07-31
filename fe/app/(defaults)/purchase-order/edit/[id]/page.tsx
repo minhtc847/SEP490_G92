@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import AsyncSelect from 'react-select/async';
 
 import {
+    deletePurchaseOrder,
     createProductNVL,
     loadCustomerOptions,
     loadOptions,
@@ -400,6 +401,24 @@ const PurchaseOrderEditPage = () => {
             </div>
 
             <div className="flex gap-4">
+                <button
+                    className="btn btn-error ml-auto"
+                    onClick={async () => {
+                        const confirmed = confirm(`Bạn có chắc muốn xoá đơn hàng "${form.description}" không?`);
+                        if (!confirmed) return;
+
+                        try {
+                            await deletePurchaseOrder(orderId);
+                            alert(`Xoá thành công: Đơn hàng ${form.orderCode} – ${form.description || '(Không có mô tả)'}`);
+                            router.push('/purchase-order'); 
+                        } catch (err: any) {
+                            alert(err.message || 'Xoá thất bại. Vui lòng thử lại');
+                        }
+                    }}
+                >
+                    🗑 Xoá đơn hàng
+                </button>
+
                 <button className="btn btn-secondary" onClick={() => router.back()}>
                     ◀ Quay lại
                 </button>
