@@ -1,281 +1,298 @@
-"use client";
-import React, { useState } from "react";
-import Link from "next/link";
-import {
-  fetchDeliveryOrdersByProductionPlanId,
-  fetchDeliveryHistoryByProduct,
-  createDeliveryHistory,
-  DeliveryOrder,
-  DeliveryHistoryItem,
-} from "./service";
+'use client';
 
-export interface DeliveryProduct {
-  id: number;
-  productName: string;
-  quantity: number;
-  done: number; // số lượng đã xong
-  totalAmount: number;
-  delivered: number;
-  lastDeliveryDate: string;
-  note?: string;
-}
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { getDeliveries, DeliveryDto } from './service';
+import { FiSearch } from 'react-icons/fi';
 
-const productionPlanId = 0; // TODO: lấy từ route hoặc props nếu cần
+const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
+    const renderPageNumbers = () => {
+        const pages = [];
+        for (let i = 1; i <= totalPages; i++) {
+            pages.push(
+                <button
+                    key={i}
+                    onClick={() => onPageChange(i)}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition ${currentPage === i ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-300'}`}
+                >
+                    {i}
+                </button>,
+            );
+        }
+        return pages;
+    };
 
-const DeliveryPage = () => {
-  const [orders, setOrders] = React.useState<DeliveryOrder[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [expandedOrderId, setExpandedOrderId] = React.useState<number | null>(null);
-  const [selectedProduct, setSelectedProduct] = React.useState<any | null>(null);
-  const [deliveryHistory, setDeliveryHistory] = React.useState<DeliveryHistoryItem[]>([]);
-  const [historyLoading, setHistoryLoading] = React.useState(false);
-  const [form, setForm] = React.useState({ deliveryDate: "", quantity: "", note: "" });
-  const [formLoading, setFormLoading] = React.useState(false);
-
-  React.useEffect(() => {
-    setLoading(true);
-    fetchDeliveryOrdersByProductionPlanId(productionPlanId)
-      .then((data) => setOrders(data))
-      .catch(() => setOrders([]))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const handleShowDetail = async (prod: any, total: number, delivered: number) => {
-    setSelectedProduct({ ...prod, total, delivered });
-    setExpandedOrderId(prod.id);
-    setHistoryLoading(true);
-    try {
-      const history = await fetchDeliveryHistoryByProduct(prod.id);
-      setDeliveryHistory(history);
-    } catch {
-      setDeliveryHistory([]);
-    } finally {
-      setHistoryLoading(false);
-    }
-  };
-
-  const handleCloseDetail = () => {
-    setExpandedOrderId(null);
-    setSelectedProduct(null);
-    setDeliveryHistory([]);
-    setForm({ deliveryDate: "", quantity: "", note: "" });
-    setFormLoading(false);
-  };
-
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleCreateDelivery = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedProduct) return;
-    setFormLoading(true);
-    try {
-      const newHistory = await createDeliveryHistory(selectedProduct.id, {
-        deliveryDate: form.deliveryDate,
-        quantity: Number(form.quantity),
-        note: form.note,
-      });
-      setDeliveryHistory((prev) => [...prev, newHistory]);
-      setForm({ deliveryDate: "", quantity: "", note: "" });
-    } catch {
-      alert("Tạo giao hàng thất bại!");
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Danh sách trình trạng giao hàng</h1>
-      {loading ? (
-        <div>Đang tải dữ liệu...</div>
-      ) : (
-        <div className="space-y-8">
-          {orders.map((order) => (
-            <div key={order.id} className="border rounded-lg p-4 shadow-sm bg-white">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
-                <div>
-                  <span className="font-semibold">Ngày đặt hàng:</span> {order.orderDate}
-                  <span className="ml-6 font-semibold">Khách hàng:</span> {order.customerName}
-                </div>
-                <div className="mt-2 md:mt-0">
-                  <span className="italic text-gray-500">Ghi chú: {order.note}</span>
-                </div>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full border text-sm">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="border px-2 py-1">Tên sản phẩm</th>
-                      <th className="border px-2 py-1">Số lượng cần giao</th>
-                      <th className="border px-2 py-1">Thành tiền</th>
-                      <th className="border px-2 py-1">Đã xong</th>
-                      <th className="border px-2 py-1">Số lượng đã giao</th>
-                      <th className="border px-2 py-1">Ngày giao gần nhất</th>
-                      <th className="border px-2 py-1">Ghi chú</th>
-                      <th className="border px-2 py-1">Xem chi tiết</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {order.products.map((prod) => (
-                      <tr key={prod.id}>
-                        <td className="border px-2 py-1">{prod.productName}</td>
-                        <td className="border px-2 py-1 text-center">{prod.quantity}</td>
-                        <td className="border px-2 py-1 text-right">{prod.totalAmount.toLocaleString()} đ</td>
-                        <td className="border px-2 py-1 text-center">{prod.done ?? '-'}</td>
-                        <td className="border px-2 py-1 text-center">{prod.delivered}</td>
-                        <td className="border px-2 py-1 text-center">{prod.lastDeliveryDate}</td>
-                        <td className="border px-2 py-1">{prod.note}</td>
-                        <td className="border px-2 py-1 text-center">
-                          <button
-                            className="btn btn-sm btn-primary"
-                            onClick={() => handleShowDetail(prod, prod.quantity, prod.delivered)}
-                          >
-                            Xem chi tiết
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      <DeliveryDetailModal
-        open={!!expandedOrderId && !!selectedProduct}
-        onClose={handleCloseDetail}
-        product={selectedProduct}
-        totalQuantity={selectedProduct?.total || 0}
-        delivered={selectedProduct?.delivered || 0}
-        history={deliveryHistory}
-        historyLoading={historyLoading}
-        form={form}
-        onFormChange={handleFormChange}
-        onCreateDelivery={handleCreateDelivery}
-        formLoading={formLoading}
-      />
-    </div>
-  );
-};
-
-const DeliveryDetailModal = ({
-  open,
-  onClose,
-  product,
-  totalQuantity,
-  delivered,
-  history,
-  historyLoading,
-  form,
-  onFormChange,
-  onCreateDelivery,
-  formLoading,
-}: {
-  open: boolean;
-  onClose: () => void;
-  product: any;
-  totalQuantity: number;
-  delivered: number;
-  history: DeliveryHistoryItem[];
-  historyLoading: boolean;
-  form: { deliveryDate: string; quantity: string; note: string };
-  onFormChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onCreateDelivery: (e: React.FormEvent) => void;
-  formLoading: boolean;
-}) => {
-  if (!open || !product) return null;
-  const remaining = totalQuantity - delivered;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative">
-        <button
-          className="absolute top-2 right-2 text-gray-500 hover:text-red-500"
-          onClick={onClose}
-        >
-          &times;
-        </button>
-        <h2 className="text-xl font-bold mb-2">Lịch sử giao hàng: {product.productName}</h2>
-        <div className="mb-2 flex gap-4">
-          <div>
-            <span className="font-semibold">Đã giao:</span> {delivered}
-          </div>
-          <div>
-            <span className="font-semibold">Còn phải giao:</span> {remaining > 0 ? remaining : 0}
-          </div>
-        </div>
-        <div className="overflow-x-auto mb-4">
-          {historyLoading ? (
-            <div>Đang tải lịch sử giao hàng...</div>
-          ) : (
-            <table className="min-w-full border text-sm">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border px-2 py-1">Tên sản phẩm</th>
-                  <th className="border px-2 py-1">Ngày giao</th>
-                  <th className="border px-2 py-1">Số lượng giao</th>
-                  <th className="border px-2 py-1">Ghi chú</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((h) => (
-                  <tr key={h.id}>
-                    <td className="border px-2 py-1">{product.productName}</td>
-                    <td className="border px-2 py-1 text-center">{h.deliveryDate}</td>
-                    <td className="border px-2 py-1 text-center">{h.quantity}</td>
-                    <td className="border px-2 py-1">{h.note}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-        <div className="border-t pt-3 mt-3">
-          <h3 className="font-semibold mb-2">Tạo giao hàng mới</h3>
-          <form onSubmit={onCreateDelivery} className="flex flex-col gap-2">
-            <div className="flex gap-2">
-              <input
-                type="date"
-                className="form-input flex-1"
-                required
-                name="deliveryDate"
-                value={form.deliveryDate}
-                onChange={onFormChange}
-                disabled={formLoading}
-              />
-              <input
-                type="number"
-                className="form-input flex-1"
-                min={1}
-                max={remaining}
-                placeholder="Số lượng giao"
-                required
-                name="quantity"
-                value={form.quantity}
-                onChange={onFormChange}
-                disabled={formLoading}
-              />
-            </div>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Ghi chú"
-              name="note"
-              value={form.note}
-              onChange={onFormChange}
-              disabled={formLoading}
-            />
-            <button type="submit" className="btn btn-primary mt-2" disabled={formLoading}>
-              {formLoading ? "Đang tạo..." : "Tạo giao hàng"}
+    return (
+        <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
+            <button
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 text-gray-800 hover:bg-gray-300 disabled:opacity-50"
+            >
+                &lt;
             </button>
-          </form>
+            {renderPageNumbers()}
+            <button
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 text-gray-800 hover:bg-gray-300 disabled:opacity-50"
+            >
+                &gt;
+            </button>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
-export default DeliveryPage; 
+const getStatusClass = (status: number) => {
+    switch (status) {
+        case 0: // NotDelivered
+            return 'badge-outline-warning';
+        case 1: // Delivering
+            return 'badge-outline-info';
+        case 2: // FullyDelivered
+            return 'badge-outline-success';
+        default:
+            return 'badge-outline-default';
+    }
+};
+
+const getStatusText = (status: number) => {
+    switch (status) {
+        case 0:
+            return 'Chưa giao hàng';
+        case 1:
+            return 'Đang giao hàng';
+        case 2:
+            return 'Đã giao hàng';
+        default:
+            return 'Không xác định';
+    }
+};
+
+const DeliverySummary = () => {
+    const router = useRouter();
+
+    const [deliveries, setDeliveries] = useState<DeliveryDto[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortAmount, setSortAmount] = useState<'asc' | 'desc' | null>(null);
+    const [statusFilter, setStatusFilter] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [loading, setLoading] = useState(true);
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const data = await getDeliveries();
+                const sortedData = data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                setDeliveries(data);
+            } catch (error) {
+                console.error('Lỗi khi tải phiếu giao hàng:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    const filteredDeliveries = deliveries
+        .filter((delivery) => delivery.customerName.toLowerCase().includes(searchTerm.toLowerCase()))
+        .filter((delivery) => {
+            const deliveryDate = new Date(delivery.deliveryDate);
+
+            if (fromDate && new Date(fromDate) > deliveryDate) return false;
+            if (toDate && new Date(toDate) < deliveryDate) return false;
+
+            return true;
+        })
+        .filter((delivery) => (statusFilter ? delivery.status === parseInt(statusFilter) : true))
+        .sort((a, b) => {
+            if (sortAmount === 'asc') return a.totalAmount - b.totalAmount;
+            if (sortAmount === 'desc') return b.totalAmount - a.totalAmount;
+            return 0;
+        });
+
+    const totalPages = Math.ceil(filteredDeliveries.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedDeliveries = filteredDeliveries.slice(startIndex, startIndex + itemsPerPage);
+
+    if (loading) {
+        return <div className="p-6">Đang tải phiếu giao hàng...</div>;
+    }
+
+    return (
+        <div className="p-6 bg-white rounded-lg shadow">
+            <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Danh sách phiếu giao hàng</h2>
+                <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800" onClick={() => router.push('/delivery/create')}>
+                    + Thêm phiếu giao hàng
+                </button>
+            </div>
+
+            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="relative w-full md:w-1/3">
+                    <input
+                        type="text"
+                        placeholder="Tìm theo tên khách hàng..."
+                        value={searchTerm}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        className="input input-bordered w-full py-2 px-4 pr-12 rounded-lg shadow-sm"
+                    />
+                    <button
+                        type="button"
+                        className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow z-10"
+                        onClick={() => console.log('Tìm kiếm:', searchTerm)}
+                    >
+                        <FiSearch className="text-white w-4 h-4" />
+                    </button>
+                </div>
+                
+                <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex gap-4">
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium whitespace-nowrap">Từ:</label>
+                            <input
+                                type="date"
+                                value={fromDate}
+                                onChange={(e) => {
+                                    setFromDate(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                                className="input input-bordered py-2 px-4 rounded-lg shadow-sm"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium whitespace-nowrap">Đến:</label>
+                            <input
+                                type="date"
+                                value={toDate}
+                                onChange={(e) => {
+                                    setToDate(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                                className="input input-bordered py-2 px-4 rounded-lg shadow-sm"
+                            />
+                        </div>
+                    </div>
+
+                    <select
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setSortAmount(val === 'asc' ? 'asc' : val === 'desc' ? 'desc' : null);
+                            setCurrentPage(1);
+                        }}
+                        className="select select-bordered py-2 px-4 rounded-lg shadow-sm"
+                        defaultValue=""
+                    >
+                        <option value="">Thành tiền</option>
+                        <option value="asc">Thấp → Cao</option>
+                        <option value="desc">Cao → Thấp</option>
+                    </select>
+
+                    <select
+                        className="select select-bordered py-2 px-4 rounded-lg shadow-sm"
+                        value={statusFilter}
+                        onChange={(e) => {
+                            setStatusFilter(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                    >
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="0">Chưa giao hàng</option>
+                        <option value="1">Đang giao hàng</option>
+                        <option value="2">Đã giao hàng</option>
+                    </select>
+                </div>
+            </div>
+
+            {/* Thông tin hiển thị */}
+            <div className="flex items-center gap-2 mb-3 text-sm text-gray-600">
+                <span>
+                    Hiển thị {startIndex + 1} đến {Math.min(startIndex + itemsPerPage, filteredDeliveries.length)} trong tổng {filteredDeliveries.length} phiếu giao hàng.
+                </span>
+                <select
+                    className="select select-bordered py-2 px-4 rounded-lg shadow-sm"
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                    }}
+                >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                </select>
+            </div>
+
+            {/* Bảng phiếu giao hàng */}
+            <div className="overflow-x-auto mb-5">
+                <table className="table w-full">
+                    <thead>
+                        <tr>
+                            <th>Mã Đơn Hàng</th>
+                            <th>Tên Khách Hàng</th>
+                            <th>Ngày Giao Hàng</th>
+                            <th>Thành Tiền</th>
+                            <th>Trạng Thái</th>
+                            <th>Ghi Chú</th>
+                            <th>Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {paginatedDeliveries.map((delivery) => (
+                            <tr key={delivery.id}>
+                                <td>{delivery.orderCode}</td>
+                                <td>{delivery.customerName}</td>
+                                <td>{new Date(delivery.deliveryDate).toLocaleDateString('vi-VN')}</td>
+                                <td>{delivery.totalAmount.toLocaleString()}₫</td>
+                                <td>
+                                    <span className={`badge ${getStatusClass(delivery.status)}`}>
+                                        {getStatusText(delivery.status)}
+                                    </span>
+                                </td>
+                                <td className="max-w-xs truncate" title={delivery.note || ''}>
+                                    {delivery.note || '-'}
+                                </td>
+                                <td className="flex gap-2">
+                                    <button
+                                        className="px-2 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-800"
+                                        onClick={() => {
+                                            if (delivery.id) {
+                                                router.push(`/delivery/${delivery.id}`);
+                                            } else {
+                                                alert('Không tìm thấy ID phiếu giao hàng!');
+                                            }
+                                        }}
+                                    >
+                                        Chi tiết
+                                    </button>
+                                    <button 
+                                        className="px-2 py-1 text-sm text-white bg-green-600 rounded hover:bg-green-800"
+                                        onClick={() => {
+                                            // Handle delivery completion
+                                            alert('Cập nhật trạng thái giao hàng thành công!');
+                                        }}
+                                    >
+                                        Hoàn thành
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Phân trang */}
+            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+        </div>
+    );
+};
+
+export default DeliverySummary;

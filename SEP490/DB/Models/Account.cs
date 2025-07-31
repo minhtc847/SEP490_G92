@@ -14,6 +14,6 @@ namespace SEP490.DB.Models
         public Employee Employee { get; set; }
         public Role Role { get; set; }
 
-        public bool IsActive { get; set }
+        public bool IsActive { get; set; } = true;
     }
 }

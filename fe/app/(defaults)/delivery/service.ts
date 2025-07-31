@@ -1,51 +1,37 @@
 import axios from "@/setup/axios";
 
-export interface DeliveryProduct {
-  id: number;
-  productName: string;
-  quantity: number;
-  done: number; // số lượng đã xong
-  totalAmount: number;
-  delivered: number;
-  lastDeliveryDate: string;
-  note?: string;
+export interface DeliveryDto {
+    id: number;
+    salesOrderId: number;
+    orderCode: string;
+    customerName: string;
+    deliveryDate: string;
+    status: number;
+    note?: string;
+    createdAt: string;
+    totalAmount: number;
 }
 
-export interface DeliveryOrder {
-  id: number;
-  orderDate: string;
-  customerName: string;
-  note?: string;
-  products: DeliveryProduct[];
-}
+export const getDeliveries = async (): Promise<DeliveryDto[]> => {
+    const response = await axios.get<DeliveryDto[]>("/api/delivery");
+    return response.data;
+};
 
-export interface DeliveryHistoryItem {
-  id: number;
-  deliveryDate: string;
-  quantity: number;
-  note?: string;
-}
+export const getDeliveryById = async (id: number): Promise<DeliveryDto> => {
+    const response = await axios.get<DeliveryDto>(`/api/delivery/${id}`);
+    return response.data;
+};
 
-// Lấy danh sách đơn hàng và sản phẩm cần giao theo production plan id
-export async function fetchDeliveryOrdersByProductionPlanId(productionPlanId: number): Promise<DeliveryOrder[]> {
-  // TODO: Đổi endpoint cho đúng backend
-  const res = await axios.get(`/api/DeliveryHistory/by-production-plan/${productionPlanId}`);
-  return res.data;
-}
+export const createDelivery = async (delivery: Omit<DeliveryDto, 'id' | 'createdAt'>): Promise<DeliveryDto> => {
+    const response = await axios.post<DeliveryDto>("/api/delivery", delivery);
+    return response.data;
+};
 
-// Lấy lịch sử giao hàng của 1 sản phẩm (theo productionPlanDetailId)
-export async function fetchDeliveryHistoryByProduct(productionPlanDetailId: number): Promise<DeliveryHistoryItem[]> {
-  // TODO: Đổi endpoint cho đúng backend
-  const res = await axios.get(`/api/DeliveryHistory/history/${productionPlanDetailId}`);
-  return res.data;
-}
+export const updateDelivery = async (id: number, delivery: Partial<DeliveryDto>): Promise<DeliveryDto> => {
+    const response = await axios.put<DeliveryDto>(`/api/delivery/${id}`, delivery);
+    return response.data;
+};
 
-// Tạo mới lịch sử giao hàng cho 1 sản phẩm
-export async function createDeliveryHistory(
-  productionPlanDetailId: number,
-  data: { deliveryDate: string; quantity: number; note?: string }
-): Promise<DeliveryHistoryItem> {
-  // TODO: Đổi endpoint cho đúng backend
-    const res = await axios.post(`/api/DeliveryHistory/history/${productionPlanDetailId}`, data);
-  return res.data;
-} 
+export const deleteDelivery = async (id: number): Promise<void> => {
+    await axios.delete(`/api/delivery/${id}`);
+};

@@ -36,6 +36,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Modules\Delivery\Controllers\" />
+    <Folder Include="Modules\Delivery\DTO\" />
+    <Folder Include="Modules\Delivery\Services\" />
     <Folder Include="Modules\TestModule\ManageSalesOrder\DTO\" />
   </ItemGroup>
 

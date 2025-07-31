@@ -27,6 +27,6 @@ public enum Status
 public enum DeliveryStatus
 {
     NotDelivered,
-    PartiallyDelivered,
+    Delivering,
     FullyDelivered
 }
