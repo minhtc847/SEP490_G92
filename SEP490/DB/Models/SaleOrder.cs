@@ -8,6 +8,8 @@ public class SaleOrder
     public decimal? OrderValue { get; set; }
     public Status Status { get; set; } = Status.Pending;
     public DeliveryStatus DeliveryStatus { get; set; } = DeliveryStatus.NotDelivered;
+
+    public bool IsUpdateMisa { get; set; }
     public string? Note { get; set; }
     public Customer Customer { get; set; } = null!;
     //Added for OrderDetail

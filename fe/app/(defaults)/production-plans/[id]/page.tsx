@@ -299,7 +299,7 @@ const ProductionPlanDetailPage = () => {
                                     </div>
                                     <div className="mb-2 flex w-full items-center justify-between">
                                         <div className="text-white-dark">Tổng sản phẩm:</div>
-                                        <div>{detail?.totalQuantity ?? '-'}</div>
+                                        <div>{detail?.quantity ?? '-'}</div>
                                     </div>
                                     <div className="mb-2 flex w-full items-center justify-between">
                                         <div className="text-white-dark">Đã hoàn thành:</div>

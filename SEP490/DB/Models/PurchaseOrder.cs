@@ -11,7 +11,7 @@ namespace SEP490.DB.Models
         public int? SupplierId { get; set; }
         public string? Description { get; set; }
         public decimal? TotalValue { get; set; }
-        public PurchaseStatus? Status { get; set; } = PurchaseStatus.Pending;// Can be replaced with enum or separate status table
+        public PurchaseStatus? Status { get; set; } = PurchaseStatus.Pending;
         public int? EmployeeId { get; set; }
         public int? CustomerId { get; set; }
         public Customer? Customer { get; set; }
@@ -23,8 +23,9 @@ namespace SEP490.DB.Models
     public enum PurchaseStatus
     {
         Pending,
-        PartiallyReceived,
-        Received,
+        Ordered,
+        PartiallyImported,
+        Imported,
         Cancelled
     }
 }

@@ -7,6 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Modules\Customers\**" />
+    <Content Remove="Modules\Customers\**" />
+    <EmbeddedResource Remove="Modules\Customers\**" />
+    <None Remove="Modules\Customers\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="EFCore.NamingConventions" Version="6.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.36" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
@@ -29,7 +36,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Modules\Customers\DTO\" />
     <Folder Include="Modules\TestModule\ManageSalesOrder\DTO\" />
   </ItemGroup>
 

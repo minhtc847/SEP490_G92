@@ -13,5 +13,7 @@ namespace SEP490.DB.Models
         public int RoleId { get; set; }
         public Employee Employee { get; set; }
         public Role Role { get; set; }
+
+        public bool IsActive { get; set }
     }
 }
