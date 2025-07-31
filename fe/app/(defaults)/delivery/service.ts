@@ -35,3 +35,42 @@ export const updateDelivery = async (id: number, delivery: Partial<DeliveryDto>)
 export const deleteDelivery = async (id: number): Promise<void> => {
     await axios.delete(`/api/delivery/${id}`);
 };
+
+export interface SalesOrderOption {
+    id: number;
+    orderCode: string;
+    customerName: string;
+    totalAmount: number;
+}
+
+export interface SalesOrderDetail {
+    id: number;
+    orderCode: string;
+    orderDate: string;
+    customer: {
+        id: number;
+        customerName: string;
+        address: string;
+        phone: string;
+    };
+    products: Array<{
+        id: number;
+        productName: string;
+        width: number;
+        height: number;
+        thickness: number;
+        quantity: number;
+        unitPrice: number;
+    }>;
+    totalAmount: number;
+}
+
+export const getSalesOrdersForDelivery = async (): Promise<SalesOrderOption[]> => {
+    const response = await axios.get<SalesOrderOption[]>("/api/orders");
+    return response.data;
+};
+
+export const getSalesOrderDetail = async (orderId: number): Promise<SalesOrderDetail> => {
+    const response = await axios.get<SalesOrderDetail>(`/api/orders/${orderId}/detail`);
+    return response.data;
+};

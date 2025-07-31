@@ -263,6 +263,45 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
             return Ok(orderDetail);
         }
 
+        // GET: api/orders/{id}/detail
+        [HttpGet("{id}/detail")]
+        public ActionResult<object> GetOrderDetailForDelivery(int id)
+        {
+            var orderDetail = _orderService.GetOrderDetailById(id);
+            if (orderDetail == null)
+            {
+                return NotFound($"Không tìm thấy đơn hàng với ID {id}.");
+            }
+
+            // Transform to match SalesOrderDetail interface
+            var result = new
+            {
+                id = id,
+                orderCode = orderDetail.OrderCode,
+                orderDate = orderDetail.OrderDate,
+                customer = new
+                {
+                    id = 0, // We don't have customer ID in OrderDetailDto, but it's not critical for delivery
+                    customerName = orderDetail.CustomerName,
+                    address = orderDetail.Address,
+                    phone = orderDetail.Phone
+                },
+                products = orderDetail.Products.Select(p => new
+                {
+                    id = p.ProductId,
+                    productName = p.ProductName,
+                    width = p.Width,
+                    height = p.Height,
+                    thickness = p.Thickness,
+                    quantity = p.Quantity,
+                    unitPrice = p.UnitPrice
+                }).ToList(),
+                totalAmount = orderDetail.TotalAmount
+            };
+
+            return Ok(result);
+        }
+
         [HttpPut("{id}")]
         public IActionResult UpdateOrderDetail(int id, [FromBody] UpdateOrderDetailDto dto)
         {

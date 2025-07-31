@@ -28,5 +28,6 @@ public enum DeliveryStatus
 {
     NotDelivered,
     Delivering,
-    FullyDelivered
+    FullyDelivered,
+    Cancelled
 }

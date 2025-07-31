@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SEP490.Common.Services;
 using SEP490.DB;
+using SEP490.DB.Models;
 using SEP490.Modules.Delivery.DTO;
 
 namespace SEP490.Modules.Delivery.Services
@@ -35,6 +36,7 @@ namespace SEP490.Modules.Delivery.Services
                 OrderCode = d.SalesOrder?.OrderCode ?? "",
                 CustomerName = d.SalesOrder?.Customer?.CustomerName ?? "",
                 DeliveryDate = d.DeliveryDate,
+                ExportDate = d.ExportDate,
                 Status = d.Status,
                 Note = d.Note,
                 CreatedAt = d.CreatedAt,

@@ -6,7 +6,8 @@ namespace SEP490.DB.Models
     {
         public int Id { get; set; }
         public int SalesOrderId { get; set; }
-        public DateTime DeliveryDate { get; set; }
+        public DateTime? DeliveryDate { get; set; }
+        public DateTime? ExportDate { get; set; }
         public DeliveryStatus Status { get; set; } = DeliveryStatus.Delivering;
         public string? Note { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;

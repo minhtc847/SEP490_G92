@@ -8,7 +8,8 @@ namespace SEP490.Modules.Delivery.DTO
         public int SalesOrderId { get; set; }
         public string OrderCode { get; set; } = string.Empty;
         public string CustomerName { get; set; } = string.Empty;
-        public DateTime DeliveryDate { get; set; }
+        public DateTime? DeliveryDate { get; set; }
+        public DateTime? ExportDate { get; set; }
         public DeliveryStatus Status { get; set; }
         public string? Note { get; set; }
         public DateTime CreatedAt { get; set; }
