@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { DataTable } from 'mantine-datatable';
 import Link from 'next/link';
 import { fetchAllProductionOrders, ProductionOrderListItem } from './service';
+import IconEye from '@/components/icon/icon-eye';
 
 const PAGE_SIZES = [10, 20, 50, 100];
 
@@ -81,8 +82,12 @@ const ProductionOrdersPage = () => {
                                             </span>
                                         </td>
                                         <td>
-                                            <Link href={`/production-orders/view/${item.id}`} className="btn btn-sm btn-outline-primary">
-                                                Xem chi tiết
+                                            <Link
+                                                href={`/production-orders/view/${item.id}`}
+                                                className="p-2 bg-sky-100 rounded-full hover:bg-sky-200 transition inline-flex items-center justify-center"
+                                                title="Xem chi tiết"
+                                                >
+                                                <IconEye className="w-4 h-4 text-sky-700" />
                                             </Link>
                                         </td>
                                     </tr>

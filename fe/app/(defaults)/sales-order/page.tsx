@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getOrders, OrderDto } from '@/app/(defaults)/sales-order/service';
+import { FiSearch } from 'react-icons/fi';
+
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -125,9 +127,9 @@ const SalesOrderSummary = () => {
                 </button>
             </div>
 
-            {/* Bộ lọc */}
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <input
+                <div className="relative w-full md:w-1/3">
+                    <input
                     type="text"
                     placeholder="Tìm theo tên khách hàng..."
                     value={searchTerm}
@@ -135,9 +137,17 @@ const SalesOrderSummary = () => {
                         setSearchTerm(e.target.value);
                         setCurrentPage(1);
                     }}
-                    className="input input-bordered w-full md:w-1/3 py-2 px-4 rounded-lg shadow-sm"
-                />
-
+                    className="input input-bordered w-full py-2 px-4 pr-12 rounded-lg shadow-sm"
+                    />
+                    <button
+                    type="button"
+                    className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow z-10"
+                    onClick={() => console.log('Tìm kiếm:', searchTerm)}
+                    >
+                    <FiSearch className="text-white w-4 h-4" />
+                    </button>
+                </div>
+                
                 <div className="flex flex-wrap items-center gap-4">
                     <div className="flex gap-4">
                         <div className="flex items-center gap-2">

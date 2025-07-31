@@ -11,6 +11,7 @@ namespace SEP490.Modules.Accountant.Services
     public class ProductionAccountantService : BaseService, IProductionAccountantService
     {
         private readonly SEP490DbContext _context;
+
         public ProductionAccountantService(SEP490DbContext context)
         {
             _context = context;
@@ -33,7 +34,6 @@ namespace SEP490.Modules.Accountant.Services
                         .Where(poOut => poOut.ProductionOrderId == po.Id)
                         .Sum(poOut => (int?)poOut.Amount ?? 0),
                     //Status = po.Status,
-
                 })
                 .ToList();
         }
@@ -47,7 +47,7 @@ namespace SEP490.Modules.Accountant.Services
                 {
                     OutputId = po.Id,
                     ProductName = po.ProductName,
-                    //Uom = po.UOM,
+                    Uom = po.UOM.HasValue ? (int)po.UOM.Value : 0,
                     Quantity = po.Amount ?? 0,
                     //Done = po.Done ?? 0
                 })
@@ -55,6 +55,7 @@ namespace SEP490.Modules.Accountant.Services
 
             return products;
         }
+
         public async Task<ProductionOrderInfoDTO?> GetProductionOrderInfoAsync(int id)
         {
             var po = await _context.ProductionOrders
@@ -69,7 +70,6 @@ namespace SEP490.Modules.Accountant.Services
             return po;
         }
 
-        
         public async Task<ProductWithMaterialsDTO?> GetProductAndMaterialByOutputId(int outputId)
         {
             var output = await _context.ProductionOutputs
@@ -89,9 +89,9 @@ namespace SEP490.Modules.Accountant.Services
                 .Where(m => m.ProductionOutputId == outputId)
                 .Select(m => new MaterialAccountantDTO
                 {
-                    Id = m.Id, 
+                    Id = m.Id,
                     ProductName = m.Product.ProductName,
-                    //Uom = m.UOM,
+                    Uom = ConvertStringUOMToInt(m.Product.UOM), // dung static method
                     QuantityPer = m.Amount ?? 0,
                     TotalQuantity = m.Amount ?? 0
                 })
@@ -103,7 +103,7 @@ namespace SEP490.Modules.Accountant.Services
                 {
                     OutputId = output.Id,
                     ProductName = output.Product.ProductName,
-                    Uom = output.Product.UOM,
+                    Uom = ConvertStringUOMToInt(output.Product.UOM), // dung static method
                     Quantity = (int)totalQuantity
                 },
                 Materials = materials
@@ -115,6 +115,7 @@ namespace SEP490.Modules.Accountant.Services
             var output = await _context.ProductionOutputs
                     .Include(p => p.Product)
                     .FirstOrDefaultAsync(p => p.Id == id);
+
             if (output == null)
             {
                 Console.WriteLine($" Không tìm thấy production_output với id = {id}");
@@ -122,23 +123,23 @@ namespace SEP490.Modules.Accountant.Services
             }
 
             output.ProductName = dto.ProductName;
-            //output.UOM = dto.Uom;
+            output.UOM = (UOM)dto.Uom;
             output.Amount = dto.Amount;
 
             await _context.SaveChangesAsync();
             return true;
         }
 
-
         public async Task<bool> UpdateMaterialInfo(int id, UpdateMaterialDTO dto)
         {
             var d = await _context.ProductionMaterials.FindAsync(id);
             if (d == null) return false;
+
             var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == d.ProductId);
             if (product == null) return false;
 
-            d.Product.ProductName = product.ProductName;
-            //d.UOM = dto.Uom;
+            d.Product.ProductName = dto.ProductName;
+            product.UOM = ConvertIntToStringUOM(dto.Uom);
             d.Amount = dto.Amount;
 
             await _context.SaveChangesAsync();
@@ -154,7 +155,7 @@ namespace SEP490.Modules.Accountant.Services
                 product = new Product
                 {
                     ProductName = dto.ProductName,
-                    UOM = dto.Uom
+                    UOM = ConvertIntToStringUOM(dto.Uom)
                 };
                 _context.Products.Add(product);
                 await _context.SaveChangesAsync();
@@ -164,7 +165,7 @@ namespace SEP490.Modules.Accountant.Services
             {
                 ProductId = product.Id,
                 ProductName = dto.ProductName,
-                //UOM = dto.Uom,
+                UOM = (UOM)dto.Uom,
                 Amount = dto.Quantity,
                 ProductionOrderId = productionOrderId
             };
@@ -173,7 +174,6 @@ namespace SEP490.Modules.Accountant.Services
             await _context.SaveChangesAsync();
             return true;
         }
-
 
         public async Task<bool> AddMaterialAsync(int productionOrderId, int outputId, CreateMaterialDTO dto)
         {
@@ -199,10 +199,7 @@ namespace SEP490.Modules.Accountant.Services
 
             var material = new ProductionMaterial
             {
-                //ProductionId = output.ProductId,
-                //ProductionName = output.Product.ProductName,
                 ProductionOutputId = output.Id,
-                //UOM = dto.Uom,
                 Amount = dto.TotalQuantity,
                 ProductId = existingProduct?.Id ?? 0
             };
@@ -217,5 +214,27 @@ namespace SEP490.Modules.Accountant.Services
             return true;
         }
 
+        // static methods chuyen doi string
+        private static int ConvertStringUOMToInt(string? uom)
+        {
+            if (string.IsNullOrEmpty(uom))
+                return 0;
+
+            return uom.ToLower() switch
+            {
+                "tấm" => (int)UOM.Tấm,
+                "kg" => (int)UOM.Kg,
+                "m" => (int)UOM.M,
+                "l" => (int)UOM.L,
+                "ml" => (int)UOM.Ml,
+                "g" => (int)UOM.g,
+                _ => 0
+            };
+        }
+
+        private static string ConvertIntToStringUOM(int uom)
+        {
+            return ((UOM)uom).ToString();
+        }
     }
 }

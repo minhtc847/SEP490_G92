@@ -1,19 +1,51 @@
 "use client"
+
 import { useEffect, useState } from "react"
 import type React from "react"
 import { useRouter } from "next/navigation"
-import ListOutputsPO from '@/components/VNG/manager/production-orders/list-outputs-of-po/list-outputs-po-components';
-import CuttingGlassPage from "@/app/(defaults)/cutting-glass/CuttingGlassPage";
+import ListOutputsPO from "@/components/VNG/manager/production-orders/list-outputs-of-po/list-outputs-po-components"
+import CuttingGlassPage from "@/app/(defaults)/cutting-glass/CuttingGlassPage"
+import GlueButylExportModalComponent from "@/components/VNG/manager/glue-butyl-export-modal-component"
+import type { Chemical, Product } from "@/app/(defaults)/production-plans/service"
+import ListExportsPO from "@/components/VNG/manager/production-plans/list-export-glue-components"
 
-import GlueButylExportModalComponent from "@/components/VNG/manager/glue-butyl-export-modal-component";
-import { Chemical, PhieuXuatKeoButylData, Product, fetchAllPhieuXuatKeoButylData } from "@/app/(defaults)/production-plans/service";
-import ListExportsPO from "@/components/VNG/manager/production-plans/list-export-glue-components";
+// Helper functions để convert UOM giữa int và string
+const convertUOMToString = (uom: number | string): string => {
+  if (typeof uom === "string") return uom
 
+  const uomMap: { [key: number]: string } = {
+    0: "Tấm",
+    1: "Kg",
+    2: "M",
+    3: "L",
+    4: "Ml",
+    5: "g",
+  }
+  return uomMap[uom] || "N/A"
+}
+
+const convertStringToUOMInt = (uomString: string): number => {
+  const stringToIntMap: { [key: string]: number } = {
+    Tấm: 0,
+    tấm: 0,
+    Kg: 1,
+    kg: 1,
+    M: 2,
+    m: 2,
+    L: 3,
+    l: 3,
+    Ml: 4,
+    ml: 4,
+    g: 5,
+    G: 5,
+  }
+  return stringToIntMap[uomString] || 0
+}
 
 interface MaterialItem {
-  id?: number;
+  id?: number
   productName: string
-  uom: string
+  uom: string | number // Support both string and int
   quantityPer: number
   totalQuantity: number
 }
@@ -22,7 +54,7 @@ interface ProductItem {
   id?: number
   outputId?: number
   productName: string
-  uom: string
+  uom: string | number // Support both string and int
   quantity: number
   done?: number
 }
@@ -46,6 +78,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   const [showMaterialModal, setShowMaterialModal] = useState(false)
   const [showAddProductModal, setShowAddProductModal] = useState(false)
   const [showAddMaterialModal, setShowAddMaterialModal] = useState(false)
+  const [showGlueButylModal, setShowGlueButylModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null)
   const [editingMaterial, setEditingMaterial] = useState<MaterialItem | null>(null)
 
@@ -55,6 +88,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     uom: "",
     quantity: 0,
   })
+
   const [materialForm, setMaterialForm] = useState<MaterialItem>({
     productName: "",
     uom: "",
@@ -68,6 +102,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     uom: "",
     quantity: 0,
   })
+
   const [addMaterialForm, setAddMaterialForm] = useState<MaterialItem>({
     productName: "",
     uom: "",
@@ -85,53 +120,64 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   const [showProductAddSuggestions, setShowProductAddSuggestions] = useState(false)
   const [isLoadingProductAddSuggestions, setIsLoadingProductAddSuggestions] = useState(false)
 
-  const productsWithMaterials = ["VT00372", "VT00090"];
-  const [exportGlueButylProducts, setExportGlueButylProducts] = useState<Product[]>([]);
-    const defaultChemicals: Chemical[] = [
-        { type: 'Keo silicone', uom: 'kg', quantity: 0 },
-        { type: 'Butyl sealant', uom: 'kg', quantity: 0 },
-        { type: 'Chất xúc tác', uom: 'kg', quantity: 0 },
-    ];
-    const [refreshFlag, setRefreshFlag] = useState(0);
+  const productsWithMaterials = ["VT00372", "VT00090"]
+  const [exportGlueButylProducts, setExportGlueButylProducts] = useState<Product[]>([])
 
-  const employees = [{
-    id: 1,
-    name: 'Tran Cao Minh',
-  },
-  {
+  const defaultChemicals: Chemical[] = [
+    { type: "Keo silicone", uom: "kg", quantity: 0 },
+    { type: "Butyl sealant", uom: "kg", quantity: 0 },
+    { type: "Chất xúc tác", uom: "kg", quantity: 0 },
+  ]
+
+  const [refreshFlag, setRefreshFlag] = useState(0)
+  const [selectedOperation, setSelectedOperation] = useState<string>("")
+
+  const employees = [
+    {
+      id: 1,
+      name: "Tran Cao Minh",
+    },
+    {
       id: 2,
-      name: 'Nguyen Tuan Kiet',
-  }]
+      name: "Nguyen Tuan Kiet",
+    },
+  ]
 
   useEffect(() => {
     fetch(`https://localhost:7075/api/ProductionAccountantControllers/production-ordersDetails/${params.id}`)
       .then((res) => res.json())
       .then((data: ProductItem[]) => {
-        console.log(" Dữ liệu thành phẩm nhận được:", data) // Debug log
+        console.log("Dữ liệu thành phẩm nhận được:", data)
 
-        setFinishedProducts(data || []);
-          setExportGlueButylProducts(
-              (data || []).map(item => ({
-                  name: item.productName,
-                  quantity: item.quantity - (item.done ?? 0), // Default `item.done` to 0 if null or undefined
-                  glueButyls: defaultChemicals.map(c => ({ ...c })), // Deep copy to prevent shared reference
-              }))
-          );
-        if (data && data.length > 0) {
-          const productWithMaterials = data.find((p) => p.productName === "VT00372") || data[0]
-          // Ưu tiên outputId, nếu không có thì dùng id
+        // Convert UOM từ int sang string cho hiển thị
+        const processedData = (data || []).map((item) => ({
+          ...item,
+          uom: convertUOMToString(item.uom),
+        }))
+
+        setFinishedProducts(processedData)
+        setExportGlueButylProducts(
+          processedData.map((item) => ({
+            name: item.productName,
+            quantity: item.quantity - (item.done ?? 0),
+            glueButyls: defaultChemicals.map((c) => ({ ...c })),
+          })),
+        )
+
+        if (processedData && processedData.length > 0) {
+          const productWithMaterials = processedData.find((p) => p.productName === "VT00372") || processedData[0]
           const productId = productWithMaterials.outputId || productWithMaterials.id
           if (productId) {
             setSelectedProduct(productId)
           }
         }
       })
-      .catch((err) => console.error(" Lỗi khi fetch thành phẩm:", err))
-  }, [params.id,refreshFlag])
+      .catch((err) => console.error("Lỗi khi fetch thành phẩm:", err))
+  }, [params.id, refreshFlag])
 
-    const handleExportSuccess = () => {
-        setRefreshFlag(prev => prev + 1);
-    };
+  const handleExportSuccess = () => {
+    setRefreshFlag((prev) => prev + 1)
+  }
 
   useEffect(() => {
     if (!selectedProduct) return
@@ -139,19 +185,16 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     setCurrentMaterials([])
     setSelectedMaterial(null)
 
-    // Find the selected product to get its outputId
     const selectedProductData = finishedProducts.find((p) => (p.outputId || p.id) === selectedProduct)
     if (!selectedProductData || !selectedProductData.outputId) {
-      console.warn(" Không tìm thấy outputId cho sản phẩm:", selectedProduct)
+      console.warn("Không tìm thấy outputId cho sản phẩm:", selectedProduct)
       setLoading(false)
       return
     }
 
-    // Use the actual outputId from the selected product
     const outputId = selectedProductData.outputId
     const url = `https://localhost:7075/api/ProductionAccountantControllers/products-materials-by-output/${outputId}`
-
-    console.log(" Fetching materials with outputId:", outputId, "for product:", selectedProduct)
+    console.log("Fetching materials with outputId:", outputId, "for product:", selectedProduct)
 
     fetch(url)
       .then((res) => {
@@ -160,29 +203,29 @@ export default function ProductionOrderView({ params }: { params: { id: string }
         return res.json()
       })
       .then((data: ApiResponse | { notFound: boolean }) => {
-        console.log(" Materials data received:", data)
-
+        console.log("Materials data received:", data)
         if ("notFound" in data) {
           setCurrentMaterials([])
           return
         }
-
         if (data && data.materials && Array.isArray(data.materials)) {
-          // Calculate quantityPer for each material
           const selectedProductQuantity = getSelectedProductQuantity()
-          const materialsWithCalculatedQuantityPer = data.materials.map((material) => ({
+
+          // Convert UOM từ int sang string cho materials
+          const materialsWithCalculatedQuantityPer = data.materials.map((material: MaterialItem) => ({
             ...material,
+            uom: convertUOMToString(material.uom),
             quantityPer: calculateQuantityPer(material.totalQuantity, selectedProductQuantity),
           }))
 
-          console.log(" Materials with calculated quantityPer:", materialsWithCalculatedQuantityPer)
+          console.log("Materials with calculated quantityPer:", materialsWithCalculatedQuantityPer)
           setCurrentMaterials(materialsWithCalculatedQuantityPer)
         } else {
           setCurrentMaterials([])
         }
       })
       .catch((err) => {
-        console.error(" API Error:", err)
+        console.error("API Error:", err)
         setCurrentMaterials([])
       })
       .finally(() => {
@@ -214,6 +257,19 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     router.push("/production-orders/view")
   }
 
+    const handleOperationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value
+    setSelectedOperation(value)
+
+    if (value === "xuat-keo-bytul") {
+      setShowGlueButylModal(true)
+    } else if (value === "cat-kinh") {
+      router.push(`/cutting-glass/${params.id}`)
+    } else {
+      setShowGlueButylModal(false)
+    }
+  }
+
   const handleAddProduct = () => {
     setAddProductForm({
       productName: "",
@@ -228,7 +284,6 @@ export default function ProductionOrderView({ params }: { params: { id: string }
       alert("Không có thành phẩm nào để cập nhật")
       return
     }
-
     const productToEdit = finishedProducts.find((p) => (p.outputId || p.id) === selectedProduct) || finishedProducts[0]
     setEditingProduct(productToEdit)
     setProductForm({ ...productToEdit })
@@ -237,7 +292,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
   const handleAddMaterial = () => {
     if (!selectedProduct) {
-      alert(" Vui lòng chọn sản phẩm trước khi thêm nguyên vật liệu!")
+      alert("Vui lòng chọn sản phẩm trước khi thêm nguyên vật liệu!")
       return
     }
     setAddMaterialForm({
@@ -251,10 +306,9 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
   const handleUpdateMaterial = () => {
     if (!selectedMaterial) {
-      alert(" Vui lòng chọn một nguyên vật liệu để cập nhật!")
+      alert("Vui lòng chọn một nguyên vật liệu để cập nhật!")
       return
     }
-
     setEditingMaterial(selectedMaterial)
     setMaterialForm({ ...selectedMaterial })
     setShowMaterialModal(true)
@@ -263,33 +317,27 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   const handleAddProductFormSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Validate dữ liệu trước khi gửi
     if (!addProductForm.productName.trim()) {
-      alert(" Vui lòng nhập tên thành phẩm!")
+      alert("Vui lòng nhập tên thành phẩm!")
       return
     }
-    if (!addProductForm.productName.trim()) {
-      alert(" Vui lòng nhập tên thành phẩm!")
-      return
-    }
-    if (!addProductForm.uom.trim()) {
-      alert(" Vui lòng nhập đơn vị tính!")
+    if (!addProductForm.uom.toString().trim()) {
+      alert("Vui lòng nhập đơn vị tính!")
       return
     }
     if (addProductForm.quantity <= 0) {
-      alert(" Số lượng phải lớn hơn 0!")
+      alert("Số lượng phải lớn hơn 0!")
       return
     }
 
-    // Chuẩn bị dữ liệu gửi lên server
+    // Convert UOM từ string sang int trước khi gửi lên server
     const productData = {
       productName: addProductForm.productName.trim(),
-      uom: addProductForm.uom.trim(),
+      uom: convertStringToUOMInt(addProductForm.uom.toString()),
       quantity: Number(addProductForm.quantity),
     }
 
-    console.log(" Đang gửi dữ liệu thành phẩm:", productData)
-    console.log(" URL:", `https://localhost:7075/api/ProductionAccountantControllers/add-output-info/${params.id}`)
+    console.log("Đang gửi dữ liệu thành phẩm:", productData)
 
     fetch(`https://localhost:7075/api/ProductionAccountantControllers/add-output-info/${params.id}`, {
       method: "POST",
@@ -301,13 +349,9 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     })
       .then(async (res) => {
         console.log("Response status:", res.status)
-        console.log("Response headers:", res.headers)
-
         const responseText = await res.text()
         console.log("Response body:", responseText)
-
         if (!res.ok) {
-          // Thử parse JSON để lấy thông tin lỗi chi tiết
           try {
             const errorData = JSON.parse(responseText)
             throw new Error(`HTTP ${res.status}: ${errorData.message || errorData.title || responseText}`)
@@ -315,19 +359,23 @@ export default function ProductionOrderView({ params }: { params: { id: string }
             throw new Error(`HTTP ${res.status}: ${responseText || res.statusText}`)
           }
         }
-
         return responseText
       })
       .then((responseText) => {
         console.log("Response từ server:", responseText)
-
-        // Refresh lại danh sách thành phẩm từ server
         return fetch(`https://localhost:7075/api/ProductionAccountantControllers/production-ordersDetails/${params.id}`)
       })
       .then((res) => res.json())
       .then((data: ProductItem[]) => {
         console.log("Dữ liệu thành phẩm sau khi refresh:", data)
-        setFinishedProducts(data || [])
+
+        // Convert UOM từ int sang string
+        const processedData = (data || []).map((item) => ({
+          ...item,
+          uom: convertUOMToString(item.uom),
+        }))
+
+        setFinishedProducts(processedData)
         alert("Thêm thành phẩm thành công!")
         setShowAddProductModal(false)
         setAddProductForm({ productName: "", uom: "", quantity: 0 })
@@ -343,16 +391,11 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   const handleProductFormSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Validate dữ liệu
     if (!productForm.productName.trim()) {
       alert("Vui lòng nhập tên thành phẩm!")
       return
     }
-    if (!productForm.productName.trim()) {
-      alert("Vui lòng nhập tên thành phẩm!")
-      return
-    }
-    if (!productForm.uom.trim()) {
+    if (!productForm.uom.toString().trim()) {
       alert("Vui lòng nhập đơn vị tính!")
       return
     }
@@ -361,16 +404,15 @@ export default function ProductionOrderView({ params }: { params: { id: string }
       return
     }
 
+    // Convert UOM từ string sang int trước khi gửi lên server
     const updateData = {
       productName: productForm.productName.trim(),
-      uom: productForm.uom.trim(),
+      uom: convertStringToUOMInt(productForm.uom.toString()),
       amount: Number(productForm.quantity),
     }
 
-    const productIdToUpdate = editingProduct?.outputId || editingProduct?.id;
-
+    const productIdToUpdate = editingProduct?.outputId || editingProduct?.id
     fetch(`https://localhost:7075/api/ProductionAccountantControllers/update-output-info/${productIdToUpdate}`, {
-
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -392,12 +434,17 @@ export default function ProductionOrderView({ params }: { params: { id: string }
         return res.json()
       })
       .then(() => {
-        // Refresh lại data từ server thay vì chỉ update local state
         return fetch(`https://localhost:7075/api/ProductionAccountantControllers/production-ordersDetails/${params.id}`)
       })
       .then((res) => res.json())
       .then((data: ProductItem[]) => {
-        setFinishedProducts(data || [])
+        // Convert UOM từ int sang string
+        const processedData = (data || []).map((item) => ({
+          ...item,
+          uom: convertUOMToString(item.uom),
+        }))
+
+        setFinishedProducts(processedData)
         alert("Cập nhật thành phẩm thành công!")
         setShowProductModal(false)
         setEditingProduct(null)
@@ -410,8 +457,6 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
   const handleMaterialFormSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-
-
     const selectedProductData = finishedProducts.find((p) => (p.outputId || p.id) === selectedProduct)
     if (!selectedProductData?.outputId) {
       alert("Không tìm thấy thông tin sản phẩm!")
@@ -423,13 +468,11 @@ export default function ProductionOrderView({ params }: { params: { id: string }
       return
     }
 
-
-    // Validate dữ liệu
     if (!materialForm.productName.trim()) {
       alert("Vui lòng nhập tên nguyên vật liệu!")
       return
     }
-    if (!materialForm.uom.trim()) {
+    if (!materialForm.uom.toString().trim()) {
       alert("Vui lòng nhập đơn vị tính!")
       return
     }
@@ -438,11 +481,10 @@ export default function ProductionOrderView({ params }: { params: { id: string }
       return
     }
 
-
-
+    // Convert UOM từ string sang int trước khi gửi lên server
     const updatedMaterialForm = {
       productName: materialForm.productName.trim(),
-      uom: materialForm.uom.trim(),
+      uom: convertStringToUOMInt(materialForm.uom.toString()),
       amount: materialForm.totalQuantity,
     }
 
@@ -462,7 +504,6 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     })
       .then(async (res) => {
         console.log("Update response status:", res.status)
-
         if (!res.ok) {
           const responseText = await res.text()
           console.error("Update error response:", responseText)
@@ -473,14 +514,11 @@ export default function ProductionOrderView({ params }: { params: { id: string }
             throw new Error(`HTTP ${res.status}: ${responseText || res.statusText}`)
           }
         }
-
-        // Thử parse response
         const responseText = await res.text()
         console.log("Update success response:", responseText)
         return responseText
       })
       .then(() => {
-        // Refresh materials từ server
         const refreshUrl = `https://localhost:7075/api/ProductionAccountantControllers/products-materials-by-output/${selectedProductData.outputId}`
         console.log("Refreshing materials from:", refreshUrl)
         return fetch(refreshUrl)
@@ -493,24 +531,21 @@ export default function ProductionOrderView({ params }: { params: { id: string }
       })
       .then((data: ApiResponse | { notFound: boolean }) => {
         console.log("Refreshed materials data:", data)
-
         if ("notFound" in data) {
           setCurrentMaterials([])
         } else if (data && data.materials && Array.isArray(data.materials)) {
           const selectedProductQuantity = getSelectedProductQuantity()
-          const materialsWithCalculatedQuantityPer = data.materials.map((material) => ({
+          const materialsWithCalculatedQuantityPer = data.materials.map((material: MaterialItem) => ({
             id: material.id,
             productName: material.productName,
-            uom: material.uom,
+            uom: convertUOMToString(material.uom), // Convert UOM từ int sang string
             totalQuantity: material.totalQuantity,
             quantityPer: calculateQuantityPer(material.totalQuantity, selectedProductQuantity),
           }))
-
           setCurrentMaterials(materialsWithCalculatedQuantityPer)
         } else {
           setCurrentMaterials([])
         }
-
         alert("Cập nhật nguyên vật liệu thành công!")
         setShowMaterialModal(false)
         setEditingMaterial(null)
@@ -532,15 +567,19 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     setIsLoadingSuggestions(true)
     try {
       const response = await fetch(`https://localhost:7075/api/Product`)
-
       if (response.ok) {
         const allProducts = await response.json()
         console.log("📦 Dữ liệu sản phẩm:", allProducts)
 
-        const filteredProducts = allProducts.filter((product: ProductItem) =>
+        // Convert UOM từ int sang string cho suggestions
+        const processedProducts = allProducts.map((product: ProductItem) => ({
+          ...product,
+          uom: convertUOMToString(product.uom),
+        }))
+
+        const filteredProducts = processedProducts.filter((product: ProductItem) =>
           product.productName.toLowerCase().includes(searchTerm.toLowerCase()),
         )
-
         console.log("Kết quả lọc:", filteredProducts)
         setProductSuggestions(filteredProducts.slice(0, 10))
         setShowSuggestions(true)
@@ -560,7 +599,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
   const handleProductCodeChange = (value: string) => {
     setAddMaterialForm({ ...addMaterialForm, productName: value })
-    console.log("Đang tìm kiếm:", value) // Debug log
+    console.log("Đang tìm kiếm:", value)
     fetchProductSuggestions(value)
   }
 
@@ -603,49 +642,61 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
   const handleAddMaterialFormSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-
     const selectedProductData = finishedProducts.find((p) => (p.outputId || p.id) === selectedProduct)
     if (!selectedProductData) {
       alert("Không tìm thấy sản phẩm được chọn!")
       return
     }
 
-    // Only send the fields that the API expects
+    // Validate dữ liệu trước khi gửi
+    if (!addMaterialForm.productName.trim()) {
+      alert("Vui lòng nhập tên nguyên vật liệu!")
+      return
+    }
+    if (!addMaterialForm.uom.toString().trim()) {
+      alert("Vui lòng chọn đơn vị tính!")
+      return
+    }
+    if (addMaterialForm.totalQuantity <= 0) {
+      alert("Tổng số lượng phải lớn hơn 0!")
+      return
+    }
+
+    // Sửa lại cách gửi data - chỉ gửi những field mà API expect
     const materialData = {
       productName: addMaterialForm.productName.trim(),
-      uom: addMaterialForm.uom.trim(),
       totalQuantity: addMaterialForm.totalQuantity,
     }
 
     console.log("Đang gửi dữ liệu NVL:", materialData)
+    console.log("Selected product outputId:", selectedProductData.outputId)
 
-    // Sử dụng productCode thay vì outputId
-    // URL này đã đúng, sử dụng outputId
     const url = `https://localhost:7075/api/ProductionAccountantControllers/add-material-info/${params.id}?outputId=${selectedProductData.outputId}`
 
     fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Accept: "application/json",
       },
       body: JSON.stringify(materialData),
     })
-      .then((res) => {
+      .then(async (res) => {
         console.log("Response status:", res.status)
         console.log("Request URL:", url)
         console.log("Request body:", JSON.stringify(materialData))
+
         if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+          const responseText = await res.text()
+          console.error("Error response:", responseText)
+          throw new Error(`HTTP ${res.status}: ${responseText || res.statusText}`)
         }
         return res.text()
       })
       .then((responseText) => {
         console.log("Response từ server:", responseText)
-
-        // Use the correct outputId for refreshing materials
         const outputId = selectedProductData.outputId
         const refreshUrl = `https://localhost:7075/api/ProductionAccountantControllers/products-materials-by-output/${outputId}`
-
         console.log("Refreshing materials with outputId:", outputId)
         return fetch(refreshUrl)
       })
@@ -657,18 +708,23 @@ export default function ProductionOrderView({ params }: { params: { id: string }
       })
       .then((data: ApiResponse | { notFound: boolean }) => {
         console.log("Dữ liệu NVL sau khi refresh:", data)
-
         if ("notFound" in data) {
           console.log("No materials found after refresh")
           setCurrentMaterials([])
         } else if (data && data.materials && Array.isArray(data.materials)) {
           console.log("Setting materials:", data.materials)
-          setCurrentMaterials(data.materials)
+
+          // Convert UOM từ int sang string cho materials
+          const processedMaterials = data.materials.map((material: MaterialItem) => ({
+            ...material,
+            uom: convertUOMToString(material.uom),
+          }))
+
+          setCurrentMaterials(processedMaterials)
         } else {
           console.log("Invalid data structure:", data)
           setCurrentMaterials([])
         }
-
         alert("Thêm nguyên vật liệu thành công!")
         setShowAddMaterialModal(false)
         setAddMaterialForm({ productName: "", uom: "", quantityPer: 0, totalQuantity: 0 })
@@ -684,7 +740,6 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   const handleAddProductCodeChange = async (value: string) => {
     setAddProductForm({ ...addProductForm, productName: value })
     console.log("Đang tìm kiếm sản phẩm:", value)
-
     if (value.length < 2) {
       setProductAddSuggestions([])
       setShowProductAddSuggestions(false)
@@ -694,15 +749,19 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     setIsLoadingProductAddSuggestions(true)
     try {
       const response = await fetch(`https://localhost:7075/api/Product`)
-
       if (response.ok) {
         const allProducts = await response.json()
         console.log("Dữ liệu sản phẩm cho Add Product:", allProducts)
 
-        const filteredProducts = allProducts.filter((product: ProductItem) =>
+        // Convert UOM từ int sang string cho suggestions
+        const processedProducts = allProducts.map((product: ProductItem) => ({
+          ...product,
+          uom: convertUOMToString(product.uom),
+        }))
+
+        const filteredProducts = processedProducts.filter((product: ProductItem) =>
           product.productName.toLowerCase().includes(value.toLowerCase()),
         )
-
         console.log("Kết quả lọc cho Add Product:", filteredProducts)
         setProductAddSuggestions(filteredProducts.slice(0, 10))
         setShowProductAddSuggestions(true)
@@ -732,10 +791,8 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
   const refreshMaterials = async () => {
     if (!selectedProduct) return
-
     setLoading(true)
     const selectedProductData = finishedProducts.find((p) => (p.outputId || p.id) === selectedProduct)
-
     if (!selectedProductData || !selectedProductData.outputId) {
       console.warn("Không tìm thấy outputId cho sản phẩm:", selectedProduct)
       setLoading(false)
@@ -744,25 +801,25 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
     const outputId = selectedProductData.outputId
     const url = `https://localhost:7075/api/ProductionAccountantControllers/products-materials-by-output/${outputId}`
-
     console.log("Manual refresh with outputId:", outputId, "URL:", url)
 
     try {
       const res = await fetch(url)
       console.log("📡 Manual refresh response status:", res.status)
-
       if (res.status === 404) {
         setCurrentMaterials([])
         return
       }
-
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`)
-
       const data = await res.json()
       console.log("Manual refresh data:", data)
-
       if (data && data.materials && Array.isArray(data.materials)) {
-        setCurrentMaterials(data.materials)
+        // Convert UOM từ int sang string cho materials
+        const processedMaterials = data.materials.map((material: MaterialItem) => ({
+          ...material,
+          uom: convertUOMToString(material.uom),
+        }))
+        setCurrentMaterials(processedMaterials)
       } else {
         setCurrentMaterials([])
       }
@@ -773,87 +830,96 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     }
   }
 
-  // Add this function after the existing functions, before the return statement
   const calculateQuantityPer = (totalQuantity: number, productQuantity: number): number => {
     if (productQuantity === 0) return 0
     return Number((totalQuantity / productQuantity).toFixed(4))
   }
 
-  // Add function to get selected product quantity
   const getSelectedProductQuantity = (): number => {
     const selectedProductData = finishedProducts.find((p) => (p.outputId || p.id) === selectedProduct)
     return selectedProductData?.quantity || 1
   }
 
-  // Add this useEffect after the existing useEffects
   useEffect(() => {
-    // Recalculate quantityPer for all materials when selected product quantity changes
     if (currentMaterials.length > 0 && selectedProduct) {
       const selectedProductQuantity = getSelectedProductQuantity()
       const updatedMaterials = currentMaterials.map((material) => ({
         ...material,
         quantityPer: calculateQuantityPer(material.totalQuantity, selectedProductQuantity),
       }))
-
       console.log("Recalculating quantityPer for materials due to product quantity change")
       setCurrentMaterials(updatedMaterials)
     }
-  }, [finishedProducts, selectedProduct]) // Depend on finishedProducts to catch quantity changes
+  }, [finishedProducts, selectedProduct])
 
   const selectedProductData = finishedProducts.find((p) => (p.outputId || p.id) === selectedProduct)
-
-  const [tabs, setTabs] = useState<string>('po');
-  const toggleTabs = (tab: string) => setTabs(tab);
+  const [tabs, setTabs] = useState<string>("po")
+  const toggleTabs = (tab: string) => setTabs(tab)
 
   return (
-
     <div className="panel">
-
-
       <div className="mb-5">
-          <ul className="flex flex-wrap -mb-px border-b border-[#e0e6ed] dark:border-[#191e3a]">
-              <li className="mr-2">
-                  <button
-                      type="button"
-                      className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'po' ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
-                      onClick={() => toggleTabs('po')}
-                  >
-                      Lệnh sản xuất
-                  </button>
-              </li>
-              <li className="mr-2">
-                  <button
-                      type="button"
-                      className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'outputs' ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
-                      onClick={() => toggleTabs('outputs')}
-                  >
-                      Tình trạng sản xuất
-                  </button>
-              </li>
-              {/* Thêm các tab khác nếu cần */}
-              <li className="mr-2">
-                  <button
-                      type="button"
-                      className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === 'chemical' ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
-                      onClick={() => toggleTabs('chemical')}
-                  >
-                      Xuất hoá chất
-                  </button>
-              </li>
-          </ul>
+        <ul className="flex flex-wrap -mb-px border-b border-[#e0e6ed] dark:border-[#191e3a]">
+          <li className="mr-2">
+            <button
+              type="button"
+              className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === "po" ? "text-primary border-primary" : "text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"}`}
+              onClick={() => toggleTabs("po")}
+            >
+              Lệnh sản xuất
+            </button>
+          </li>
+          <li className="mr-2">
+            <button
+              type="button"
+              className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === "outputs" ? "text-primary border-primary" : "text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"}`}
+              onClick={() => toggleTabs("outputs")}
+            >
+              Tình trạng sản xuất
+            </button>
+          </li>
+          <li className="mr-2">
+            <button
+              type="button"
+              className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === "chemical" ? "text-primary border-primary" : "text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"}`}
+              onClick={() => toggleTabs("chemical")}
+            >
+              Xuất hoá chất
+            </button>
+          </li>
+        </ul>
       </div>
 
-        {tabs === 'po' && (
-            <div>
-                <div className="flex justify-between items-center mb-4">
-                    <h1 className="text-xl font-bold text-[#4361ee]">{orderDescription}</h1>
-
-                    <div className="flex items-center gap-4">
-                        {exportGlueButylProducts.length > 0 && (
-                            <GlueButylExportModalComponent products={exportGlueButylProducts} type={'Ghép Kính'}
-                                                           productionOrderId={Number(params.id)} employees={employees} onSuccess={handleExportSuccess}></GlueButylExportModalComponent>
-                )}
-                    <select className="px-4 py-2 border border-[#4361ee] text-[#4361ee] rounded shadow-sm focus:ring-2 focus:ring-[#4361ee] focus:outline-none text-sm">
+      {tabs === "po" && (
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-xl font-bold text-[#4361ee]">{orderDescription}</h1>
+            <div className="flex items-center gap-4">
+              {selectedOperation === "xuat-keo-bytul" && (
+                exportGlueButylProducts.length > 0 ? (
+                  <GlueButylExportModalComponent
+                    products={exportGlueButylProducts}
+                    type={"Ghép Kính"}
+                    productionOrderId={Number(params.id)}
+                    employees={employees}
+                    onSuccess={handleExportSuccess}
+                    isOpen={showGlueButylModal}
+                    onClose={() => {
+                      setShowGlueButylModal(false)
+                      setSelectedOperation("")
+                    }}
+                  />
+                ) : (
+                  <div className="text-sm text-gray-500">
+                    Không có sản phẩm nào để xuất keo butyl
+                  </div>
+                )
+              )}
+              <select 
+                className="px-4 py-2 border border-[#4361ee] text-[#4361ee] rounded shadow-sm focus:ring-2 focus:ring-[#4361ee] focus:outline-none text-sm"
+                value={selectedOperation}
+                onChange={handleOperationChange}
+              >
                 <option value="">Chọn thao tác</option>
                 <option value="xuat-hoa-chat">Xuất hóa chất</option>
                 <option value="xuat-keo-bytul">Xuất keo bytul</option>
@@ -863,7 +929,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                 onClick={handleGoBack}
                 className="px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white text-sm rounded shadow transition-colors"
               >
-                ← Quay lại
+                Quay lại
               </button>
             </div>
           </div>
@@ -875,7 +941,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
               <table className="w-full border rounded shadow text-sm">
                 <thead className="bg-[#edf0ff]">
                   <tr>
-                    <th className="border p-2">#</th>
+                    <th className="border p-2">STT</th>
                     <th className="border p-2">Tên TP</th>
                     <th className="border p-2">ĐVT</th>
                     <th className="border p-2">Số lượng</th>
@@ -891,10 +957,11 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                           handleProductSelect(productId)
                         }
                       }}
-                      className={`cursor-pointer hover:bg-blue-50 transition-colors ${selectedProduct === (item.outputId || item.id)
-                        ? "bg-[#edf0ff] border-l-4 border-[#4361ee] font-bold"
-                        : ""
-                        }`}
+                      className={`cursor-pointer hover:bg-blue-50 transition-colors ${
+                        selectedProduct === (item.outputId || item.id)
+                          ? "bg-[#edf0ff] border-l-4 border-[#4361ee] font-bold"
+                          : ""
+                      }`}
                     >
                       <td className="border p-2">{index + 1}</td>
                       <td className="border p-2">{item.productName}</td>
@@ -912,13 +979,12 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   </tr>
                 </tfoot>
               </table>
-
               <div className="flex gap-2 mt-3">
                 <button
                   onClick={handleAddProduct}
                   className="px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white text-sm rounded shadow transition-colors"
                 >
-                  + Thêm
+                  Thêm
                 </button>
                 <button
                   onClick={handleUpdateProduct}
@@ -954,11 +1020,10 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   )}
                 </div>
               </div>
-
               <table className="w-full border rounded shadow text-sm" key={`materials-${selectedProduct}`}>
                 <thead className="bg-[#edf0ff]">
                   <tr>
-                    <th className="border p-2">#</th>
+                    <th className="border p-2">STT</th>
                     <th className="border p-2">Tên NVL</th>
                     <th className="border p-2">ĐVT</th>
                     <th className="border p-2">Tổng SL</th>
@@ -976,10 +1041,11 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                     currentMaterials.map((material, index) => (
                       <tr
                         key={`${selectedProduct}-${material.id}-${index}`}
-                        className={`cursor-pointer transition-colors ${selectedMaterial?.productName === material.productName
-                          ? "bg-[#e8f5e8] border-l-4 border-[#28a745] font-bold"
-                          : "hover:bg-blue-50"
-                          }`}
+                        className={`cursor-pointer transition-colors ${
+                          selectedMaterial?.productName === material.productName
+                            ? "bg-[#e8f5e8] border-l-4 border-[#28a745] font-bold"
+                            : "hover:bg-blue-50"
+                        }`}
                         onClick={() => handleMaterialSelect(material)}
                         title="Click để chọn nguyên vật liệu này"
                       >
@@ -1014,18 +1080,18 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   </tfoot>
                 )}
               </table>
-
               <div className="flex gap-2 mt-3">
                 <button
                   onClick={handleAddMaterial}
                   className="px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white text-sm rounded shadow transition-colors"
                 >
-                  + Thêm
+                  Thêm
                 </button>
                 <button
                   onClick={handleUpdateMaterial}
-                  className={`px-4 py-2 text-white text-sm rounded shadow transition-colors ${selectedMaterial ? "bg-[#28a745] hover:bg-[#218838]" : "bg-gray-400 cursor-not-allowed"
-                    }`}
+                  className={`px-4 py-2 text-white text-sm rounded shadow transition-colors ${
+                    selectedMaterial ? "bg-[#28a745] hover:bg-[#218838]" : "bg-gray-400 cursor-not-allowed"
+                  }`}
                   disabled={!selectedMaterial}
                   title={
                     selectedMaterial ? `Cập nhật ${selectedMaterial.productName})` : "Chọn nguyên vật liệu để cập nhật"
@@ -1039,34 +1105,34 @@ export default function ProductionOrderView({ params }: { params: { id: string }
         </div>
       )}
 
-      {tabs === 'outputs' && (
+      {tabs === "outputs" && (
         <div>
           <div>
             <ListOutputsPO productionOrderId={Number(params.id)} />
           </div>
         </div>
       )}
-      
-        {tabs === 'cut-glass' && (
+
+      {tabs === "cut-glass" && (
         <div>
           <div>
             <CuttingGlassPage productionOrderId={Number(params.id)} />
           </div>
         </div>
-      	)}
+      )}
 
-        {tabs === 'chemical' && (
-            <div>
-                <div>
-                    <ListExportsPO productionOrderId={Number(params.id)} />
-                </div>
-            </div>
-        )}
-        
-        {/* POPUP THÊM THÀNH PHẨM */}
-        {showAddProductModal && (
-            <div
-                className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      {tabs === "chemical" && (
+        <div>
+          <div>
+            <ListExportsPO productionOrderId={Number(params.id)} />
+          </div>
+        </div>
+      )}
+
+      {/* POPUP THÊM THÀNH PHẨM */}
+      {showAddProductModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
           onClick={(e) => {
             if (e.target === e.currentTarget) closeAddProductModal()
           }}
@@ -1081,7 +1147,6 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                 ×
               </button>
             </div>
-
             <form onSubmit={handleAddProductFormSubmit} className="space-y-4">
               <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tên thành phẩm</label>
@@ -1094,7 +1159,6 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   placeholder="Nhập tên thành phẩm (tối thiểu 2 ký tự)"
                   autoComplete="off"
                 />
-
                 {/* Suggestions Dropdown for Add Product */}
                 {showProductAddSuggestions && (
                   <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
@@ -1123,19 +1187,23 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   </div>
                 )}
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
-                <input
-                  type="text"
+                <select
                   value={addProductForm.uom}
                   onChange={(e) => setAddProductForm({ ...addProductForm, uom: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
                   required
-                  placeholder="VD: Cái, Kg, Lít..."
-                />
+                >
+                  <option value="">Chọn đơn vị tính</option>
+                  <option value="Tấm">Tấm</option>
+                  <option value="Kg">Kg</option>
+                  <option value="M">M</option>
+                  <option value="L">L</option>
+                  <option value="Ml">Ml</option>
+                  <option value="g">g</option>
+                </select>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
                 <input
@@ -1149,7 +1217,6 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   placeholder="Nhập số lượng (VD: 1.5, 2.25)"
                 />
               </div>
-
               <div className="flex gap-2 pt-4">
                 <button
                   type="submit"
@@ -1193,7 +1260,6 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                 ×
               </button>
             </div>
-
             <form onSubmit={handleAddMaterialFormSubmit} className="space-y-4">
               <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tên nguyên vật liệu</label>
@@ -1206,7 +1272,6 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   placeholder="Nhập tên nguyên vật liệu (tối thiểu 2 ký tự)"
                   autoComplete="off"
                 />
-
                 {/* Suggestions Dropdown */}
                 {showSuggestions && (
                   <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
@@ -1237,20 +1302,23 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   </div>
                 )}
               </div>
-
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
-                <input
-                  type="text"
+                <select
                   value={addMaterialForm.uom}
                   onChange={(e) => setAddMaterialForm({ ...addMaterialForm, uom: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
                   required
-                  placeholder="VD: Kg, Lít, Mét..."
-                />
+                >
+                  <option value="">Chọn đơn vị tính</option>
+                  <option value="Tấm">Tấm</option>
+                  <option value="Kg">Kg</option>
+                  <option value="M">M</option>
+                  <option value="L">L</option>
+                  <option value="Ml">Ml</option>
+                  <option value="g">g</option>
+                </select>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tổng số lượng</label>
                 <input
@@ -1260,7 +1328,6 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                     const newTotalQuantity = Number(e.target.value)
                     const selectedProductQuantity = getSelectedProductQuantity()
                     const newQuantityPer = calculateQuantityPer(newTotalQuantity, selectedProductQuantity)
-
                     setAddMaterialForm({
                       ...addMaterialForm,
                       totalQuantity: newTotalQuantity,
@@ -1277,7 +1344,6 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   SL/1SP: {addMaterialForm.quantityPer.toFixed(4)} (tự động tính)
                 </div>
               </div>
-
               <div className="flex gap-2 pt-4">
                 <button
                   type="submit"
@@ -1316,7 +1382,6 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                 ×
               </button>
             </div>
-
             <form onSubmit={handleProductFormSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tên thành phẩm</label>
@@ -1329,19 +1394,23 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   placeholder="Nhập tên thành phẩm"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
-                <input
-                  type="text"
+                <select
                   value={productForm.uom}
                   onChange={(e) => setProductForm({ ...productForm, uom: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
                   required
-                  placeholder="VD: Cái, Kg, Lít..."
-                />
+                >
+                  <option value="">Chọn đơn vị tính</option>
+                  <option value="Tấm">Tấm</option>
+                  <option value="Kg">Kg</option>
+                  <option value="M">M</option>
+                  <option value="L">L</option>
+                  <option value="Ml">Ml</option>
+                  <option value="g">g</option>
+                </select>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
                 <input
@@ -1355,7 +1424,6 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   placeholder="Nhập số lượng (VD: 1.5, 2.25)"
                 />
               </div>
-
               <div className="flex gap-2 pt-4">
                 <button
                   type="submit"
@@ -1394,7 +1462,6 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                 ×
               </button>
             </div>
-
             <form onSubmit={handleMaterialFormSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tên nguyên vật liệu</label>
@@ -1407,19 +1474,23 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   placeholder="Nhập tên nguyên vật liệu"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
-                <input
-                  type="text"
+                <select
                   value={materialForm.uom}
                   onChange={(e) => setMaterialForm({ ...materialForm, uom: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
                   required
-                  placeholder="VD: Kg, Lít, Mét..."
-                />
+                >
+                  <option value="">Chọn đơn vị tính</option>
+                  <option value="Tấm">Tấm</option>
+                  <option value="Kg">Kg</option>
+                  <option value="M">M</option>
+                  <option value="L">L</option>
+                  <option value="Ml">Ml</option>
+                  <option value="g">g</option>
+                </select>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng / 1 SP</label>
                 <input
@@ -1435,7 +1506,6 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   {materialForm.quantityPer.toFixed(4)}
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tổng số lượng</label>
                 <input
@@ -1445,7 +1515,6 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                     const newTotalQuantity = Number(e.target.value)
                     const selectedProductQuantity = getSelectedProductQuantity()
                     const newQuantityPer = calculateQuantityPer(newTotalQuantity, selectedProductQuantity)
-
                     setMaterialForm({
                       ...materialForm,
                       totalQuantity: newTotalQuantity,
@@ -1462,7 +1531,6 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   SL/1SP sẽ được tính tự động: {materialForm.quantityPer.toFixed(4)}
                 </div>
               </div>
-
               <div className="flex gap-2 pt-4">
                 <button
                   type="submit"

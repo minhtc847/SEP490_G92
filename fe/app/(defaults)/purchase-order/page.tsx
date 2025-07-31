@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getPurchaseOrders, PurchaseOrderDto } from './service';
+import { FiSearch } from 'react-icons/fi';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -95,17 +96,26 @@ const PurchaseOrderPage = () => {
             {/* Bộ lọc */}
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="flex flex-col md:flex-row gap-4 w-full md:w-2/3">
-                    <input
-                        type="text"
-                        placeholder="Tìm theo tên nhà cung cấp..."
-                        value={searchTerm}
-                        onChange={(e) => {
-                            setSearchTerm(e.target.value);
-                            setCurrentPage(1);
-                        }}
-                        className="input input-bordered w-full py-2 px-4 rounded-lg shadow-sm"
-                    />
-                    <input
+                    <div className="relative w-full">
+                        <input
+                            type="text"
+                            placeholder="Tìm theo tên nhà cung cấp..."
+                            value={searchTerm}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            className="input input-bordered w-full py-2 px-4 rounded-lg shadow-sm"
+                        />
+                        <button
+                            type="button"
+                            className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow z-10"
+                            >
+                            <FiSearch className="text-white w-4 h-4" />
+                        </button>
+                     </div>   
+                    <div className="relative w-full">
+                        <input
                         type="text"
                         placeholder="Tìm theo mô tả..."
                         value={searchDescription}
@@ -113,8 +123,15 @@ const PurchaseOrderPage = () => {
                             setSearchDescription(e.target.value);
                             setCurrentPage(1);
                         }}
-                        className="input input-bordered w-full py-2 px-4 rounded-lg shadow-sm"
-                    />
+                        className="input input-bordered w-full py-2 px-4 pr-12 rounded-lg shadow-sm"
+                        />
+                        <button
+                        type="button"
+                        className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow z-10"
+                        >
+                        <FiSearch className="text-white w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4">
@@ -210,7 +227,7 @@ const PurchaseOrderPage = () => {
                                 </td> */}
                                 <td className="border px-3 py-2">{order.customerName || '-'}</td>
                                 <td className="border px-3 py-2 space-x-2">
-                                    <button onClick={() => router.push(`/purchase-order/${order.id}`)} className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
+                                    <button onClick={() => router.push(`/purchase-order/${order.id}`)} className="px-2 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-800">
                                         Chi tiết
                                     </button>
                                     <button onClick={() => alert(`Xoá đơn ${order.code}`)} className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm">
