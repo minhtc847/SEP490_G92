@@ -9,6 +9,7 @@ export interface DeliveryDto {
     status: number;
     note?: string;
     createdAt: string;
+    exportDate: string;
     totalAmount: number;
 }
 
@@ -22,7 +23,41 @@ export const getDeliveryById = async (id: number): Promise<DeliveryDto> => {
     return response.data;
 };
 
-export const createDelivery = async (delivery: Omit<DeliveryDto, 'id' | 'createdAt'>): Promise<DeliveryDto> => {
+export interface CreateDeliveryDetailDto {
+    productId: number;
+    quantity: number;
+    note?: string;
+}
+
+export interface CreateDeliveryDto {
+    salesOrderId: number;
+    deliveryDate?: string;
+    exportDate?: string;
+    status: number;
+    note?: string;
+    deliveryDetails: CreateDeliveryDetailDto[];
+}
+
+export interface DeliveryValidationItem {
+    productId: number;
+    productName: string;
+    requestedQuantity: number;
+    availableQuantity: number;
+    isValid: boolean;
+}
+
+export interface DeliveryValidationResult {
+    isValid: boolean;
+    errors: string[];
+    validationItems: DeliveryValidationItem[];
+}
+
+export const getProductionPlanValidation = async (salesOrderId: number): Promise<DeliveryValidationItem[]> => {
+    const response = await axios.get<DeliveryValidationItem[]>(`/api/delivery/validation/${salesOrderId}`);
+    return response.data;
+};
+
+export const createDelivery = async (delivery: CreateDeliveryDto): Promise<DeliveryDto> => {
     const response = await axios.post<DeliveryDto>("/api/delivery", delivery);
     return response.data;
 };

@@ -238,8 +238,9 @@ const DeliverySummary = () => {
                         <tr>
                             <th>Mã Đơn Hàng</th>
                             <th>Tên Khách Hàng</th>
+                            <th>Ngày xuất kho</th>
                             <th>Ngày Giao Hàng</th>
-                            <th>Thành Tiền</th>
+                            <th>Tổng tiền</th>
                             <th>Trạng Thái</th>
                             <th>Ghi Chú</th>
                             <th>Hành Động</th>
@@ -251,9 +252,10 @@ const DeliverySummary = () => {
                                 <td>{delivery.orderCode}</td>
                                 <td>{delivery.customerName}</td>
                                 <td>{new Date(delivery.deliveryDate).toLocaleDateString('vi-VN')}</td>
+                                <td>{new Date(delivery.exportDate).toLocaleDateString('vi-VN')}</td>
                                 <td>{delivery.totalAmount.toLocaleString()}₫</td>
                                 <td>
-                                    <span className={`badge ${getStatusClass(delivery.status)}`}>
+                                    <span className={`badge ${getStatusClass(delivery.status)} whitespace-nowrap`}>
                                         {getStatusText(delivery.status)}
                                     </span>
                                 </td>
