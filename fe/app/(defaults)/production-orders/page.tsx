@@ -8,9 +8,20 @@ import IconEye from '@/components/icon/icon-eye';
 const PAGE_SIZES = [10, 20, 50, 100];
 
 const statusBadgeMap: Record<string, string> = {
-    'Đang sản xuất': 'badge-outline-warning',
-    'Đã hoàn thành': 'badge-outline-success',
-    'Đã hủy': 'badge-outline-danger',
+    '0': 'badge-outline-warning', // Pending
+    '1': 'badge-outline-info',    // InProgress
+    '2': 'badge-outline-success', // Completed
+    '3': 'badge-outline-danger',  // Cancelled
+};
+
+const getStatusText = (status: string | undefined) => {
+    switch (status) {
+        case '0': return 'Pending';
+        case '1': return 'InProgress';
+        case '2': return 'Completed';
+        case '3': return 'Cancelled';
+        default: return status || '-';
+    }
 };
 
 const ProductionOrdersPage = () => {
@@ -77,8 +88,8 @@ const ProductionOrdersPage = () => {
                                         <td>{item.type}</td>
                                         <td>{item.description}</td>
                                         <td style={{ minWidth: '150px' }}>
-                                            <span className={`badge ${statusBadgeMap[item.productionStatus || ''] || 'badge-outline-secondary'}`}>
-                                                {item.productionStatus || '-'}
+                                            <span className={`badge ${statusBadgeMap[item.productionStatus || ''] || 'badge-outline-secondary'} whitespace-nowrap`}>
+                                                {getStatusText(item.productionStatus)}
                                             </span>
                                         </td>
                                         <td>

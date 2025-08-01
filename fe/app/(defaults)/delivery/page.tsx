@@ -251,8 +251,8 @@ const DeliverySummary = () => {
                             <tr key={delivery.id}>
                                 <td>{delivery.orderCode}</td>
                                 <td>{delivery.customerName}</td>
-                                <td>{new Date(delivery.deliveryDate).toLocaleDateString('vi-VN')}</td>
                                 <td>{new Date(delivery.exportDate).toLocaleDateString('vi-VN')}</td>
+                                <td>{delivery.deliveryDate ? new Date(delivery.deliveryDate).toLocaleDateString('vi-VN') : 'Chưa giao'}</td>
                                 <td>{delivery.totalAmount.toLocaleString()}₫</td>
                                 <td>
                                     <span className={`badge ${getStatusClass(delivery.status)} whitespace-nowrap`}>

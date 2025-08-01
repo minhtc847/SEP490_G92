@@ -11,7 +11,8 @@ import { getSalesOrdersForDelivery, getSalesOrderDetail, getProductionPlanValida
 
 const AddDeliveryComponent = () => {
     const router = useRouter();
-    const statusList = ['NotDelivered', 'Delivering', 'FullyDelivered', 'Cancelled'];
+    // Chỉ cho phép 2 trạng thái: NotDelivered và Delivering
+    const statusList = ['NotDelivered', 'Delivering'];
     
     // State for sales orders
     const [salesOrders, setSalesOrders] = useState<SalesOrderOption[]>([]);
@@ -22,7 +23,7 @@ const AddDeliveryComponent = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [deliveryDate, setDeliveryDate] = useState<string>('');
     const [exportDate, setExportDate] = useState<string>('');
-    const [status, setStatus] = useState<string>('Delivering');
+    const [status, setStatus] = useState<string>('NotDelivered');
     const [note, setNote] = useState<string>('');
 
     interface DeliveryItem {
@@ -35,16 +36,7 @@ const AddDeliveryComponent = () => {
     }
 
     // State for delivery items
-    const [items, setItems] = useState<DeliveryItem[]>([
-        {
-            id: 1,
-            productId: '',
-            productName: '',
-            quantity: 0,
-            unitPrice: 0,
-            amount: 0,
-        },
-    ]);
+    const [items, setItems] = useState<DeliveryItem[]>([]);
 
     // Load sales orders on component mount
     useEffect(() => {
@@ -65,6 +57,7 @@ const AddDeliveryComponent = () => {
         if (!orderId) {
             setSelectedOrderDetail(null);
             setProductionPlanValidation([]);
+            setItems([]);
             return;
         }
 
@@ -78,16 +71,8 @@ const AddDeliveryComponent = () => {
             setSelectedOrderDetail(detail);
             setProductionPlanValidation(validation);
             
-            // Initialize items with products from the order
-            const initialItems = detail.products.map((product, index) => ({
-                id: index + 1,
-                productId: product.id,
-                productName: product.productName,
-                quantity: product.quantity,
-                unitPrice: product.unitPrice,
-                amount: product.quantity * product.unitPrice,
-            }));
-            setItems(initialItems);
+            // Không tự động thêm sản phẩm, để người dùng chọn
+            setItems([]);
         } catch (error) {
             console.error('Lỗi khi tải chi tiết đơn hàng:', error);
         } finally {
@@ -95,9 +80,47 @@ const AddDeliveryComponent = () => {
         }
     };
 
+    // Kiểm tra xem đã có đủ sản phẩm của đơn hàng chưa
+    const hasAllOrderProducts = (): boolean => {
+        if (!selectedOrderDetail) return false;
+        const orderProductIds = selectedOrderDetail.products.map(p => p.id);
+        const addedProductIds = items.map(item => typeof item.productId === 'string' ? parseInt(item.productId) : item.productId);
+        return orderProductIds.every(id => addedProductIds.includes(id));
+    };
+
+    // Kiểm tra xem sản phẩm đã được thêm chưa
+    const isProductAlreadyAdded = (productId: number): boolean => {
+        return items.some(item => (typeof item.productId === 'string' ? parseInt(item.productId) : item.productId) === productId);
+    };
+
+    // Lấy danh sách sản phẩm chưa được thêm
+    const getAvailableProducts = () => {
+        if (!selectedOrderDetail) return [];
+        return selectedOrderDetail.products.filter(product => !isProductAlreadyAdded(product.id));
+    };
+
+    // Lấy danh sách sản phẩm cho một row cụ thể (bao gồm sản phẩm đã chọn)
+    const getProductsForRow = (currentItem: DeliveryItem) => {
+        if (!selectedOrderDetail) return [];
+        
+        const availableProducts = selectedOrderDetail.products.filter(product => 
+            !isProductAlreadyAdded(product.id) || product.id === currentItem.productId
+        );
+        
+        return availableProducts;
+    };
+
     const addItem = () => {
+        // Không cho phép thêm nếu đã có đủ sản phẩm
+        if (hasAllOrderProducts()) {
+            alert('Đã có đủ tất cả sản phẩm của đơn hàng!');
+            return;
+        }
+
         let maxId = 0;
-        maxId = items?.length ? items.reduce((max: number, character: any) => (character.id > max ? character.id : max), items[0].id) : 0;
+        if (items.length > 0) {
+            maxId = items.reduce((max: number, item: DeliveryItem) => (item.id > max ? item.id : max), items[0].id);
+        }
 
         setItems([
             ...items,
@@ -105,7 +128,6 @@ const AddDeliveryComponent = () => {
                 id: maxId + 1,
                 productId: '',
                 productName: '',
-
                 quantity: 0,
                 unitPrice: 0,
                 amount: 0,
@@ -162,9 +184,59 @@ const AddDeliveryComponent = () => {
         return quantity > available;
     };
 
+    // Kiểm tra xem có sản phẩm nào vượt quá số lượng có sẵn không
+    const hasExceededQuantity = (): boolean => {
+        return items.some(item => {
+            if (!item.productId || item.quantity === 0) return false;
+            const productId = typeof item.productId === 'string' ? parseInt(item.productId) : item.productId;
+            return isQuantityExceeded(productId, item.quantity);
+        });
+    };
+
+    // Kiểm tra xem có sản phẩm nào có số lượng 0 không
+    const hasZeroQuantity = (): boolean => {
+        return items.some(item => item.quantity === 0);
+    };
+
+    // Kiểm tra xem có sản phẩm nào chưa được chọn không
+    const hasUnselectedProducts = (): boolean => {
+        return items.some(item => !item.productId);
+    };
+
     const handleSubmit = async () => {
-        if (!selectedOrderId || items.length === 0) {
-            alert('Vui lòng chọn đơn hàng và thêm ít nhất một sản phẩm');
+        // Kiểm tra đã chọn đơn hàng chưa
+        if (!selectedOrderId) {
+            alert('Vui lòng chọn đơn hàng!');
+            return;
+        }
+
+        // Kiểm tra ngày xuất kho
+        if (!exportDate) {
+            alert('Vui lòng chọn ngày xuất kho!');
+            return;
+        }
+
+        // Kiểm tra có sản phẩm nào chưa được chọn không
+        if (hasUnselectedProducts()) {
+            alert('Vui lòng chọn đầy đủ sản phẩm!');
+            return;
+        }
+
+        // Kiểm tra có sản phẩm nào có số lượng 0 không
+        if (hasZeroQuantity()) {
+            alert('Không được để sản phẩm có số lượng là 0!');
+            return;
+        }
+
+        // Kiểm tra có sản phẩm nào vượt quá số lượng có sẵn không
+        if (hasExceededQuantity()) {
+            alert('Có sản phẩm vượt quá số lượng có sẵn! Vui lòng kiểm tra lại.');
+            return;
+        }
+
+        // Kiểm tra có ít nhất một sản phẩm không
+        if (items.length === 0) {
+            alert('Vui lòng thêm ít nhất một sản phẩm!');
             return;
         }
 
@@ -172,7 +244,7 @@ const AddDeliveryComponent = () => {
         try {
             const deliveryData: CreateDeliveryDto = {
                 salesOrderId: parseInt(selectedOrderId),
-                deliveryDate: deliveryDate || undefined,
+                deliveryDate: deliveryDate || undefined, // Cho phép null
                 exportDate: exportDate || undefined,
                 status: statusList.indexOf(status),
                 note: note || undefined,
@@ -231,7 +303,7 @@ const AddDeliveryComponent = () => {
                         </div>
                         <div className="mt-4 flex items-center">
                             <label htmlFor="exportDate" className="mb-0 flex-1 ltr:mr-2 rtl:ml-2">
-                                Ngày xuất kho
+                                Ngày xuất kho <span className="text-red-500">*</span>
                             </label>
                             <input 
                                 id="exportDate" 
@@ -239,6 +311,7 @@ const AddDeliveryComponent = () => {
                                 value={exportDate}
                                 onChange={(e) => setExportDate(e.target.value)}
                                 className="form-input w-2/3 lg:w-[250px]" 
+                                required
                             />
                         </div>
 
@@ -315,7 +388,7 @@ const AddDeliveryComponent = () => {
                                                     disabled={!selectedOrderDetail}
                                                 >
                                                     <option value="">-- Chọn sản phẩm --</option>
-                                                    {selectedOrderDetail?.products.map((product) => (
+                                                    {getProductsForRow(item).map((product) => (
                                                         <option key={product.id} value={product.id}>
                                                             {product.productName} 
                                                         </option>
@@ -329,7 +402,7 @@ const AddDeliveryComponent = () => {
                                                     className="form-input w-32"
                                                     placeholder="Số lượng"
                                                     value={item.quantity}
-                                                    min={0}
+                                                    min={1}
                                                     onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 0)}
                                                 />
                                                 {item.productId && typeof item.productId === 'number' && isQuantityExceeded(item.productId, item.quantity) && (
@@ -361,9 +434,16 @@ const AddDeliveryComponent = () => {
                     </div>
                     <div className="mt-6 flex flex-col justify-between px-4 sm:flex-row">
                         <div className="mb-6 sm:mb-0">
-                            <button type="button" className="btn btn-primary" onClick={() => addItem()}>
-                                Thêm sản phẩm
-                            </button>
+                            {!hasAllOrderProducts() && (
+                                <button type="button" className="btn btn-primary" onClick={() => addItem()}>
+                                    Thêm sản phẩm
+                                </button>
+                            )}
+                            {hasAllOrderProducts() && (
+                                <div className="text-sm text-green-600 font-medium">
+                                    ✓ Đã có đủ tất cả sản phẩm của đơn hàng
+                                </div>
+                            )}
                         </div>
                         <div className="text-right">
                             <div className="text-lg font-semibold">
