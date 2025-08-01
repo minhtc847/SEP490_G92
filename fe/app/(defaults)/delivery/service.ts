@@ -62,13 +62,67 @@ export const createDelivery = async (delivery: CreateDeliveryDto): Promise<Deliv
     return response.data;
 };
 
-export const updateDelivery = async (id: number, delivery: Partial<DeliveryDto>): Promise<DeliveryDto> => {
+export const updateDeliveryPartial = async (id: number, delivery: Partial<DeliveryDto>): Promise<DeliveryDto> => {
     const response = await axios.put<DeliveryDto>(`/api/delivery/${id}`, delivery);
     return response.data;
 };
 
 export const deleteDelivery = async (id: number): Promise<void> => {
     await axios.delete(`/api/delivery/${id}`);
+};
+
+export const updateDeliveryStatus = async (id: number, status: number): Promise<void> => {
+    await axios.put(`/api/delivery/${id}/status`, { status });
+};
+
+export interface DeliveryDetailDto {
+    id: number;
+    salesOrderId: number;
+    orderCode: string;
+    customerName: string;
+    customerAddress: string;
+    customerPhone: string;
+    deliveryDate: string | null;
+    exportDate: string | null;
+    status: number;
+    note?: string;
+    createdAt: string;
+    totalAmount: number;
+    deliveryDetails: DeliveryDetailItemDto[];
+}
+
+export interface DeliveryDetailItemDto {
+    id: number;
+    productId: number;
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    amount: number;
+    note?: string;
+}
+
+export interface UpdateDeliveryDto {
+    deliveryDate?: string;
+    exportDate?: string;
+    status: number;
+    note?: string;
+    deliveryDetails: UpdateDeliveryDetailDto[];
+}
+
+export interface UpdateDeliveryDetailDto {
+    id: number;
+    productId: number;
+    quantity: number;
+    note?: string;
+}
+
+export const getDeliveryDetail = async (id: number): Promise<DeliveryDetailDto> => {
+    const response = await axios.get<DeliveryDetailDto>(`/api/delivery/${id}`);
+    return response.data;
+};
+
+export const updateDelivery = async (id: number, delivery: UpdateDeliveryDto): Promise<void> => {
+    await axios.put(`/api/delivery/${id}`, delivery);
 };
 
 export interface SalesOrderOption {

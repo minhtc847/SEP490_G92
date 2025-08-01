@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getDeliveries, DeliveryDto } from './service';
+import { getDeliveries, DeliveryDto, updateDeliveryStatus } from './service';
 import { FiSearch } from 'react-icons/fi';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
@@ -51,6 +51,8 @@ const getStatusClass = (status: number) => {
             return 'badge-outline-info';
         case 2: // FullyDelivered
             return 'badge-outline-success';
+        case 3: // Cancelled
+            return 'badge-outline-danger';
         default:
             return 'badge-outline-default';
     }
@@ -64,6 +66,8 @@ const getStatusText = (status: number) => {
             return 'Đang giao hàng';
         case 2:
             return 'Đã giao hàng';
+        case 3:
+            return 'Đã hủy';
         default:
             return 'Không xác định';
     }
@@ -81,6 +85,28 @@ const DeliverySummary = () => {
     const [loading, setLoading] = useState(true);
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
+
+    const handleStatusChange = async (deliveryId: number, newStatus: number) => {
+        try {
+            // Call API to update delivery status
+            await updateDeliveryStatus(deliveryId, newStatus);
+            
+            // Update local state
+            setDeliveries(prevDeliveries => 
+                prevDeliveries.map(delivery => 
+                    delivery.id === deliveryId 
+                        ? { ...delivery, status: newStatus }
+                        : delivery
+                )
+            );
+            
+            const statusText = getStatusText(newStatus);
+            alert(`Cập nhật trạng thái thành công: ${statusText}`);
+        } catch (error: any) {
+            console.error('Lỗi khi cập nhật trạng thái:', error);
+            alert(`Lỗi: ${error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật trạng thái'}`);
+        }
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -275,15 +301,18 @@ const DeliverySummary = () => {
                                     >
                                         Chi tiết
                                     </button>
-                                    <button 
-                                        className="px-2 py-1 text-sm text-white bg-green-600 rounded hover:bg-green-800"
-                                        onClick={() => {
-                                            // Handle delivery completion
-                                            alert('Cập nhật trạng thái giao hàng thành công!');
-                                        }}
-                                    >
-                                        Hoàn thành
-                                    </button>
+                                    <div className="relative">
+                                        <select
+                                            className="px-2 py-1 text-sm text-white bg-gray-600 rounded hover:bg-gray-700 cursor-pointer"
+                                            onChange={(e) => handleStatusChange(delivery.id, parseInt(e.target.value))}
+                                            value=""
+                                        >
+                                            <option value="" disabled>Hành động</option>
+                                            <option value="1">Giao hàng</option>
+                                            <option value="2">Hoàn thành</option>
+                                            <option value="3">Hủy</option>
+                                        </select>
+                                    </div>
                                 </td>
                             </tr>
                         ))}

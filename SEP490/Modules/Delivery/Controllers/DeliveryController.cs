@@ -78,6 +78,66 @@ namespace SEP490.Modules.Delivery.Controllers
             }
         }
 
+        [HttpPut("{deliveryId}/status")]
+        public async Task<ActionResult> UpdateDeliveryStatus(int deliveryId, [FromBody] UpdateDeliveryStatusDto dto)
+        {
+            try
+            {
+                var success = await _deliveryService.UpdateDeliveryStatusAsync(deliveryId, dto.Status);
+                if (success)
+                {
+                    return Ok(new { message = "Cập nhật trạng thái thành công" });
+                }
+                return BadRequest(new { message = "Không thể cập nhật trạng thái" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi cập nhật trạng thái", error = ex.Message });
+            }
+        }
 
+        [HttpGet("{deliveryId}")]
+        public async Task<ActionResult<DeliveryDetailDto>> GetDeliveryDetail(int deliveryId)
+        {
+            try
+            {
+                var delivery = await _deliveryService.GetDeliveryDetailAsync(deliveryId);
+                return Ok(delivery);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi tải chi tiết phiếu giao hàng", error = ex.Message });
+            }
+        }
+
+        [HttpPut("{deliveryId}")]
+        public async Task<ActionResult> UpdateDelivery(int deliveryId, [FromBody] UpdateDeliveryDto dto)
+        {
+            try
+            {
+                var success = await _deliveryService.UpdateDeliveryAsync(deliveryId, dto);
+                if (success)
+                {
+                    return Ok(new { message = "Cập nhật phiếu giao hàng thành công" });
+                }
+                return BadRequest(new { message = "Không thể cập nhật phiếu giao hàng" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi cập nhật phiếu giao hàng", error = ex.Message });
+            }
+        }
     }
 } 

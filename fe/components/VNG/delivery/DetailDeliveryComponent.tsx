@@ -1,221 +1,351 @@
 'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import IconDownload from '@/components/icon/icon-download';
+import IconEye from '@/components/icon/icon-eye';
+import IconSave from '@/components/icon/icon-save';
 import IconEdit from '@/components/icon/icon-edit';
-import IconPlus from '@/components/icon/icon-plus';
-import IconPrinter from '@/components/icon/icon-printer';
-import IconSend from '@/components/icon/icon-send';
-import Link from 'next/link';
-import React from 'react';
+import IconX from '@/components/icon/icon-x';
+import { getDeliveryDetail, updateDelivery, DeliveryDetailDto, DeliveryDetailItemDto, UpdateDeliveryDto, UpdateDeliveryDetailDto } from '@/app/(defaults)/delivery/service';
 
 const DetailDeliveryComponent = () => {
-    const exportTable = () => {
-        window.print();
+    const router = useRouter();
+    const params = useParams();
+    const deliveryId = params.id as string;
+    
+    const statusList = ['NotDelivered', 'Delivering', 'FullyDelivered', 'Cancelled'];
+    
+    // State for delivery details
+    const [delivery, setDelivery] = useState<DeliveryDetailDto | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [isEditing, setIsEditing] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // Form state
+    const [deliveryDate, setDeliveryDate] = useState<string>('');
+    const [exportDate, setExportDate] = useState<string>('');
+    const [status, setStatus] = useState<string>('NotDelivered');
+    const [note, setNote] = useState<string>('');
+    const [items, setItems] = useState<DeliveryDetailItemDto[]>([]);
+
+    // Load delivery details on component mount
+    useEffect(() => {
+        const loadDeliveryDetail = async () => {
+            if (!deliveryId) return;
+            
+            try {
+                setLoading(true);
+                const data = await getDeliveryDetail(parseInt(deliveryId));
+                setDelivery(data);
+                
+                // Initialize form state
+                setDeliveryDate(data.deliveryDate || '');
+                setExportDate(data.exportDate || '');
+                setStatus(statusList[data.status]);
+                setNote(data.note || '');
+                setItems(data.deliveryDetails);
+            } catch (error) {
+                console.error('Lỗi khi tải chi tiết phiếu giao hàng:', error);
+                alert('Không thể tải chi tiết phiếu giao hàng');
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        loadDeliveryDetail();
+    }, [deliveryId]);
+
+    const handleQuantityChange = (itemId: number, quantity: number) => {
+        setItems(items.map(item => 
+            item.id === itemId 
+                ? {
+                    ...item,
+                    quantity: quantity,
+                    amount: quantity * item.unitPrice,
+                }
+                : item
+        ));
     };
 
-    const items = [
-        {
-            id: 1,
-            title: 'Calendar App Customization',
-            quantity: 1,
-            price: '120',
-            amount: '120',
-        },
-        {
-            id: 2,
-            title: 'Chat App Customization',
-            quantity: 1,
-            price: '230',
-            amount: '230',
-        },
-        {
-            id: 3,
-            title: 'Laravel Integration',
-            quantity: 1,
-            price: '405',
-            amount: '405',
-        },
-        {
-            id: 4,
-            title: 'Backend UI Design',
-            quantity: 1,
-            price: '2500',
-            amount: '2500',
-        },
-    ];
+    const totalAmount = items.reduce((sum: number, item: DeliveryDetailItemDto) => sum + item.amount, 0);
 
-    const columns = [
-        {
-            key: 'id',
-            label: 'S.NO',
-        },
-        {
-            key: 'title',
-            label: 'ITEMS',
-        },
-        {
-            key: 'quantity',
-            label: 'QTY',
-        },
-        {
-            key: 'price',
-            label: 'PRICE',
-            class: 'ltr:text-right rtl:text-left',
-        },
-        {
-            key: 'amount',
-            label: 'AMOUNT',
-            class: 'ltr:text-right rtl:text-left',
-        },
-    ];
+    const handleEdit = () => {
+        setIsEditing(true);
+    };
+
+    const handleCancel = () => {
+        setIsEditing(false);
+        // Reset form to original values
+        if (delivery) {
+            setDeliveryDate(delivery.deliveryDate || '');
+            setExportDate(delivery.exportDate || '');
+            setStatus(statusList[delivery.status]);
+            setNote(delivery.note || '');
+            setItems(delivery.deliveryDetails);
+        }
+    };
+
+    const handleSubmit = async () => {
+        if (!delivery) return;
+
+        setIsSubmitting(true);
+        try {
+            const updateData: UpdateDeliveryDto = {
+                deliveryDate: deliveryDate || undefined,
+                exportDate: exportDate || undefined,
+                status: statusList.indexOf(status),
+                note: note || undefined,
+                deliveryDetails: items.map(item => ({
+                    id: item.id,
+                    productId: item.productId,
+                    quantity: item.quantity,
+                    note: item.note
+                }))
+            };
+
+            await updateDelivery(delivery.id, updateData);
+            alert('Cập nhật phiếu giao hàng thành công!');
+            setIsEditing(false);
+            
+            // Reload delivery data
+            const updatedData = await getDeliveryDetail(delivery.id);
+            setDelivery(updatedData);
+        } catch (error: any) {
+            console.error('Lỗi khi cập nhật phiếu giao hàng:', error);
+            alert(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật phiếu giao hàng');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    if (loading) {
+        return <div className="p-6">Đang tải chi tiết phiếu giao hàng...</div>;
+    }
+
+    if (!delivery) {
+        return <div className="p-6">Không tìm thấy phiếu giao hàng</div>;
+    }
 
     return (
-        <div>
-            <div className="mb-6 flex flex-wrap items-center justify-center gap-4 lg:justify-end">
-                <button type="button" className="btn btn-info gap-2">
-                    <IconSend />
-                    Send Invoice
-                </button>
-
-                <button type="button" className="btn btn-primary gap-2" onClick={() => exportTable()}>
-                    <IconPrinter />
-                    Print
-                </button>
-
-                <button type="button" className="btn btn-success gap-2">
-                    <IconDownload />
-                    Download
-                </button>
-
-                <Link href="/apps/invoice/add" className="btn btn-secondary gap-2">
-                    <IconPlus />
-                    Create
-                </Link>
-
-                <Link href="/apps/invoice/edit" className="btn btn-warning gap-2">
-                    <IconEdit />
-                    Edit
-                </Link>
-            </div>
-            <div className="panel">
-                <div className="flex flex-wrap justify-between gap-4 px-4">
-                    <div className="text-2xl font-semibold uppercase">Invoice</div>
-                    <div className="shrink-0">
-                        <img src="/assets/images/logo.svg" alt="img" className="w-14 ltr:ml-auto rtl:mr-auto" />
+        <div className="flex flex-col gap-2.5 xl:flex-row">
+            <div className="panel flex-1 px-0 py-6 ltr:xl:mr-6 rtl:xl:ml-6">
+                <div className="flex flex-wrap justify-between px-4">
+                    <div className="mb-6 w-full lg:w-1/2">
+                        <div className="flex shrink-0 items-center text-black dark:text-white">
+                            <img src="/assets/images/logo.svg" alt="img" className="w-14" />
+                        </div>
+                        <div className="mt-6 space-y-1 text-gray-500 dark:text-gray-400">
+                            <div>{delivery.customerName}</div>
+                            <div>{delivery.customerAddress}</div>
+                            <div>{delivery.customerPhone}</div>
+                        </div>
                     </div>
-                </div>
-                <div className="px-4 ltr:text-right rtl:text-left">
-                    <div className="mt-6 space-y-1 text-white-dark">
-                        <div>13 Tetrick Road, Cypress Gardens, Florida, 33884, US</div>
-                        <div>vristo@gmail.com</div>
-                        <div>+1 (070) 123-4567</div>
+                    <div className="w-full lg:w-1/2 lg:max-w-fit">
+                        <div className="mt-4 flex items-center">
+                            <label htmlFor="orderCode" className="mb-0 flex-1 ltr:mr-2 rtl:ml-2">
+                                Mã đơn hàng
+                            </label>
+                            <div className="form-input w-2/3 lg:w-[250px] bg-gray-100">
+                                {delivery.orderCode}
+                            </div>
+                        </div>
+                        <div className="mt-4 flex items-center">
+                            <label htmlFor="exportDate" className="mb-0 flex-1 ltr:mr-2 rtl:ml-2">
+                                Ngày xuất kho
+                            </label>
+                            {isEditing ? (
+                                <input 
+                                    id="exportDate" 
+                                    type="date" 
+                                    value={exportDate}
+                                    onChange={(e) => setExportDate(e.target.value)}
+                                    className="form-input w-2/3 lg:w-[250px]" 
+                                />
+                            ) : (
+                                <div className="form-input w-2/3 lg:w-[250px] bg-gray-100">
+                                    {exportDate ? new Date(exportDate).toLocaleDateString('vi-VN') : '-'}
+                                </div>
+                            )}
+                        </div>
+                        <div className="mt-4 flex items-center">
+                            <label htmlFor="deliveryDate" className="mb-0 flex-1 ltr:mr-2 rtl:ml-2">
+                                Ngày giao hàng
+                            </label>
+                            {isEditing ? (
+                                <input 
+                                    id="deliveryDate" 
+                                    type="date" 
+                                    value={deliveryDate}
+                                    onChange={(e) => setDeliveryDate(e.target.value)}
+                                    className="form-input w-2/3 lg:w-[250px]" 
+                                />
+                            ) : (
+                                <div className="form-input w-2/3 lg:w-[250px] bg-gray-100">
+                                    {deliveryDate ? new Date(deliveryDate).toLocaleDateString('vi-VN') : 'Chưa giao'}
+                                </div>
+                            )}
+                        </div>
+                        <div className="mt-4 flex items-center">
+                            <label htmlFor="status" className="mb-0 flex-1 ltr:mr-2 rtl:ml-2">
+                                Trạng thái
+                            </label>
+                            {isEditing ? (
+                                <select 
+                                    id="status" 
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value)}
+                                    className="form-select w-2/3 lg:w-[250px]"
+                                >
+                                    {statusList.map((statusOption) => (
+                                        <option key={statusOption} value={statusOption}>{statusOption}</option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <div className="form-input w-2/3 lg:w-[250px] bg-gray-100">
+                                    {status}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
                 <hr className="my-6 border-white-light dark:border-[#1b2e4b]" />
-                <div className="flex flex-col flex-wrap justify-between gap-6 lg:flex-row">
-                    <div className="flex-1">
-                        <div className="space-y-1 text-white-dark">
-                            <div>Issue For:</div>
-                            <div className="font-semibold text-black dark:text-white">John Doe</div>
-                            <div>405 Mulberry Rd. Mc Grady, NC, 28649</div>
-                            <div>redq@company.com</div>
-                            <div>(128) 666 070</div>
-                        </div>
-                    </div>
-                    <div className="flex flex-col justify-between gap-6 sm:flex-row lg:w-2/3">
-                        <div className="xl:1/3 sm:w-1/2 lg:w-2/5">
-                            <div className="mb-2 flex w-full items-center justify-between">
-                                <div className="text-white-dark">Invoice :</div>
-                                <div>#8701</div>
-                            </div>
-                            <div className="mb-2 flex w-full items-center justify-between">
-                                <div className="text-white-dark">Issue Date :</div>
-                                <div>13 Sep 2022</div>
-                            </div>
-                            <div className="mb-2 flex w-full items-center justify-between">
-                                <div className="text-white-dark">Order ID :</div>
-                                <div>#OD-85794</div>
-                            </div>
-                            <div className="flex w-full items-center justify-between">
-                                <div className="text-white-dark">Shipment ID :</div>
-                                <div>#SHP-8594</div>
-                            </div>
-                        </div>
-                        <div className="xl:1/3 sm:w-1/2 lg:w-2/5">
-                            <div className="mb-2 flex w-full items-center justify-between">
-                                <div className="text-white-dark">Bank Name:</div>
-                                <div className="whitespace-nowrap">Bank Of America</div>
-                            </div>
-                            <div className="mb-2 flex w-full items-center justify-between">
-                                <div className="text-white-dark">Account Number:</div>
-                                <div>1234567890</div>
-                            </div>
-                            <div className="mb-2 flex w-full items-center justify-between">
-                                <div className="text-white-dark">SWIFT Code:</div>
-                                <div>S58K796</div>
-                            </div>
-                            <div className="mb-2 flex w-full items-center justify-between">
-                                <div className="text-white-dark">IBAN:</div>
-                                <div>L5698445485</div>
-                            </div>
-                            <div className="mb-2 flex w-full items-center justify-between">
-                                <div className="text-white-dark">Country:</div>
-                                <div>United States</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div className="table-responsive mt-6">
-                    <table className="table-striped">
-                        <thead>
-                            <tr>
-                                {columns.map((column) => {
-                                    return (
-                                        <th key={column.key} className={column?.class}>
-                                            {column.label}
-                                        </th>
-                                    );
-                                })}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {items.map((item) => {
-                                return (
-                                    <tr key={item.id}>
-                                        <td>{item.id}</td>
-                                        <td>{item.title}</td>
-                                        <td>{item.quantity}</td>
-                                        <td className="ltr:text-right rtl:text-left">${item.price}</td>
-                                        <td className="ltr:text-right rtl:text-left">${item.amount}</td>
+
+                <div className="mt-8">
+                    <div className="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Sản phẩm</th>
+                                    <th className="w-1">Số lượng</th>
+                                    <th className="w-1">Đơn giá</th>
+                                    <th className="w-1">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {items.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="!text-center font-semibold">
+                                            Không có sản phẩm nào
+                                        </td>
                                     </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                                ) : (
+                                    items.map((item: DeliveryDetailItemDto) => (
+                                        <tr className="align-top" key={item.id}>
+                                            <td>
+                                                <div className="form-input min-w-[200px] bg-gray-100">
+                                                    {item.productName}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {isEditing ? (
+                                                    <input
+                                                        type="number"
+                                                        className="form-input w-32"
+                                                        placeholder="Số lượng"
+                                                        value={item.quantity}
+                                                        min={1}
+                                                        onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 0)}
+                                                    />
+                                                ) : (
+                                                    <div className="form-input w-32 bg-gray-100">
+                                                        {item.quantity}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td>
+                                                <div className="form-input w-32 bg-gray-100">
+                                                    {item.unitPrice.toLocaleString()}₫
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="form-input w-32 bg-gray-100">
+                                                    {item.amount.toLocaleString()}₫
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="mt-6 flex flex-col justify-between px-4 sm:flex-row">
+                        <div className="mb-6 sm:mb-0">
+                            {isEditing ? (
+                                <div className="flex gap-2">
+                                    <button 
+                                        type="button" 
+                                        className="btn btn-primary" 
+                                        onClick={handleSubmit}
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        className="btn btn-secondary" 
+                                        onClick={handleCancel}
+                                    >
+                                        Hủy
+                                    </button>
+                                </div>
+                            ) : (
+                                <button 
+                                    type="button" 
+                                    className="btn btn-primary" 
+                                    onClick={handleEdit}
+                                >
+                                    <IconEdit className="mr-2" />
+                                    Chỉnh sửa
+                                </button>
+                            )}
+                        </div>
+                        <div className="text-right">
+                            <div className="text-lg font-semibold">
+                                Tổng tiền: {totalAmount.toLocaleString()}₫
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div className="mt-6 grid grid-cols-1 px-4 sm:grid-cols-2">
-                    <div></div>
-                    <div className="space-y-2 ltr:text-right rtl:text-left">
-                        <div className="flex items-center">
-                            <div className="flex-1">Subtotal</div>
-                            <div className="w-[37%]">$3255</div>
+                <div className="mt-8 px-4">
+                    <label htmlFor="notes">Ghi chú</label>
+                    {isEditing ? (
+                        <textarea 
+                            id="notes" 
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            className="form-textarea min-h-[130px]" 
+                            placeholder="Ghi chú...."
+                        ></textarea>
+                    ) : (
+                        <div className="form-textarea min-h-[130px] bg-gray-100">
+                            {note || '-'}
                         </div>
-                        <div className="flex items-center">
-                            <div className="flex-1">Tax</div>
-                            <div className="w-[37%]">$700</div>
-                        </div>
-                        <div className="flex items-center">
-                            <div className="flex-1">Shipping Rate</div>
-                            <div className="w-[37%]">$0</div>
-                        </div>
-                        <div className="flex items-center">
-                            <div className="flex-1">Discount</div>
-                            <div className="w-[37%]">$10</div>
-                        </div>
-                        <div className="flex items-center text-lg font-semibold">
-                            <div className="flex-1">Grand Total</div>
-                            <div className="w-[37%]">$3945</div>
-                        </div>
+                    )}
+                </div>
+            </div>
+            <div className="mt-6 w-full xl:mt-0 xl:w-96">
+                <div className="panel">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-1">
+                        <button type="button" className="btn btn-primary w-full gap-2">
+                            <IconEye className="shrink-0 ltr:mr-2 rtl:ml-2" />
+                            Xem trước
+                        </button>
+
+                        <button type="button" className="btn btn-secondary w-full gap-2">
+                            <IconDownload className="shrink-0 ltr:mr-2 rtl:ml-2" />
+                            Tải xuống
+                        </button>
+
+                        <button 
+                            type="button" 
+                            className="btn btn-outline-primary w-full gap-2"
+                            onClick={() => router.push('/delivery')}
+                        >
+                            <IconX className="shrink-0 ltr:mr-2 rtl:ml-2" />
+                            Quay lại
+                        </button>
                     </div>
                 </div>
             </div>

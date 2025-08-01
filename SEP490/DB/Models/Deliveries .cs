@@ -12,5 +12,6 @@ namespace SEP490.DB.Models
         public string? Note { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public SaleOrder SalesOrder { get; set; }
+        public ICollection<DeliveryDetail> DeliveryDetails { get; set; } = new List<DeliveryDetail>();
     }
 }
