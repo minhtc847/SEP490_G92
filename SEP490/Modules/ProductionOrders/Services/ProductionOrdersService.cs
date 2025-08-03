@@ -93,21 +93,18 @@ namespace SEP490.Modules.ProductionOrders.Services
         public async Task<bool> CreateDefectReportAsync(CreateDefectReportDto dto)
         {
             try
-            {
-                // Validate that the production order and product exist
+            {                
                 var productionOrder = await _context.ProductionOrders.FindAsync(dto.ProductionOrderId);
                 if (productionOrder == null) return false;
 
                 var product = await _context.Products.FindAsync(dto.ProductId);
                 if (product == null) return false;
-
-                // Find the corresponding ProductionOutput to update Defected count
+               
                 var productionOutput = await _context.ProductionOutputs
                     .FirstOrDefaultAsync(po => po.ProductionOrderId == dto.ProductionOrderId && po.ProductId == dto.ProductId);
                 
                 if (productionOutput == null) return false;
-
-                // Create defect report
+                
                 var defect = new ProductionDefects
                 {
                     ProductionOrderId = dto.ProductionOrderId,
@@ -121,15 +118,11 @@ namespace SEP490.Modules.ProductionOrders.Services
 
                 _context.ProductionDefects.Add(defect);
 
-                // Update Defected count in ProductionOutput
-                // This ensures the "Số lượng hỏng" column shows the total of all defect reports
+               
                 productionOutput.Defected = (productionOutput.Defected ?? 0) + dto.Quantity;
 
-                // Update Finished count (reduce by defected quantity)
-                // Finished products should decrease when we report defects
                 productionOutput.Finished = Math.Max((productionOutput.Finished ?? 0) - dto.Quantity, 0);
 
-                // Update production order status if needed
                 if (productionOrder != null)
                 {
                     productionOrder.Status = ProductionStatus.InProgress;
@@ -156,27 +149,22 @@ namespace SEP490.Modules.ProductionOrders.Services
                 var oldQuantity = existingDefect.Quantity ?? 0;
                 var newQuantity = dto.Quantity;
                 var quantityDifference = newQuantity - oldQuantity;
-
-                // Find the corresponding ProductionOutput to update Defected count
+              
                 var productionOutput = await _context.ProductionOutputs
                     .FirstOrDefaultAsync(po => po.ProductionOrderId == existingDefect.ProductionOrderId && po.ProductId == existingDefect.ProductId);
                 
                 if (productionOutput == null) return false;
-
-                // Update the defect record
+           
                 existingDefect.Quantity = dto.Quantity;
                 existingDefect.DefectType = dto.DefectType;
                 existingDefect.DefectStage = dto.DefectStage;
                 existingDefect.Note = dto.Note;
-                existingDefect.ReportedAt = DateTime.UtcNow; // Update report time
+                existingDefect.ReportedAt = DateTime.UtcNow; 
 
-                // Update ProductionOutput Defected count based on quantity change
                 productionOutput.Defected = (productionOutput.Defected ?? 0) + quantityDifference;
 
-                // Update Finished count (adjust by quantity difference)
                 productionOutput.Finished = Math.Max((productionOutput.Finished ?? 0) - quantityDifference, 0);
 
-                // Update production order status
                 var productionOrder = await _context.ProductionOrders.FindAsync(existingDefect.ProductionOrderId);
                 if (productionOrder != null)
                 {
@@ -197,13 +185,10 @@ namespace SEP490.Modules.ProductionOrders.Services
             var output = await _context.ProductionOutputs.Include(o => o.ProductionOrder).FirstOrDefaultAsync(o => o.Id == outputId);
             if (output == null || dto.Broken <= 0) return false;
 
-            // Update broken count
             output.Defected = (output.Defected ?? 0) + dto.Broken;
 
-            // Update done
             output.Finished = Math.Max((output.Finished ?? 0) - dto.Broken, 0);
 
-            // Update production order status
             if (output.ProductionOrder != null)
             {
                 output.ProductionOrder.Status = ProductionStatus.InProgress;
