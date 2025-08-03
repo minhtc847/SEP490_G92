@@ -37,6 +37,17 @@ namespace SEP490.Modules.InvoiceModule.Controller
             return Ok(invoice);
         }
 
+        [HttpGet("{id}/payments")]
+        public ActionResult<InvoiceWithPaymentsDto> GetInvoiceWithPayments(int id)
+        {
+            var invoice = _invoiceService.GetInvoiceWithPayments(id);
+            if (invoice == null)
+            {
+                return NotFound($"Invoice with ID {id} not found.");
+            }
+            return Ok(invoice);
+        }
+
         [HttpPost]
         public ActionResult<int> CreateInvoice([FromBody] CreateInvoiceDto createInvoiceDto)
         {

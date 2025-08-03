@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using SEP490.DB;
 using SEP490.DB.Models;
 using SEP490.Modules.InvoiceModule.DTO;
+using SEP490.Modules.PaymentsModule.DTO;
+using SEP490.Modules.PaymentsModule.Service;
 using SEP490.Common.Services;
 
 namespace SEP490.Modules.InvoiceModule.Service
@@ -9,10 +11,12 @@ namespace SEP490.Modules.InvoiceModule.Service
     public class InvoiceService : BaseService, IInvoiceService
     {
         private readonly SEP490DbContext _context;
+        private readonly IPaymentService _paymentService;
 
-        public InvoiceService(SEP490DbContext context)
+        public InvoiceService(SEP490DbContext context, IPaymentService paymentService)
         {
             _context = context;
+            _paymentService = paymentService;
         }
 
         public List<InvoiceDto> GetAllInvoices()
@@ -76,6 +80,53 @@ namespace SEP490.Modules.InvoiceModule.Service
                     Total = id.Total,
                     
                 }).ToList()
+            };
+        }
+
+        public InvoiceWithPaymentsDto? GetInvoiceWithPayments(int id)
+        {
+            var invoice = _context.Invoices
+                .Include(i => i.Customer)
+                .Include(i => i.InvoiceDetails)
+                .ThenInclude(id => id.Product)
+                .FirstOrDefault(i => i.Id == id);
+
+            if (invoice == null)
+                return null;
+
+            var payments = _paymentService.GetPaymentsByInvoiceId(id);
+            var totalPaidAmount = _paymentService.GetTotalPaidAmount(id);
+            var remainingAmount = (invoice.TotalAmount ?? 0) - totalPaidAmount;
+
+            return new InvoiceWithPaymentsDto
+            {
+                Id = invoice.Id,
+                CustomerId = invoice.CustomerId,
+                CustomerName = invoice.Customer.CustomerName,
+                InvoiceCode = $"INV{invoice.Id:D6}",
+                InvoiceDate = invoice.InvoiceDate,
+                DueDate = invoice.DueDate,
+                InvoiceType = invoice.InvoiceType,
+                Status = invoice.Status,
+                Subtotal = invoice.Subtotal ?? 0,
+                Tax = invoice.Tax ?? 0,
+                TotalAmount = invoice.TotalAmount ?? 0,
+                SalesOrderId = invoice.SalesOrderId,
+                PurchaseOrderId = invoice.PurchaseOrderId,
+                InvoiceDetails = invoice.InvoiceDetails.Select(id => new InvoiceDetailDto
+                {
+                    Id = id.Id,
+                    InvoiceId = id.InvoiceId,
+                    ProductId = id.ProductId,
+                    ProductName = id.Product.ProductName,
+                    Quantity = id.Quantity,
+                    UnitPrice = id.UnitPrice,
+                    Total = id.Total,
+                    
+                }).ToList(),
+                Payments = payments,
+                TotalPaidAmount = totalPaidAmount,
+                RemainingAmount = remainingAmount
             };
         }
 

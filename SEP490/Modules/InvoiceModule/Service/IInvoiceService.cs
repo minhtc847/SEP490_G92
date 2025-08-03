@@ -1,4 +1,5 @@
 using SEP490.Modules.InvoiceModule.DTO;
+using SEP490.Modules.PaymentsModule.DTO;
 
 namespace SEP490.Modules.InvoiceModule.Service
 {
@@ -6,6 +7,7 @@ namespace SEP490.Modules.InvoiceModule.Service
     {
         List<InvoiceDto> GetAllInvoices();
         InvoiceWithDetailsDto? GetInvoiceById(int id);
+        InvoiceWithPaymentsDto? GetInvoiceWithPayments(int id);
         int CreateInvoice(CreateInvoiceDto createInvoiceDto);
         bool UpdateInvoice(int id, CreateInvoiceDto updateInvoiceDto);
         bool DeleteInvoice(int id);
