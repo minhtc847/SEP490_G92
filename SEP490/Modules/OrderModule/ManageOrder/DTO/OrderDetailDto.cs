@@ -39,6 +39,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.DTO
         public int TotalQuantity { get; set; }
         public decimal TotalAmount { get; set; }
         public Status? Status { get; set; }
+        public DeliveryStatus? DeliveryStatus { get; set; }
     }
 
 }

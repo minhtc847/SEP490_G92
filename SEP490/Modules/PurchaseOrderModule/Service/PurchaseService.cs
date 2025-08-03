@@ -124,15 +124,6 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                     Unit = "Tấm",
                     Quantity = p.Quantity,
 
-                    Product = new Product
-                    {
-                        ProductName = p.ProductName,
-                        Width = p.Width.ToString(),
-                        Height = p.Height.ToString(),
-                        Thickness = p.Thickness,
-                        UOM = "Tấm",
-                        ProductType = "NVL"
-                    }
                 };
                 _context.PurchaseOrderDetails.Add(detail);
             }
@@ -288,6 +279,17 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<bool> ChangeStatusToOrderedAsync(int orderId)
+        {
+            var order = await _context.PurchaseOrders.FirstOrDefaultAsync(o => o.Id == orderId);
+            if (order == null) return false;
+
+            order.Status = PurchaseStatus.Ordered;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
 
     }
 }

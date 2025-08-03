@@ -64,6 +64,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                     OrderCode = g.Key.OrderCode,
                     OrderDate = g.Key.OrderDate.Date,
                     Status = g.Key.Status,
+                    DeliveryStatus = _context.SaleOrders.First(o => o.Id == g.Key.Id).DeliveryStatus,
                     Discount = g.Key.Discount ?? 0,
                     OriginalTotalAmount = g.Sum(x => x.UnitPrice * x.Quantity),
                     TotalAmount = g.Sum(x => x.UnitPrice * x.Quantity) - (g.Sum(x => x.UnitPrice * x.Quantity) * (g.Key.Discount ?? 0))
@@ -138,6 +139,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 Status = order.Status,
                 CustomerName = order.Customer?.CustomerName,
                 Address = order.Customer?.Address,
+                DeliveryStatus = order.DeliveryStatus,
                 Phone = order.Customer?.Phone,
                 Discount = discount,
                 Products = productDtos,

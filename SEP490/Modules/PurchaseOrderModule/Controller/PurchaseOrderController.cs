@@ -91,6 +91,15 @@ namespace SEP490.Modules.PurchaseOrderModule.Controller
             }
         }
 
+        [HttpPut("{id}/change-to-ordered")]
+        public async Task<IActionResult> ChangeStatusToOrdered(int id)
+        {
+            var result = await _purchaseOrderService.ChangeStatusToOrderedAsync(id);
+            if (!result)
+                return NotFound(new { message = $"Không tìm thấy đơn hàng mua với ID {id}" });
+
+            return Ok(new { message = "Đã cập nhật trạng thái đơn hàng mua sang 'Ordered'" });
+        }
 
     }
 }

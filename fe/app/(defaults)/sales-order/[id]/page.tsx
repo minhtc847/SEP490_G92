@@ -34,7 +34,7 @@ const SalesOrderDetailPage = () => {
     if (loading) return <div className="p-6">Đang tải dữ liệu...</div>;
     if (!order) return <div className="p-6 text-red-600">Không tìm thấy đơn hàng với ID: {id}</div>;
 
-const handleExportToExcel = async () => {
+    const handleExportToExcel = async () => {
         if (!order) return;
 
         const workbook = new ExcelJS.Workbook();
@@ -54,16 +54,13 @@ const handleExportToExcel = async () => {
 
         worksheet.addRow([]);
 
-        const headerRow = worksheet.addRow([
-            'Stt', 'Ký hiệu', 'Tên sản phẩm', 'Đơn vị', 'SL',
-            'Dày kính (mm)', 'Rộng(mm)', 'Cao(mm)', 'Đơn giá (VND/m2)', 'Thành tiền (VND)'
-        ]);
+        const headerRow = worksheet.addRow(['Stt', 'Ký hiệu', 'Tên sản phẩm', 'Đơn vị', 'SL', 'Dày kính (mm)', 'Rộng(mm)', 'Cao(mm)', 'Đơn giá (VND/m2)', 'Thành tiền (VND)']);
 
         headerRow.eachCell((cell) => {
             cell.fill = {
                 type: 'pattern',
                 pattern: 'solid',
-                fgColor: { argb: '305496' }
+                fgColor: { argb: '305496' },
             };
             cell.font = { color: { argb: 'FFFFFF' }, bold: true };
             cell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -76,18 +73,7 @@ const handleExportToExcel = async () => {
         });
 
         order.products.forEach((item, idx) => {
-            const row = worksheet.addRow([
-                idx + 1,
-                item.productCode,
-                item.productName,
-                'Tấm',
-                item.quantity,
-                item.thickness,
-                item.width,
-                item.height,
-                item.unitPrice,
-                item.totalAmount,
-            ]);
+            const row = worksheet.addRow([idx + 1, item.productCode, item.productName, 'Tấm', item.quantity, item.thickness, item.width, item.height, item.unitPrice, item.totalAmount]);
             row.eachCell((cell) => {
                 cell.border = {
                     top: { style: 'thin' },
@@ -118,13 +104,25 @@ const handleExportToExcel = async () => {
         worksheet.addRow(['ĐẠI DIỆN BÊN MUA', '', '', '', '', '', 'ĐẠI DIỆN BÊN BÁN']);
 
         worksheet.columns.forEach((column) => {
-        column.width = 15; 
+            column.width = 15;
         });
-
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         saveAs(blob, `XacNhanDonHang_${order.orderCode}.xlsx`);
+    };
+
+    const getDeliveryStatusText = (status: number) => {
+        switch (status) {
+            case 0:
+                return 'Chưa giao';
+            case 1:
+                return 'Đã giao một phần';
+            case 2:
+                return 'Đã giao dầy đủ';
+            case 3:
+                return 'Trả hàng';
+        }
     };
 
     if (loading) return <div className="p-6">Đang tải dữ liệu...</div>;
@@ -175,6 +173,9 @@ const handleExportToExcel = async () => {
                 </div>
                 <div>
                     <strong>Trạng thái:</strong> {order.status}
+                </div>
+                <div>
+                    <strong>Giao hàng:</strong> {getDeliveryStatusText(order.deliveryStatus)}
                 </div>
             </div>
 

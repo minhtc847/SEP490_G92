@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { deletePurchaseOrder, getPurchaseOrders, PurchaseOrderDto } from './service';
+import { deletePurchaseOrder, getPurchaseOrders, PurchaseOrderDto, updatePurchaseOrderStatus } from './service';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -236,37 +236,65 @@ const PurchaseOrderPage = () => {
                                                       : 'badge-outline-default'
                                         }`}
                                     >
-                                        {order.status === 'Pending' ? 'Chờ đặt hàng' :
-                                         order.status === 'Ordered' ? 'Đã đặt hàng' :
-                                         order.status === 'Imported' ? 'Đã nhập hàng' :
-                                         order.status === 'Cancelled' ? 'Đã hủy' :
-                                         order.status}
+                                        {order.status === 'Pending'
+                                            ? 'Chờ đặt hàng'
+                                            : order.status === 'Ordered'
+                                              ? 'Đã đặt hàng'
+                                              : order.status === 'Imported'
+                                                ? 'Đã nhập hàng'
+                                                : order.status === 'Cancelled'
+                                                  ? 'Đã hủy'
+                                                  : order.status}
                                     </span>
                                 </td>
                                 {/* <td className="border px-3 py-2">
                                     <span className={`bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs`}>{order.status}</span>
                                 </td> */}
                                 <td className="border px-3 py-2">{order.customerName || '-'}</td>
-                                <td className="border px-3 py-2 space-x-2">
-                                    <button onClick={() => router.push(`/purchase-order/${order.id}`)} className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
-                                        Chi tiết
-                                    </button>
-                                    <button
-                                        onClick={async () => {
-                                            if (confirm(`Bạn có chắc muốn xoá đơn mua hàng "${order.description}" không?`)) {
-                                                try {
-                                                    await deletePurchaseOrder(order.id);
-                                                    setOrders((prev) => prev.filter((o) => o.id !== order.id));
-                                                    alert(`Xoá thành công:\nĐơn hàng ${order.code} – ${order.description ?? '(Không có mô tả)'}`);
-                                                } catch (error) {
-                                                    alert('Không thể xoá đơn hàng. Vui lòng thử lại.');
-                                                }
-                                            }
-                                        }}
-                                        className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                                    >
-                                        Xoá
-                                    </button>
+                                <td className=" px-3 py-2 space-x-2">
+                                    <td className=" px-3 py-2 space-x-2">
+                                        <button onClick={() => router.push(`/purchase-order/${order.id}`)} className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
+                                            Chi tiết
+                                        </button>
+
+                                        {order.status === 'Pending' && (
+                                            <>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (confirm(`Bạn có chắc muốn đặt đơn hàng "${order.description}" không?`)) {
+                                                            try {
+                                                                await updatePurchaseOrderStatus(order.id, 1); // Ordered = 1
+                                                                setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: 'Ordered' } : o)));
+                                                                alert('Đơn hàng đã chuyển sang trạng thái "Đã đặt hàng".');
+                                                            } catch (error) {
+                                                                alert('Lỗi khi cập nhật trạng thái. Vui lòng thử lại.');
+                                                            }
+                                                        }
+                                                    }}
+                                                    className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+                                                >
+                                                    Đặt hàng
+                                                </button>
+
+                                                <button
+                                                    onClick={async () => {
+                                                        if (confirm(`Bạn có chắc muốn huỷ đơn hàng "${order.description}" không?`)) {
+                                                            try {
+                                                                await updatePurchaseOrderStatus(order.id, 3); // Cancelled = 3
+                                                                setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: 'Cancelled' } : o)));
+                                                                alert('Đơn hàng đã được huỷ.');
+                                                            } catch (error) {
+                                                                alert('Lỗi khi huỷ đơn hàng. Vui lòng thử lại.');
+                                                            }
+                                                        }
+                                                    }}
+                                                    className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                                                >
+                                                    Huỷ đơn
+                                                </button>
+                                            </>
+                                        )}
+                                    </td>
                                 </td>
                             </tr>
                         ))}

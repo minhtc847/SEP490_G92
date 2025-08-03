@@ -6,6 +6,7 @@ export interface OrderDto {
     orderCode: string;
     orderDate: string;
     status: number;
+    deliveryStatus: number;
     totalAmount: number;
 }
 
