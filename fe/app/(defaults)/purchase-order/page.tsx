@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getPurchaseOrders, PurchaseOrderDto } from './service';
-import { FiSearch } from 'react-icons/fi';
+import { deletePurchaseOrder, getPurchaseOrders, PurchaseOrderDto } from './service';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -53,6 +52,8 @@ const PurchaseOrderPage = () => {
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const router = useRouter();
     const [searchDescription, setSearchDescription] = useState('');
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -69,8 +70,23 @@ const PurchaseOrderPage = () => {
     }, []);
 
     const filteredOrders = orders
-        .filter((order) => order.customerName?.toLowerCase().includes(searchTerm.toLowerCase()))
-        .filter(order => order.description?.toLowerCase().includes(searchDescription.toLowerCase()))
+        .filter((order) => {
+            if (!fromDate && !toDate) return true;
+            const orderDate = order.date ? new Date(order.date) : null;
+            if (!orderDate) return false;
+
+            const from = fromDate ? new Date(fromDate) : null;
+            const to = toDate ? new Date(toDate) : null;
+
+            if (from && orderDate < from) return false;
+            if (to && orderDate > to) return false;
+
+            return true;
+        })
+        .filter((order) => {
+            const combined = `${order.customerName ?? ''} ${order.description ?? ''}`.toLowerCase();
+            return combined.includes(searchTerm.toLowerCase());
+        })
         .filter((order) => (statusFilter ? order.status === statusFilter : true))
         .sort((a, b) => {
             if (sortAmount === 'asc') return (a.totalValue || 0) - (b.totalValue || 0);
@@ -95,47 +111,49 @@ const PurchaseOrderPage = () => {
 
             {/* Bộ lọc */}
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="flex flex-col md:flex-row gap-4 w-full md:w-2/3">
-                    <div className="relative w-full">
-                        <input
-                            type="text"
-                            placeholder="Tìm theo tên nhà cung cấp..."
-                            value={searchTerm}
-                            onChange={(e) => {
-                                setSearchTerm(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                            className="input input-bordered w-full py-2 px-4 rounded-lg shadow-sm"
-                        />
-                        <button
-                            type="button"
-                            className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow z-10"
-                            >
-                            <FiSearch className="text-white w-4 h-4" />
-                        </button>
-                     </div>   
-                    <div className="relative w-full">
-                        <input
+                <div className="w-full md:w-2/3">
+                    <input
                         type="text"
-                        placeholder="Tìm theo mô tả..."
-                        value={searchDescription}
+                        placeholder="Tìm theo tên nhà cung cấp hoặc mô tả..."
+                        value={searchTerm}
                         onChange={(e) => {
-                            setSearchDescription(e.target.value);
+                            setSearchTerm(e.target.value);
                             setCurrentPage(1);
                         }}
-                        className="input input-bordered w-full py-2 px-4 pr-12 rounded-lg shadow-sm"
+                        className="input input-bordered w-full py-2 px-4 rounded-lg shadow-sm"
+                    />
+                </div>
+
+                <div className="flex gap-4 items-end">
+                    <div className="flex flex-col">
+                        <label className="text-sm text-gray-600 mb-1">Từ ngày</label>
+                        <input
+                            type="date"
+                            className="input input-bordered py-2 px-3 rounded-lg shadow-sm"
+                            value={fromDate}
+                            onChange={(e) => {
+                                setFromDate(e.target.value);
+                                setCurrentPage(1);
+                            }}
                         />
-                        <button
-                        type="button"
-                        className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow z-10"
-                        >
-                        <FiSearch className="text-white w-4 h-4" />
-                        </button>
+                    </div>
+
+                    <div className="flex flex-col">
+                        <label className="text-sm text-gray-600 mb-1">Đến ngày</label>
+                        <input
+                            type="date"
+                            className="input input-bordered py-2 px-3 rounded-lg shadow-sm"
+                            value={toDate}
+                            onChange={(e) => {
+                                setToDate(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                        />
                     </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4">
-                    <select
+                    {/* <select
                         onChange={(e) => {
                             const val = e.target.value;
                             setSortAmount(val === 'asc' ? 'asc' : val === 'desc' ? 'desc' : null);
@@ -147,7 +165,7 @@ const PurchaseOrderPage = () => {
                         <option value="">Tổng tiền</option>
                         <option value="asc">Thấp → Cao</option>
                         <option value="desc">Cao → Thấp</option>
-                    </select>
+                    </select> */}
 
                     <select
                         className="select select-bordered py-2 px-4 rounded-lg shadow-sm"
@@ -158,15 +176,14 @@ const PurchaseOrderPage = () => {
                         }}
                     >
                         <option value="">Tất cả trạng thái</option>
-                        <option value="Chờ đặt hàng">Chờ đặt hàng</option>
-                        <option value="Đã đặt hàng">Đã đặt hàng</option>
-                        <option value="Hoàn thành">Đã nhập hàng</option>
-                        {/* <option value="Đã huỷ">Đã huỷ</option> */}
+                        <option value="Pending">Chờ đặt hàng</option>
+                        <option value="Ordered">Đã đặt hàng</option>
+                        <option value="Imported">Đã nhập hàng</option>
+                        <option value="Cancelled">Đã hủy</option>
                     </select>
                 </div>
             </div>
 
-            {/* Hiển thị thông tin dòng */}
             <div className="flex items-center gap-2 mb-3 text-sm text-gray-600">
                 <span>
                     Hiển thị {startIndex + 1} đến {Math.min(startIndex + itemsPerPage, filteredOrders.length)} trong tổng {filteredOrders.length} đơn hàng.
@@ -193,7 +210,7 @@ const PurchaseOrderPage = () => {
                         <tr>
                             <th className="border px-3 py-2">Mô tả</th>
                             <th className="border px-3 py-2">Ngày tạo</th>
-                            <th className="border px-3 py-2">Tổng tiền</th>
+                            {/* <th className="border px-3 py-2">Tổng tiền</th> */}
                             <th className="border px-3 py-2">Trạng thái</th>
                             <th className="border px-3 py-2">Nhà cung cấp</th>
                             <th className="border px-3 py-2">Hành động</th>
@@ -204,22 +221,26 @@ const PurchaseOrderPage = () => {
                             <tr key={order.id}>
                                 <td className="border px-3 py-2">{order.description || '-'}</td>
                                 <td className="border px-3 py-2">{order.date ? new Date(order.date).toLocaleDateString('vi-VN') : ''}</td>
-                                <td className="border px-3 py-2">{order.totalValue != null ? `${order.totalValue.toLocaleString()}₫` : '0₫'}</td>
+                                {/* <td className="border px-3 py-2">{order.totalValue != null ? `${order.totalValue.toLocaleString()}₫` : '0₫'}</td> */}
                                 <td>
                                     <span
                                         className={`badge ${
-                                            order.status === 'Chờ đặt hàng'
+                                            order.status === 'Pending'
                                                 ? 'badge-outline-warning'
-                                                : order.status === 'Đã đặt hàng'
+                                                : order.status === 'Ordered'
                                                   ? 'badge-outline-info'
-                                                  : order.status === 'Hoàn thành'
+                                                  : order.status === 'Imported'
                                                     ? 'badge-outline-success'
-                                                    : order.status === 'Đã huỷ'
+                                                    : order.status === 'Cancelled'
                                                       ? 'badge-outline-danger'
                                                       : 'badge-outline-default'
                                         }`}
                                     >
-                                        {order.status}
+                                        {order.status === 'Pending' ? 'Chờ đặt hàng' :
+                                         order.status === 'Ordered' ? 'Đã đặt hàng' :
+                                         order.status === 'Imported' ? 'Đã nhập hàng' :
+                                         order.status === 'Cancelled' ? 'Đã hủy' :
+                                         order.status}
                                     </span>
                                 </td>
                                 {/* <td className="border px-3 py-2">
@@ -227,10 +248,23 @@ const PurchaseOrderPage = () => {
                                 </td> */}
                                 <td className="border px-3 py-2">{order.customerName || '-'}</td>
                                 <td className="border px-3 py-2 space-x-2">
-                                    <button onClick={() => router.push(`/purchase-order/${order.id}`)} className="px-2 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-800">
+                                    <button onClick={() => router.push(`/purchase-order/${order.id}`)} className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
                                         Chi tiết
                                     </button>
-                                    <button onClick={() => alert(`Xoá đơn ${order.code}`)} className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm">
+                                    <button
+                                        onClick={async () => {
+                                            if (confirm(`Bạn có chắc muốn xoá đơn mua hàng "${order.description}" không?`)) {
+                                                try {
+                                                    await deletePurchaseOrder(order.id);
+                                                    setOrders((prev) => prev.filter((o) => o.id !== order.id));
+                                                    alert(`Xoá thành công:\nĐơn hàng ${order.code} – ${order.description ?? '(Không có mô tả)'}`);
+                                                } catch (error) {
+                                                    alert('Không thể xoá đơn hàng. Vui lòng thử lại.');
+                                                }
+                                            }
+                                        }}
+                                        className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                                    >
                                         Xoá
                                     </button>
                                 </td>

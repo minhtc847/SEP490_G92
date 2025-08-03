@@ -2,12 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getPriceQuotes, PriceQuote } from '@/app/(defaults)/price-quotes/service';
+import { getPriceQuotes, PriceQuote, PriceQuoteDetail, deletePriceQuote } from '@/app/(defaults)/price-quotes/service';
 import IconEye from '@/components/icon/icon-eye';
-import IconSearch from '@/components/icon/icon-search';
 import IconEdit from '@/components/icon/icon-edit';
 import IconTrash from '@/components/icon/icon-trash-lines';
-import { FiSearch } from 'react-icons/fi';
+
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
         const pages = [];
@@ -58,6 +57,7 @@ const PriceQuotePage = () => {
     const [message, setMessage] = useState('');
     const searchParams = useSearchParams();
     const deletedMessage = searchParams.get('deleted');
+    const [formData, setFormData] = useState<PriceQuoteDetail | null>(null);
     const successMessage = searchParams.get('success');
 
     useEffect(() => {
@@ -73,16 +73,25 @@ const PriceQuotePage = () => {
         fetch();
     }, []);
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         const deletedItem = quotes.find((q) => q.id === id);
-        if (deletedItem && confirm(`Bạn có chắc chắn muốn xóa báo giá: ${deletedItem.productName}?`)) {
-            setQuotes((prev) => prev.filter((q) => q.id !== id));
-            router.push(`/price-quotes?deleted=${encodeURIComponent(deletedItem.productName)}`);
+        if (!deletedItem) return;
+
+        const confirmDelete = confirm(`Bạn có chắc chắn muốn xoá báo giá: ${deletedItem.productName}?`);
+        if (!confirmDelete) return;
+
+        try {
+            await deletePriceQuote(id);
+            alert(`Đã xoá báo giá: ${deletedItem.productName}`);
+            router.refresh();
+        } catch (err) {
+            console.error('Lỗi khi xoá báo giá:', err);
+            alert('Xoá báo giá thất bại! Không thể xoá báo giá được sử dụng');
         }
     };
 
     const filteredQuotes = quotes
-        .filter((item) => item.productName.toLowerCase().includes(searchTerm.toLowerCase()))
+        .filter((item) => item.productName.toLowerCase().includes(searchTerm.toLowerCase()) || item.productCode.toLowerCase().includes(searchTerm.toLowerCase()))
         .filter((item) => (categoryFilter ? item.category === categoryFilter : true))
         .filter((item) => (typeFilter ? item.productCode === typeFilter : true))
         .sort((a, b) => {
@@ -104,58 +113,36 @@ const PriceQuotePage = () => {
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-gray-800">Báo giá</h2>
                 <button onClick={handleCreateNew} className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-xl shadow transition duration-200">
-                     Thêm báo giá
+                    + Thêm báo giá
                 </button>
             </div>
-
-            {successMessage && (
-                <div className="mb-4 p-3 rounded-xl bg-green-100 text-green-800 border border-green-300">
-                    Đã thêm báo giá thành công cho <strong>{successMessage}</strong>.
-                </div>
-            )}
-            {deletedMessage && (
-                <div className="mb-4 p-3 rounded-xl bg-red-100 text-red-800 border border-red-300">
-                    🗑️ Đã xoá báo giá thành công: <strong>{deletedMessage}</strong>
-                </div>
-            )}
 
             {message && <div className="mb-4 p-3 rounded bg-green-100 text-green-800 border border-green-300">{message}</div>}
 
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="relative w-full md:w-1/3">
-                    <input
-                        type="text"
-                        placeholder="Tìm theo tên hàng..."
-                        value={searchTerm}
-                        onChange={(e) => {
-                            setSearchTerm(e.target.value);
-                            setCurrentPage(1);
-                        }}
-                        className="input input-bordered w-full md:w-1/3 pl-4 pr-4 py-2 rounded-lg shadow-sm"
-                    />
-                        <button
-                            type="button"
-                            className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow z-10"
-                        >
-                            <FiSearch className="text-white w-4 h-4" />
-                        </button>
-                    </div>
+                <input
+                    type="text"
+                    placeholder="Tìm theo tên hoặc mã sản phẩm..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1);
+                    }}
+                    className="input input-bordered w-full md:w-1/3 pl-4 pr-4 py-2 rounded-lg shadow-sm"
+                />
                 <div className="flex flex-wrap items-center gap-4">
-
-
                     <select
                         className="select select-bordered pl-4 pr-4 py-2 rounded-lg shadow-sm"
-                        value={typeFilter}
+                        value={categoryFilter}
                         onChange={(e) => {
-                            setTypeFilter(e.target.value);
+                            setCategoryFilter(e.target.value);
                             setCurrentPage(1);
                         }}
-                        
                     >
-                        <option value="">Tất cả mã sản phẩm</option>
-                        {Array.from(new Set(quotes.map((q) => q.productCode))).map((code) => (
-                            <option key={code} value={code}>
-                                {code}
+                        <option value="">Tất cả loại hàng</option>
+                        {Array.from(new Set(quotes.map((q) => q.category))).map((category) => (
+                            <option key={category} value={category}>
+                                {category}
                             </option>
                         ))}
                     </select>
@@ -200,7 +187,8 @@ const PriceQuotePage = () => {
                     <thead>
                         <tr>
                             <th>Tên</th>
-                            <th>Chủng loại</th>
+                            <th>Loại</th>
+                            <th>Mã SP</th>
                             <th>Đơn giá</th>
                             <th>Hành động</th>
                         </tr>
@@ -209,14 +197,15 @@ const PriceQuotePage = () => {
                         {paginatedQuotes.map((item, index) => (
                             <tr key={index}>
                                 <td>{item.productName}</td>
+                                <td>{item.category}</td>
                                 <td>{item.productCode}</td>
                                 <td>{item.unitPrice.toLocaleString()}₫</td>
                                 <td className="flex gap-2">
-                                    <button onClick={() => router.push(`/price-quotes/${item.id}`)} className="p-2 bg-sky-100 rounded-full hover:bg-sky-200 transition" title="Chi tiết">
-                                        <IconEye className="w-5 h-5 text-sky-700" />
+                                    <button onClick={() => router.push(`/price-quotes/${item.id}`)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-300 transition" title="Chi tiết">
+                                        <IconEye className="w-5 h-5 text-gray-700" />
                                     </button>
-                                    <button onClick={() => router.push(`/price-quotes/edit/${item.id}`)} className="p-2 bg-green-100 rounded-full hover:bg-green-200 transition" title="Sửa">
-                                        <IconEdit className="w-5 h-5 text-green-700" />
+                                    <button onClick={() => router.push(`/price-quotes/edit/${item.id}`)} className="p-2 bg-blue-100 rounded-full hover:bg-blue-200 transition" title="Sửa">
+                                        <IconEdit className="w-5 h-5 text-blue-700" />
                                     </button>
                                     <button onClick={() => handleDelete(item.id)} className="p-2 bg-red-100 rounded-full hover:bg-red-200 transition" title="Xoá">
                                         <IconTrash className="w-5 h-5 text-red-700" />

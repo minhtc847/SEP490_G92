@@ -6,12 +6,31 @@ import { getPurchaseOrderById, PurchaseOrderWithDetailsDto } from './service';
 
 const getStatusBadgeClass = (status: string) => {
     switch (status) {
-        case 'Đã tạo':
+        case 'Pending':
             return 'bg-yellow-200 text-yellow-800';
-        case 'Đã mua':
+        case 'Ordered':
+            return 'bg-blue-200 text-blue-800';
+        case 'Imported':
             return 'bg-green-200 text-green-800';
+        case 'Cancelled':
+            return 'bg-red-200 text-red-800';
         default:
             return 'bg-gray-200 text-gray-800';
+    }
+};
+
+const getStatusDisplayName = (status: string) => {
+    switch (status) {
+        case 'Pending':
+            return 'Chờ đặt hàng';
+        case 'Ordered':
+            return 'Đã đặt hàng';
+        case 'Imported':
+            return 'Đã nhập hàng';
+        case 'Cancelled':
+            return 'Đã hủy';
+        default:
+            return status;
     }
 };
 
@@ -71,7 +90,7 @@ const PurchaseOrderDetailPage = () => {
                     <strong>Ngày tạo:</strong> {order.date ? new Date(order.date).toLocaleDateString('vi-VN') : '-'}
                 </div>
                 <div>
-                    <strong>Trạng thái:</strong> <span className={`inline-block px-2 py-1 rounded text-xs ${getStatusBadgeClass(order.status || '')}`}>{order.status || '-'}</span>
+                                            <strong>Trạng thái:</strong> <span className={`inline-block px-2 py-1 rounded text-xs ${getStatusBadgeClass(order.status || '')}`}>{getStatusDisplayName(order.status || '')}</span>
                 </div>
             </div>
 
@@ -80,12 +99,12 @@ const PurchaseOrderDetailPage = () => {
                     <tr>
                         <th className="border p-2">STT</th>
                         <th className="border p-2">Tên SP</th>
-                        <th className="border p-2">Rộng (mm)</th>
+                        {/* <th className="border p-2">Rộng (mm)</th>
                         <th className="border p-2">Cao (mm)</th>
-                        <th className="border p-2">Dày (mm)</th>
+                        <th className="border p-2">Dày (mm)</th> */}
                         <th className="border p-2">Số lượng</th>
                         <th className="border p-2">Đơn vị</th>
-                        <th className="border p-2">Diện tích (m²)</th>
+                        {/* <th className="border p-2">Diện tích (m²)</th> */}
                     </tr>
                 </thead>
                 <tbody>
@@ -98,12 +117,12 @@ const PurchaseOrderDetailPage = () => {
                             <tr key={idx}>
                                 <td className="border p-2 text-center">{idx + 1}</td>
                                 <td className="border p-2">{item.productName}</td>
-                                <td className="border p-2 text-right">{width.toLocaleString()}</td>
+                                {/* <td className="border p-2 text-right">{width.toLocaleString()}</td>
                                 <td className="border p-2 text-right">{height.toLocaleString()}</td>
-                                <td className="border p-2 text-right">{(item.thickness ?? 0).toLocaleString()}</td>
+                                <td className="border p-2 text-right">{(item.thickness ?? 0).toLocaleString()}</td> */}
                                 <td className="border p-2 text-right">{(item.quantity ?? 0).toLocaleString()}</td>
                                 <td className="border p-2">{item.uom || '-'}</td>
-                                <td className="border p-2 text-right">{areaM2.toFixed(2)}</td>
+                                {/* <td className="border p-2 text-right">{areaM2.toFixed(2)}</td> */}
                             </tr>
                         );
                     })}

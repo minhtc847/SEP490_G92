@@ -38,7 +38,8 @@ const PriceQuoteEditPage = () => {
 
         try {
             await deletePriceQuote(String(formData.id));
-            router.push(`/price-quotes?deleted=${encodeURIComponent(formData.productName)}`);
+            alert(`Đã xoá báo giá cho sản phẩm: ${formData.productName}`);
+            router.push(`/price-quotes`);
         } catch (err) {
             console.error('Lỗi khi xoá báo giá:', err);
             alert('Xoá báo giá thất bại!');
@@ -50,7 +51,8 @@ const PriceQuoteEditPage = () => {
         if (!formData) return;
         try {
             await updatePriceQuote(formData.id, formData);
-            router.push(`/price-quotes?success=${encodeURIComponent(formData.productName)}`);
+            alert(`Đã cập nhật báo giá cho sản phẩm: ${formData.productName}`);
+            router.push(`/price-quotes/${formData.id}`);
         } catch (err) {
             console.error('Lỗi khi cập nhật báo giá:', err);
         }
@@ -65,15 +67,33 @@ const PriceQuoteEditPage = () => {
             <h2 className="text-xl font-bold mb-6">Chỉnh sửa báo giá</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {['productCode', 'productName', 'edgeType', 'adhesiveType', 'composition'].map((field) => (
-                        <div key={field}>
-                            <label className="block font-medium text-gray-700 mb-1 capitalize">{field}</label>
-                            <input type="text" name={field} value={(formData as any)[field]} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
-                        </div>
-                    ))}
+                    <div>
+                        <label className="block font-medium text-gray-700 mb-1">Mã sản phẩm</label>
+                        <input type="text" name="productCode" value={formData.productCode} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
+                    </div>
+                    <div>
+                        <label className="block font-medium text-gray-700 mb-1">Tên sản phẩm</label>
+                        <input type="text" name="productName" value={formData.productName} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
+                    </div>
+                    <div>
+                        <label className="block font-medium text-gray-700 mb-1">Phân loại</label>
+                        <input type="text" name="category" value={formData.category} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
+                    </div>
+                    <div>
+                        <label className="block font-medium text-gray-700 mb-1">Loại cạnh</label>
+                        <input type="text" name="edgeType" value={formData.edgeType} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
+                    </div>
+                    <div>
+                        <label className="block font-medium text-gray-700 mb-1">Loại keo</label>
+                        <input type="text" name="adhesiveType" value={formData.adhesiveType} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
+                    </div>
+                    <div>
+                        <label className="block font-medium text-gray-700 mb-1">Thành phần</label>
+                        <input type="text" name="composition" value={formData.composition} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
                         <label className="block font-medium text-gray-700 mb-1">Số lớp kính</label>
                         <input style={{ height: 35 }} type="number" name="glassLayers" value={formData.glassLayers} onChange={handleChange} className="input w-full" />
@@ -82,8 +102,6 @@ const PriceQuoteEditPage = () => {
                         <label className="block font-medium text-gray-700 mb-1">Số lớp keo</label>
                         <input style={{ height: 35 }} type="number" name="adhesiveLayers" value={formData.adhesiveLayers} onChange={handleChange} className="input w-full" />
                     </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
                         <label className="block font-medium text-gray-700 mb-1">Độ dày keo (mm)</label>
                         <input style={{ height: 35 }} type="number" name="adhesiveThickness" value={formData.adhesiveThickness} onChange={handleChange} className="input w-full" />

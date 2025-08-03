@@ -28,9 +28,20 @@ const PriceQuoteDetailPage = () => {
             <h2 className="text-xl font-bold mb-6">Chi tiết báo giá</h2>
             <form className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {['productCode', 'productName', 'edgeType', 'adhesiveType', 'composition'].map((field) => (
+                    {['productCode', 'productName', 'category', 'edgeType', 'adhesiveType', 'composition'].map((field) => (
                         <div key={field}>
-                            <label className="block font-medium text-gray-700 mb-1 capitalize">{field}</label>
+                            <label className="block font-medium text-gray-700 mb-1 capitalize">
+                                {
+                                    {
+                                        productCode: 'Mã sản phẩm',
+                                        productName: 'Tên sản phẩm',
+                                        category: 'Phân loại',
+                                        edgeType: 'Loại viền',
+                                        adhesiveType: 'Keo',
+                                        composition: 'Thành phần',
+                                    }[field]
+                                }
+                            </label>
                             <input type="text" name={field} value={(formData as any)[field]} disabled className="w-full border px-3 py-2 rounded-lg shadow-sm bg-gray-100 cursor-not-allowed" />
                         </div>
                     ))}

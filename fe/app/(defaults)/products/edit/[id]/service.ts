@@ -13,7 +13,8 @@ export interface ProductDetail {
     thickness?: number;
     weight?: number;
     unitPrice?: number;
-    glassStructureId: number;
+    glassStructureId?: number;
+    quantity?: number;
 }
 
 export interface GlassStructureOption {
@@ -28,11 +29,15 @@ export const searchGlassStructures = async (inputValue: string): Promise<GlassSt
     return res.data;
 };
 
-
 export interface GlassStructureOption {
     id: number;
     productName: string;
 }
+
+export const getGlassStructureById = async (id: number): Promise<GlassStructureOption> => {
+    const res = await axios.get<GlassStructureOption>(`/api/GlassStructure/${id}`);
+    return res.data;
+};
 
 export const getGlassStructures = async (): Promise<GlassStructureOption[]> => {
     const res = await axios.get<GlassStructureOption[]>('/api/Product/all');
@@ -45,7 +50,11 @@ export const getProductById = async (id: string): Promise<ProductDetail> => {
 };
 
 export const updateProduct = async (id: number, data: ProductDetail): Promise<void> => {
-    await axios.put(`/api/Product/${id}`, data);
+    const payload = {
+        ...data,
+        glassStructureId: data.glassStructureId ?? null ,
+    };
+    await axios.put(`/api/Product/${id}`, payload);
 };
 
 export const deleteProduct = async (id: string): Promise<void> => {

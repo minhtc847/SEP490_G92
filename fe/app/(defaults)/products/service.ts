@@ -5,6 +5,7 @@ export interface Product {
     productName: string;
     productType: string;
     uom: string;
+    quantity: number;
 }
 
 export const getProducts = async (): Promise<Product[]> => {

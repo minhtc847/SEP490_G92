@@ -45,8 +45,12 @@ const ProductDetailPage = () => {
                     <input type="text" value={product.productName ?? ''} disabled className="w-full border px-3 py-2 rounded-lg bg-gray-100" />
                 </div>
                 <div>
-                    <label className="block font-medium text-gray-700 mb-1">Chủng loại</label>
+                    <label className="block font-medium text-gray-700 mb-1">Loại SP</label>
                     <input type="text" value={product.productType ?? ''} disabled className="w-full border px-3 py-2 rounded-lg bg-gray-100" />
+                </div>
+                <div>
+                    <label className="block font-medium text-gray-700 mb-1">Số lượng</label>
+                    <input type="number" value={product.quantity ?? ''} disabled className="w-full border px-3 py-2 rounded-lg bg-gray-100" />
                 </div>
                 <div>
                     <label className="block font-medium text-gray-700 mb-1">Đơn vị tính</label>

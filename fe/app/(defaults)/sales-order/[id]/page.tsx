@@ -183,10 +183,11 @@ const handleExportToExcel = async () => {
                     <tr>
                         <th className="border p-2">STT</th>
                         <th className="border p-2">Tên SP</th>
-                        <th className="border p-2">Rộng (mm)</th>
+                        {/* <th className="border p-2">Rộng (mm)</th>
                         <th className="border p-2">Cao (mm)</th>
-                        <th className="border p-2">Dày (mm)</th>
+                        <th className="border p-2">Dày (mm)</th> */}
                         <th className="border p-2">Số lượng</th>
+                        <th className="border p-2">Đơn vị tính</th>
                         <th className="border p-2">Đơn giá (₫)</th>
                         <th className="border p-2">Diện tích (m²)</th>
                         <th className="border p-2">Thành tiền (₫)</th>
@@ -197,10 +198,11 @@ const handleExportToExcel = async () => {
                         <tr key={idx}>
                             <td className="border p-2 text-center">{idx + 1}</td>
                             <td className="border p-2">{item.productName}</td>
-                            <td className="border p-2 text-right">{item.width}</td>
+                            {/* <td className="border p-2 text-right">{item.width}</td>
                             <td className="border p-2 text-right">{item.height}</td>
-                            <td className="border p-2 text-right">{item.thickness}</td>
+                            <td className="border p-2 text-right">{item.thickness}</td> */}
                             <td className="border p-2 text-right">{item.quantity}</td>
+                            <td className="border p-2">Tấm</td>
                             <td className="border p-2 text-right">{item.unitPrice.toLocaleString()}</td>
                             <td className="border p-2 text-right">{item.areaM2}</td>
                             <td className="border p-2 text-right">{item.totalAmount.toLocaleString()}</td>
@@ -234,7 +236,7 @@ const handleExportToExcel = async () => {
                 })()}
             </div>
 
-            <button onClick={handleBack} className="btn btn-status-secondary">
+            <button onClick={() => router.back()} className="btn btn-status-secondary">
                 ◀ Quay lại
             </button>
         </div>

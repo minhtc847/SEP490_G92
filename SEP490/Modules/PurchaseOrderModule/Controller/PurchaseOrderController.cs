@@ -74,6 +74,23 @@ namespace SEP490.Modules.PurchaseOrderModule.Controller
             return Ok(new { message = "Cập nhật thành công." });
         }
 
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdatePurchaseOrderStatusDto dto)
+        {
+            try
+            {
+                var result = await _purchaseOrderService.UpdatePurchaseOrderStatusAsync(id, dto.Status);
+                if (!result)
+                    return NotFound(new { message = "Không tìm thấy đơn hàng mua với ID " + id });
+
+                return Ok(new { message = "Cập nhật trạng thái đơn hàng mua thành công" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi cập nhật trạng thái đơn hàng mua", error = ex.Message });
+            }
+        }
+
 
     }
 }

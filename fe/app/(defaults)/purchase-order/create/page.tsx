@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AsyncSelect from 'react-select/async';
 import {
-    createProduct,
     checkProductNameExists,
     createPurchaseOrder,
     getNextPurchaseOrderCode,
@@ -17,6 +16,7 @@ import {
     OrderItem,
     getAllCustomerNames,
     getAllProductNames,
+    createProductNVL,
 } from './service';
 
 const toPositiveInt = (v: string | number): number | null => {
@@ -105,48 +105,59 @@ const PurchaseOrderCreatePage = () => {
             return { ...f, items };
         });
 
-    const handleProductNameChange = (name: string) => {
-        setIsProductNameDuplicate(productNames.includes(name.trim()));
-        setNewProductForm((p) => ({ ...p, productName: name }));
+    const [newMaterialProductForm, setNewMaterialProductForm] = useState({
+        productName: '',
+        width: 0,
+        height: 0,
+        thickness: 0,
+        uom: '',
+    });
+
+    const [isProductNameDuplicateNVL, setIsProductNameDuplicateNVL] = useState(false);
+
+    const handleMaterialProductNameChange = async (val: string) => {
+        const exists = await checkProductNameExists(val.trim());
+        setIsProductNameDuplicateNVL(exists);
+        setNewMaterialProductForm((prev) => ({ ...prev, productName: val }));
     };
 
     const handleSaveProduct = async () => {
         try {
-            if (!newProductForm.productName.trim()) throw new Error('Vui lòng nhập tên sản phẩm');
-            if (!PRODUCT_NAME_REGEX.test(newProductForm.productName)) throw new Error('Tên sản phẩm sai định dạng');
-            if (isProductNameDuplicate) throw new Error('Tên sản phẩm đã tồn tại');
-            if (await checkProductNameExists(newProductForm.productName)) throw new Error('Tên sản phẩm đã tồn tại, vui lòng chọn tên khác!');
-
-            const w = toPositiveNumber(newProductForm.width);
-            const h = toPositiveNumber(newProductForm.height);
-            const t = toPositiveInt(newProductForm.thickness);
-            if (!w || !h || !t) throw new Error('Rộng/Cao/Dày phải > 0');
+            if (!newMaterialProductForm.productName.trim()) throw new Error('Vui lòng nhập tên sản phẩm');
+            if (!newMaterialProductForm.uom?.trim()) throw new Error('Vui lòng nhập đơn vị tính');
+            if (isProductNameDuplicateNVL) throw new Error('Tên sản phẩm đã tồn tại');
+            if (await checkProductNameExists(newMaterialProductForm.productName)) throw new Error('Tên sản phẩm đã tồn tại, vui lòng chọn tên khác!');
 
             const payload = {
-                productName: newProductForm.productName,
-                width: newProductForm.width.toString(),
-                height: newProductForm.height.toString(),
-                thickness: newProductForm.thickness,
+                productName: newMaterialProductForm.productName,
+                uom: newMaterialProductForm.uom,
+                productType: 'NVL', // mặc định
+                width: null,
+                height: null,
+                thickness: null,
                 unitPrice: 0,
-                ...(newProductForm.glassStructureId && { glassStructureId: newProductForm.glassStructureId }),
             };
-            const p = await createProduct(payload);
+
+            const p = await createProductNVL(payload);
 
             const newItem: OrderItem = {
                 id: Date.now(),
                 productId: p.id,
                 productName: p.productName,
-                width: Number(p.width),
-                height: Number(p.height),
-                thickness: Number(p.thickness),
+                width: 0,
+                height: 0,
+                thickness: 0,
                 quantity: 1,
                 unitPrice: 0,
-                glassStructureId: p.glassStructureId,
+                uom: p.uom ?? 'Tấm',
                 isFromDatabase: true,
             };
+
             setForm((f) => ({ ...f, items: [...f.items, newItem] }));
             setShowAddProductForm(false);
-            setNewProductForm({ productName: '', width: 0, height: 0, thickness: 0, quantity: 1, glassStructureId: undefined });
+            setNewMaterialProductForm({ productName: '', width: 0, height: 0, thickness: 0, uom: '' });
+
+            alert(`Đã tạo sản phẩm thành công: ${p.productName}`);
         } catch (err: any) {
             alert(err.message || 'Lỗi tạo sản phẩm');
         }
@@ -161,13 +172,14 @@ const PurchaseOrderCreatePage = () => {
             if (!validItems.length) throw new Error('Chưa có sản phẩm hợp lệ');
 
             const products = validItems.map((p, i) => {
-                const width = toPositiveNumber(p.width);
-                const height = toPositiveNumber(p.height);
-                const thick = toPositiveNumber(p.thickness);
                 const qty = toPositiveInt(p.quantity);
-                if (!width || !height || !thick) throw new Error(`Sản phẩm #${i + 1}: Rộng/Cao/Dày phải > 0`);
+                if (!p.productName?.trim()) throw new Error(`Sản phẩm #${i + 1}: Vui lòng nhập tên sản phẩm`);
                 if (!qty) throw new Error(`Sản phẩm #${i + 1}: Số lượng phải > 0`);
-                return { productName: p.productName.trim(), width, height, thickness: thick, quantity: qty };
+
+                return {
+                    productName: p.productName.trim(),
+                    quantity: qty,
+                };
             });
 
             const dto = {
@@ -250,44 +262,26 @@ const PurchaseOrderCreatePage = () => {
                         <tr>
                             <th className="border p-2">STT</th>
                             <th className="border p-2">Tên SP</th>
-                            <th className="border p-2">Rộng (mm)</th>
-                            <th className="border p-2">Cao (mm)</th>
-                            <th className="border p-2">Dày (mm)</th>
                             <th className="border p-2">Số lượng</th>
-                            <th className="border p-2">Đơn vị</th>
-                            <th className="border p-2">Diện tích (m²)</th>
+                            <th className="border p-2">Đơn vị tính</th>
                             <th className="border p-2 w-20"></th> {/* cột xoá */}
                         </tr>
                     </thead>
 
                     <tbody>
                         {form.items.map((it, idx) => {
-                            const width = it.width ?? 0;
-                            const height = it.height ?? 0;
-                            const areaM2 = (width * height) / 1_000_000;
-
                             return (
                                 <tr key={it.id}>
                                     <td className="border p-2 text-center">{idx + 1}</td>
 
                                     <td className="border p-2">{it.productName}</td>
 
-                                    <td className="border p-2 text-right">{width.toLocaleString()}</td>
-
-                                    <td className="border p-2 text-right">{height.toLocaleString()}</td>
-
-                                    <td className="border p-2 text-right">{(it.thickness ?? 0).toLocaleString()}</td>
-
-                                    {/* cột chỉnh số lượng */}
                                     <td className="border p-2 text-right">
                                         <input type="number" className="input input-xs w-20" value={it.quantity} min={1} onChange={(e) => handleItemChange(idx, 'quantity', +e.target.value)} />
                                     </td>
 
                                     <td className="border p-2">{it.uom || 'Tấm'}</td>
 
-                                    <td className="border p-2 text-right">{areaM2.toFixed(2)}</td>
-
-                                    {/* nút xoá */}
                                     <td className="border p-2 text-center">
                                         <button className="btn btn-xs btn-error" onClick={() => removeItem(idx)}>
                                             Xoá
@@ -325,6 +319,7 @@ const PurchaseOrderCreatePage = () => {
                                 thickness: Number(p.thickness),
                                 quantity: 1,
                                 unitPrice: 0,
+                                uom: p.uom ?? 'Tấm',
                                 glassStructureId: p.glassStructureId,
                                 isFromDatabase: true,
                             };
@@ -341,7 +336,7 @@ const PurchaseOrderCreatePage = () => {
                         <div className="border rounded-lg p-4 mb-6 bg-gray-50">
                             <h4 className="text-lg font-semibold mb-2">Thêm sản phẩm mới</h4>
                             <p className="text-sm text-gray-500 italic mb-2">
-                                ⚠️ Tên sản phẩm phải theo định dạng: <strong>Kính [loại kính] KT: [rộng]*[cao]*[dày] mm</strong>
+                                ⚠️ Tên sản phẩm không cần theo định dạng đặc biệt, chỉ cần mô tả rõ ràng là được.
                                 <br />
                                 <span>
                                     Ví dụ: <code>Kính cường lực tôi trắng KT: 200*200*5 mm</code>
@@ -353,46 +348,21 @@ const PurchaseOrderCreatePage = () => {
                                     <label className="block mb-1 font-medium">Tên sản phẩm</label>
                                     <input
                                         className="input input-sm input-bordered w-full"
-                                        placeholder="VD: Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng"
-                                        value={newProductForm.productName}
-                                        onChange={(e) => handleProductNameChange(e.target.value)}
+                                        placeholder="VD: Kính EI60 phút, KT: 300*500*30 mm, ..."
+                                        value={newMaterialProductForm.productName}
+                                        onChange={(e) => handleMaterialProductNameChange(e.target.value)}
                                     />
-                                    {isProductNameDuplicate && <p className="text-red-500 text-sm mt-1">Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.</p>}
+                                    {isProductNameDuplicateNVL && <p className="text-red-500 text-sm mt-1">Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.</p>}
                                 </div>
 
                                 <div>
-                                    <label className="block mb-1 font-medium">Rộng (mm)</label>
+                                    <label className="block mb-1 font-medium">Đơn vị tính (UOM)</label>
                                     <input
                                         className="input input-sm input-bordered w-full"
-                                        type="number"
-                                        value={newProductForm.width}
-                                        onChange={(e) => setNewProductForm((prev) => ({ ...prev, width: +e.target.value }))}
+                                        placeholder="VD: Tấm, m², kg, ..."
+                                        value={newMaterialProductForm.uom ?? ''}
+                                        onChange={(e) => setNewMaterialProductForm((prev) => ({ ...prev, uom: e.target.value }))}
                                     />
-                                </div>
-
-                                <div>
-                                    <label className="block mb-1 font-medium">Cao (mm)</label>
-                                    <input
-                                        className="input input-sm input-bordered w-full"
-                                        type="number"
-                                        value={newProductForm.height}
-                                        onChange={(e) => setNewProductForm((prev) => ({ ...prev, height: +e.target.value }))}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block mb-1 font-medium">Dày (mm)</label>
-                                    <input
-                                        className="input input-sm input-bordered w-full"
-                                        type="number"
-                                        value={newProductForm.thickness}
-                                        onChange={(e) => setNewProductForm((prev) => ({ ...prev, thickness: +e.target.value }))}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block mb-1 font-medium">Diện tích (m²)</label>
-                                    <div className="input input-sm bg-gray-100 flex items-center">{((newProductForm.width * newProductForm.height) / 1_000_000).toFixed(2)}</div>
                                 </div>
                             </div>
 

@@ -24,7 +24,6 @@ namespace SEP490.DB.Models
     {
         Pending,
         Ordered,
-        PartiallyImported,
         Imported,
         Cancelled
     }

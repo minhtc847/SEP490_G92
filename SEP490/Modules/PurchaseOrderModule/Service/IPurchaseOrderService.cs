@@ -12,6 +12,7 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
         string GetNextPurchaseOrderCode();
         Task<Product> CreateProductAsync(CreateProductV3Dto dto);
         Task<bool> UpdatePurchaseOrderAsync(int id, UpdatePurchaseOrderDto dto);
+        Task<bool> UpdatePurchaseOrderStatusAsync(int orderId, PurchaseStatus status);
 
     }
 }
