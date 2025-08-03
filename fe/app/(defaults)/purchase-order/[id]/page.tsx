@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getPurchaseOrderById, PurchaseOrderWithDetailsDto } from './service';
+import { getPurchaseOrderById, PurchaseOrderWithDetailsDto, updatePurchaseOrderStatus } from './service';
 
 const getStatusBadgeClass = (status: string) => {
     switch (status) {
@@ -70,6 +70,43 @@ const PurchaseOrderDetailPage = () => {
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl font-bold">Chi tiết đơn hàng mua: {order.code}</h1>
                 <div className="space-x-2">
+                    {order.status === 'Pending' && (
+                        <div className="flex gap-2">
+                            <button
+                                onClick={async () => {
+                                    if (confirm(`Bạn có chắc muốn đặt đơn hàng "${order.description}" không?`)) {
+                                        try {
+                                            await updatePurchaseOrderStatus(order.id, 1); // Ordered
+                                            setOrder((prev) => (prev ? { ...prev, status: 'Ordered' } : prev));
+                                            alert('Đơn hàng đã được đặt.');
+                                        } catch (error) {
+                                            alert('Có lỗi khi cập nhật trạng thái.');
+                                        }
+                                    }
+                                }}
+                                className="px-4 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm focus:outline-none focus:ring-0"
+                            >
+                                🛒 Đặt hàng
+                            </button>
+
+                            <button
+                                onClick={async () => {
+                                    if (confirm(`Bạn có chắc muốn huỷ đơn hàng "${order.description}" không?`)) {
+                                        try {
+                                            await updatePurchaseOrderStatus(order.id, 3); // Cancelled
+                                            setOrder((prev) => (prev ? { ...prev, status: 'Cancelled' } : prev));
+                                            alert('Đơn hàng đã bị huỷ.');
+                                        } catch (error) {
+                                            alert('Có lỗi khi huỷ đơn hàng.');
+                                        }
+                                    }
+                                }}
+                                className="px-4 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm focus:outline-none focus:ring-0"
+                            >
+                                ❌ Huỷ đơn
+                            </button>
+                        </div>
+                    )}
                     <button onClick={handleEdit} className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
                         ✏️ Sửa
                     </button>
@@ -90,7 +127,7 @@ const PurchaseOrderDetailPage = () => {
                     <strong>Ngày tạo:</strong> {order.date ? new Date(order.date).toLocaleDateString('vi-VN') : '-'}
                 </div>
                 <div>
-                                            <strong>Trạng thái:</strong> <span className={`inline-block px-2 py-1 rounded text-xs ${getStatusBadgeClass(order.status || '')}`}>{getStatusDisplayName(order.status || '')}</span>
+                    <strong>Trạng thái:</strong> <span className={`inline-block px-2 py-1 rounded text-xs ${getStatusBadgeClass(order.status || '')}`}>{getStatusDisplayName(order.status || '')}</span>
                 </div>
             </div>
 

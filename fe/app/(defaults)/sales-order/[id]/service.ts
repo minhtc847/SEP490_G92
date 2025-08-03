@@ -25,6 +25,7 @@ export interface OrderDetailDto {
   totalQuantity: number;
   totalAmount: number;
   status: string;
+  deliveryStatus: number;
 }
 
 export const getOrderDetailById = async (id: number): Promise<OrderDetailDto> => {

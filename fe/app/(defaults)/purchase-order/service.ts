@@ -40,3 +40,11 @@ export const updatePurchaseOrderStatus = async (orderId: number, status: number)
     }
 };
 
+export const importPurchaseOrder = async (orderId: number): Promise<void> => {
+    try {
+        await axios.post(`/api/PurchaseOrder/${orderId}/import`);
+    } catch (error) {
+        console.error("Lỗi khi nhập hàng:", error);
+        throw error;
+    }
+};

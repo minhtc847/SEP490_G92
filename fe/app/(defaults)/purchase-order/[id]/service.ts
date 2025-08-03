@@ -36,3 +36,7 @@ export const getPurchaseOrderById = async (id: number): Promise<PurchaseOrderWit
     const res = await axios.get(`/api/PurchaseOrder/${id}`);
     return res.data;
 };
+
+export const updatePurchaseOrderStatus = async (id: number, status: number): Promise<void> => {
+    await axios.put(`/api/PurchaseOrder/${id}/status`, { status });
+};

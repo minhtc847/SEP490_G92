@@ -12,5 +12,6 @@ namespace SEP490.Modules.OrderModule.ManageOrder.DTO
         public decimal Discount { get; set; }
         public decimal OriginalTotalAmount { get; set; }
         public decimal TotalAmount { get; set; }
+        public DeliveryStatus? DeliveryStatus { get; set; }
     }
 }

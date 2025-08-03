@@ -13,6 +13,8 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
         Task<Product> CreateProductAsync(CreateProductV3Dto dto);
         Task<bool> UpdatePurchaseOrderAsync(int id, UpdatePurchaseOrderDto dto);
         Task<bool> UpdatePurchaseOrderStatusAsync(int orderId, PurchaseStatus status);
+        Task<bool> ChangeStatusToOrderedAsync(int orderId);
+        Task<bool> ImportPurchaseOrderAsync(int orderId);
 
     }
 }

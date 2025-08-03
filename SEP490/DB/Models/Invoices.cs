@@ -8,14 +8,20 @@ namespace SEP490.DB.Models
         public int Id { get; set; }
         public int CustomerId { get; set; }
         public InvoiceType InvoiceType { get; set; }
-        public int? RelatedOrderId { get; set; }
+        
         public DateTime InvoiceDate { get; set; }
         public DateTime? DueDate { get; set; }
         public decimal? Subtotal { get; set; }
         public decimal? Tax { get; set; }
-        public decimal? TotalAmount { get; set; } // Computed as Subtotal + Tax
+        public decimal? TotalAmount { get; set; } 
         public InvoiceStatus Status { get; set; } = InvoiceStatus.Unpaid;
         public Customer Customer { get; set; }
+
+        public int? SalesOrderId { get; set; }
+        public int? PurchaseOrderId { get; set; }
+
+        public SaleOrder? SalesOrder { get; set; }
+        public PurchaseOrder? PurchaseOrder { get; set; }
     }
 
     public enum InvoiceType

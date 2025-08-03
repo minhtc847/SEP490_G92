@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { getOrders, OrderDto } from '@/app/(defaults)/sales-order/service';
 import { FiSearch } from 'react-icons/fi';
 
-
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
         const pages = [];
@@ -89,6 +88,32 @@ const SalesOrderSummary = () => {
         fetchData();
     }, []);
 
+    const getDeliveryStatusText = (status: number) => {
+        switch (status) {
+            case 0:
+                return 'Chưa giao';
+            case 1:
+                return 'Đã giao một phần';
+            case 2:
+                return 'Đã giao dầy đủ';
+            case 3:
+                return 'Trả hàng';
+        }
+    };
+
+    const getDeliveryStatusClass = (status: number) => {
+        switch (status) {
+            case 0:
+                return 'badge-outline-warning';
+            case 1:
+                return 'badge-outline-info';
+            case 2:
+                return 'badge-outline-success';
+            case 3:
+                return 'badge-outline-danger';
+        }
+    };
+
     const filteredOrders = orders
         .filter((order) => order.customerName.toLowerCase().includes(searchTerm.toLowerCase()))
         .filter((order) => {
@@ -130,24 +155,24 @@ const SalesOrderSummary = () => {
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="relative w-full md:w-1/3">
                     <input
-                    type="text"
-                    placeholder="Tìm theo tên khách hàng..."
-                    value={searchTerm}
-                    onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        setCurrentPage(1);
-                    }}
-                    className="input input-bordered w-full py-2 px-4 pr-12 rounded-lg shadow-sm"
+                        type="text"
+                        placeholder="Tìm theo tên khách hàng..."
+                        value={searchTerm}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        className="input input-bordered w-full py-2 px-4 pr-12 rounded-lg shadow-sm"
                     />
                     <button
-                    type="button"
-                    className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow z-10"
-                    onClick={() => console.log('Tìm kiếm:', searchTerm)}
+                        type="button"
+                        className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow z-10"
+                        onClick={() => console.log('Tìm kiếm:', searchTerm)}
                     >
-                    <FiSearch className="text-white w-4 h-4" />
+                        <FiSearch className="text-white w-4 h-4" />
                     </button>
                 </div>
-                
+
                 <div className="flex flex-wrap items-center gap-4">
                     <div className="flex gap-4">
                         <div className="flex items-center gap-2">
@@ -237,6 +262,7 @@ const SalesOrderSummary = () => {
                             <th>Mã Đơn Hàng</th>
                             <th>Thành Tiền</th>
                             <th>Trạng Thái</th>
+                            <th>Giao Hàng</th>
                             <th>Hành Động</th>
                         </tr>
                     </thead>
@@ -263,6 +289,9 @@ const SalesOrderSummary = () => {
                                     >
                                         {order.status === 0 ? 'Chưa thực hiện' : order.status === 1 ? 'Đang thực hiện' : order.status === 2 ? 'Hoàn thành' : 'Đã huỷ'}
                                     </span>
+                                </td>
+                                <td>
+                                    <span className={`badge ${getDeliveryStatusClass(order.deliveryStatus)}`}>{getDeliveryStatusText(order.deliveryStatus)}</span>
                                 </td>
 
                                 <td className="flex gap-2">

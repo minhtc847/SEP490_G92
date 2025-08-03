@@ -124,15 +124,6 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                     Unit = "Tấm",
                     Quantity = p.Quantity,
 
-                    Product = new Product
-                    {
-                        ProductName = p.ProductName,
-                        Width = p.Width.ToString(),
-                        Height = p.Height.ToString(),
-                        Thickness = p.Thickness,
-                        UOM = "Tấm",
-                        ProductType = "NVL"
-                    }
                 };
                 _context.PurchaseOrderDetails.Add(detail);
             }
@@ -285,6 +276,44 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
             if (order == null) return false;
 
             order.Status = status;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ChangeStatusToOrderedAsync(int orderId)
+        {
+            var order = await _context.PurchaseOrders.FirstOrDefaultAsync(o => o.Id == orderId);
+            if (order == null) return false;
+
+            order.Status = PurchaseStatus.Ordered;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ImportPurchaseOrderAsync(int orderId)
+        {
+            var order = await _context.PurchaseOrders
+                .Include(po => po.PurchaseOrderDetails)
+                .ThenInclude(d => d.Product)
+                .FirstOrDefaultAsync(po => po.Id == orderId);
+
+            if (order == null || order.Status == PurchaseStatus.Imported)
+                return false;
+
+            foreach (var detail in order.PurchaseOrderDetails)
+            {
+                if (detail.ProductId.HasValue && detail.Quantity.HasValue)
+                {
+                    var product = await _context.Products.FindAsync(detail.ProductId.Value);
+                    if (product != null)
+                    {
+                        product.quantity += detail.Quantity.Value;
+                    }
+                }
+            }
+
+            order.Status = PurchaseStatus.Imported;
+
             await _context.SaveChangesAsync();
             return true;
         }
