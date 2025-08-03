@@ -476,7 +476,7 @@ const AddDeliveryComponent = () => {
                             {isSubmitting ? 'Đang tạo...' : 'Tạo phiếu giao hàng'}
                         </button>
 
-                        <button type="button" className="btn btn-primary w-full gap-2">
+                        {/* <button type="button" className="btn btn-primary w-full gap-2">
                             <IconEye className="shrink-0 ltr:mr-2 rtl:ml-2" />
                             Xem trước
                         </button>
@@ -484,7 +484,7 @@ const AddDeliveryComponent = () => {
                         <button type="button" className="btn btn-secondary w-full gap-2">
                             <IconDownload className="shrink-0 ltr:mr-2 rtl:ml-2" />
                             Tải xuống
-                        </button>
+                        </button> */}
                     </div>
                 </div>
             </div>

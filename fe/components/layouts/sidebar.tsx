@@ -157,6 +157,22 @@ const Sidebar = () => {
             );
         }
 
+        // Debts - Factory Manager and Accountant
+        if (isFactoryManager() || isAccountant()) {
+            items.push(
+                <li key="debts" className="menu nav-item">
+                    <Link href="/debts" className="nav-link group w-full">
+                        <div className="flex items-center">
+                            <IconMenuInvoice className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Công Nợ
+                            </span>
+                        </div>
+                    </Link>
+                </li>
+            );
+        }
+
         // Production - All roles can view
         items.push(
             <li key="production" className="menu nav-item">

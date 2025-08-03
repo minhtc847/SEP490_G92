@@ -14,6 +14,7 @@ public class Customer
     public PartnerType PartnerType { get; set; } // Enum
     public ICollection<SaleOrder> SaleOrders { get; set; } = new List<SaleOrder>();
     public ICollection<PurchaseOrder> PurchaseOrders { get; set; } = new List<PurchaseOrder>();
+    public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 }
 
 public enum PartnerType
