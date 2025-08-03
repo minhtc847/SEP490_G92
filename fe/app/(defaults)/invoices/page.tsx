@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getInvoices, InvoiceDto } from '@/app/(defaults)/invoices/service';
 import { FiSearch } from 'react-icons/fi';
+import OrderSelectionModal from '@/components/invoices/OrderSelectionModal';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -98,6 +99,7 @@ const InvoiceSummary = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedDate, setSelectedDate] = useState('');
     const [sortAmount, setSortAmount] = useState<'asc' | 'desc' | null>(null);
+    const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
     const [statusFilter, setStatusFilter] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -157,13 +159,22 @@ const InvoiceSummary = () => {
     }
 
     return (
-        <div className="p-6 bg-white rounded-lg shadow">
-            <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Tóm tắt hóa đơn</h2>
-                <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800" onClick={() => router.push('/invoices/create')}>
-                    + Thêm hóa đơn
-                </button>
-            </div>
+        <>
+            <div className="p-6 bg-white rounded-lg shadow">
+                <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-xl font-semibold">Tóm tắt hóa đơn</h2>
+                    <div className="flex gap-2">
+                        <button 
+                            className="px-4 py-2 text-sm text-white bg-green-600 rounded hover:bg-green-800" 
+                            onClick={() => setIsOrderModalOpen(true)}
+                        >
+                            + Tạo từ đơn mua hàng
+                        </button>
+                        <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800" onClick={() => router.push('/invoices/create')}>
+                            + Thêm hóa đơn
+                        </button>
+                    </div>
+                </div>
 
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="relative w-full md:w-1/3">
@@ -344,7 +355,14 @@ const InvoiceSummary = () => {
 
             {/* Phân trang */}
             <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-        </div>
+            </div>
+
+            {/* Order Selection Modal */}
+            <OrderSelectionModal 
+                isOpen={isOrderModalOpen}
+                onClose={() => setIsOrderModalOpen(false)}
+            />
+        </>
     );
 };
 
