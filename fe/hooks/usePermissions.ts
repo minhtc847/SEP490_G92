@@ -79,18 +79,24 @@ const getRolePermissions = (roleId: number): string[] => {
         case 1: // Chủ xưởng
             return [
                 'dashboard.view', 'dashboard.manage',
-                'orders.view', 'orders.create', 'orders.edit', 'orders.delete',
-                'production.view', 'production.create', 'production.edit', 'production.delete',
+                'saleorders.view', 'saleorders.create', 'saleorders.edit', 'saleorders.delete',
+                'saleorders.manage',
+                'purchaseorders.view', 'purchaseorders.create', 'purchaseorders.edit', 'purchaseorders.delete',
+                'purchaseorders.manage',
+                'productionplan.view', 'productionplan.create', 'productionplan.edit', 'productionplan.delete',
+                'productionorder.view', 'productionorder.create', 'productionorder.edit', 'productionorder.delete',
                 'customers.view', 'customers.create', 'customers.edit', 'customers.delete',
                 'quotes.view', 'quotes.create', 'quotes.edit', 'quotes.delete',
                 'glue.view', 'glue.create', 'glue.edit', 'glue.delete',
-                'messages.view', 'messages.manage',
-                'users.view', 'users.create', 'users.edit', 'users.delete'
+                
             ];
         case 2: // Kế toán
             return [
                 'dashboard.view',
-                'orders.view',
+                'saleorders.view', 'saleorders.create', 'saleorders.edit', 'saleorders.delete',
+                'saleorders.manage',
+                'purchaseorders.view', 'purchaseorders.create', 'purchaseorders.edit', 'purchaseorders.delete',
+                'purchaseorders.manage',
                 'production.view',
                 'customers.view',
                 'quotes.view', 'quotes.create', 'quotes.edit',
@@ -98,10 +104,9 @@ const getRolePermissions = (roleId: number): string[] => {
             ];
         case 3: // Bộ phận sản xuất
             return [
-                'dashboard.view',
-                'orders.view',
-                'production.view', 'production.edit',
-                'glue.view'
+                'productionplan.view', 'productionplan.create', 'productionplan.edit', 'productionplan.delete',
+                'productionorder.view', 'productionorder.create', 'productionorder.edit', 'productionorder.delete',
+                
             ];
         default:
             return [];
