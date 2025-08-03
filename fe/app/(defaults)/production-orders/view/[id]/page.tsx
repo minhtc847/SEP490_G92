@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import ListOutputsPO from "@/components/VNG/manager/production-orders/list-outputs-of-po/list-outputs-po-components"
 import CuttingGlassPage from "@/app/(defaults)/cutting-glass/CuttingGlassPage"
 import GlueButylExportModalComponent from "@/components/VNG/manager/glue-butyl-export-modal-component"
+import ChemicalExportModalComponent from "@/components/VNG/manager/chemical-export-modal-component"
 import type { Chemical, Product } from "@/app/(defaults)/production-plans/service"
 import ListExportsPO from "@/components/VNG/manager/production-plans/list-export-glue-components"
 
@@ -79,6 +80,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   const [showAddProductModal, setShowAddProductModal] = useState(false)
   const [showAddMaterialModal, setShowAddMaterialModal] = useState(false)
   const [showGlueButylModal, setShowGlueButylModal] = useState(false)
+  const [showChemicalExportModal, setShowChemicalExportModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null)
   const [editingMaterial, setEditingMaterial] = useState<MaterialItem | null>(null)
 
@@ -261,12 +263,15 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     const value = e.target.value
     setSelectedOperation(value)
 
-    if (value === "xuat-keo-bytul") {
+    if (value === "xuat-hoa-chat") {
+      setShowChemicalExportModal(true)
+    } else if (value === "xuat-keo-bytul") {
       setShowGlueButylModal(true)
     } else if (value === "cat-kinh") {
       router.push(`/cutting-glass/${params.id}`)
     } else {
       setShowGlueButylModal(false)
+      setShowChemicalExportModal(false)
     }
   }
 
@@ -895,6 +900,17 @@ export default function ProductionOrderView({ params }: { params: { id: string }
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-xl font-bold text-[#4361ee]">{orderDescription}</h1>
             <div className="flex items-center gap-4">
+              {selectedOperation === "xuat-hoa-chat" && (
+                <ChemicalExportModalComponent
+                  productionOrderId={Number(params.id)}
+                  onSuccess={handleExportSuccess}
+                  isOpen={showChemicalExportModal}
+                  onClose={() => {
+                    setShowChemicalExportModal(false)
+                    setSelectedOperation("")
+                  }}
+                />
+              )}
               {selectedOperation === "xuat-keo-bytul" && (
                 exportGlueButylProducts.length > 0 ? (
                   <GlueButylExportModalComponent
