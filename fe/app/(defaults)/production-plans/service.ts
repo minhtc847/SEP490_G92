@@ -134,7 +134,7 @@ export async function fetchProductionOrdersByPlanId(id: number | string): Promis
     orderDate: item.orderDate,
     type: item.type,
     description: item.description,
-    productionStatus: item.productionStatus,
+    productionStatus: item.productionStatus || 'Pending',
   }));
 }
 

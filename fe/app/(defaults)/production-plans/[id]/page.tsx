@@ -182,21 +182,36 @@ const ProductionPlanDetailPage = () => {
     const toggleTabs = (tab: string) => setTabs(tab);
     const [materialLoading, setMaterialLoading] = useState(false);
 
-    const statusBadgeMap: Record<number, string> = {
+    const statusBadgeMap: Record<string | number, string> = {
         0: 'badge-outline-warning', // Pending
         1: 'badge-outline-info',    // InProgress
         2: 'badge-outline-success', // Completed
         3: 'badge-outline-danger',  // Cancelled
+        'Pending': 'badge-outline-warning',
+        'InProgress': 'badge-outline-info',
+        'Completed': 'badge-outline-success',
+        'Cancelled': 'badge-outline-danger',
     };
 
-    const getStatusText = (status: number | undefined) => {
-        switch (status) {
-            case 0: return 'Pending';
-            case 1: return 'InProgress';
-            case 2: return 'Completed';
-            case 3: return 'Cancelled';
-            default: return status || '-';
+    const getStatusText = (status: string | number | undefined) => {
+        if (typeof status === 'string') {
+            switch (status) {
+                case 'Pending': return 'Pending';
+                case 'InProgress': return 'InProgress';
+                case 'Completed': return 'Completed';
+                case 'Cancelled': return 'Cancelled';
+                default: return status || '-';
+            }
+        } else if (typeof status === 'number') {
+            switch (status) {
+                case 0: return 'Pending';
+                case 1: return 'InProgress';
+                case 2: return 'Completed';
+                case 3: return 'Cancelled';
+                default: return status || '-';
+            }
         }
+        return '-';
     };
 
 
@@ -493,8 +508,8 @@ const ProductionPlanDetailPage = () => {
                                         <td>{item.type}</td>
                                         <td>{item.description}</td>
                                         <td style={{ minWidth: '150px' }}>
-                                            <span className={`badge ${statusBadgeMap[Number(item.productionStatus) || 0] || 'badge-outline-secondary'} whitespace-nowrap`}>
-                                                {getStatusText(Number(item.productionStatus))}
+                                            <span className={`badge ${statusBadgeMap[item.productionStatus || 'Pending'] || 'badge-outline-secondary'} whitespace-nowrap`}>
+                                                {getStatusText(item.productionStatus)}
                                             </span>
                                         </td>
                                         <td>

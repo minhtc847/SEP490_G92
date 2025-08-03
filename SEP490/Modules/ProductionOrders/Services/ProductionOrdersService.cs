@@ -27,7 +27,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                     OrderDate = po.OrderDate,
                     Type = po.Type,
                     Description = po.Description,
-                    
+                    ProductionStatus = po.Status.HasValue ? po.Status.Value.ToString() : null
                 })
                 .ToListAsync();
 
@@ -44,7 +44,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                     OrderDate = po.OrderDate,
                     Type = po.Type,
                     Description = po.Description,
-                    
+                    ProductionStatus = po.Status.HasValue ? po.Status.Value.ToString() : null
                 })
                 .ToListAsync();
             return productionOrders;

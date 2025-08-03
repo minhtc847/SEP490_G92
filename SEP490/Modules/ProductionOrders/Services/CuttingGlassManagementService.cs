@@ -167,7 +167,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                             .ToListAsync();
 
                         bool allDone = allOutputs.All(po =>
-                            po.Amount.HasValue && po.Finished.HasValue && po.Amount.Value == po.Finished.Value && po.Amount.Value > 0
+                            po.Amount.HasValue && po.Finished.HasValue && po.Amount.Value <= po.Finished.Value && po.Amount.Value > 0
                         );
 
                         var prodOrder = await _context.ProductionOrders.FindAsync(prodOrderId);
@@ -175,11 +175,11 @@ namespace SEP490.Modules.ProductionOrders.Services
                         {
                             if (allDone)
                             {
-                                //prodOrder.ProductionStatus = "Đã hoàn thành";
+                                prodOrder.Status = ProductionStatus.Completed;
                             }
                             else
                             {
-                                //prodOrder.ProductionStatus = "Đang sản xuất";
+                                prodOrder.Status = ProductionStatus.Completed;
                             }
                             await _context.SaveChangesAsync();
                         }
@@ -236,7 +236,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                             .ToListAsync();
 
                         bool allDone = allOutputs.All(po =>
-                            po.Amount.HasValue && po.Finished.HasValue && po.Amount.Value == po.Finished.Value && po.Amount.Value > 0
+                            po.Amount.HasValue && po.Finished.HasValue && po.Amount.Value <= po.Finished.Value && po.Amount.Value > 0
                         );
 
                         var prodOrder = await _context.ProductionOrders.FindAsync(prodOrderId);
@@ -244,11 +244,11 @@ namespace SEP490.Modules.ProductionOrders.Services
                         {
                             if (allDone)
                             {
-                                //prodOrder.ProductionStatus = "Đã hoàn thành";
+                                prodOrder.Status = ProductionStatus.Completed;
                             }
                             else
                             {
-                                //prodOrder.ProductionStatus = "Đang sản xuất";
+                                prodOrder.Status = ProductionStatus.Completed;
                             }
                             await _context.SaveChangesAsync();
                         }
