@@ -49,6 +49,31 @@ namespace SEP490.Modules.ProductionOrders.Controllers
             return Ok(outputs);
         }
 
+        [HttpGet("{productionOrderId}/defects")]
+        public async Task<ActionResult<List<ProductionDefectDto>>> GetDefectsByOrderId(int productionOrderId)
+        {
+            var defects = await _productionOrdersService.GetProductionDefectsByOrderIdAsync(productionOrderId);
+            return Ok(defects);
+        }
+
+        [HttpPost("defects")]
+        public async Task<IActionResult> CreateDefectReport([FromBody] CreateDefectReportDto dto)
+        {
+            var result = await _productionOrdersService.CreateDefectReportAsync(dto);
+            if (!result)
+                return BadRequest("Không thể tạo báo cáo lỗi. Vui lòng kiểm tra lại thông tin.");
+            return Ok(new { message = "Tạo báo cáo lỗi thành công." });
+        }
+
+        [HttpPut("defects/{defectId}")]
+        public async Task<IActionResult> UpdateDefectReport(int defectId, [FromBody] UpdateDefectReportDto dto)
+        {
+            var result = await _productionOrdersService.UpdateDefectReportAsync(defectId, dto);
+            if (!result)
+                return BadRequest("Không thể cập nhật báo cáo lỗi. Vui lòng kiểm tra lại thông tin.");
+            return Ok(new { message = "Cập nhật báo cáo lỗi thành công." });
+        }
+
         [HttpPut("outputs/{outputId}/report-broken")]
         public async Task<IActionResult> ReportBrokenOutput(int outputId, [FromBody] ReportBrokenOutputDto dto)
         {

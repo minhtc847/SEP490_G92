@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchProductionOutputsByOrderId, reportBrokenOutput, ProductionOutput } from './service';
+import { fetchProductionOutputsByOrderId, fetchProductionDefectsByOrderId, createDefectReport, updateDefectReport, ProductionOutput, ProductionDefect, UpdateDefectReport } from './service';
 import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react';
 import { Fragment } from 'react';
 
@@ -9,52 +9,200 @@ interface ListOutputsPOProps {
 
 const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
   const [outputs, setOutputs] = useState<ProductionOutput[]>([]);
+  const [defects, setDefects] = useState<ProductionDefect[]>([]);
   const [loading, setLoading] = useState(true);
+  const [defectsLoading, setDefectsLoading] = useState(true);
+  
+  // Create defect modal states
   const [showModal, setShowModal] = useState(false);
-  const [selectedOutput, setSelectedOutput] = useState<ProductionOutput | null>(null);
-  const [brokenValue, setBrokenValue] = useState(0);
-  const [reasonValue, setReasonValue] = useState('');
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [defectQuantity, setDefectQuantity] = useState(0);
+  const [defectType, setDefectType] = useState('');
+  const [defectStage, setDefectStage] = useState('');
+  const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Edit defect modal states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingDefect, setEditingDefect] = useState<ProductionDefect | null>(null);
+  const [editDefectQuantity, setEditDefectQuantity] = useState(0);
+  const [editDefectType, setEditDefectType] = useState('');
+  const [editDefectStage, setEditDefectStage] = useState('');
+  const [editNote, setEditNote] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
+
+  // Predefined options for dropdowns
+  const defectTypes = [
+    'Lỗi nguyên vật liệu',
+    'Lỗi quy trình sản xuất', 
+    'Lỗi thiết bị',
+    'Lỗi con người',
+    'Lỗi khác'
+  ];
+
+  const defectStages = [
+    'Chuẩn bị nguyên vật liệu',
+    'Gia công', 
+    'Lắp ráp',
+    'Kiểm tra chất lượng',
+    'Đóng gói',
+    'Khác'
+  ];
+
   useEffect(() => {
-    setLoading(true);
-    fetchProductionOutputsByOrderId(productionOrderId)
-      .then(setOutputs)
-      .finally(() => setLoading(false));
+    const fetchData = async () => {
+      setLoading(true);
+      setDefectsLoading(true);
+      
+      try {
+        // Fetch outputs first (priority)
+        const outputsData = await fetchProductionOutputsByOrderId(productionOrderId);
+        setOutputs(outputsData);
+        setLoading(false);
+        
+        // Then fetch defects separately
+        try {
+          const defectsData = await fetchProductionDefectsByOrderId(productionOrderId);
+          setDefects(defectsData);
+        } catch (defectsError) {
+          console.warn('Failed to fetch defects:', defectsError);
+          setDefects([]); // Set empty array if defects API fails
+        }
+        setDefectsLoading(false);
+        
+      } catch (error) {
+        console.error('Error fetching outputs:', error);
+        setOutputs([]);
+        setLoading(false);
+        setDefectsLoading(false);
+      }
+    };
+
+    fetchData();
   }, [productionOrderId]);
 
-  const handleOpenModal = (output: ProductionOutput) => {
-    setSelectedOutput(output);
-    setBrokenValue(0);
-    setReasonValue(output.reasonBroken || '');
+  const handleOpenModal = () => {
+    setSelectedProductId(null);
+    setDefectQuantity(0);
+    setDefectType('');
+    setDefectStage('');
+    setNote('');
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setSelectedOutput(null);
-    setBrokenValue(0);
-    setReasonValue('');
+    setSelectedProductId(null);
+    setDefectQuantity(0);
+    setDefectType('');
+    setDefectStage('');
+    setNote('');
   };
 
-  const handleSubmitBroken = async () => {
-    if (!selectedOutput || brokenValue <= 0) return;
+  const handleSubmitDefect = async () => {
+    if (!selectedProductId || defectQuantity <= 0 || !defectType || !defectStage) return;
+    
     setSubmitting(true);
     try {
-      await reportBrokenOutput(selectedOutput.id, brokenValue, reasonValue);
-      // Refresh outputs after reporting
-      const updated = await fetchProductionOutputsByOrderId(selectedOutput.productionOrderId);
-      setOutputs(updated);
+      await createDefectReport({
+        productionOrderId,
+        productId: selectedProductId,
+        quantity: defectQuantity,
+        defectType,
+        defectStage,
+        note
+      });
+      
+      // Refresh data after reporting
+      const [updatedOutputs, updatedDefects] = await Promise.all([
+        fetchProductionOutputsByOrderId(productionOrderId),
+        fetchProductionDefectsByOrderId(productionOrderId)
+      ]);
+      
+      setOutputs(updatedOutputs);
+      setDefects(updatedDefects);
       handleCloseModal();
+      
+      // Show success notification
+      alert('✅ Tạo báo cáo lỗi thành công!');
+    } catch (error) {
+      console.error('Error creating defect report:', error);
+      alert('❌ Tạo báo cáo lỗi thất bại. Vui lòng thử lại!');
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleOpenEditModal = (defect: ProductionDefect) => {
+    setEditingDefect(defect);
+    setEditDefectQuantity(defect.quantity ?? 0);
+    setEditDefectType(defect.defectType ?? '');
+    setEditDefectStage(defect.defectStage ?? '');
+    setEditNote(defect.note ?? '');
+    setShowEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditingDefect(null);
+    setEditDefectQuantity(0);
+    setEditDefectType('');
+    setEditDefectStage('');
+    setEditNote('');
+  };
+
+  const handleSubmitEditDefect = async () => {
+    if (!editingDefect || editDefectQuantity <= 0 || !editDefectType || !editDefectStage) return;
+    
+    setEditSubmitting(true);
+    try {
+      await updateDefectReport(editingDefect.id, {
+        quantity: editDefectQuantity,
+        defectType: editDefectType,
+        defectStage: editDefectStage,
+        note: editNote
+      });
+      
+      // Refresh data after updating
+      const [updatedOutputs, updatedDefects] = await Promise.all([
+        fetchProductionOutputsByOrderId(productionOrderId),
+        fetchProductionDefectsByOrderId(productionOrderId)
+      ]);
+      
+      setOutputs(updatedOutputs);
+      setDefects(updatedDefects);
+      handleCloseEditModal();
+      
+      // Show success notification
+      alert('✅ Cập nhật báo cáo lỗi thành công!');
+    } catch (error) {
+      console.error('Error updating defect report:', error);
+      alert('❌ Cập nhật báo cáo lỗi thất bại. Vui lòng thử lại!');
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  const formatDateTime = (dateString?: string) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleString('vi-VN');
+  };
+
   return (
     <div className="panel mt-6">
-      <h3 className="text-lg font-semibold mb-4">Danh sách sản phẩm đã hoàn thành</h3>
-      <div className="table-responsive">
+      {/* Bảng sản phẩm đã hoàn thành */}
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">Danh sách sản phẩm đã hoàn thành</h3>
+        <button 
+          className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-300" 
+          onClick={handleOpenModal}
+          disabled={outputs.length === 0}
+          title={outputs.length === 0 ? "Không có sản phẩm nào để báo lỗi" : "Tạo báo cáo lỗi mới"}
+        >
+          🚨 Báo lỗi
+        </button>
+      </div>
+      <div className="table-responsive mb-8">
         <table className="table-striped">
           <thead>
             <tr>
@@ -63,18 +211,16 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
               <th>Số lượng</th>
               <th>Số lượng đã hoàn thành</th>
               <th>Số lượng hỏng</th>
-              <th>Lí do hỏng</th>
-              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="text-center py-4">Đang tải dữ liệu...</td>
+                <td colSpan={5} className="text-center py-4">Đang tải dữ liệu...</td>
               </tr>
             ) : outputs.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-4">Không có sản phẩm nào</td>
+                <td colSpan={5} className="text-center py-4">Không có sản phẩm nào</td>
               </tr>
             ) : (
               outputs.map((item, idx) => (
@@ -84,10 +230,57 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
                   <td>{item.amount ?? 0}</td>
                   <td>{item.done ?? 0}</td>
                   <td>{item.broken ?? 0}</td>
-                  <td>{item.reasonBroken ?? ''}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Bảng báo cáo lỗi */}
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold mb-4">Danh sách báo cáo lỗi</h3>
+      </div>
+      <div className="table-responsive">
+        <table className="table-striped">
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Tên sản phẩm</th>
+              <th>Số lượng lỗi</th>
+              <th>Loại lỗi</th>
+              <th>Giai đoạn lỗi</th>
+              <th>Ghi chú</th>
+              <th>Thời gian báo cáo</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {defectsLoading ? (
+              <tr>
+                <td colSpan={8} className="text-center py-4">Đang tải dữ liệu...</td>
+              </tr>
+            ) : defects.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="text-center py-4">Chưa có báo cáo lỗi nào</td>
+              </tr>
+            ) : (
+              defects.map((defect, idx) => (
+                <tr key={defect.id}>
+                  <td>{idx + 1}</td>
+                  <td>{defect.productName}</td>
+                  <td>{defect.quantity ?? 0}</td>
+                  <td>{defect.defectType}</td>
+                  <td>{defect.defectStage}</td>
+                  <td>{defect.note || '-'}</td>
+                  <td>{formatDateTime(defect.reportedAt)}</td>
                   <td>
-                    <button className="btn btn-sm btn-primary" onClick={() => handleOpenModal(item)}>
-                      Báo hỏng
+                    <button 
+                      className="px-3 py-1 text-sm bg-amber-500 text-white rounded-md hover:bg-amber-600 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-300"
+                      onClick={() => handleOpenEditModal(defect)}
+                      title="Chỉnh sửa báo cáo lỗi"
+                    >
+                      ✏️ Sửa
                     </button>
                   </td>
                 </tr>
@@ -96,6 +289,8 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
           </tbody>
         </table>
       </div>
+
+      {/* Modal báo hỏng */}
       {showModal && (
         <Transition appear show={showModal} as={Fragment}>
           <Dialog as="div" open={showModal} onClose={handleCloseModal}>
@@ -121,30 +316,228 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
                   leaveFrom="opacity-100 scale-100"
                   leaveTo="opacity-0 scale-95"
                 >
-                  <DialogPanel as="div" className="panel my-8 w-full max-w-md overflow-hidden rounded-lg border-0 p-0 text-black dark:text-white-dark">
+                  <DialogPanel as="div" className="panel my-8 w-full max-w-lg overflow-hidden rounded-lg border-0 p-0 text-black dark:text-white-dark">
                     <div className="flex items-center justify-between bg-[#fbfbfb] px-5 py-3 dark:bg-[#121c2c]">
-                      <div className="text-lg font-bold">Báo hỏng sản phẩm</div>
+                      <div className="text-lg font-bold">Báo cáo lỗi sản phẩm</div>
                       <button type="button" className="text-white-dark hover:text-dark" onClick={handleCloseModal}>
                         &times;
                       </button>
                     </div>
                     <div className="p-5">
                       <div className="form-group">
-                        <label>Số lượng hỏng</label>
-                        <input type="number" className="form-control bg-white dark:bg-[#1a233a] border border-gray-300 dark:border-gray-600" min={1} value={brokenValue} onChange={e => setBrokenValue(Number(e.target.value))} />
+                        <label className="block text-sm font-medium mb-2">Chọn sản phẩm *</label>
+                        <select 
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-[#1a233a] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          value={selectedProductId || ''}
+                          onChange={e => setSelectedProductId(Number(e.target.value) || null)}
+                        >
+                          <option value="">-- Chọn sản phẩm --</option>
+                          {outputs.map(output => (
+                            <option key={output.id} value={output.productId}>
+                              {output.productName} (Hoàn thành: {output.done ?? 0})
+                            </option>
+                          ))}
+                        </select>
                       </div>
+
                       <div className="form-group mt-4">
-                        <label>Lí do hỏng</label>
-                        <input type="text" className="form-control bg-white dark:bg-[#1a233a] border border-gray-300 dark:border-gray-600" value={reasonValue} onChange={e => setReasonValue(e.target.value)} />
+                        <label className="block text-sm font-medium mb-2">Số lượng lỗi *</label>
+                        <input 
+                          type="number" 
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-[#1a233a] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                          min={1} 
+                          value={defectQuantity} 
+                          onChange={e => setDefectQuantity(Number(e.target.value))} 
+                          placeholder="Nhập số lượng sản phẩm lỗi"
+                        />
                       </div>
-                      <div className="mt-8 flex items-center justify-end">
-                        <button type="button" className="btn btn-outline-danger" onClick={handleCloseModal} disabled={submitting}>
-                          Huỷ
+
+                      <div className="form-group mt-4">
+                        <label className="block text-sm font-medium mb-2">Loại lỗi *</label>
+                        <select 
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-[#1a233a] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          value={defectType}
+                          onChange={e => setDefectType(e.target.value)}
+                        >
+                          <option value="">-- Chọn loại lỗi --</option>
+                          {defectTypes.map(type => (
+                            <option key={type} value={type}>{type}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="form-group mt-4">
+                        <label className="block text-sm font-medium mb-2">Giai đoạn lỗi *</label>
+                        <select 
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-[#1a233a] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          value={defectStage}
+                          onChange={e => setDefectStage(e.target.value)}
+                        >
+                          <option value="">-- Chọn giai đoạn --</option>
+                          {defectStages.map(stage => (
+                            <option key={stage} value={stage}>{stage}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="form-group mt-4">
+                        <label className="block text-sm font-medium mb-2">Ghi chú</label>
+                        <textarea 
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-[#1a233a] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" 
+                          rows={5}
+                          value={note} 
+                          onChange={e => setNote(e.target.value)} 
+                          placeholder="Mô tả chi tiết về lỗi, nguyên nhân, hướng khắc phục..."
+                        />
+                      </div>
+
+                      <div className="mt-8 flex items-center justify-end gap-3">
+                        <button 
+                          type="button" 
+                          className="px-4 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+                          onClick={handleCloseModal} 
+                          disabled={submitting}
+                        >
+                          Hủy
                         </button>
-                        <button type="button" className="btn btn-primary ltr:ml-4 rtl:mr-4" onClick={handleSubmitBroken} disabled={submitting || brokenValue <= 0}>
-                          {submitting ? 'Đang gửi...' : 'Xác nhận'}
+                        <button 
+                          type="button" 
+                          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+                          onClick={handleSubmitDefect} 
+                          disabled={submitting || defectQuantity <= 0 || !selectedProductId || !defectType || !defectStage}
+                        >
+                          {submitting ? 'Đang gửi...' : 'Tạo báo cáo'}
                         </button>
                       </div>
+                    </div>
+                  </DialogPanel>
+                </TransitionChild>
+              </div>
+            </div>
+          </Dialog>
+        </Transition>
+      )}
+
+      {/* Modal sửa báo cáo lỗi */}
+      {showEditModal && (
+        <Transition appear show={showEditModal} as={Fragment}>
+          <Dialog as="div" open={showEditModal} onClose={handleCloseEditModal}>
+            <TransitionChild
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <div className="fixed inset-0" />
+            </TransitionChild>
+            <div className="fixed inset-0 z-[999] overflow-y-auto bg-[black]/60">
+              <div className="flex min-h-screen items-start justify-center px-4">
+                <TransitionChild
+                  as={Fragment}
+                  enter="ease-out duration-300"
+                  enterFrom="opacity-0 scale-95"
+                  enterTo="opacity-100 scale-100"
+                  leave="ease-in duration-200"
+                  leaveFrom="opacity-100 scale-100"
+                  leaveTo="opacity-0 scale-95"
+                >
+                  <DialogPanel as="div" className="panel my-8 w-full max-w-lg overflow-hidden rounded-lg border-0 p-0 text-black dark:text-white-dark">
+                    <div className="flex items-center justify-between bg-[#fbfbfb] px-5 py-3 dark:bg-[#121c2c]">
+                      <div className="text-lg font-bold">Chỉnh sửa báo cáo lỗi</div>
+                      <button type="button" className="text-white-dark hover:text-dark" onClick={handleCloseEditModal}>
+                        &times;
+                      </button>
+                    </div>
+                                         <div className="p-5">
+                       <div className="form-group">
+                         <label className="block text-sm font-medium mb-2">Sản phẩm</label>
+                         <input 
+                           type="text" 
+                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-[#1a233a] cursor-not-allowed" 
+                           value={editingDefect?.productName || ''}
+                           readOnly
+                         />
+                         <div className="text-xs text-gray-500 mt-1">Không thể thay đổi sản phẩm</div>
+                       </div>
+
+                       <div className="form-group mt-4">
+                         <label className="block text-sm font-medium mb-2">Số lượng lỗi *</label>
+                         <input 
+                           type="number" 
+                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-[#1a233a] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                           min={1} 
+                           value={editDefectQuantity} 
+                           onChange={e => setEditDefectQuantity(Number(e.target.value))} 
+                           placeholder="Nhập số lượng sản phẩm lỗi"
+                         />
+                       </div>
+
+                       <div className="form-group mt-4">
+                         <label className="block text-sm font-medium mb-2">Loại lỗi *</label>
+                         <select 
+                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-[#1a233a] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           value={editDefectType}
+                           onChange={e => setEditDefectType(e.target.value)}
+                         >
+                           <option value="">-- Chọn loại lỗi --</option>
+                           {defectTypes.map(type => (
+                             <option key={type} value={type}>{type}</option>
+                           ))}
+                         </select>
+                       </div>
+
+                       <div className="form-group mt-4">
+                         <label className="block text-sm font-medium mb-2">Giai đoạn lỗi *</label>
+                         <select 
+                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-[#1a233a] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           value={editDefectStage}
+                           onChange={e => setEditDefectStage(e.target.value)}
+                         >
+                           <option value="">-- Chọn giai đoạn --</option>
+                           {defectStages.map(stage => (
+                             <option key={stage} value={stage}>{stage}</option>
+                           ))}
+                         </select>
+                       </div>
+
+                       <div className="form-group mt-4">
+                         <label className="block text-sm font-medium mb-2">Ghi chú</label>
+                         <textarea 
+                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-[#1a233a] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" 
+                           rows={5}
+                           value={editNote} 
+                           onChange={e => setEditNote(e.target.value)} 
+                           placeholder="Mô tả chi tiết về lỗi, nguyên nhân, hướng khắc phục..."
+                         />
+                       </div>
+
+                      <div className="form-group mt-4">
+                        <div className="text-xs text-blue-600">
+                          <strong>Lưu ý:</strong> Thời gian báo cáo sẽ được cập nhật thành thời điểm hiện tại khi lưu thay đổi.
+                        </div>
+                      </div>
+
+                                             <div className="mt-8 flex items-center justify-end gap-3">
+                         <button 
+                           type="button" 
+                           className="px-4 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+                           onClick={handleCloseEditModal} 
+                           disabled={editSubmitting}
+                         >
+                           Hủy
+                         </button>
+                         <button 
+                           type="button" 
+                           className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+                           onClick={handleSubmitEditDefect} 
+                           disabled={editSubmitting || editDefectQuantity <= 0 || !editDefectType || !editDefectStage}
+                         >
+                           {editSubmitting ? 'Đang cập nhật...' : 'Lưu thay đổi'}
+                         </button>
+                       </div>
                     </div>
                   </DialogPanel>
                 </TransitionChild>
