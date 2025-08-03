@@ -3,6 +3,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { DataTable } from 'mantine-datatable';
 import { getOrderDetailById, OrderDetailDto, ProductInOrderDto } from '@/app/(defaults)/sales-order/[id]/service';
 import { createProductionPlanFromSaleOrder, ProductionPlanProductInput, getGlassStructureByProductId } from '@/app/(defaults)/production-plans/create/service';
+import { OrderDto } from '@/app/(defaults)/sales-order/service';
 
 const PAGE_SIZES = [10, 20, 30, 50, 100];
 
@@ -19,7 +20,9 @@ const CreateProductionPlanManager = () => {
     const searchParams = useSearchParams();
     const router = useRouter();
     const orderId = searchParams.get('orderId');
+    const orderParam = searchParams.get('order');
     const [order, setOrder] = useState<OrderDetailDto | null>(null);
+    const [selectedOrder, setSelectedOrder] = useState<OrderDto | null>(null);
     const [products, setProducts] = useState<ProductionPlanProductInput[]>([]);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState<string | null>(null);
@@ -28,9 +31,24 @@ const CreateProductionPlanManager = () => {
     const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
 
     useEffect(() => {
-        if (!orderId) return;
+        // Parse order data from URL parameter if available
+        if (orderParam) {
+            try {
+                const decodedOrder = JSON.parse(decodeURIComponent(orderParam)) as OrderDto;
+                setSelectedOrder(decodedOrder);
+            } catch (error) {
+                console.error('Error parsing order data:', error);
+                setError('Dữ liệu đơn hàng không hợp lệ!');
+                return;
+            }
+        }
+
+        // Use orderId if available, otherwise use selectedOrder.id
+        const currentOrderId = orderId || selectedOrder?.id;
+        if (!currentOrderId) return;
+
         setLoading(true);
-        getOrderDetailById(Number(orderId))
+        getOrderDetailById(Number(currentOrderId))
             .then(async (data) => {
                 setOrder(data);
                 // Lấy glass structure cho từng sản phẩm
@@ -69,7 +87,7 @@ const CreateProductionPlanManager = () => {
             })
             .catch(() => setError('Không lấy được thông tin đơn hàng!'))
             .finally(() => setLoading(false));
-    }, [orderId]);
+    }, [orderId, orderParam, selectedOrder?.id]);
 
     // Tính tổng keo nano/mềm dựa vào adhesiveType
     const totalKeoNano = products.filter(p => p.adhesiveType?.toLowerCase() === 'nano').reduce((sum, p) => sum + calculateTotalGlue(p.width, p.height, p.thickness, p.glass4mm, p.glass5mm, p.quantity), 0);
@@ -80,13 +98,14 @@ const CreateProductionPlanManager = () => {
     };
 
     const handleCreate = async () => {
-        if (!orderId) return;
+        const currentOrderId = orderId || selectedOrder?.id;
+        if (!currentOrderId) return;
         setLoading(true);
         setError(null);
         setSuccess(null);
         try {
             await createProductionPlanFromSaleOrder({
-                saleOrderId: Number(orderId),
+                saleOrderId: Number(currentOrderId),
                 products,
             });
             setSuccess('Tạo kế hoạch sản xuất thành công!');

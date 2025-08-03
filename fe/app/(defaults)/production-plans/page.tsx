@@ -9,6 +9,7 @@ import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { fetchProductionPlanList, ProductionPlan, deleteProductionPlan } from './service';
 import { FiSearch } from 'react-icons/fi';
+import OrderSelectionModal from '@/components/production-plans/OrderSelectionModal';
 
 const statusMap: Record<string, { tooltip: string; color: string }> = {
     'Đang sản xuất': { tooltip: 'Đang sản xuất', color: 'warning' },
@@ -30,6 +31,9 @@ const ProductionPlansPage = () => {
         columnAccessor: 'orderCode',
         direction: 'asc',
     });
+
+    // Modal state
+    const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
     useEffect(() => {
         async function loadData() {
@@ -102,135 +106,145 @@ const ProductionPlansPage = () => {
     };
 
     return (
-        <div>
-            <div className="mb-5">
-                <h1 className="text-2xl font-bold">Danh sách kế hoạch sản xuất</h1>
-            </div>
-            <div className="panel mt-6">
+        <>
+            <div>
+                <div className="mb-5">
+                    <h1 className="text-2xl font-bold">Danh sách kế hoạch sản xuất</h1>
+                </div>
+                <div className="panel mt-6">
 
-                <div className="production-plans-table">
-                    <div className="mb-4.5 flex flex-col gap-5 px-5 md:flex-row md:items-center">
-                        <div className="flex items-center gap-2">
-                            <Link href="/production-plans/create" className="btn btn-primary gap-2">
-                                <IconPlus />
-                                Thêm mới
-                            </Link>
-                        </div>
-                        <div className="ltr:ml-auto rtl:mr-auto">
-                             <div className="relative w-fit">
-                                <input
-                                    type="text"
-                                    className="form-input w-auto"
-                                    placeholder="Tìm kiếm..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                />
-                                <button
-                                    type="button"
-                                    className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow z-10"
+                    <div className="production-plans-table">
+                        <div className="mb-4.5 flex flex-col gap-5 px-5 md:flex-row md:items-center">
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => setIsOrderModalOpen(true)}
+                                    className="btn btn-primary gap-2"
                                 >
-                                    <FiSearch className="text-white w-4 h-4" />
+                                    <IconPlus />
+                                    Thêm mới
                                 </button>
-                                </div>
+                            </div>
+                            <div className="ltr:ml-auto rtl:mr-auto">
+                                 <div className="relative w-fit">
+                                    <input
+                                        type="text"
+                                        className="form-input w-auto"
+                                        placeholder="Tìm kiếm..."
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow z-10"
+                                    >
+                                        <FiSearch className="text-white w-4 h-4" />
+                                    </button>
+                                    </div>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="datatables pagination-padding">
-                        <DataTable
-                            className="table-hover whitespace-nowrap"
-                            records={records}
-                            columns={[
-                                {
-                                    accessor: 'index',
-                                    title: '#',
-                                    sortable: false,
-                                    width: 70,
-                                    render: (_, index) => <span>{index + 1}</span>,
-                                },
-                                {
-                                    accessor: 'orderCode',
-                                    title: 'Mã đơn hàng',
-                                    sortable: true,
-                                    render: ({ orderCode }) => {
-                                        const orderId = orderCode.replace(/^DH/, '');
-                                        return (
-                                            <Link href={`/sales-order/${orderId}`}>
-                                                <div className="font-semibold text-primary underline hover:no-underline">{orderCode}</div>
-                                            </Link>
-                                        );
+                        <div className="datatables pagination-padding">
+                            <DataTable
+                                className="table-hover whitespace-nowrap"
+                                records={records}
+                                columns={[
+                                    {
+                                        accessor: 'index',
+                                        title: '#',
+                                        sortable: false,
+                                        width: 70,
+                                        render: (_, index) => <span>{index + 1}</span>,
                                     },
-                                },
-                                {
-                                    accessor: 'customerName',
-                                    title: 'Tên khách hàng',
-                                    sortable: true,
-                                    textAlignment: 'center',
-                                    render: ({ customerName }) => (
-                                        <div className="text-center font-semibold">{customerName}</div>
-                                    ),
-                                },
-                                {
-                                    accessor: 'totalProducts',
-                                    title: 'Tổng số SP',
-                                    sortable: true,
-                                    textAlignment: 'center',
-                                    render: ({ totalProducts }) => (
-                                        <div className="text-center font-semibold">{totalProducts}</div>
-                                    ),
-                                },
-                                {
-                                    accessor: 'status',
-                                    title: 'Trạng thái',
-                                    sortable: true,
-                                    render: ({ status }) => (
-                                        <span className={`badge badge-outline-${status.color}`}>
-                                            {status.tooltip}
-                                        </span>
-                                    ),
-                                },
-                                {
-                                    accessor: 'action',
-                                    title: 'Thao tác',
-                                    sortable: false,
-                                    textAlignment: 'center',
-                                    width: 150,
-                                    render: ({ id }) => (
-                                        <div className="mx-auto flex w-max items-center gap-4">
-                                            <Link href="/production-plans/edit" className="flex hover:text-info">
-                                                <IconEdit className="h-4.5 w-4.5" />
-                                            </Link>
-                                            <Link href={`/production-plans/${id}`} className="flex hover:text-primary">
-                                                <IconEye />
-                                            </Link>
-                                            <button
-                                                type="button"
-                                                className="flex hover:text-danger"
-                                                onClick={() => deleteRow(id)}
-                                            >
-                                                <IconTrashLines />
-                                            </button>
-                                        </div>
-                                    ),
-                                },
-                            ]}
-                            highlightOnHover
-                            totalRecords={initialRecords.length}
-                            recordsPerPage={pageSize}
-                            page={page}
-                            onPageChange={(p) => setPage(p)}
-                            recordsPerPageOptions={PAGE_SIZES}
-                            onRecordsPerPageChange={setPageSize}
-                            sortStatus={sortStatus}
-                            onSortStatusChange={setSortStatus}
-                            paginationText={({ from, to, totalRecords }) =>
-                                `Hiển thị ${from} đến ${to} trong tổng số ${totalRecords} bản ghi`
-                            }
-                        />
+                                    {
+                                        accessor: 'orderCode',
+                                        title: 'Mã đơn hàng',
+                                        sortable: true,
+                                        render: ({ orderCode }) => {
+                                            const orderId = orderCode.replace(/^DH/, '');
+                                            return (
+                                                <Link href={`/sales-order/${orderId}`}>
+                                                    <div className="font-semibold text-primary underline hover:no-underline">{orderCode}</div>
+                                                </Link>
+                                            );
+                                        },
+                                    },
+                                    {
+                                        accessor: 'customerName',
+                                        title: 'Tên khách hàng',
+                                        sortable: true,
+                                        textAlignment: 'center',
+                                        render: ({ customerName }) => (
+                                            <div className="text-center font-semibold">{customerName}</div>
+                                        ),
+                                    },
+                                    {
+                                        accessor: 'totalProducts',
+                                        title: 'Tổng số SP',
+                                        sortable: true,
+                                        textAlignment: 'center',
+                                        render: ({ totalProducts }) => (
+                                            <div className="text-center font-semibold">{totalProducts}</div>
+                                        ),
+                                    },
+                                    {
+                                        accessor: 'status',
+                                        title: 'Trạng thái',
+                                        sortable: true,
+                                        render: ({ status }) => (
+                                            <span className={`badge badge-outline-${status.color}`}>
+                                                {status.tooltip}
+                                            </span>
+                                        ),
+                                    },
+                                    {
+                                        accessor: 'action',
+                                        title: 'Thao tác',
+                                        sortable: false,
+                                        textAlignment: 'center',
+                                        width: 150,
+                                        render: ({ id }) => (
+                                            <div className="mx-auto flex w-max items-center gap-4">
+                                                <Link href="/production-plans/edit" className="flex hover:text-info">
+                                                    <IconEdit className="h-4.5 w-4.5" />
+                                                </Link>
+                                                <Link href={`/production-plans/${id}`} className="flex hover:text-primary">
+                                                    <IconEye />
+                                                </Link>
+                                                <button
+                                                    type="button"
+                                                    className="flex hover:text-danger"
+                                                    onClick={() => deleteRow(id)}
+                                                >
+                                                    <IconTrashLines />
+                                                </button>
+                                            </div>
+                                        ),
+                                    },
+                                ]}
+                                highlightOnHover
+                                totalRecords={initialRecords.length}
+                                recordsPerPage={pageSize}
+                                page={page}
+                                onPageChange={(p) => setPage(p)}
+                                recordsPerPageOptions={PAGE_SIZES}
+                                onRecordsPerPageChange={setPageSize}
+                                sortStatus={sortStatus}
+                                onSortStatusChange={setSortStatus}
+                                paginationText={({ from, to, totalRecords }) =>
+                                    `Hiển thị ${from} đến ${to} trong tổng số ${totalRecords} bản ghi`
+                                }
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
+            {/* Order Selection Modal */}
+            <OrderSelectionModal 
+                isOpen={isOrderModalOpen}
+                onClose={() => setIsOrderModalOpen(false)}
+            />
+        </>
     );
 };
 
