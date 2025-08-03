@@ -7,6 +7,7 @@ import ListOutputsPO from "@/components/VNG/manager/production-orders/list-outpu
 import CuttingGlassPage from "@/app/(defaults)/cutting-glass/CuttingGlassPage"
 import GlueButylExportModalComponent from "@/components/VNG/manager/glue-butyl-export-modal-component"
 import ChemicalExportModalComponent from "@/components/VNG/manager/chemical-export-modal-component"
+import ListChemicalExport from "@/components/VNG/manager/chemical-export/list-chemical-export"
 import type { Chemical, Product } from "@/app/(defaults)/production-plans/service"
 import ListExportsPO from "@/components/VNG/manager/production-plans/list-export-glue-components"
 
@@ -886,10 +887,28 @@ export default function ProductionOrderView({ params }: { params: { id: string }
           <li className="mr-2">
             <button
               type="button"
+              className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === "cut-glass" ? "text-primary border-primary" : "text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"}`}
+              onClick={() => toggleTabs("cut-glass")}
+            >
+              Cắt kính
+            </button>
+          </li>
+          <li className="mr-2">
+            <button
+              type="button"
               className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === "chemical" ? "text-primary border-primary" : "text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"}`}
               onClick={() => toggleTabs("chemical")}
             >
               Xuất hoá chất
+            </button>
+          </li>
+          <li className="mr-2">
+            <button
+              type="button"
+              className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === "glue-butyl" ? "text-primary border-primary" : "text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"}`}
+              onClick={() => toggleTabs("glue-butyl")}
+            >
+              Xuất keo butyl
             </button>
           </li>
         </ul>
@@ -1138,6 +1157,14 @@ export default function ProductionOrderView({ params }: { params: { id: string }
       )}
 
       {tabs === "chemical" && (
+        <div>
+          <div>
+            <ListChemicalExport productionOrderId={Number(params.id)} />
+          </div>
+        </div>
+      )}
+
+      {tabs === "glue-butyl" && (
         <div>
           <div>
             <ListExportsPO productionOrderId={Number(params.id)} />
