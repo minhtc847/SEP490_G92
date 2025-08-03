@@ -178,9 +178,7 @@ const InvoiceSummary = () => {
                         >
                             + Tạo từ đơn giao hàng
                         </button>
-                        <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800" onClick={() => router.push('/invoices/create')}>
-                            + Thêm hóa đơn
-                        </button>
+                        
                     </div>
                 </div>
 
@@ -342,7 +340,7 @@ const InvoiceSummary = () => {
                                     >
                                         Chi tiết
                                     </button>
-                                    <button 
+                                    {/* <button 
                                         className="px-2 py-1 text-sm text-white bg-green-600 rounded hover:bg-green-800" 
                                         onClick={handleExportInvoice}
                                     >
@@ -353,7 +351,7 @@ const InvoiceSummary = () => {
                                         onClick={handleSendInvoice}
                                     >
                                         Gửi
-                                    </button>
+                                    </button> */}
                                 </td>
                             </tr>
                         ))}

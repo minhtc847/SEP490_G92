@@ -85,13 +85,6 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                 setCustomerId(orderData.id || 0);
                 setInvoiceType(1); // Purchase invoice
                 
-                // Generate invoice code
-                const today = new Date();
-                const year = today.getFullYear();
-                const month = String(today.getMonth() + 1).padStart(2, '0');
-                const day = String(today.getDate()).padStart(2, '0');
-                setInvoiceCode(`HD${year}${month}${day}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`);
-                
                 // Load purchase order details
                 loadPurchaseOrderDetails(orderData.id);
             } catch (error) {
@@ -104,26 +97,12 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                 setCustomerId(deliveryData.salesOrderId || 0);
                 setInvoiceType(0); // Sales invoice
                 
-                // Generate invoice code
-                const today = new Date();
-                const year = today.getFullYear();
-                const month = String(today.getMonth() + 1).padStart(2, '0');
-                const day = String(today.getDate()).padStart(2, '0');
-                setInvoiceCode(`HD${year}${month}${day}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`);
-                
                 // Load delivery details
                 loadDeliveryDetails(deliveryData.id);
             } catch (error) {
                 console.error('Error parsing delivery data:', error);
             }
-        } else {
-            // Generate invoice code for manual creation
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            setInvoiceCode(`HD${year}${month}${day}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`);
-        }
+        } 
     }, [searchParams]);
 
     const loadPurchaseOrderDetails = async (orderId: number) => {
@@ -138,19 +117,13 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
             setSourceInfo({ type: 'purchase', data: orderData });
             setCustomerId(orderData.customerId); // Set customerId from purchase order
             
-            // Load products from purchase order (mock data for now)
-            // In real implementation, you would get this from the API
-            const mockProducts = [
-                { id: 1, name: 'Kính cường lực 8mm', quantity: 10, unitPrice: 0 },
-                { id: 2, name: 'Kính cường lực 10mm', quantity: 5, unitPrice: 0 }
-            ];
-            
-            setItems(mockProducts.map((product, index) => ({
+            // Load products from purchase order details
+            setItems(orderData.purchaseOrderDetails.map((detail: any, index: number) => ({
                 id: index + 1,
-                productId: product.id,
-                productName: product.name,
-                quantity: product.quantity,
-                unitPrice: product.unitPrice,
+                productId: detail.productId || 0,
+                productName: detail.productName || '',
+                quantity: detail.quantity || 0,
+                unitPrice: 0, // User will input price
                 amount: 0, // User will input price
                 description: ''
             })));
@@ -313,16 +286,6 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
         <div className="flex flex-col gap-2.5 xl:flex-row">
             <div className="panel flex-1 px-0 py-6 ltr:xl:mr-6 rtl:xl:ml-6">
                 <div className="flex flex-wrap justify-between px-4">
-                    {/* <div className="mb-6 w-full lg:w-1/2">
-                        <div className="flex shrink-0 items-center text-black dark:text-white">
-                            <img src="/assets/images/logo.svg" alt="img" className="w-14" />
-                        </div>
-                        <div className="mt-6 space-y-1 text-gray-500 dark:text-gray-400">
-                            <div>VNG Glass</div>
-                            <div>123 Đường ABC, Quận 1, TP.HCM</div>
-                            <div>Phone: (84) 123-456-789</div>
-                        </div>
-                    </div> */}
 
                     {/* Hóa đơn cho */}
                     {sourceInfo.type && (
