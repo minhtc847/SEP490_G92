@@ -290,6 +290,33 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
             return true;
         }
 
+        public async Task<bool> ImportPurchaseOrderAsync(int orderId)
+        {
+            var order = await _context.PurchaseOrders
+                .Include(po => po.PurchaseOrderDetails)
+                .ThenInclude(d => d.Product)
+                .FirstOrDefaultAsync(po => po.Id == orderId);
+
+            if (order == null || order.Status == PurchaseStatus.Imported)
+                return false;
+
+            foreach (var detail in order.PurchaseOrderDetails)
+            {
+                if (detail.ProductId.HasValue && detail.Quantity.HasValue)
+                {
+                    var product = await _context.Products.FindAsync(detail.ProductId.Value);
+                    if (product != null)
+                    {
+                        product.quantity += detail.Quantity.Value;
+                    }
+                }
+            }
+
+            order.Status = PurchaseStatus.Imported;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
 
     }
 }

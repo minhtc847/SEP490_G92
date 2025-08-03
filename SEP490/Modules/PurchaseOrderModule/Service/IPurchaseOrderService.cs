@@ -14,7 +14,7 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
         Task<bool> UpdatePurchaseOrderAsync(int id, UpdatePurchaseOrderDto dto);
         Task<bool> UpdatePurchaseOrderStatusAsync(int orderId, PurchaseStatus status);
         Task<bool> ChangeStatusToOrderedAsync(int orderId);
-
+        Task<bool> ImportPurchaseOrderAsync(int orderId);
 
     }
 }

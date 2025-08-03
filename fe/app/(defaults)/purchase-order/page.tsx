@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { deletePurchaseOrder, getPurchaseOrders, PurchaseOrderDto, updatePurchaseOrderStatus } from './service';
+import { importPurchaseOrder, deletePurchaseOrder, getPurchaseOrders, PurchaseOrderDto, updatePurchaseOrderStatus } from './service';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -293,6 +293,24 @@ const PurchaseOrderPage = () => {
                                                     Huỷ đơn
                                                 </button>
                                             </>
+                                        )}
+                                        {order.status !== 'Imported' && order.status !== 'Cancelled' && (
+                                            <button
+                                                onClick={async () => {
+                                                    if (confirm(`Bạn có chắc muốn kho cho đơn hàng "${order.description}" không?`)) {
+                                                        try {
+                                                            await importPurchaseOrder(order.id);
+                                                            setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: 'Imported' } : o)));
+                                                            alert('Đã nhập hàng thành công.');
+                                                        } catch {
+                                                            alert('Lỗi khi nhập hàng. Vui lòng thử lại.');
+                                                        }
+                                                    }
+                                                }}
+                                                className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                                            >
+                                                Nhập hàng
+                                            </button>
                                         )}
                                     </td>
                                 </td>

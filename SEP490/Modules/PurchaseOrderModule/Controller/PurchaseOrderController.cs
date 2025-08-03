@@ -101,5 +101,15 @@ namespace SEP490.Modules.PurchaseOrderModule.Controller
             return Ok(new { message = "Đã cập nhật trạng thái đơn hàng mua sang 'Ordered'" });
         }
 
+        [HttpPost("{id}/import")]
+        public async Task<IActionResult> ImportPurchaseOrder(int id)
+        {
+            var success = await _purchaseOrderService.ImportPurchaseOrderAsync(id);
+            if (!success)
+                return BadRequest("Invalid order or already imported.");
+
+            return Ok("Order imported successfully.");
+        }
+
     }
 }
