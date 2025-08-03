@@ -78,6 +78,7 @@ export const updateDeliveryStatus = async (id: number, status: number): Promise<
 export interface DeliveryDetailDto {
     id: number;
     salesOrderId: number;
+    customerId: number;
     orderCode: string;
     customerName: string;
     customerAddress: string;

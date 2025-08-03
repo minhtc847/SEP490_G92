@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getInvoices, InvoiceDto } from '@/app/(defaults)/invoices/service';
 import { FiSearch } from 'react-icons/fi';
 import OrderSelectionModal from '@/components/invoices/OrderSelectionModal';
+import DeliverySelectionModal from '@/components/invoices/DeliverySelectionModal';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -100,6 +101,7 @@ const InvoiceSummary = () => {
     const [selectedDate, setSelectedDate] = useState('');
     const [sortAmount, setSortAmount] = useState<'asc' | 'desc' | null>(null);
     const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+    const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
     const [statusFilter, setStatusFilter] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -169,6 +171,12 @@ const InvoiceSummary = () => {
                             onClick={() => setIsOrderModalOpen(true)}
                         >
                             + Tạo từ đơn mua hàng
+                        </button>
+                        <button 
+                            className="px-4 py-2 text-sm text-white bg-purple-600 rounded hover:bg-purple-800" 
+                            onClick={() => setIsDeliveryModalOpen(true)}
+                        >
+                            + Tạo từ đơn giao hàng
                         </button>
                         <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800" onClick={() => router.push('/invoices/create')}>
                             + Thêm hóa đơn
@@ -361,6 +369,12 @@ const InvoiceSummary = () => {
             <OrderSelectionModal 
                 isOpen={isOrderModalOpen}
                 onClose={() => setIsOrderModalOpen(false)}
+            />
+
+            {/* Delivery Selection Modal */}
+            <DeliverySelectionModal 
+                isOpen={isDeliveryModalOpen}
+                onClose={() => setIsDeliveryModalOpen(false)}
             />
         </>
     );

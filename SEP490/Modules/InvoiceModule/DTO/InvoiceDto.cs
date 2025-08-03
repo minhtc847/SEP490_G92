@@ -1,6 +1,6 @@
 using SEP490.DB.Models;
 
-namespace SEP490.Modules.Invoice.DTO
+namespace SEP490.Modules.InvoiceModule.DTO
 {
     public class InvoiceDto
     {

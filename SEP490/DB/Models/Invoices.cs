@@ -22,6 +22,7 @@ namespace SEP490.DB.Models
 
         public SaleOrder? SalesOrder { get; set; }
         public PurchaseOrder? PurchaseOrder { get; set; }
+        public ICollection<InvoiceDetails> InvoiceDetails { get; set; } = new List<InvoiceDetails>();
     }
 
     public enum InvoiceType

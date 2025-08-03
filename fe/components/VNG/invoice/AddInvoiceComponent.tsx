@@ -7,6 +7,8 @@ import IconEye from '@/components/icon/icon-eye';
 import IconSave from '@/components/icon/icon-save';
 import IconX from '@/components/icon/icon-x';
 import { PurchaseOrderDto } from '@/app/(defaults)/purchase-order/service';
+import { DeliveryDto, getDeliveryDetail, DeliveryDetailDto } from '@/app/(defaults)/delivery/service';
+import { createInvoice } from '@/app/(defaults)/invoices/service';
 import axios from '@/setup/axios';
 
 interface InvoiceItem {
@@ -30,14 +32,13 @@ interface CreateInvoiceDto {
     totalAmount: number;
     salesOrderId?: number;
     purchaseOrderId?: number;
-    customerName: string;
-    customerAddress?: string;
-    customerPhone?: string;
+    customerId: number;
     note?: string;
     invoiceDetails: {
         productId: number;
         quantity: number;
         unitPrice: number;
+        total: number;
         description?: string;
     }[];
 }
@@ -57,25 +58,31 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
     const [dueDate, setDueDate] = useState('');
     const [invoiceType, setInvoiceType] = useState(1); // Default to Purchase
     const [status, setStatus] = useState(0); // Default to Unpaid
-    const [customerName, setCustomerName] = useState('');
-    const [customerAddress, setCustomerAddress] = useState('');
-    const [customerPhone, setCustomerPhone] = useState('');
+    // Customer info is now loaded from source (delivery or purchase order)
     const [note, setNote] = useState('');
     const [tax, setTax] = useState(0);
     const [purchaseOrderId, setPurchaseOrderId] = useState<number | undefined>();
+    const [deliveryId, setDeliveryId] = useState<number | undefined>();
+    const [customerId, setCustomerId] = useState<number>(0);
+    const [sourceInfo, setSourceInfo] = useState<{
+        type: 'delivery' | 'purchase' | null;
+        data: any;
+    }>({ type: null, data: null });
 
     // State for invoice items
     const [items, setItems] = useState<InvoiceItem[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Load purchase order data if provided in URL
+    // Load purchase order or delivery data if provided in URL
     useEffect(() => {
         const orderParam = searchParams.get('order');
+        const deliveryParam = searchParams.get('delivery');
+        
         if (orderParam) {
             try {
                 const orderData: PurchaseOrderDto = JSON.parse(decodeURIComponent(orderParam));
                 setPurchaseOrderId(orderData.id);
-                setCustomerName(orderData.supplierName || '');
+                setCustomerId(orderData.id || 0);
                 setInvoiceType(1); // Purchase invoice
                 
                 // Generate invoice code
@@ -90,6 +97,25 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
             } catch (error) {
                 console.error('Error parsing order data:', error);
             }
+        } else if (deliveryParam) {
+            try {
+                const deliveryData: DeliveryDto = JSON.parse(decodeURIComponent(deliveryParam));
+                setDeliveryId(deliveryData.id);
+                setCustomerId(deliveryData.salesOrderId || 0);
+                setInvoiceType(0); // Sales invoice
+                
+                // Generate invoice code
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                setInvoiceCode(`HD${year}${month}${day}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`);
+                
+                // Load delivery details
+                loadDeliveryDetails(deliveryData.id);
+            } catch (error) {
+                console.error('Error parsing delivery data:', error);
+            }
         } else {
             // Generate invoice code for manual creation
             const today = new Date();
@@ -102,11 +128,60 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
 
     const loadPurchaseOrderDetails = async (orderId: number) => {
         try {
-            // This would need to be implemented in the backend
-            // For now, we'll create a mock structure
-            console.log('Loading purchase order details for ID:', orderId);
+            // Load purchase order details from API
+            const response = await axios.get(`/api/PurchaseOrder/${orderId}`);
+            const orderData = response.data;
+            
+            console.log('Purchase order data received:', orderData);
+            console.log('CustomerId from purchase order:', orderData.customerId);
+            
+            setSourceInfo({ type: 'purchase', data: orderData });
+            setCustomerId(orderData.customerId); // Set customerId from purchase order
+            
+            // Load products from purchase order (mock data for now)
+            // In real implementation, you would get this from the API
+            const mockProducts = [
+                { id: 1, name: 'Kính cường lực 8mm', quantity: 10, unitPrice: 0 },
+                { id: 2, name: 'Kính cường lực 10mm', quantity: 5, unitPrice: 0 }
+            ];
+            
+            setItems(mockProducts.map((product, index) => ({
+                id: index + 1,
+                productId: product.id,
+                productName: product.name,
+                quantity: product.quantity,
+                unitPrice: product.unitPrice,
+                amount: 0, // User will input price
+                description: ''
+            })));
         } catch (error) {
             console.error('Error loading purchase order details:', error);
+        }
+    };
+
+    const loadDeliveryDetails = async (deliveryId: number) => {
+        try {
+            // Load delivery details from API
+            const deliveryData = await getDeliveryDetail(deliveryId);
+            
+            console.log('Delivery data received:', deliveryData);
+            console.log('CustomerId from delivery:', deliveryData.customerId);
+            
+            setSourceInfo({ type: 'delivery', data: deliveryData });
+            setCustomerId(deliveryData.customerId); // Use actual customerId
+            
+            // Load products from delivery details
+            setItems(deliveryData.deliveryDetails.map((detail, index) => ({
+                id: index + 1,
+                productId: detail.productId,
+                productName: detail.productName,
+                quantity: detail.quantity,
+                unitPrice: detail.unitPrice,
+                amount: detail.amount,
+                description: detail.note || ''
+            })));
+        } catch (error) {
+            console.error('Error loading delivery details:', error);
         }
     };
 
@@ -149,25 +224,35 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
     const totalAmount = subtotal + taxAmount;
 
     const validateForm = (): boolean => {
-        if (!invoiceCode.trim()) {
-            alert('Vui lòng nhập mã hóa đơn!');
-            return false;
-        }
+        
         if (!invoiceDate) {
             alert('Vui lòng chọn ngày hóa đơn!');
             return false;
         }
-        if (!customerName.trim()) {
-            alert('Vui lòng nhập tên khách hàng/nhà cung cấp!');
+        if (customerId <= 0) {
+            alert('Vui lòng chọn khách hàng/nhà cung cấp!');
+            return false;
+        }
+        if (!sourceInfo.type) {
+            alert('Vui lòng chọn nguồn dữ liệu (phiếu giao hàng hoặc đơn mua hàng)!');
             return false;
         }
         if (items.length === 0) {
             alert('Vui lòng thêm ít nhất một sản phẩm!');
             return false;
         }
-        if (items.some(item => !item.productName.trim() || item.quantity <= 0 || item.unitPrice <= 0)) {
-            alert('Vui lòng điền đầy đủ thông tin sản phẩm!');
-            return false;
+        if (sourceInfo.type === 'delivery') {
+            // For delivery invoices, all data is pre-filled and read-only
+            if (items.some(item => item.quantity <= 0 || item.unitPrice <= 0)) {
+                alert('Dữ liệu sản phẩm không hợp lệ!');
+                return false;
+            }
+        } else {
+            // For purchase invoices, user needs to input prices
+            if (items.some(item => !item.productName.trim() || item.quantity <= 0 || item.unitPrice <= 0)) {
+                alert('Vui lòng điền đầy đủ thông tin sản phẩm và đơn giá!');
+                return false;
+            }
         }
         return true;
     };
@@ -187,21 +272,20 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                 tax,
                 totalAmount,
                 purchaseOrderId,
-                customerName,
-                customerAddress: customerAddress || undefined,
-                customerPhone: customerPhone || undefined,
+                salesOrderId: sourceInfo.type === 'delivery' ? sourceInfo.data.salesOrderId : undefined,
+                customerId,
                 note: note || undefined,
                 invoiceDetails: items.map(item => ({
                     productId: item.productId,
                     quantity: item.quantity,
                     unitPrice: item.unitPrice,
+                    total: item.amount,
                     description: item.description,
                 })),
             };
 
-            // This would need to be implemented in the backend
-            // await axios.post('/api/invoices', invoiceData);
-            console.log('Creating invoice:', invoiceData);
+            console.log('Creating invoice with data:', invoiceData);
+            const result = await createInvoice(invoiceData);
             
             alert('Tạo hóa đơn thành công!');
             if (onSuccess) {
@@ -229,7 +313,7 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
         <div className="flex flex-col gap-2.5 xl:flex-row">
             <div className="panel flex-1 px-0 py-6 ltr:xl:mr-6 rtl:xl:ml-6">
                 <div className="flex flex-wrap justify-between px-4">
-                    <div className="mb-6 w-full lg:w-1/2">
+                    {/* <div className="mb-6 w-full lg:w-1/2">
                         <div className="flex shrink-0 items-center text-black dark:text-white">
                             <img src="/assets/images/logo.svg" alt="img" className="w-14" />
                         </div>
@@ -238,21 +322,56 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                             <div>123 Đường ABC, Quận 1, TP.HCM</div>
                             <div>Phone: (84) 123-456-789</div>
                         </div>
-                    </div>
-                    <div className="w-full lg:w-1/2 lg:max-w-fit">
-                        <div className="mt-4 flex items-center">
-                            <label htmlFor="invoiceCode" className="mb-0 flex-1 ltr:mr-2 rtl:ml-2">
-                                Mã hóa đơn <span className="text-red-500">*</span>
-                            </label>
-                            <input 
-                                id="invoiceCode" 
-                                type="text" 
-                                value={invoiceCode}
-                                onChange={(e) => setInvoiceCode(e.target.value)}
-                                className="form-input w-2/3 lg:w-[250px]" 
-                                required
-                            />
+                    </div> */}
+
+                    {/* Hóa đơn cho */}
+                    {sourceInfo.type && (
+                        <div className="mb-6 w-full lg:w-1/2">
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                                    Hóa đơn cho
+                                </h3>
+                                {sourceInfo.type === 'delivery' && sourceInfo.data && (
+                                    <div className="space-y-2 text-sm">
+                                        <div>
+                                            <span className="font-medium">Phiếu giao hàng:</span>
+                                            <p className="text-blue-700">{sourceInfo.data.orderCode}</p>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium">Khách hàng:</span>
+                                            <p className="text-blue-700">{sourceInfo.data.customerName}</p>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium">Địa chỉ:</span>
+                                            <p className="text-blue-700">{sourceInfo.data.customerAddress}</p>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium">Số điện thoại:</span>
+                                            <p className="text-blue-700">{sourceInfo.data.customerPhone}</p>
+                                        </div>
+                                    </div>
+                                )}
+                                {sourceInfo.type === 'purchase' && sourceInfo.data && (
+                                    <div className="space-y-2 text-sm">
+                                        <div>
+                                            <span className="font-medium">Đơn mua hàng:</span>
+                                            <p className="text-blue-700">{sourceInfo.data.code}</p>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium">Nhà cung cấp:</span>
+                                            <p className="text-blue-700">{sourceInfo.data.customerName}</p>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium">Ngày đặt hàng:</span>
+                                            <p className="text-blue-700">{sourceInfo.data.date ? new Date(sourceInfo.data.date).toLocaleDateString('vi-VN') : 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
+                    )}
+                    <div className="w-full lg:w-1/2 lg:max-w-fit">
+                        
                         <div className="mt-4 flex items-center">
                             <label htmlFor="invoiceDate" className="mb-0 flex-1 ltr:mr-2 rtl:ml-2">
                                 Ngày hóa đơn <span className="text-red-500">*</span>
@@ -266,18 +385,7 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                                 required
                             />
                         </div>
-                        <div className="mt-4 flex items-center">
-                            <label htmlFor="dueDate" className="mb-0 flex-1 ltr:mr-2 rtl:ml-2">
-                                Ngày đến hạn
-                            </label>
-                            <input 
-                                id="dueDate" 
-                                type="date" 
-                                value={dueDate}
-                                onChange={(e) => setDueDate(e.target.value)}
-                                className="form-input w-2/3 lg:w-[250px]" 
-                            />
-                        </div>
+                        
                         <div className="mt-4 flex items-center">
                             <label htmlFor="invoiceType" className="mb-0 flex-1 ltr:mr-2 rtl:ml-2">
                                 Loại hóa đơn
@@ -312,47 +420,7 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
 
                 <hr className="my-6 border-white-light dark:border-[#1b2e4b]" />
 
-                <div className="px-4">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                        <div>
-                            <label htmlFor="customerName" className="mb-2 block">
-                                {invoiceType === 0 ? 'Tên khách hàng' : 'Tên nhà cung cấp'} <span className="text-red-500">*</span>
-                            </label>
-                            <input 
-                                id="customerName" 
-                                type="text" 
-                                value={customerName}
-                                onChange={(e) => setCustomerName(e.target.value)}
-                                className="form-input" 
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="customerAddress" className="mb-2 block">
-                                Địa chỉ
-                            </label>
-                            <input 
-                                id="customerAddress" 
-                                type="text" 
-                                value={customerAddress}
-                                onChange={(e) => setCustomerAddress(e.target.value)}
-                                className="form-input" 
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="customerPhone" className="mb-2 block">
-                                Số điện thoại
-                            </label>
-                            <input 
-                                id="customerPhone" 
-                                type="text" 
-                                value={customerPhone}
-                                onChange={(e) => setCustomerPhone(e.target.value)}
-                                className="form-input" 
-                            />
-                        </div>
-                    </div>
-                </div>
+                
 
                 <div className="mt-8">
                     <div className="table-responsive">
@@ -363,7 +431,7 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                                     <th className="w-1">Số lượng</th>
                                     <th className="w-1">Đơn giá</th>
                                     <th className="w-1">Thành tiền</th>
-                                    <th className="w-1">Mô tả</th>
+                                   
                                     <th className="w-1"></th>
                                 </tr>
                             </thead>
@@ -378,48 +446,58 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                                 {items.map((item) => (
                                     <tr className="align-top" key={item.id}>
                                         <td>
-                                            <input
-                                                type="text"
-                                                value={item.productName}
-                                                onChange={(e) => handleItemChange(item.id, 'productName', e.target.value)}
-                                                className="form-input min-w-[200px]"
-                                                placeholder="Tên sản phẩm"
-                                            />
+                                            {sourceInfo.type === 'delivery' ? (
+                                                <div className="form-input min-w-[200px] bg-gray-100">
+                                                    {item.productName}
+                                                </div>
+                                            ) : (
+                                                <input
+                                                    type="text"
+                                                    value={item.productName}
+                                                    onChange={(e) => handleItemChange(item.id, 'productName', e.target.value)}
+                                                    className="form-input min-w-[200px]"
+                                                    placeholder="Tên sản phẩm"
+                                                />
+                                            )}
                                         </td>
                                         <td>
-                                            <input
-                                                type="number"
-                                                className="form-input w-32"
-                                                placeholder="Số lượng"
-                                                value={item.quantity}
-                                                min={1}
-                                                onChange={(e) => handleItemChange(item.id, 'quantity', parseInt(e.target.value) || 0)}
-                                            />
+                                            {sourceInfo.type === 'delivery' ? (
+                                                <div className="form-input w-32 bg-gray-100">
+                                                    {item.quantity}
+                                                </div>
+                                            ) : (
+                                                <input
+                                                    type="number"
+                                                    className="form-input w-32"
+                                                    placeholder="Số lượng"
+                                                    value={item.quantity}
+                                                    min={1}
+                                                    onChange={(e) => handleItemChange(item.id, 'quantity', parseInt(e.target.value) || 0)}
+                                                />
+                                            )}
                                         </td>
                                         <td>
-                                            <input
-                                                type="number"
-                                                className="form-input w-32"
-                                                placeholder="Đơn giá"
-                                                value={item.unitPrice}
-                                                min={0}
-                                                onChange={(e) => handleItemChange(item.id, 'unitPrice', parseInt(e.target.value) || 0)}
-                                            />
+                                            {sourceInfo.type === 'delivery' ? (
+                                                <div className="form-input w-32 bg-gray-100">
+                                                    {item.unitPrice.toLocaleString()}₫
+                                                </div>
+                                            ) : (
+                                                <input
+                                                    type="number"
+                                                    className="form-input w-32"
+                                                    placeholder="Đơn giá"
+                                                    value={item.unitPrice}
+                                                    min={0}
+                                                    onChange={(e) => handleItemChange(item.id, 'unitPrice', parseInt(e.target.value) || 0)}
+                                                />
+                                            )}
                                         </td>
                                         <td>
                                             <div className="form-input w-32 bg-gray-100">
                                                 {item.amount.toLocaleString()}₫
                                             </div>
                                         </td>
-                                        <td>
-                                            <input
-                                                type="text"
-                                                value={item.description || ''}
-                                                onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
-                                                className="form-input min-w-[150px]"
-                                                placeholder="Mô tả"
-                                            />
-                                        </td>
+                                       
                                         <td>
                                             <button type="button" onClick={() => removeItem(item.id)}>
                                                 <IconX className="h-5 w-5" />
@@ -458,16 +536,7 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                         </div>
                     </div>
                 </div>
-                <div className="mt-8 px-4">
-                    <label htmlFor="notes">Ghi chú</label>
-                    <textarea 
-                        id="notes" 
-                        value={note}
-                        onChange={(e) => setNote(e.target.value)}
-                        className="form-textarea min-h-[130px]" 
-                        placeholder="Ghi chú...."
-                    ></textarea>
-                </div>
+               
             </div>
             <div className="mt-6 w-full xl:mt-0 xl:w-96">
                 <div className="panel">

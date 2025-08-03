@@ -12,5 +12,6 @@ namespace SEP490.DB.Models
         public decimal UnitPrice { get; set; }
         public decimal Total { get; set; } // Computed as Quantity * UnitPrice
         public Invoice Invoice { get; set; }
+        public Product Product { get; set; } 
     }
 }

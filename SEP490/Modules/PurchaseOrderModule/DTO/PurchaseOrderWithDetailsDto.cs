@@ -11,6 +11,7 @@
 
         public string? SupplierName { get; set; }
         public string? CustomerName { get; set; }
+        public int CustomerId { get; set; }
         public string? EmployeeName { get; set; }
 
         public List<PurchaseOrderDetailDto> PurchaseOrderDetails { get; set; } = new();

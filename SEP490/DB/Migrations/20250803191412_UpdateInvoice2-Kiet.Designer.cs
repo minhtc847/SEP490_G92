@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SEP490.DB;
 
@@ -10,9 +11,10 @@ using SEP490.DB;
 namespace SEP490.DB.Migrations
 {
     [DbContext(typeof(SEP490DbContext))]
-    partial class SEP490DbContextModelSnapshot : ModelSnapshot
+    [Migration("20250803191412_UpdateInvoice2-Kiet")]
+    partial class UpdateInvoice2Kiet
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1676,7 +1678,7 @@ namespace SEP490.DB.Migrations
             modelBuilder.Entity("SEP490.DB.Models.InvoiceDetails", b =>
                 {
                     b.HasOne("SEP490.DB.Models.Invoice", "Invoice")
-                        .WithMany("InvoiceDetails")
+                        .WithMany()
                         .HasForeignKey("InvoiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
@@ -1951,11 +1953,6 @@ namespace SEP490.DB.Migrations
             modelBuilder.Entity("SEP490.DB.Models.Delivery", b =>
                 {
                     b.Navigation("DeliveryDetails");
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.Invoice", b =>
-                {
-                    b.Navigation("InvoiceDetails");
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.OrderDetail", b =>

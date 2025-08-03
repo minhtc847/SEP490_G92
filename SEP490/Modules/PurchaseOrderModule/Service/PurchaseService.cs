@@ -65,6 +65,7 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                 Status = order.Status.HasValue ? order.Status.Value.ToString() : null,
                 SupplierName = order.Supplier?.CustomerName,
                 CustomerName = order.Customer?.CustomerName,
+                CustomerId = order.CustomerId ?? 0,
                 EmployeeName = order.Employee?.FullName,
                 PurchaseOrderDetails = order.PurchaseOrderDetails.Select(d => new PurchaseOrderDetailDto
                 {

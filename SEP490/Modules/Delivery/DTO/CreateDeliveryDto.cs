@@ -44,6 +44,7 @@ namespace SEP490.Modules.Delivery.DTO
     {
         public int Id { get; set; }
         public int SalesOrderId { get; set; }
+        public int CustomerId { get; set; }
         public string OrderCode { get; set; } = string.Empty;
         public string CustomerName { get; set; } = string.Empty;
         public string CustomerAddress { get; set; } = string.Empty;
