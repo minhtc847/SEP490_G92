@@ -1,13 +1,13 @@
 # Tính năng chọn đơn hàng để tạo kế hoạch sản xuất
 
 ## Mô tả
-Tính năng này cho phép người dùng chọn đơn hàng có trạng thái "Chờ xử lý" (status = 0) để tạo kế hoạch sản xuất thay vì phải nhập thủ công thông tin đơn hàng.
+Tính năng này cho phép người dùng chọn đơn hàng có trạng thái "Chưa thực hiện" (status = 0) để tạo kế hoạch sản xuất thay vì phải nhập thủ công thông tin đơn hàng.
 
 ## Cách hoạt động
 
 ### 1. Modal chọn đơn hàng
 - Khi click vào button "Thêm mới" trên trang danh sách kế hoạch sản xuất
-- Modal sẽ hiển thị danh sách tất cả đơn hàng có status = 0 (pending)
+- Modal sẽ hiển thị danh sách tất cả đơn hàng có status = 0 (Chưa thực hiện)
 - Người dùng có thể tìm kiếm theo mã đơn hàng hoặc tên khách hàng
 - Click vào đơn hàng để chọn
 
@@ -16,7 +16,7 @@ Tính năng này cho phép người dùng chọn đơn hàng có trạng thái "
 - Tên khách hàng
 - Ngày đặt hàng
 - Tổng giá trị đơn hàng
-- Trạng thái "Chờ xử lý"
+- Trạng thái "Chưa thực hiện"
 - Nút xem chi tiết đơn hàng
 
 ### 3. Chuyển dữ liệu
@@ -31,19 +31,25 @@ Tính năng này cho phép người dùng chọn đơn hàng có trạng thái "
 - `fe/app/(defaults)/production-plans/page.tsx` - Trang danh sách kế hoạch sản xuất
 - `fe/components/VNG/manager/production-plans/create.tsx` - Component tạo kế hoạch sản xuất
 - `fe/app/(defaults)/sales-order/service.ts` - Service lấy danh sách đơn hàng
+- `fe/app/(defaults)/production-plans/create/service.ts` - Service tạo kế hoạch sản xuất và cập nhật trạng thái
 
 ### Backend
 - API endpoint `/api/orders` - Lấy danh sách đơn hàng
 - API endpoint `/api/orders/{id}` - Lấy chi tiết đơn hàng
+- API endpoint `/api/orders/{id}/status` - Cập nhật trạng thái đơn hàng
+- `SEP490/Modules/OrderModule/ManageOrder/Controller/OrderController.cs` - Controller xử lý API
+- `SEP490/Modules/OrderModule/ManageOrder/Service/OrderService.cs` - Service xử lý logic
+- `SEP490/Modules/OrderModule/ManageOrder/DTO/UpdateOrderStatusDto.cs` - DTO cho cập nhật trạng thái
 
 ## Luồng hoạt động
 
 1. **Bước 1**: Người dùng click "Thêm mới" trên trang production-plans
-2. **Bước 2**: Modal hiển thị danh sách đơn hàng pending
+2. **Bước 2**: Modal hiển thị danh sách đơn hàng chưa thực hiện
 3. **Bước 3**: Người dùng tìm kiếm và chọn đơn hàng
 4. **Bước 4**: Click "Tạo kế hoạch sản xuất"
 5. **Bước 5**: Chuyển đến trang create với thông tin đơn hàng
 6. **Bước 6**: Người dùng chỉnh sửa và tạo kế hoạch sản xuất
+7. **Bước 7**: Hệ thống tự động cập nhật trạng thái đơn hàng sang "Đang thực hiện" (status = 1)
 
 ## Tính năng bổ sung
 
@@ -57,15 +63,34 @@ Tính năng này cho phép người dùng chọn đơn hàng có trạng thái "
 - Mở trong tab mới để không mất dữ liệu đã chọn
 
 ### Validation
-- Kiểm tra đơn hàng có status = 0
+- Kiểm tra đơn hàng có status = 0 (Chưa thực hiện)
 - Hiển thị thông báo khi không có đơn hàng phù hợp
 - Disable button khi chưa chọn đơn hàng
+
+### Cập nhật trạng thái tự động
+- Tự động cập nhật trạng thái đơn hàng từ "Chưa thực hiện" (0) sang "Đang thực hiện" (1)
+- Xử lý lỗi khi không thể cập nhật trạng thái
+- Thông báo kết quả cập nhật cho người dùng
 
 ### UX/UI
 - Loading state khi tải dữ liệu
 - Highlight đơn hàng đã chọn
 - Thông tin tổng quan về đơn hàng đã chọn
 - Responsive design
+
+## Trạng thái đơn hàng
+
+### Các trạng thái
+- **0 (Pending)**: Chưa thực hiện - Đơn hàng mới được tạo
+- **1 (Processing)**: Đang thực hiện - Đã tạo kế hoạch sản xuất
+- **2 (Delivered)**: Hoàn thành - Đã giao hàng
+- **3 (Cancelled)**: Đã hủy - Đơn hàng bị hủy
+
+### Luồng chuyển trạng thái
+1. Đơn hàng được tạo → Status = 0 (Chưa thực hiện)
+2. Tạo kế hoạch sản xuất → Status = 1 (Đang thực hiện) ← **Tính năng mới**
+3. Giao hàng → Status = 2 (Hoàn thành)
+4. Hủy đơn hàng → Status = 3 (Đã hủy)
 
 ## Lưu ý kỹ thuật
 

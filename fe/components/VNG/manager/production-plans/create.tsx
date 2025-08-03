@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { DataTable } from 'mantine-datatable';
 import { getOrderDetailById, OrderDetailDto, ProductInOrderDto } from '@/app/(defaults)/sales-order/[id]/service';
-import { createProductionPlanFromSaleOrder, ProductionPlanProductInput, getGlassStructureByProductId } from '@/app/(defaults)/production-plans/create/service';
+import { createProductionPlanFromSaleOrder, ProductionPlanProductInput, getGlassStructureByProductId, updateOrderStatus } from '@/app/(defaults)/production-plans/create/service';
 import { OrderDto } from '@/app/(defaults)/sales-order/service';
 
 const PAGE_SIZES = [10, 20, 30, 50, 100];
@@ -104,12 +104,22 @@ const CreateProductionPlanManager = () => {
         setError(null);
         setSuccess(null);
         try {
+            // Tạo kế hoạch sản xuất
             await createProductionPlanFromSaleOrder({
                 saleOrderId: Number(currentOrderId),
                 products,
             });
-            setSuccess('Tạo kế hoạch sản xuất thành công!');
-            setTimeout(() => router.push('/production-plans'), 1500);
+            
+            // Cập nhật trạng thái đơn hàng sang processing (1)
+            try {
+                await updateOrderStatus(Number(currentOrderId), 1);
+                setSuccess('Tạo kế hoạch sản xuất thành công và đã cập nhật trạng thái đơn hàng!');
+            } catch (statusError) {
+                console.error('Lỗi khi cập nhật trạng thái đơn hàng:', statusError);
+                setSuccess('Tạo kế hoạch sản xuất thành công nhưng không thể cập nhật trạng thái đơn hàng!');
+            }
+            
+            setTimeout(() => router.push('/production-plans'), 2000);
         } catch (e) {
             setError('Tạo kế hoạch sản xuất thất bại!');
         } finally {

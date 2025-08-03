@@ -41,4 +41,9 @@ export const getGlassStructureByProductId = async (productId: number) => {
 export const createGelOrder = async (data: CreateGelOrderDto) => {
   const response = await axios.post('/api/CreateGelOrder/create', data);
   return response.data;
+};
+
+export const updateOrderStatus = async (orderId: number, status: number) => {
+  const response = await axios.put(`/api/orders/${orderId}/status`, { status });
+  return response.data;
 }; 

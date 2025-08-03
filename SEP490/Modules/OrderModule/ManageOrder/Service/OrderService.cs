@@ -390,6 +390,22 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 .ToList();
         }
 
+        public bool UpdateOrderStatus(int orderId, int status)
+        {
+            var order = _context.SaleOrders.FirstOrDefault(o => o.Id == orderId);
+            if (order == null) return false;
+
+            // Convert int to Status enum
+            if (Enum.IsDefined(typeof(Status), status))
+            {
+                order.Status = (Status)status;
+                _context.SaveChanges();
+                return true;
+            }
+            
+            return false; // Invalid status value
+        }
+
 
 
     }

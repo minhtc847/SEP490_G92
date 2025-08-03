@@ -312,6 +312,23 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
             return Ok("Đơn hàng đã được cập nhật thành công.");
         }
 
+        [HttpPut("{id}/status")]
+        public IActionResult UpdateOrderStatus(int id, [FromBody] UpdateOrderStatusDto dto)
+        {
+            try
+            {
+                var success = _orderService.UpdateOrderStatus(id, dto.Status);
+                if (!success)
+                    return NotFound($"Không tìm thấy đơn hàng với ID {id}.");
+
+                return Ok(new { message = "Cập nhật trạng thái đơn hàng thành công" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi cập nhật trạng thái đơn hàng", error = ex.Message });
+            }
+        }
+
         [HttpDelete("{id}")]
         public IActionResult DeleteOrder(int id)
         {
