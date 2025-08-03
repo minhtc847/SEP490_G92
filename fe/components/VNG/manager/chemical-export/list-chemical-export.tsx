@@ -147,10 +147,25 @@ const ListChemicalExport: React.FC<ListChemicalExportProps> = ({ productionOrder
   const [loading, setLoading] = useState(false)
   const [selectedExport, setSelectedExport] = useState<ChemicalExportDto | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
+  const [isGluePouringOrder, setIsGluePouringOrder] = useState(false)
 
   useEffect(() => {
     loadChemicalExports()
+    checkProductionOrderType()
   }, [productionOrderId])
+
+  const checkProductionOrderType = async () => {
+    try {
+      // This would need a separate API endpoint to get production order details
+      // For now, we'll check based on the chemical exports data
+      // In a real implementation, you'd want to fetch the production order type
+      const data = await chemicalExportService.getChemicalExportsByProductionOrder(productionOrderId)
+      // This is a simplified check - in reality you'd want to get the production order type from the backend
+      setIsGluePouringOrder(false) // This would be set based on actual production order type
+    } catch (error) {
+      console.error('Error checking production order type:', error)
+    }
+  }
 
   const loadChemicalExports = async () => {
     try {
@@ -162,6 +177,20 @@ const ListChemicalExport: React.FC<ListChemicalExportProps> = ({ productionOrder
       alert('Lỗi khi tải danh sách phiếu xuất hóa chất!')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleCheckCompletion = async () => {
+    try {
+      const result = await chemicalExportService.checkAndUpdateProductionOrderStatus(productionOrderId)
+      if (result.completed) {
+        alert('Lệnh sản xuất đã được chuyển sang trạng thái hoàn thành!')
+      } else {
+        alert('Lệnh sản xuất chưa đủ điều kiện để hoàn thành.')
+      }
+    } catch (error) {
+      console.error('Error checking completion status:', error)
+      alert('Lỗi khi kiểm tra trạng thái hoàn thành!')
     }
   }
 
@@ -202,13 +231,29 @@ const ListChemicalExport: React.FC<ListChemicalExportProps> = ({ productionOrder
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-[#4361ee]">Danh sách phiếu xuất hóa chất</h2>
-        <button
-          onClick={loadChemicalExports}
-          className="px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white text-sm rounded shadow transition-colors"
-        >
-          Làm mới
-        </button>
+        <div>
+          <h2 className="text-xl font-bold text-[#4361ee]">Danh sách phiếu xuất hóa chất</h2>
+          {isGluePouringOrder && (
+            <div className="mt-1 text-sm text-orange-600 bg-orange-50 px-2 py-1 rounded">
+              ⚠️ Lệnh đổ keo - Số lượng sẽ được cập nhật vào tiến độ kế hoạch sản xuất
+            </div>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleCheckCompletion}
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded shadow transition-colors"
+            title="Kiểm tra và cập nhật trạng thái hoàn thành"
+          >
+            Kiểm tra hoàn thành
+          </button>
+          <button
+            onClick={loadChemicalExports}
+            className="px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white text-sm rounded shadow transition-colors"
+          >
+            Làm mới
+          </button>
+        </div>
       </div>
 
       {chemicalExports.length === 0 ? (

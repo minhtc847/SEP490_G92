@@ -94,7 +94,20 @@ export const chemicalExportService = {
     return response.data;
   },
 
-  async deleteChemicalExport(id: number): Promise<void> {
-    await axios.delete(`/api/ChemicalExport/${id}`);
-  }
+          async deleteChemicalExport(id: number): Promise<void> {
+          await axios.delete(`/api/ChemicalExport/${id}`);
+        },
+
+        async checkAndUpdateProductionOrderStatus(productionOrderId: number): Promise<{ completed: boolean; message: string }> {
+          const response = await axios.post(`/api/ChemicalExport/production-order/${productionOrderId}/check-completion`);
+          return response.data;
+        },
+
+        async updateProductionPlanDetailDone(productionOrderId: number, productId: number, quantity: number, isIncrease: boolean): Promise<{ updated: boolean; message: string }> {
+          const response = await axios.post(`/api/ChemicalExport/production-order/${productionOrderId}/product/${productId}/update-plan-detail`, {
+            quantity,
+            isIncrease
+          });
+          return response.data;
+        }
 }; 

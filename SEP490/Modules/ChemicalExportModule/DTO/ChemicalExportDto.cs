@@ -73,6 +73,12 @@ namespace SEP490.Modules.ChemicalExportModule.DTO
         public string? ProductName { get; set; }
         public string? UOM { get; set; }
         public decimal? Amount { get; set; }
-        public int ProductionOutputId { get; set; }
-    }
-} 
+                   public int ProductionOutputId { get; set; }
+       }
+
+       public class UpdatePlanDetailRequest
+       {
+           public int Quantity { get; set; }
+           public bool IsIncrease { get; set; }
+       }
+   } 
