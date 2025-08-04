@@ -24,7 +24,7 @@ export interface OrderDetailDto {
   products: ProductInOrderDto[];
   totalQuantity: number;
   totalAmount: number;
-  status: string;
+  status: number;
   deliveryStatus: number;
 }
 

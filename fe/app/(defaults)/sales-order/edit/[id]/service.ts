@@ -18,6 +18,7 @@ export interface UpdateOrderPayload {
     phone: string;
     discount: number;
     status: string;
+    deliveryStatus: string;
     products: UpdateProductDto[];
 }
 
@@ -38,6 +39,7 @@ export interface OrderDetailDto {
     orderCode: string;
     orderDate: string;
     status: string;
+    deliveryStatus: string;
     customerName: string;
     address: string;
     phone: string;
@@ -83,6 +85,7 @@ export interface CreateOrderDto {
     orderDate: string;
     discount: number;
     status: string;
+    deliveryStatus: string;
     products: CreateOrderItem[];
 }
 
@@ -104,6 +107,7 @@ export interface UpdateOrderPayload {
     phone: string;
     discount: number;
     status: string;
+    deliveryStatus: string;
     products: UpdateProductDto[];
 }
 

@@ -252,7 +252,15 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 order.Customer.Discount = dto.Discount;
             }
 
-            order.Status = Enum.Parse<Status>(dto.Status);
+            if (!string.IsNullOrWhiteSpace(dto.Status) && Enum.TryParse<Status>(dto.Status, ignoreCase: true, out var parsedStatus))
+            {
+                order.Status = parsedStatus;
+            }
+
+            if (!string.IsNullOrEmpty(dto.DeliveryStatus))
+            {
+                order.DeliveryStatus = Enum.Parse<DeliveryStatus>(dto.DeliveryStatus);
+            }
 
             var orderDetail = order.OrderDetails.FirstOrDefault();
             if (orderDetail == null)

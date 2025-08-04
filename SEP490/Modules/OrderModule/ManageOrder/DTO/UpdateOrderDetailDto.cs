@@ -7,7 +7,7 @@
         public string Phone { get; set; }
         public decimal Discount { get; set; }
         public string? Status { get; set; }
-
+        public string? DeliveryStatus { get; set; }
         public List<UpdateProductDto> Products { get; set; }
     }
 
