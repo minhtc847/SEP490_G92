@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace TestVNG.Setup
 {
-    internal class TestBase
+    public class TestBase
     {
         protected SEP490DbContext CreateInMemoryDbContext()
         {
@@ -34,28 +34,10 @@ namespace TestVNG.Setup
 
         protected void SeedTestData(SEP490DbContext context)
         {
-            // Thêm dữ liệu test cần thiết
-            if (!context.Roles.Any())
-            {
-                context.Roles.AddRange(TestData.GetRoles());
-            }
-
-            if (!context.Employees.Any())
-            {
-                context.Employees.AddRange(TestData.GetEmployees());
-            }
-
-            if (!context.Accounts.Any())
-            {
-                context.Accounts.AddRange(TestData.GetAccounts());
-            }
-
-
-            
-
+            context.GlassStructures.AddRange(TestData.GetSampleGlassStructures());
+            context.Products.AddRange(TestData.GetSampleProducts());
             context.SaveChanges();
         }
-
 
     }
 }

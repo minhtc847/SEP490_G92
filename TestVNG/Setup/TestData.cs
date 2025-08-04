@@ -1,53 +1,64 @@
 ﻿using SEP490.DB.Models;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TestVNG.Setup
 {
-    internal class TestData
+    internal static class TestData
     {
-
-        public static List<Role> GetRoles()
+        public static List<GlassStructure> GetSampleGlassStructures()
         {
-            return new List<Role>
+            return new List<GlassStructure>
             {
-                new Role { Id = 1, RoleName = "Admin", Description = "Administrator" },
-                new Role { Id = 2, RoleName = "User", Description = "Regular User" },
-                new Role { Id = 3, RoleName = "Manager", Description = "Manager" }
-            };
-        }
-
-        public static List<Employee> GetEmployees()
-        {
-            return new List<Employee>
-            {
-                new Employee { Id = 1, FullName = "John Doe", Email = "john@example.com" },
-                new Employee { Id = 2, FullName = "Jane Smith", Email = "jane@example.com" }
-            };
-        }
-
-        public static List<Account> GetAccounts()
-        {
-            return new List<Account>
-            {
-                new Account
+                new GlassStructure
                 {
                     Id = 1,
-                    UserName = "admin",
-                    PasswordHash = "hashed_password_here",
-                    EmployeeId = 1,
-                    RoleId = 1
+                    ProductName = "Glass A",
+                    ProductCode = "GLA001",
+                    Category = "Double",
+                    EdgeType = "Polished",
+                    AdhesiveType = "UV",
+                    GlassLayers = 2,
+                    AdhesiveLayers = 1,
+                    AdhesiveThickness = 0.5m,
+                    UnitPrice = 200000,
+                    Composition = "A+B"
+                }
+            };
+        }
+
+        public static List<Product> GetSampleProducts()
+        {
+            return new List<Product>
+            {
+                new Product
+                {
+                    Id = 1,
+                    ProductCode = "PROD001",
+                    ProductName = "Product 1",
+                    ProductType = "Thành phẩm",
+                    UOM = "Tấm",
+                    Height = "200",
+                    Width = "100",
+                    Thickness = 5,
+                    Weight = 10,
+                    quantity = 5,
+                    UnitPrice = 100000,
+                    GlassStructureId = null // Không có cấu trúc kính
                 },
-                new Account
+                new Product
                 {
                     Id = 2,
-                    UserName = "user",
-                    PasswordHash = "hashed_password_here",
-                    EmployeeId = 2,
-                    RoleId = 2
+                    ProductCode = "PROD002",
+                    ProductName = "Product 2",
+                    ProductType = "Thành phẩm",
+                    UOM = "Tấm",
+                    Height = "300",
+                    Width = "150",
+                    Thickness = 8,
+                    Weight = 15,
+                    quantity = 3,
+                    UnitPrice = 160000,
+                    GlassStructureId = 1 // Gắn GlassStructure
                 }
             };
         }

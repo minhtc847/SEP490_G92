@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\FPT\\sem9_summer2025\\Capstone-Project\\VNG_Glass\\TestVNG\\TestVNG.csproj": {}
+    "D:\\Downloads\\FU\\SEP490_G92\\Code\\git_dev_5\\SEP490_G92\\TestVNG\\TestVNG.csproj": {}
   },
   "projects": {
-    "D:\\FPT\\sem9_summer2025\\Capstone-Project\\VNG_Glass\\SEP490\\SEP490.csproj": {
+    "D:\\Downloads\\FU\\SEP490_G92\\Code\\git_dev_5\\SEP490_G92\\SEP490\\SEP490.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\FPT\\sem9_summer2025\\Capstone-Project\\VNG_Glass\\SEP490\\SEP490.csproj",
+        "projectUniqueName": "D:\\Downloads\\FU\\SEP490_G92\\Code\\git_dev_5\\SEP490_G92\\SEP490\\SEP490.csproj",
         "projectName": "SEP490",
-        "projectPath": "D:\\FPT\\sem9_summer2025\\Capstone-Project\\VNG_Glass\\SEP490\\SEP490.csproj",
+        "projectPath": "D:\\Downloads\\FU\\SEP490_G92\\Code\\git_dev_5\\SEP490_G92\\SEP490\\SEP490.csproj",
         "packagesPath": "C:\\Users\\admin\\.nuget\\packages\\",
-        "outputPath": "D:\\FPT\\sem9_summer2025\\Capstone-Project\\VNG_Glass\\SEP490\\obj\\",
+        "outputPath": "D:\\Downloads\\FU\\SEP490_G92\\Code\\git_dev_5\\SEP490_G92\\SEP490\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -26,7 +26,6 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -137,18 +136,18 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.300\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "D:\\FPT\\sem9_summer2025\\Capstone-Project\\VNG_Glass\\TestVNG\\TestVNG.csproj": {
+    "D:\\Downloads\\FU\\SEP490_G92\\Code\\git_dev_5\\SEP490_G92\\TestVNG\\TestVNG.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\FPT\\sem9_summer2025\\Capstone-Project\\VNG_Glass\\TestVNG\\TestVNG.csproj",
+        "projectUniqueName": "D:\\Downloads\\FU\\SEP490_G92\\Code\\git_dev_5\\SEP490_G92\\TestVNG\\TestVNG.csproj",
         "projectName": "TestVNG",
-        "projectPath": "D:\\FPT\\sem9_summer2025\\Capstone-Project\\VNG_Glass\\TestVNG\\TestVNG.csproj",
+        "projectPath": "D:\\Downloads\\FU\\SEP490_G92\\Code\\git_dev_5\\SEP490_G92\\TestVNG\\TestVNG.csproj",
         "packagesPath": "C:\\Users\\admin\\.nuget\\packages\\",
-        "outputPath": "D:\\FPT\\sem9_summer2025\\Capstone-Project\\VNG_Glass\\TestVNG\\obj\\",
+        "outputPath": "D:\\Downloads\\FU\\SEP490_G92\\Code\\git_dev_5\\SEP490_G92\\TestVNG\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -163,15 +162,14 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "D:\\FPT\\sem9_summer2025\\Capstone-Project\\VNG_Glass\\SEP490\\SEP490.csproj": {
-                "projectPath": "D:\\FPT\\sem9_summer2025\\Capstone-Project\\VNG_Glass\\SEP490\\SEP490.csproj"
+              "D:\\Downloads\\FU\\SEP490_G92\\Code\\git_dev_5\\SEP490_G92\\SEP490\\SEP490.csproj": {
+                "projectPath": "D:\\Downloads\\FU\\SEP490_G92\\Code\\git_dev_5\\SEP490_G92\\SEP490\\SEP490.csproj"
               }
             }
           }
@@ -214,7 +212,7 @@
             },
             "xunit": {
               "target": "Package",
-              "version": "[2.5.3, )"
+              "version": "[2.9.3, )"
             },
             "xunit.runner.visualstudio": {
               "target": "Package",
@@ -237,7 +235,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.300/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
