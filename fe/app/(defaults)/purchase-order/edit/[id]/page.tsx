@@ -76,6 +76,13 @@ const PurchaseOrderEditPage = () => {
         uom: '',
     });
 
+    const STATUS_OPTIONS = [
+        { value: 'Pending', label: 'Chờ đặt hàng' },
+        { value: 'Ordered', label: 'Đã đặt hàng' },
+        { value: 'Imported', label: 'Đã nhập hàng' },
+        { value: 'Cancelled', label: 'Đã hủy' },
+    ];
+
     const [isProductNameDuplicateNVL, setIsProductNameDuplicateNVL] = useState(false);
 
     const [form, setForm] = useState({
@@ -95,7 +102,7 @@ const PurchaseOrderEditPage = () => {
                     customer: po.customerName ?? '',
                     description: po.description ?? '',
                     orderCode: po.code ?? '',
-                    status: po.status ?? 'Chưa thực hiện',
+                    status: po.status ?? 'Pending',
                     createdDate: po.date ? new Date(po.date).toISOString().split('T')[0] : '',
                     items: po.purchaseOrderDetails.map((d, idx) => ({
                         id: Date.now() + idx,
@@ -247,10 +254,11 @@ const PurchaseOrderEditPage = () => {
                 <div>
                     <label className="block mb-1 font-medium">Trạng thái</label>
                     <select className="select select-bordered w-full" value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
-                        <option value="Chờ đặt hàng">Chờ đặt hàng</option>
-                        <option value="Đã đặt hàng">Đã đặt hàng</option>
-                        <option value="Hoàn thành">Hoàn thành</option>
-                        <option value="Đã huỷ">Đã huỷ</option>
+                        {STATUS_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                            </option>
+                        ))}
                     </select>
                 </div>
                 <div className="md:col-span-2">
@@ -410,7 +418,7 @@ const PurchaseOrderEditPage = () => {
                         try {
                             await deletePurchaseOrder(orderId);
                             alert(`Xoá thành công: Đơn hàng ${form.orderCode} – ${form.description || '(Không có mô tả)'}`);
-                            router.push('/purchase-order'); 
+                            router.push('/purchase-order');
                         } catch (err: any) {
                             alert(err.message || 'Xoá thất bại. Vui lòng thử lại');
                         }

@@ -112,6 +112,21 @@ const SalesOrderDetailPage = () => {
         saveAs(blob, `XacNhanDonHang_${order.orderCode}.xlsx`);
     };
 
+    const getStatusText = (status: number) => {
+        switch (status) {
+            case 0:
+                return 'Chưa thực hiện';
+            case 1:
+                return 'Đang thực hiện';
+            case 2:
+                return 'Hoàn thành';
+            case 3:
+                return 'Đã huỷ';
+            default:
+                return 'Không xác định';
+        }
+    };
+
     const getDeliveryStatusText = (status: number) => {
         switch (status) {
             case 0:
@@ -129,8 +144,6 @@ const SalesOrderDetailPage = () => {
     if (!order) return <div className="p-6 text-red-600">Không tìm thấy đơn hàng với ID: {id}</div>;
 
     const { customerName, address, phone, orderDate, orderCode, discount, products, totalAmount, totalQuantity } = order;
-
-    const handleBack = () => router.push('/sales-order');
 
     return (
         <div className="p-6">
@@ -172,7 +185,7 @@ const SalesOrderDetailPage = () => {
                     <strong>Chiết khấu:</strong> {discount * 100}%
                 </div>
                 <div>
-                    <strong>Trạng thái:</strong> {order.status}
+                    <strong>Trạng thái:</strong> {getStatusText(order.status)}
                 </div>
                 <div>
                     <strong>Giao hàng:</strong> {getDeliveryStatusText(order.deliveryStatus)}

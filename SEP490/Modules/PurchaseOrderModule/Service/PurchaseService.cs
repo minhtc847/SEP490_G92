@@ -173,7 +173,17 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
 
             order.CustomerId = customer.Id;
             order.Description = dto.Description;
-            //order.Status = dto.Status;
+            if (!string.IsNullOrWhiteSpace(dto.Status))
+            {
+                if (Enum.TryParse<PurchaseStatus>(dto.Status, ignoreCase: true, out var parsedStatus))
+                {
+                    order.Status = parsedStatus;
+                }
+                else
+                {
+                    throw new Exception($"Trạng thái '{dto.Status}' không hợp lệ. Các giá trị hợp lệ là: {string.Join(", ", Enum.GetNames(typeof(PurchaseStatus)))}");
+                }
+            }
             order.Date = DateTime.Now; 
 
             _context.PurchaseOrderDetails.RemoveRange(order.PurchaseOrderDetails);

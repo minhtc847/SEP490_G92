@@ -47,6 +47,7 @@ const SalesOrderEditPage = () => {
         orderCode: string;
         discount: number;
         status: string;
+        deliveryStatus: string;
         orderItems: OrderItem[];
     }>({
         customer: '',
@@ -55,7 +56,8 @@ const SalesOrderEditPage = () => {
         orderDate: '',
         orderCode: '',
         discount: 0,
-        status: '',
+        status: 'Pending',
+        deliveryStatus: 'NotShipped',
         orderItems: [],
     });
 
@@ -71,6 +73,7 @@ const SalesOrderEditPage = () => {
                 orderCode: data.orderCode,
                 discount: data.discount * 100,
                 status: data.status,
+                deliveryStatus: data.deliveryStatus,
                 orderItems: data.products,
             });
             const glassList = await getGlassStructures();
@@ -78,6 +81,20 @@ const SalesOrderEditPage = () => {
         };
         fetchData();
     }, [id]);
+
+    const STATUS_OPTIONS = [
+        { value: 'Pending', label: 'Chưa thực hiện' },
+        { value: 'Processing', label: 'Đang thực hiện' },
+        { value: 'Delivered', label: 'Hoàn thành' },
+        { value: 'Cancelled', label: 'Đã hủy' },
+    ];
+
+    const DELIVERY_STATUS_OPTIONS = [
+        { value: 'NotDelivered', label: 'Chưa giao' },
+        { value: 'Delivering', label: 'Đã giao một phần' },
+        { value: 'FullyDelivered', label: 'Đã giao đầy đủ' },
+        { value: 'Cancelled', label: 'Trả hàng' },
+    ];
 
     const handleItemChange = (index: number, field: keyof OrderItem, value: string | number) => {
         const updatedItems = [...form.orderItems];
@@ -253,6 +270,7 @@ const SalesOrderEditPage = () => {
                 phone: form.phone,
                 discount: form.discount / 100,
                 status: form.status,
+                deliveryStatus: form.deliveryStatus,
                 products: form.orderItems.map((item) => ({
                     productId: item.productId,
                     productCode: item.productCode,
@@ -319,12 +337,25 @@ const SalesOrderEditPage = () => {
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Trạng thái</label>
-                    <select className="select select-bordered w-full" value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}>
-                        <option value="Chưa thực hiện">Chưa thực hiện</option>
-                        <option value="Đang thực hiện">Đang thực hiện</option>
-                        <option value="Hoàn thành">Hoàn thành</option>
-                        <option value="Đã huỷ">Đã huỷ</option>
+                    <select value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}>
+                        {STATUS_OPTIONS.map((s) => (
+                            <option key={s.value} value={s.value}>
+                                {s.label}
+                            </option>
+                        ))}
                     </select>
+                </div>
+                <div>
+                    <div>
+                        <label className="block mb-1 font-medium">Trạng thái giao hàng</label>
+                        <select value={form.deliveryStatus} onChange={(e) => setForm((prev) => ({ ...prev, deliveryStatus: e.target.value }))} className="input input-bordered w-full">
+                            {DELIVERY_STATUS_OPTIONS.map((s) => (
+                                <option key={s.value} value={s.value}>
+                                    {s.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 
