@@ -247,12 +247,12 @@ const ListChemicalExport: React.FC<ListChemicalExportProps> = ({ productionOrder
           >
             Kiểm tra hoàn thành
           </button>
-          <button
+          {/* <button
             onClick={loadChemicalExports}
             className="px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white text-sm rounded shadow transition-colors"
           >
             Làm mới
-          </button>
+          </button> */}
         </div>
       </div>
 

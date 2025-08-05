@@ -228,10 +228,6 @@ namespace SEP490.Modules.Delivery.Services
             }
 
             var customerId = delivery.SalesOrder?.Customer?.Id ?? 0;
-            Console.WriteLine($"Debug - Delivery ID: {delivery.Id}");
-            Console.WriteLine($"Debug - SalesOrder: {delivery.SalesOrder != null}");
-            Console.WriteLine($"Debug - Customer: {delivery.SalesOrder?.Customer != null}");
-            Console.WriteLine($"Debug - CustomerId: {customerId}");
 
             return new DeliveryDetailDto
             {

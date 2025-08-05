@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace TestVNG.Setup
 {
-    internal class TestBase
+    public class TestBase
     {
         protected SEP490DbContext CreateInMemoryDbContext()
         {
@@ -50,8 +50,60 @@ namespace TestVNG.Setup
                 context.Accounts.AddRange(TestData.GetAccounts());
             }
 
+            if (!context.Customers.Any())
+            {
+                context.Customers.AddRange(TestData.GetCustomers());
+            }
 
-            
+            if (!context.Products.Any())
+            {
+                context.Products.AddRange(TestData.GetProducts());
+            }
+
+            if (!context.SaleOrders.Any())
+            {
+                context.SaleOrders.AddRange(TestData.GetSaleOrders());
+            }
+
+            if (!context.OrderDetails.Any())
+            {
+                context.OrderDetails.AddRange(TestData.GetOrderDetails());
+            }
+
+            if (!context.OrderDetailProducts.Any())
+            {
+                context.OrderDetailProducts.AddRange(TestData.GetOrderDetailProducts());
+            }
+
+            if (!context.ProductionPlans.Any())
+            {
+                context.ProductionPlans.AddRange(TestData.GetProductionPlans());
+            }
+
+            if (!context.ProductionPlanDetails.Any())
+            {
+                context.ProductionPlanDetails.AddRange(TestData.GetProductionPlanDetails());
+            }
+
+            if (!context.Deliveries.Any())
+            {
+                context.Deliveries.AddRange(TestData.GetDeliveries());
+            }
+
+            if (!context.DeliveryDetails.Any())
+            {
+                context.DeliveryDetails.AddRange(TestData.GetDeliveryDetails());
+            }
+
+            if (!context.Invoices.Any())
+            {
+                context.Invoices.AddRange(TestData.GetInvoices());
+            }
+
+            if (!context.InvoiceDetails.Any())
+            {
+                context.InvoiceDetails.AddRange(TestData.GetInvoiceDetails());
+            }
 
             context.SaveChanges();
         }
