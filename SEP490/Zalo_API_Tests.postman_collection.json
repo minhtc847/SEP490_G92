@@ -1,0 +1,168 @@
+{
+  "info": {
+    "name": "Zalo Chat & Order API Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Get Sample Order Data",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/ZaloOrder/sample",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ZaloOrder", "sample"]
+        }
+      }
+    },
+    {
+      "name": "2. Create Order Directly",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phoneNumber\": \"0123456789\",\n  \"items\": [\n    {\n      \"productCode\": \"GL001\",\n      \"height\": \"1000\",\n      \"width\": \"800\",\n      \"thickness\": 6.0,\n      \"quantity\": 2\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/ZaloOrder/create",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ZaloOrder", "create"]
+        }
+      }
+    },
+    {
+      "name": "3. Zalo Webhook - Valid Order Message (API v3)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json; charset=utf-8"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"app_id\": \"1823865030574396868\",\n  \"sender\": {\n    \"id\": \"3621469840359096133\"\n  },\n  \"recipient\": {\n    \"id\": \"1823865030574396868\"\n  },\n  \"event\": \"user_send_text\",\n  \"message\": {\n    \"text\": \"Đặt hàng: GL001 1000x800x6 x2, GL002 1200x900x8 x1\",\n    \"msg_id\": \"msg_123456\"\n  },\n  \"timestamp\": 1640995200000\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/ZaloWebhook/message",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ZaloWebhook", "message"]
+        }
+      }
+    },
+    {
+      "name": "4. Zalo Webhook - Single Product",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"app_id\": \"1823865030574396868\",\n  \"sender\": {\n    \"id\": \"test_user_id\"\n  },\n  \"recipient\": {\n    \"id\": \"1823865030574396868\"\n  },\n  \"event\": \"user_send_text\",\n  \"message\": {\n    \"text\": \"Đặt hàng: GL001 1000x800x6.5 x3\",\n    \"msg_id\": \"msg_789\"\n  },\n  \"timestamp\": 1640995200000\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/ZaloWebhook/message",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ZaloWebhook", "message"]
+        }
+      }
+    },
+    {
+      "name": "5. Zalo Webhook - Invalid Message (Should Return Instructions)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"app_id\": \"1823865030574396868\",\n  \"sender\": {\n    \"id\": \"test_user_id\"\n  },\n  \"recipient\": {\n    \"id\": \"1823865030574396868\"\n  },\n  \"event\": \"user_send_text\",\n  \"message\": {\n    \"text\": \"Xin chào, tôi muốn đặt hàng\",\n    \"msg_id\": \"msg_999\"\n  },\n  \"timestamp\": 1640995200000\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/ZaloWebhook/message",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ZaloWebhook", "message"]
+        }
+      }
+    },
+    {
+      "name": "6. Get Order Details",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/ZaloOrder/1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ZaloOrder", "1"]
+        }
+      }
+    },
+    {
+      "name": "7. Test Zalo API v3 Debug",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/ZaloTest/test-debug",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ZaloTest", "test-debug"]
+        }
+      }
+    },
+    {
+      "name": "8. Test Zalo Send Message v3",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"3621469840359096133\",\n  \"message\": \"Test message from Postman 🚀\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/ZaloTest/send-message",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ZaloTest", "send-message"]
+        }
+      }
+    },
+    {
+      "name": "9. Check Zalo Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/ZaloTest/status",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ZaloTest", "status"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://localhost:7075",
+      "type": "string"
+    }
+  ]
+} 

@@ -1,0 +1,311 @@
+{
+  "conversation_based_scenarios": [
+    {
+      "name": "Session Control Flow",
+      "description": "Test basic session start and end functionality",
+      "steps": [
+        {
+          "step": 1,
+          "description": "User starts session",
+          "request": {
+            "userId": "session_test_001",
+            "message": "Bắt đầu"
+          },
+          "expected_response_contains": ["BẮT ĐẦU PHIÊN CHAT MỚI", "Đặt hàng từng bước", "Đặt hàng nhanh"],
+          "expected_buttons": ["🛒 Đặt hàng", "📋 Hướng dẫn", "📞 Liên hệ"]
+        },
+        {
+          "step": 2,
+          "description": "User ends session",
+          "request": {
+            "userId": "session_test_001", 
+            "message": "Kết thúc"
+          },
+          "expected_response_contains": ["KẾT THÚC PHIÊN CHAT", "Cảm ơn bạn"],
+          "expected_buttons": ["🔄 Bắt đầu lại", "📞 Liên hệ"]
+        }
+      ]
+    },
+    {
+      "name": "Multi-Step Single Item Ordering",
+      "description": "Complete step-by-step ordering flow for one product",
+      "steps": [
+        {
+          "step": 1,
+          "description": "Start step-by-step ordering",
+          "request": {
+            "userId": "multistep_001",
+            "message": "Đặt hàng",
+            "userPhone": "0914913696"
+          },
+          "expected_response_contains": ["BẮT ĐẦU ĐẶT HÀNG TỪNG BƯỚC", "Bước 1/4", "Nhập mã sản phẩm"],
+          "expected_state": "WaitingForProductCode"
+        },
+        {
+          "step": 2,
+          "description": "Input product code",
+          "request": {
+            "userId": "multistep_001",
+            "message": "N-EI 15"
+          },
+          "expected_response_contains": ["ĐÃ NHẬN MÃ SẢN PHẨM: N-EI 15", "Bước 2/4", "Nhập kích thước"],
+          "expected_state": "WaitingForDimensions"
+        },
+        {
+          "step": 3,
+          "description": "Input dimensions",
+          "request": {
+            "userId": "multistep_001",
+            "message": "1000x800x6"
+          },
+          "expected_response_contains": ["ĐÃ NHẬN KÍCH THƯỚC: 1000x800x6", "Bước 3/4", "Nhập số lượng"],
+          "expected_state": "WaitingForQuantity"
+        },
+        {
+          "step": 4,
+          "description": "Input quantity",
+          "request": {
+            "userId": "multistep_001",
+            "message": "2"
+          },
+          "expected_response_contains": ["XÁC NHẬN THÔNG TIN", "N-EI 15", "1000x800x6", "2 tấm"],
+          "expected_buttons": ["✅ Xác nhận", "➕ Thêm sản phẩm", "❌ Hủy"],
+          "expected_state": "WaitingForConfirmation"
+        },
+        {
+          "step": 5,
+          "description": "Confirm order",
+          "request": {
+            "userId": "multistep_001",
+            "message": "Xác nhận"
+          },
+          "expected_response_contains": ["ĐƠN HÀNG ĐÃ TẠO THÀNH CÔNG", "Mã đơn hàng"],
+          "expected_buttons": ["📋 Xem chi tiết", "📞 Liên hệ hỗ trợ", "🛒 Đặt hàng mới"],
+          "expected_state": "Idle"
+        }
+      ]
+    },
+    {
+      "name": "Multi-Step Multiple Items Ordering",
+      "description": "Add multiple products in step-by-step flow",
+      "steps": [
+        {
+          "step": 1,
+          "description": "Start and complete first item",
+          "request": {
+            "userId": "multiitem_001",
+            "message": "Đặt hàng",
+            "userPhone": "0914913696"
+          },
+          "note": "Go through full flow: Đặt hàng → N-EI 15 → 1000x800x6 → 2"
+        },
+        {
+          "step": 2,
+          "description": "Choose to add more products",
+          "request": {
+            "userId": "multiitem_001",
+            "message": "Thêm sản phẩm"
+          },
+          "expected_response_contains": ["THÊM SẢN PHẨM THỨ 2", "Nhập mã sản phẩm tiếp theo"],
+          "expected_state": "WaitingForProductCode"
+        },
+        {
+          "step": 3,
+          "description": "Add second product code",
+          "request": {
+            "userId": "multiitem_001",
+            "message": "GL001"
+          },
+          "expected_response_contains": ["ĐÃ NHẬN MÃ SẢN PHẨM: GL001", "Bước 2/4"],
+          "expected_state": "WaitingForDimensions"
+        },
+        {
+          "step": 4,
+          "description": "Complete second product and confirm",
+          "request": {
+            "userId": "multiitem_001",
+            "message": "1200x900x8"
+          },
+          "note": "Continue with quantity: 1, then confirm entire order"
+        }
+      ]
+    },
+    {
+      "name": "Error Handling and Recovery",
+      "description": "Test error scenarios and recovery mechanisms",
+      "steps": [
+        {
+          "step": 1,
+          "description": "Invalid product code",
+          "request": {
+            "userId": "error_test_001",
+            "message": "Đặt hàng",
+            "userPhone": "0914913696"
+          },
+          "note": "Start ordering flow"
+        },
+        {
+          "step": 2,
+          "description": "Input invalid product code",
+          "request": {
+            "userId": "error_test_001",
+            "message": "X"
+          },
+          "expected_response_contains": ["MÃ SẢN PHẨM KHÔNG HỢP LỆ", "Thử lại"],
+          "expected_state": "WaitingForProductCode"
+        },
+        {
+          "step": 3,
+          "description": "Input valid product code after error",
+          "request": {
+            "userId": "error_test_001",
+            "message": "GL001"
+          },
+          "expected_response_contains": ["ĐÃ NHẬN MÃ SẢN PHẨM: GL001"],
+          "expected_state": "WaitingForDimensions"
+        },
+        {
+          "step": 4,
+          "description": "Test cancel functionality",
+          "request": {
+            "userId": "error_test_001",
+            "message": "Hủy"
+          },
+          "expected_response_contains": ["ĐÃ HỦY ĐẶT HÀNG"],
+          "expected_state": "Idle"
+        }
+      ]
+    },
+    {
+      "name": "Backward Compatibility",
+      "description": "Test that old full-order format still works",
+      "steps": [
+        {
+          "step": 1,
+          "description": "Single product full order",
+          "request": {
+            "userId": "backward_001",
+            "message": "Đặt hàng: N-EI 15 1000x800x6 x2",
+            "userPhone": "0914913696"
+          },
+          "expected_response_contains": ["ĐƠN HÀNG ĐÃ TẠO THÀNH CÔNG", "N-EI 15"],
+          "expected_state": "Idle"
+        },
+        {
+          "step": 2,
+          "description": "Multiple products full order",
+          "request": {
+            "userId": "backward_002",
+            "message": "Đặt hàng: N-EI 15 1000x800x6 x2, GL001 1200x900x8 x1",
+            "userPhone": "0914913696"
+          },
+          "expected_response_contains": ["ĐƠN HÀNG ĐÃ TẠO THÀNH CÔNG", "N-EI 15", "GL001"],
+          "expected_state": "Idle"
+        }
+      ]
+    },
+    {
+      "name": "Product Code Variations",
+      "description": "Test different product code formats in step-by-step",
+      "test_cases": [
+        {
+          "product_code": "GL001",
+          "type": "Basic alphanumeric"
+        },
+        {
+          "product_code": "N-EI15", 
+          "type": "With hyphen, no space"
+        },
+        {
+          "product_code": "N-EI 15",
+          "type": "With hyphen and space"
+        },
+        {
+          "product_code": "ABC-XYZ 30",
+          "type": "Complex with multiple elements"
+        }
+      ]
+    },
+    {
+      "name": "Input Format Variations",
+      "description": "Test different input formats for each step",
+      "variations": {
+        "dimensions": [
+          "1000x800x6",
+          "1000 x 800 x 6",
+          "1200x900x8.5"
+        ],
+        "quantities": [
+          "2",
+          "số lượng: 5", 
+          "3 tấm",
+          "x4"
+        ]
+      }
+    }
+  ],
+  "quick_test_commands": [
+    {
+      "name": "Test Session Start",
+      "command": "curl -X POST \"http://localhost:5000/api/ZaloDynamic/chat\" -H \"Content-Type: application/json\" -d '{\"userId\":\"test_001\",\"message\":\"Bắt đầu\"}'"
+    },
+    {
+      "name": "Test Step-by-Step Start",
+      "command": "curl -X POST \"http://localhost:5000/api/ZaloDynamic/chat\" -H \"Content-Type: application/json\" -d '{\"userId\":\"test_002\",\"message\":\"Đặt hàng\",\"userPhone\":\"0914913696\"}'"
+    },
+    {
+      "name": "Test Product Code Input",
+      "command": "curl -X POST \"http://localhost:5000/api/ZaloDynamic/chat\" -H \"Content-Type: application/json\" -d '{\"userId\":\"test_002\",\"message\":\"N-EI 15\"}'"
+    },
+    {
+      "name": "Test Backward Compatibility",
+      "command": "curl -X POST \"http://localhost:5000/api/ZaloDynamic/chat\" -H \"Content-Type: application/json\" -d '{\"userId\":\"test_003\",\"message\":\"Đặt hàng: N-EI 15 1000x800x6 x2\",\"userPhone\":\"0914913696\"}'"
+    },
+    {
+      "name": "Test Session End",
+      "command": "curl -X POST \"http://localhost:5000/api/ZaloDynamic/chat\" -H \"Content-Type: application/json\" -d '{\"userId\":\"test_001\",\"message\":\"Kết thúc\"}'"
+    }
+  ],
+  "conversation_simulation": {
+    "description": "Simulate conversation history for testing session detection",
+    "example_history": [
+      {
+        "timestamp": "2024-01-01T10:00:00Z",
+        "text": "Xin chào",
+        "isFromUser": true
+      },
+      {
+        "timestamp": "2024-01-01T10:00:01Z", 
+        "text": "Chào mừng bạn!",
+        "isFromUser": false
+      },
+      {
+        "timestamp": "2024-01-01T10:01:00Z",
+        "text": "Bắt đầu",
+        "isFromUser": true
+      },
+      {
+        "timestamp": "2024-01-01T10:01:01Z",
+        "text": "BẮT ĐẦU PHIÊN CHAT MỚI!",
+        "isFromUser": false
+      },
+      {
+        "timestamp": "2024-01-01T10:02:00Z",
+        "text": "Đặt hàng",
+        "isFromUser": true
+      },
+      {
+        "timestamp": "2024-01-01T10:02:01Z",
+        "text": "BẮT ĐẦU ĐẶT HÀNG TỪNG BƯỚC",
+        "isFromUser": false
+      }
+    ],
+    "session_detection": {
+      "last_start_index": 2,
+      "last_end_index": -1,
+      "active_session": true,
+      "session_messages": "Messages from index 2 onward",
+      "current_state": "Should be determined from conversation flow"
+    }
+  }
+} 

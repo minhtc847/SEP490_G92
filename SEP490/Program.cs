@@ -10,6 +10,7 @@ using SEP490.Modules.LLMChat.Services;
 using SEP490.Modules.OrderModule.ManageOrder.Services;
 using SEP490.Modules.Zalo.Services;
 using SEP490.Modules.ProductionOrders.Services;
+using SEP490.Modules.SaleOrders.Services;
 using System;
 using System.Reflection;
 using System.Text;
@@ -48,6 +49,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICuttingGlassManagementService, CuttingGlassManagementService>();
 builder.Services.AddScoped<IDocumentMaterialService, DocumentMaterialService>();
 builder.Services.AddHttpClient<ZaloChatService>();
+builder.Services.AddScoped<IZaloOrderService, ZaloOrderService>();
+builder.Services.AddHttpClient<IZaloMessageService, ZaloMessageService>();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddSignalR();
@@ -86,6 +89,14 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod()
               .AllowCredentials();
     });
+    
+    // Add CORS policy for production deployment (Zalo Dynamic API)
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
 });
 
 var app = builder.Build();
@@ -96,7 +107,20 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseCors("AllowFrontend");
+else
+{
+    // Enable Swagger in production for API testing
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "VNG Glass API v1");
+        c.RoutePrefix = "swagger";
+    });
+}
+
+// Use AllowAll CORS policy for production (Zalo integration)
+// Use AllowFrontend for development
+app.UseCors(app.Environment.IsDevelopment() ? "AllowFrontend" : "AllowAll");
 app.UseHttpsRedirection();
 app.UseMiddleware<PermissionMiddleware>();
 app.UseAuthentication();

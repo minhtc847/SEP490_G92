@@ -1,0 +1,598 @@
+{
+  "info": {
+    "name": "VNG Glass - Dynamic Conversation API Tests",
+    "description": "Comprehensive tests for conversation-based multi-step ordering system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:7075",
+      "type": "string"
+    },
+    {
+      "key": "test_user_id",
+      "value": "postman_test_{{$randomInt}}",
+      "type": "string"
+    },
+    {
+      "key": "test_phone",
+      "value": "0914913696",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🚀 SESSION CONTROL",
+      "item": [
+        {
+          "name": "1.1 Session Start",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{test_user_id}}\",\n  \"message\": \"Bắt đầu\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "1.2 Session End",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{test_user_id}}\",\n  \"message\": \"Kết thúc\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🛒 STEP-BY-STEP ORDERING",
+      "item": [
+        {
+          "name": "2.1 Start Ordering",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"step_order_{{$randomInt}}\",\n  \"message\": \"Đặt hàng\",\n  \"userPhone\": \"{{test_phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.2 Product Code - GL001",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"step_order_001\",\n  \"message\": \"GL001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.3 Product Code - N-EI 15 (with space)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"step_order_002\",\n  \"message\": \"N-EI 15\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.4 Dimensions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"step_order_001\",\n  \"message\": \"1000x800x6\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.5 Quantity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"step_order_001\",\n  \"message\": \"2\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.6 Confirm Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"step_order_001\",\n  \"message\": \"Xác nhận\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "➕ MULTIPLE ITEMS",
+      "item": [
+        {
+          "name": "3.1 Add More Items",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"multi_order_001\",\n  \"message\": \"Thêm sản phẩm\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.2 Second Product Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"multi_order_001\",\n  \"message\": \"GL001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔄 BACKWARD COMPATIBILITY",
+      "item": [
+        {
+          "name": "4.1 Full Order - Single Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"compat_single_{{$randomInt}}\",\n  \"message\": \"Đặt hàng: N-EI 15 1000x800x6 x2\",\n  \"userPhone\": \"{{test_phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.2 Full Order - Multiple Items",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"compat_multi_{{$randomInt}}\",\n  \"message\": \"Đặt hàng: N-EI 15 1000x800x6 x2, GL001 1200x900x8 x1\",\n  \"userPhone\": \"{{test_phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📱 REGISTRATION FLOW",
+      "item": [
+        {
+          "name": "5.1 Order Without Phone",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"reg_test_{{$randomInt}}\",\n  \"message\": \"Đặt hàng\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.2 Register Phone",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"reg_test_001\",\n  \"message\": \"Đăng ký: {{test_phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "❌ ERROR HANDLING",
+      "item": [
+        {
+          "name": "6.1 Invalid Product Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"error_test_001\",\n  \"message\": \"X\",\n  \"userPhone\": \"{{test_phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.2 Invalid Dimensions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"error_test_002\",\n  \"message\": \"invalid dimensions\",\n  \"userPhone\": \"{{test_phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.3 Cancel Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"error_test_003\",\n  \"message\": \"Hủy\",\n  \"userPhone\": \"{{test_phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.4 Go Back",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"error_test_004\",\n  \"message\": \"Quay lại\",\n  \"userPhone\": \"{{test_phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔧 PRODUCT CODE VARIATIONS",
+      "item": [
+        {
+          "name": "7.1 Basic Code - GL001",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"code_test_001\",\n  \"message\": \"GL001\",\n  \"userPhone\": \"{{test_phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7.2 With Hyphen - N-EI15",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"code_test_002\",\n  \"message\": \"N-EI15\",\n  \"userPhone\": \"{{test_phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7.3 With Space - N-EI 15 (FIXED!)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"code_test_003\",\n  \"message\": \"N-EI 15\",\n  \"userPhone\": \"{{test_phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7.4 Complex Code - ABC-XYZ 30",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"code_test_004\",\n  \"message\": \"ABC-XYZ 30\",\n  \"userPhone\": \"{{test_phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🧪 DEBUGGING UTILITIES",
+      "item": [
+        {
+          "name": "8.1 Check Server Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ZaloTest/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloTest", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "8.2 Get User Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ZaloTest/user-info/3621469840359096133",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloTest", "user-info", "3621469840359096133"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "8.3 Help Command",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"help_test\",\n  \"message\": \"Hướng dẫn\",\n  \"userPhone\": \"{{test_phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ZaloDynamic/chat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ZaloDynamic", "chat"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+} 

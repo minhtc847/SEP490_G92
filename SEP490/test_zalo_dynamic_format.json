@@ -1,0 +1,134 @@
+{
+  "description": "Test requests that simulate Zalo Chatbot Dynamic API calls",
+  "tests": [
+    {
+      "name": "Session Start Test",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:7075/api/ZaloDynamic/chat",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "userId": "{user_id}",
+          "message": "Bắt đầu",
+          "userPhone": "{shared_info.phone}",
+          "userName": "{shared_info.name}"
+        }
+      },
+      "expected_format": {
+        "version": "chatbot",
+        "content": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "🚀 **BẮT ĐẦU PHIÊN CHAT MỚI!**",
+              "buttons": [
+                {
+                  "name": "🛒 Đặt hàng",
+                  "type": "query",
+                  "payload": "đặt hàng"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Step-by-Step Order Test",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:7075/api/ZaloDynamic/chat",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "userId": "{user_id}",
+          "message": "Đặt hàng",
+          "userPhone": "0914913696"
+        }
+      },
+      "expected_format": {
+        "version": "chatbot",
+        "content": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "🛒 **BẮT ĐẦU ĐẶT HÀNG TỪNG BƯỚC**",
+              "buttons": [
+                {
+                  "name": "❌ Hủy",
+                  "type": "query",
+                  "payload": "hủy đặt hàng"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Full Order Test (Backward Compatibility)",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:7075/api/ZaloDynamic/chat",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "userId": "{user_id}",
+          "message": "Đặt hàng: N-EI 15 1000x800x6 x2",
+          "userPhone": "0914913696"
+        }
+      },
+      "expected_format": {
+        "version": "chatbot",
+        "content": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "✅ ĐƠN HÀNG ĐÃ TẠO THÀNH CÔNG!",
+              "buttons": [
+                {
+                  "name": "📋 Xem chi tiết",
+                  "type": "query",
+                  "payload": "chi tiết đơn hàng"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "curl_commands": {
+    "session_start": "curl -X POST 'http://localhost:7075/api/ZaloDynamic/chat' -H 'Content-Type: application/json' -d '{\"userId\":\"zalo_test_001\",\"message\":\"Bắt đầu\"}'",
+    "step_order": "curl -X POST 'http://localhost:7075/api/ZaloDynamic/chat' -H 'Content-Type: application/json' -d '{\"userId\":\"zalo_test_002\",\"message\":\"Đặt hàng\",\"userPhone\":\"0914913696\"}'",
+    "full_order": "curl -X POST 'http://localhost:7075/api/ZaloDynamic/chat' -H 'Content-Type: application/json' -d '{\"userId\":\"zalo_test_003\",\"message\":\"Đặt hàng: N-EI 15 1000x800x6 x2\",\"userPhone\":\"0914913696\"}'"
+  },
+  "validation_checklist": {
+    "response_format": [
+      "✅ version = 'chatbot'",
+      "✅ content.messages is array",
+      "✅ message.type = 'text'",
+      "✅ message.text is string",
+      "✅ message.buttons is array (optional)",
+      "✅ button.name, button.type, button.payload"
+    ],
+    "api_requirements": [
+      "✅ Returns status 200",
+      "✅ Response time < 2s",
+      "✅ Max 5 messages per response",
+      "✅ Max 5 buttons per message",
+      "✅ HTTPS (for production)"
+    ],
+    "zalo_integration": [
+      "📋 Setup Dynamic API in Zalo OA Dashboard",
+      "📋 Configure API endpoint URL",
+      "📋 Map request parameters",
+      "📋 Test with ngrok HTTPS URL",
+      "📋 Deploy to production"
+    ]
+  }
+} 
