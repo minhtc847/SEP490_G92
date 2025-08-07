@@ -145,6 +145,10 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     },
   ]
 
+  // Thêm state mới cho modal xem chi tiết
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [detailContent, setDetailContent] = useState({ title: '', content: '' })
+
   const closeAddProductModal = () => {
     setShowAddProductModal(false)
   }
@@ -159,6 +163,16 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
   const closeMaterialModal = () => {
     setShowMaterialModal(false)
+  }
+
+  const showDetailInfo = (title: string, content: string) => {
+    setDetailContent({ title, content })
+    setShowDetailModal(true)
+  }
+
+  const closeDetailModal = () => {
+    setShowDetailModal(false)
+    setDetailContent({ title: '', content: '' })
   }
 
   useEffect(() => {
@@ -952,47 +966,43 @@ export default function ProductionOrderView({ params }: { params: { id: string }
             {/* Thành phẩm */}
             <div>
               <h2 className="font-semibold text-[#4361ee] mb-2">Thành phẩm</h2>
-              <table className="w-full border rounded shadow text-sm">
-                <thead className="bg-[#edf0ff]">
-                  <tr>
-                    <th className="border p-2">STT</th>
-                    <th className="border p-2">Tên TP</th>
-                    <th className="border p-2">ĐVT</th>
-                    <th className="border p-2">Số lượng</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {finishedProducts.map((item, index) => (
-                    <tr
-                      key={`${item.productName}-${index}`}
-                      onClick={() => {
-                        const productId = item.outputId || item.id
-                        if (productId) {
-                          handleProductSelect(productId)
-                        }
-                      }}
-                      className={`cursor-pointer hover:bg-blue-50 transition-colors ${
-                        selectedProduct === (item.outputId || item.id)
-                          ? "bg-[#edf0ff] border-l-4 border-[#4361ee] font-bold"
-                          : ""
-                      }`}
-                    >
-                      <td className="border p-2">{index + 1}</td>
-                      <td className="border p-2">{item.productName}</td>
-                      <td className="border p-2">{item.uom}</td>
-                      <td className="border p-2 text-right">{Number(item.quantity).toFixed(2)}</td>
+              <div className="border rounded shadow overflow-x-auto">
+                <table className="w-full text-sm" style={{ minWidth: '600px' }}>
+                  <thead className="bg-[#edf0ff]">
+                    <tr>
+                      <th className="border p-2 w-12">STT</th>
+                      <th className="border p-2 min-w-[200px]">Tên TP</th>
+                      <th className="border p-2 w-16">ĐVT</th>
+                      <th className="border p-2 w-24">Số lượng</th>
                     </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-[#f4f7ff]">
-                    {/* <td colSpan={3} className="border p-2 text-right font-semibold">
-                      Tổng:
-                    </td>
-                    <td className="border p-2 text-right font-semibold">{totalQuantity.toFixed(2)}</td> */}
-                  </tr>
-                </tfoot>
-              </table>
+                  </thead>
+                  <tbody>
+                    {finishedProducts.map((item, index) => (
+                      <tr
+                        key={`${item.productName}-${index}`}
+                        onClick={() => {
+                          const productId = item.outputId || item.id
+                          if (productId) {
+                            handleProductSelect(productId)
+                          }
+                        }}
+                        className={`hover:bg-blue-50 transition-colors ${
+                          selectedProduct === (item.outputId || item.id)
+                            ? "bg-[#edf0ff] border-l-4 border-[#4361ee] font-bold"
+                            : ""
+                        }`}
+                      >
+                        <td className="border p-2 text-center">{index + 1}</td>
+                        <td className="border p-2 break-words max-w-0" title={item.productName}>
+                          <div className="truncate">{item.productName}</div>
+                        </td>
+                        <td className="border p-2 text-center">{item.uom}</td>
+                        <td className="border p-2 text-right">{Number(item.quantity).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               <div className="flex gap-2 mt-3">
                 <button
                   onClick={handleAddProduct}
@@ -1010,11 +1020,11 @@ export default function ProductionOrderView({ params }: { params: { id: string }
             </div>
 
             {/* Nguyên vật liệu */}
-            <div className="overflow-x-auto">
+            <div>
               <div className="flex justify-between items-center mb-2">
                 <h2 className="font-semibold text-[#4361ee]">
                   Định mức NVL cho:{" "}
-                  <span className="bg-[#edf0ff] text-[#4361ee] px-2 py-1 rounded font-mono">
+                  <span className="bg-[#edf0ff] text-[#4361ee] px-2 py-1 rounded font-mono text-xs">
                     {selectedProductData?.productName || ""}
                   </span>
                 </h2>
@@ -1034,66 +1044,68 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   )}
                 </div>
               </div>
-              <table className="w-full border rounded shadow text-sm" key={`materials-${selectedProduct}`}>
-                <thead className="bg-[#edf0ff]">
-                  <tr>
-                    <th className="border p-2">STT</th>
-                    <th className="border p-2">Tên NVL</th>
-                    <th className="border p-2">ĐVT</th>
-                    <th className="border p-2">Tổng SL</th>
-                    <th className="border p-2">SL / 1 SP</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan={5} className="p-4 text-center text-gray-500 italic">
-                        Đang tải dữ liệu...
-                      </td>
-                    </tr>
-                  ) : currentMaterials.length > 0 ? (
-                    currentMaterials.map((material, index) => (
-                      <tr
-                        key={`${selectedProduct}-${material.id}-${index}`}
-                        className={`cursor-pointer transition-colors ${
-                          selectedMaterial?.productName === material.productName
-                            ? "bg-[#e8f5e8] border-l-4 border-[#28a745] font-bold"
-                            : "hover:bg-blue-50"
-                        }`}
-                        onClick={() => handleMaterialSelect(material)}
-                        title="Click để chọn nguyên vật liệu này"
-                      >
-                        <td className="border p-2">{index + 1}</td>
-                        <td className="border p-2 break-words" title={material.productName}>
-                          {material.productName}
-                        </td>
-                        <td className="border p-2">{material.uom}</td>
-                        <td className="border p-2 text-right">{material.totalQuantity}</td>
-                        <td className="border p-2 text-right">{material.quantityPer}</td>
+              <div className="border rounded shadow">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm" style={{ minWidth: '700px' }} key={`materials-${selectedProduct}`}>
+                    <thead className="bg-[#edf0ff]">
+                      <tr>
+                        <th className="border p-2 w-12">STT</th>
+                        <th className="border p-2 min-w-[250px]">Tên NVL</th>
+                        <th className="border p-2 w-16">ĐVT</th>
+                        <th className="border p-2 w-24">Tổng SL</th>
+                        <th className="border p-2 w-24">SL / 1 SP</th>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="border p-4 text-center text-gray-500 italic">
-                        {selectedProduct
-                          ? `Không có nguyên vật liệu cho sản phẩm ${selectedProduct}`
-                          : "Chọn sản phẩm để xem nguyên vật liệu"}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-                {currentMaterials.length > 0 && (
-                  <tfoot>
-                    <tr className="bg-[#f4f7ff]">
-                      {/* <td colSpan={3} className="border p-2 text-right font-semibold">
-                        Tổng:
-                      </td>
-                      <td className="border p-2 text-right font-semibold">{totalMaterialQuantity}</td>
-                      <td className="border p-2" /> */}
-                    </tr>
-                  </tfoot>
-                )}
-              </table>
+                    </thead>
+                    <tbody>
+                      {loading ? (
+                        <tr>
+                          <td colSpan={5} className="p-4 text-center text-gray-500 italic">
+                            Đang tải dữ liệu...
+                          </td>
+                        </tr>
+                      ) : currentMaterials.length > 0 ? (
+                        currentMaterials.map((material, index) => (
+                          <tr
+                            key={`${selectedProduct}-${material.id}-${index}`}
+                            className={`cursor-pointer transition-colors ${
+                              selectedMaterial?.productName === material.productName
+                                ? "bg-[#e8f5e8] border-l-4 border-[#28a745] font-bold"
+                                : "hover:bg-blue-50"
+                            }`}
+                            onClick={() => handleMaterialSelect(material)}
+                            title="Click để chọn nguyên vật liệu này"
+                          >
+                            <td className="border p-2 text-center">{index + 1}</td>
+                            <td className="border p-2 break-words max-w-0">
+                              <div 
+                                className="truncate cursor-pointer hover:text-blue-600 hover:underline" 
+                                title="Click để xem đầy đủ tên nguyên vật liệu"
+                                onClick={(e) => {
+                                  e.stopPropagation() // Ngăn không cho trigger row selection
+                                  showDetailInfo('Tên nguyên vật liệu', material.productName)
+                                }}
+                              >
+                                {material.productName}
+                              </div>
+                            </td>
+                            <td className="border p-2 text-center">{material.uom}</td>
+                            <td className="border p-2 text-right">{material.totalQuantity}</td>
+                            <td className="border p-2 text-right">{material.quantityPer}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="border p-4 text-center text-gray-500 italic">
+                            {selectedProduct
+                              ? `Không có nguyên vật liệu cho sản phẩm ${selectedProduct}`
+                              : "Chọn sản phẩm để xem nguyên vật liệu"}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
               <div className="flex gap-2 mt-3">
                 <button
                   onClick={handleAddMaterial}
@@ -1108,10 +1120,10 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   }`}
                   disabled={!selectedMaterial}
                   title={
-                    selectedMaterial ? `Cập nhật ${selectedMaterial.productName})` : "Chọn nguyên vật liệu để cập nhật"
+                    selectedMaterial ? `Cập nhật ${selectedMaterial.productName}` : "Chọn nguyên vật liệu để cập nhật"
                   }
                 >
-                  Sửa {selectedMaterial ? `(${selectedMaterial.productName})` : ""}
+                  Sửa {selectedMaterial ? `(${selectedMaterial.productName.length > 20 ? selectedMaterial.productName.substring(0, 20) + '...' : selectedMaterial.productName})` : ""}
                 </button>
               </div>
             </div>
@@ -1412,7 +1424,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Đơn vị tính
-                  <span className="text-xs text-blue-600 ml-2">(Không thể sửa - lấy từ sản phẩm được chọn)</span>
+                  <span className="text-xs text-blue-600 ml-2"></span>
                 </label>
                 <input
                   type="text"
@@ -1508,7 +1520,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Đơn vị tính
-                  <span className="text-xs text-blue-600 ml-2">(Không thể sửa - lấy từ sản phẩm được chọn)</span>
+                  <span className="text-xs text-blue-600 ml-2"></span>
                 </label>
                 <input
                   type="text"
@@ -1575,6 +1587,39 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL XEM CHI TIẾT */}
+      {showDetailModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeDetailModal()
+          }}
+        >
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg mx-4 animate-in fade-in duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-[#4361ee]">{detailContent.title}</h3>
+              <button
+                onClick={closeDetailModal}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"
+              >
+                ×
+              </button>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-md border">
+              <p className="text-gray-800 break-words leading-relaxed">{detailContent.content}</p>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={closeDetailModal}
+                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors font-medium"
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}
