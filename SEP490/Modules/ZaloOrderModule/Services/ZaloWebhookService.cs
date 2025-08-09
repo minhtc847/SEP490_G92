@@ -5,6 +5,7 @@ using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.Modules.ZaloOrderModule.Constants;
 using SEP490.Modules.ZaloOrderModule.DTO;
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -139,12 +140,13 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 };
 
                 var client = _httpClientFactory.CreateClient();
-                client.DefaultRequestHeaders.Add("access_token", token.AccessToken);
-
+                // client.DefaultRequestHeaders.Add("access_token", token.AccessToken);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
+                var accesstoken = token.AccessToken;
                 var json = JsonSerializer.Serialize(sendRequest);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var response = await client.PostAsync("https://graph.zalo.me/v3.0/me/message", content);
+                var response = await client.PostAsync("https://openapi.zalo.me/v3.0/oa/message/cs", content);
                 
                 if (response.IsSuccessStatusCode)
                 {
