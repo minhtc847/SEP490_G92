@@ -61,6 +61,13 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddSignalR();
 
+// Add ZaloOrderModule services
+builder.Services.AddTransient<ZaloConversationStateService>();
+builder.Services.AddTransient<ZaloResponseService>();
+builder.Services.AddTransient<ZaloMessageProcessorService>();
+builder.Services.AddTransient<IZaloMessageHistoryService, ZaloMessageHistoryService>();
+builder.Services.AddTransient<IZaloCustomerService, ZaloCustomerService>();
+
 // Register all services that inherit from BaseService
 var baseType = typeof(BaseService);
 

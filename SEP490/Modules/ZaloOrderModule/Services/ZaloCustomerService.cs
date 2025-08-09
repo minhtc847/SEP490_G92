@@ -1,12 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.DB.Models;
 using System.Text.RegularExpressions;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
-    public class ZaloCustomerService : IZaloCustomerService
+    public class ZaloCustomerService :BaseService, IZaloCustomerService
     {
         private readonly ILogger<ZaloCustomerService> _logger;
         private readonly SEP490DbContext _context;

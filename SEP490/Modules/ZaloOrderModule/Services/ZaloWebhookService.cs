@@ -1,5 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using SEP490.Common.Services;
+using SEP490.DB;
 using SEP490.Modules.ZaloOrderModule.Constants;
 using SEP490.Modules.ZaloOrderModule.DTO;
 using System.Security.Cryptography;
@@ -8,8 +11,9 @@ using System.Text.Json;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
-    public class ZaloWebhookService : IZaloWebhookService
+    public class ZaloWebhookService : BaseService, IZaloWebhookService
     {
+        private readonly SEP490DbContext _context;
         private readonly ILogger<ZaloWebhookService> _logger;
         private readonly IConfiguration _configuration;
         private readonly IHttpClientFactory _httpClientFactory;
@@ -18,6 +22,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         private readonly ZaloResponseService _responseService;
 
         public ZaloWebhookService(
+            SEP490DbContext sEP490DbContext,
             ILogger<ZaloWebhookService> logger,
             IConfiguration configuration,
             IHttpClientFactory httpClientFactory,
@@ -25,6 +30,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             ZaloConversationStateService conversationStateService,
             ZaloResponseService responseService)
         {
+            _context = sEP490DbContext;
             _logger = logger;
             _configuration = configuration;
             _httpClientFactory = httpClientFactory;
@@ -108,12 +114,23 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         {
             try
             {
-                var accessToken = await GetAccessTokenAsync();
-                if (string.IsNullOrEmpty(accessToken))
-                {
-                    _logger.LogError("Failed to get Zalo access token");
-                    return false;
-                }
+                var token = await _context.ZaloTokens.FirstOrDefaultAsync();
+                if (token == null)
+                    throw new Exception("loi");
+                // Refresh access token if expired
+                //if (token.AccessTokenExpiresAt <= DateTime.UtcNow)
+                //{
+                //    var refreshed = await RefreshZaloTokenAsync(token);
+                //    if (!refreshed)
+                //        throw new Exception("loi");
+                //}
+
+                //var accessToken = await GetAccessTokenAsync();
+                //if (string.IsNullOrEmpty(accessToken))
+                //{
+                //    _logger.LogError("Failed to get Zalo access token");
+                //    return false;
+                //}
 
                 var sendRequest = new ZaloSendMessageRequest
                 {
@@ -122,12 +139,12 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 };
 
                 var client = _httpClientFactory.CreateClient();
-                client.DefaultRequestHeaders.Add("access_token", accessToken);
+                client.DefaultRequestHeaders.Add("access_token", token.AccessToken);
 
                 var json = JsonSerializer.Serialize(sendRequest);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var response = await client.PostAsync("https://graph.zalo.me/v2.0/me/message", content);
+                var response = await client.PostAsync("https://graph.zalo.me/v3.0/me/message", content);
                 
                 if (response.IsSuccessStatusCode)
                 {
@@ -152,12 +169,21 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 return false;
             }
         }
-        private async Task<string?> GetAccessTokenAsync()
-        {
-            // Implement logic to get access token from your existing ZaloAuthService
-            // This should use your existing token management system
-            return _configuration["Zalo:AccessToken"];
-        }
+        //private async Task<string?> GetAccessTokenAsync()
+        //{
+        //    var token = await _context.ZaloTokens.FirstOrDefaultAsync();
+        //    if (token == null)
+        //        throw new Exception("loi");
+
+        //    // Refresh access token if expired
+        //    //if (token.AccessTokenExpiresAt <= DateTime.UtcNow)
+        //    //{
+        //    //    var refreshed = await RefreshZaloTokenAsync(token);
+        //    //    if (!refreshed)
+        //    //        throw new Exception("loi");
+        //    //}
+        //    return token;
+        //}
     }
 }
 

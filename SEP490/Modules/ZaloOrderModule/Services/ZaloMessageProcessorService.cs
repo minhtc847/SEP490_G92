@@ -1,16 +1,17 @@
-using Microsoft.Extensions.Logging;
-using SEP490.Modules.ZaloOrderModule.DTO;
-using SEP490.Modules.ZaloOrderModule.Constants;
-using SEP490.DB.Models;
-using ZaloMessageResponse = SEP490.Modules.Zalo.DTO.MessageResponse;
-using ZaloLLMResponse = SEP490.Modules.Zalo.DTO.LLMResponse;
-using SEP490.Modules.Zalo.Services;
-using SEP490.DB;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using SEP490.Common.Services;
+using SEP490.DB;
+using SEP490.DB.Models;
+using SEP490.Modules.Zalo.Services;
+using SEP490.Modules.ZaloOrderModule.Constants;
+using SEP490.Modules.ZaloOrderModule.DTO;
+using ZaloLLMResponse = SEP490.Modules.Zalo.DTO.LLMResponse;
+using ZaloMessageResponse = SEP490.Modules.Zalo.DTO.MessageResponse;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
-    public class ZaloMessageProcessorService
+    public class ZaloMessageProcessorService: BaseService
     {
         private readonly ILogger<ZaloMessageProcessorService> _logger;
         private readonly ZaloConversationStateService _conversationStateService;

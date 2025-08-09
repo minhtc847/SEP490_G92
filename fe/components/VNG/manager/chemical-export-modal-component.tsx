@@ -106,10 +106,10 @@ const ChemicalExportModalComponent: React.FC<ChemicalExportModalComponentProps> 
         const material = newProducts[productIndex].materials[materialIndex];
         
         if (field === 'quantity') {
-            material[field] = Number(value);
-        } else {
-            material[field] = String(value);
-        }
+            material[field] = Number(value);}
+        // } else {
+        //     material[field] = String(value);
+        // }
         
         setFormProducts(newProducts);
     };

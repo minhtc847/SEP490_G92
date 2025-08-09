@@ -33,11 +33,11 @@ const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productio
     useEffect(() => {
         if (isOpen) {
             const initialQuantities: { [productId: number]: number } = {};
-            products.forEach((product) => {
-                // Default to remaining quantity
-                const remainingQuantity = product.totalQuantity - product.daGhepKinh;
-                initialQuantities[product.id] = remainingQuantity;
-            });
+            // products.forEach((product) => {
+            //     // Default to remaining quantity
+            //     //const remainingQuantity = product.totalQuantity - product.daGhepKinh;
+            //     //initialQuantities[product.id] = remainingQuantity;
+            // });
             setProductQuantities(initialQuantities);
             updateFinishedProducts(initialQuantities);
         }
@@ -168,7 +168,7 @@ const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productio
                                                 </thead>
                                                 <tbody>
                                                     {products.map((product, idx) => {
-                                                        const remainingQuantity = product.totalQuantity - product.daGhepKinh;
+                                                        // const remainingQuantity = product.totalQuantity - product.daGhepKinh;
                                                         const selectedQuantity = productQuantities[product.id] || 0;
                                                         
                                                         return (
@@ -179,15 +179,15 @@ const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productio
                                                                     <input
                                                                         type="number"
                                                                         min={0}
-                                                                        max={remainingQuantity}
+                                                                        //max={remainingQuantity}
                                                                         className="form-input w-24"
                                                                         value={productQuantities[product.id] ?? 0}
                                                                         onChange={e => handleProductQuantityChange(product.id, e.target.value)}
                                                                     />
                                                                 </td>
-                                                                <td className="text-center">{product.daGhepKinh}</td>
-                                                                <td className="text-center">{remainingQuantity}</td>
-                                                                <td className="text-center">{product.daCatKinh}</td>
+                                                                {/* <td className="text-center">{product.daGhepKinh}</td> */}
+                                                                {/* <td className="text-center">{remainingQuantity}</td> */}
+                                                                {/* <td className="text-center">{product.daCatKinh}</td> */}
                                                             </tr>
                                                         );
                                                     })}

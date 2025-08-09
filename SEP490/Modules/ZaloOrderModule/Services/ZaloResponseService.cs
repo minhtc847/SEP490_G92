@@ -1,10 +1,11 @@
 using Microsoft.Extensions.Logging;
+using SEP490.Common.Services;
 using SEP490.Modules.ZaloOrderModule.Constants;
 using SEP490.Modules.ZaloOrderModule.DTO;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
-    public class ZaloResponseService
+    public class ZaloResponseService: BaseService
     {
         private readonly ILogger<ZaloResponseService> _logger;
 

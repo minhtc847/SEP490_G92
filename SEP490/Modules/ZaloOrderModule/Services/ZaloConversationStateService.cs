@@ -1,12 +1,13 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using SEP490.Common.Services;
 using SEP490.Modules.ZaloOrderModule.DTO;
 using StackExchange.Redis;
 using System.Text.Json;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
-    public class ZaloConversationStateService
+    public class ZaloConversationStateService: BaseService
     {
         private readonly ILogger<ZaloConversationStateService> _logger;
         private readonly IConnectionMultiplexer _redis;
@@ -45,7 +46,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 var newConversation = new ConversationState
                 {
                     ZaloUserId = zaloUserId,
-                    CurrentState = UserStates.INQUIRY,
+                    CurrentState = UserStates.NEW,
                     LastActivity = DateTime.UtcNow,
                     CreatedAt = DateTime.UtcNow,
                     IsActive = true
@@ -64,7 +65,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 return new ConversationState
                 {
                     ZaloUserId = zaloUserId,
-                    CurrentState = UserStates.INQUIRY,
+                    CurrentState = UserStates.NEW,
                     LastActivity = DateTime.UtcNow,
                     CreatedAt = DateTime.UtcNow,
                     IsActive = true

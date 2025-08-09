@@ -56,11 +56,11 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
     useEffect(() => {
         if (isOpen) {
             const initialQuantities: { [productId: number]: number } = {};
-            products.forEach((product) => {
-                // Default to remaining quantity
-                const remainingQuantity = product.totalQuantity - product.daDoKeo;
-                initialQuantities[product.id] = remainingQuantity;
-            });
+            // products.forEach((product) => {
+            //     // Default to remaining quantity
+            //     // const remainingQuantity = product.totalQuantity - product.daDoKeo;
+            //     // initialQuantities[product.id] = remainingQuantity;
+            // });
             setProductQuantities(initialQuantities);
         }
     }, [isOpen, products]);
@@ -201,7 +201,7 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
                                                 </thead>
                                                 <tbody>
                                                     {products.map((product, idx) => {
-                                                        const remainingQuantity = product.totalQuantity - product.daDoKeo;
+                                                        //const remainingQuantity = product.totalQuantity - product.daDoKeo;
                                                         const materialProduct = materialProducts.find(mp => mp.productName === product.productName);
                                                         const totalGlue = materialProduct?.totalGlue || 0;
                                                         
@@ -215,14 +215,14 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
                                                                     <input
                                                                         type="number"
                                                                         min={0}
-                                                                        max={remainingQuantity}
+                                                                        //max={remainingQuantity}
                                                                         className="form-input w-24"
                                                                         value={productQuantities[product.id] ?? 0}
                                                                         onChange={e => handleProductQuantityChange(product.id, e.target.value)}
                                                                     />
                                                                 </td>
-                                                                <td className="text-center">{product.daDoKeo}</td>
-                                                                <td className="text-center">{remainingQuantity}</td>
+                                                                {/* <td className="text-center">{product.daDoKeo}</td>
+                                                                <td className="text-center">{remainingQuantity}</td> */}
                                                             </tr>
                                                         );
                                                     })}
