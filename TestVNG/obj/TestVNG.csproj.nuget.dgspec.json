@@ -109,6 +109,10 @@
               "target": "Package",
               "version": "[124.0.6367.6000, )"
             },
+            "StackExchange.Redis": {
+              "target": "Package",
+              "version": "[2.8.58, )"
+            },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[6.5.0, )"

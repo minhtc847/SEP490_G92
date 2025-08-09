@@ -1,0 +1,192 @@
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using SEP490.Modules.ZaloOrderModule.DTO;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+
+namespace SEP490.Modules.ZaloOrderModule.Services
+{
+    public class ZaloWebhookService : IZaloWebhookService
+    {
+        private readonly ILogger<ZaloWebhookService> _logger;
+        private readonly IConfiguration _configuration;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ZaloMessageProcessorService _messageProcessor;
+        private readonly ZaloConversationStateService _conversationStateService;
+
+        public ZaloWebhookService(
+            ILogger<ZaloWebhookService> logger,
+            IConfiguration configuration,
+            IHttpClientFactory httpClientFactory,
+            ZaloMessageProcessorService messageProcessor,
+            ZaloConversationStateService conversationStateService)
+        {
+            _logger = logger;
+            _configuration = configuration;
+            _httpClientFactory = httpClientFactory;
+            _messageProcessor = messageProcessor;
+            _conversationStateService = conversationStateService;
+        }
+
+        public async Task<ZaloWebhookResponse> ProcessWebhookAsync(ZaloWebhookRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("Processing webhook event: {EventName} from user: {UserId}", 
+                    request.EventName, request.Sender.Id);
+
+                // Update user info in conversation state
+                await _conversationStateService.UpdateUserInfoAsync(request.Sender.Id, request.Sender.Name, request.Sender.Avatar);
+
+                switch (request.EventName.ToLower())
+                {
+                    case "user_send_text":
+                        return await HandleTextMessageAsync(request);
+                    
+                    
+                    
+                    default:
+                        _logger.LogWarning("Unhandled webhook event: {EventName}", request.EventName);
+                        return new ZaloWebhookResponse { Status = "ignored", Message = "Event not handled" };
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing webhook request");
+                return new ZaloWebhookResponse { Status = "error", Message = "Internal server error" };
+            }
+        }
+
+        private async Task<ZaloWebhookResponse> HandleTextMessageAsync(ZaloWebhookRequest request)
+        {
+            if (request.Message?.Text == null)
+            {
+                return new ZaloWebhookResponse { Status = "error", Message = "No text content" };
+            }
+
+            // Xử lý tin nhắn text
+            var response = await _messageProcessor.ProcessMessageAsync(request.Sender.Id, request.Message.Text);
+
+            // Gửi phản hồi về Zalo
+            await SendMessageToZaloAsync(request.Sender.Id, response.Content);
+
+            return new ZaloWebhookResponse { Status = "success", Message = "Text message processed" };
+        }
+
+        
+        public async Task<bool> SendMessageToZaloAsync(string recipientId, string message)
+        {
+            try
+            {
+                var accessToken = await GetAccessTokenAsync();
+                if (string.IsNullOrEmpty(accessToken))
+                {
+                    _logger.LogError("Failed to get Zalo access token");
+                    return false;
+                }
+
+                var sendRequest = new ZaloSendMessageRequest
+                {
+                    Recipient = new ZaloRecipient { Id = recipientId },
+                    Message = new ZaloSendMessage { Text = message }
+                };
+
+                var client = _httpClientFactory.CreateClient();
+                client.DefaultRequestHeaders.Add("access_token", accessToken);
+
+                var json = JsonSerializer.Serialize(sendRequest);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await client.PostAsync("https://graph.zalo.me/v2.0/me/message", content);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var sendResponse = JsonSerializer.Deserialize<ZaloSendMessageResponse>(responseContent);
+                    _logger.LogInformation("Message sent successfully to user: {UserId}, MessageId: {MessageId}", 
+                        recipientId, sendResponse?.MessageId);
+                    return true;
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    var errorResponse = JsonSerializer.Deserialize<ZaloErrorResponse>(errorContent);
+                    _logger.LogError("Failed to send message to user {UserId}. Error: {Error}, Message: {Message}", 
+                        recipientId, errorResponse?.Error, errorResponse?.Message);
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending message to Zalo for user: {UserId}", recipientId);
+                return false;
+            }
+        }
+
+        public async Task<bool> SendImageToZaloAsync(string recipientId, string imageUrl, string? thumbnailUrl = null)
+        {
+            try
+            {
+                var accessToken = await GetAccessTokenAsync();
+                if (string.IsNullOrEmpty(accessToken))
+                {
+                    _logger.LogError("Failed to get Zalo access token");
+                    return false;
+                }
+
+                var sendRequest = new ZaloSendMessageRequest
+                {
+                    Recipient = new ZaloRecipient { Id = recipientId },
+                    Message = new ZaloSendMessage
+                    {
+                        Attachment = new ZaloSendAttachment
+                        {
+                            Type = "image",
+                            Payload = new ZaloSendAttachmentPayload
+                            {
+                                Url = imageUrl,
+                                Thumbnail = thumbnailUrl
+                            }
+                        }
+                    }
+                };
+
+                var client = _httpClientFactory.CreateClient();
+                client.DefaultRequestHeaders.Add("access_token", accessToken);
+
+                var json = JsonSerializer.Serialize(sendRequest);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await client.PostAsync("https://graph.zalo.me/v2.0/me/message", content);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("Image sent successfully to user: {UserId}", recipientId);
+                    return true;
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("Failed to send image to user {UserId}. Status: {Status}, Error: {Error}", 
+                        recipientId, response.StatusCode, errorContent);
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending image to Zalo for user: {UserId}", recipientId);
+                return false;
+            }
+        }
+
+
+        private async Task<string?> GetAccessTokenAsync()
+        {
+            // Implement logic to get access token from your existing ZaloAuthService
+            // This should use your existing token management system
+            return _configuration["Zalo:AccessToken"];
+        }
+    }
+}
+
