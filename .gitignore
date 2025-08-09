@@ -1,6 +1,7 @@
 .github
 /obj
-/bin/
+/obj
+/TestVNG/bin
 
 # dependencies
 /node_modules
