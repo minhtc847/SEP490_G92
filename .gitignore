@@ -1,5 +1,6 @@
 .github
 /obj
+/bin/
 
 # dependencies
 /node_modules
@@ -58,3 +59,4 @@ pids
 *.pid
 *.seed
 *.pid.lock
+
