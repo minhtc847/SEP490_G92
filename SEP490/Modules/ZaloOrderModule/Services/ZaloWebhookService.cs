@@ -118,20 +118,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 var token = await _context.ZaloTokens.FirstOrDefaultAsync();
                 if (token == null)
                     throw new Exception("loi");
-                // Refresh access token if expired
-                //if (token.AccessTokenExpiresAt <= DateTime.UtcNow)
-                //{
-                //    var refreshed = await RefreshZaloTokenAsync(token);
-                //    if (!refreshed)
-                //        throw new Exception("loi");
-                //}
-
-                //var accessToken = await GetAccessTokenAsync();
-                //if (string.IsNullOrEmpty(accessToken))
-                //{
-                //    _logger.LogError("Failed to get Zalo access token");
-                //    return false;
-                //}
+               
 
                 var sendRequest = new ZaloSendMessageRequest
                 {
