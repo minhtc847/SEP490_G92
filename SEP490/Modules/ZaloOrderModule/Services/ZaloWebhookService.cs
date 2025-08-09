@@ -152,64 +152,6 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 return false;
             }
         }
-
-        public async Task<bool> SendImageToZaloAsync(string recipientId, string imageUrl, string? thumbnailUrl = null)
-        {
-            try
-            {
-                var accessToken = await GetAccessTokenAsync();
-                if (string.IsNullOrEmpty(accessToken))
-                {
-                    _logger.LogError("Failed to get Zalo access token");
-                    return false;
-                }
-
-                var sendRequest = new ZaloSendMessageRequest
-                {
-                    Recipient = new ZaloRecipient { Id = recipientId },
-                    Message = new ZaloSendMessage
-                    {
-                        Attachment = new ZaloSendAttachment
-                        {
-                            Type = "image",
-                            Payload = new ZaloSendAttachmentPayload
-                            {
-                                Url = imageUrl,
-                                Thumbnail = thumbnailUrl
-                            }
-                        }
-                    }
-                };
-
-                var client = _httpClientFactory.CreateClient();
-                client.DefaultRequestHeaders.Add("access_token", accessToken);
-
-                var json = JsonSerializer.Serialize(sendRequest);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                var response = await client.PostAsync("https://graph.zalo.me/v2.0/me/message", content);
-                
-                if (response.IsSuccessStatusCode)
-                {
-                    _logger.LogInformation("Image sent successfully to user: {UserId}", recipientId);
-                    return true;
-                }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    _logger.LogError("Failed to send image to user {UserId}. Status: {Status}, Error: {Error}", 
-                        recipientId, response.StatusCode, errorContent);
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error sending image to Zalo for user: {UserId}", recipientId);
-                return false;
-            }
-        }
-
-
         private async Task<string?> GetAccessTokenAsync()
         {
             // Implement logic to get access token from your existing ZaloAuthService

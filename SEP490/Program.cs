@@ -9,7 +9,9 @@ using SEP490.Modules.Auth.Services;
 using SEP490.Modules.LLMChat.Services;
 using SEP490.Modules.OrderModule.ManageOrder.Services;
 using SEP490.Modules.Zalo.Services;
+using SEP490.Modules.ZaloOrderModule.Services;
 using SEP490.Modules.ProductionOrders.Services;
+using StackExchange.Redis;
 using System;
 using System.Reflection;
 using System.Text;
@@ -23,6 +25,13 @@ builder.Services.AddDbContext<SEP490DbContext>(options =>
     options.UseMySql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
         mysqlVersion).UseSnakeCaseNamingConvention());
+
+// Add Redis
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    var configuration = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
+    return ConnectionMultiplexer.Connect(configuration);
+});
 
 // Add JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

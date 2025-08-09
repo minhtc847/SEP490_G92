@@ -14,16 +14,16 @@ namespace SEP490.Modules.Zalo.Services
             _context = context;
         }
 
-        public async Task<string?> FindProductCodeAsync(string itemCode, string itemType, double height, double width, double thickness)
+        public async Task<string?> FindProductNameAsync(string itemCode, string itemType, double height, double width, double thickness)
         {
-            // 1. Tìm glassstructureId
+            // 1. Tï¿½m glassstructureId
             var glassStructure = await _context.GlassStructures
                 .FirstOrDefaultAsync(gs => gs.ProductCode == itemCode && gs.Category =="VNG-"+ itemType);
 
             if (glassStructure == null)
                 return null;
 
-            // 2. Tìm productcode trong b?ng Product
+            // 2. Tï¿½m productname trong b?ng Product
             var product = await _context.Products
                 .FirstOrDefaultAsync(p =>
                     p.GlassStructureId == glassStructure.Id &&
@@ -31,7 +31,7 @@ namespace SEP490.Modules.Zalo.Services
                     p.Width == width.ToString() &&  // Convert width to string for comparison
                     p.Thickness == (decimal)thickness); // Cast thickness to decimal for comparison
 
-            return product?.ProductCode;
+            return product?.ProductName;
         }
     }
 }

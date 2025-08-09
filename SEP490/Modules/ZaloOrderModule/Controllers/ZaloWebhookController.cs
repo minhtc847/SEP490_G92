@@ -161,13 +161,6 @@ namespace SEP490.Modules.ZaloOrderModule.Controllers
         public string RecipientId { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
     }
-
-    public class SendImageRequest
-    {
-        public string RecipientId { get; set; } = string.Empty;
-        public string ImageUrl { get; set; } = string.Empty;
-        public string? ThumbnailUrl { get; set; }
-    }
 }
 
 

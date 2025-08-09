@@ -67,21 +67,20 @@ namespace SEP490.Modules.Zalo.Controllers
 
             foreach (var item in forwardResponse.Items)
             {
-                var productCode = await glassProductLookupService.FindProductCodeAsync(
+                var productName = await glassProductLookupService.FindProductNameAsync(
                     item.ItemCode, item.ItemType, item.Height, item.Width, item.Thickness
                 );
-                if (productCode != null)
+                if (productName != null)
                 {
                     // Query product info from database
                     var product = await context.Products
-                        .FirstOrDefaultAsync(p => p.ProductCode == productCode);
+                        .FirstOrDefaultAsync(p => p.ProductName == productName);
 
                     if (product != null)
                     {
                         createProductDtos.Add(new CreateProductDto
                         {
                             ProductId = product.Id,
-                            ProductCode = product.ProductCode,
                             ProductName = product.ProductName,
                             Height = product.Height.ToString(),
                             Width = product.Width.ToString(),

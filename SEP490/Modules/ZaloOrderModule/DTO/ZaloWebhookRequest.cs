@@ -52,77 +52,7 @@ namespace SEP490.Modules.ZaloOrderModule.DTO
         [JsonPropertyName("text")]
         public string Text { get; set; } = string.Empty;
 
-        [JsonPropertyName("attachments")]
-        public List<ZaloAttachment>? Attachments { get; set; }
-
-        [JsonPropertyName("reply_to")]
-        public ZaloReplyTo? ReplyTo { get; set; }
     }
 
-    public class ZaloAttachment
-    {
-        [JsonPropertyName("type")]
-        public string Type { get; set; } = string.Empty;
-
-        [JsonPropertyName("payload")]
-        public ZaloAttachmentPayload Payload { get; set; } = new();
-    }
-
-    public class ZaloAttachmentPayload
-    {
-        [JsonPropertyName("url")]
-        public string? Url { get; set; }
-
-        [JsonPropertyName("thumbnail")]
-        public string? Thumbnail { get; set; }
-
-        [JsonPropertyName("size")]
-        public long? Size { get; set; }
-
-        [JsonPropertyName("name")]
-        public string? Name { get; set; }
-
-        [JsonPropertyName("coordinates")]
-        public ZaloCoordinates? Coordinates { get; set; }
-
-        [JsonPropertyName("address")]
-        public string? Address { get; set; }
-
-        [JsonPropertyName("title")]
-        public string? Title { get; set; }
-
-        [JsonPropertyName("description")]
-        public string? Description { get; set; }
-
-        [JsonPropertyName("image")]
-        public ZaloImage? Image { get; set; }
-    }
-
-    public class ZaloCoordinates
-    {
-        [JsonPropertyName("latitude")]
-        public double Latitude { get; set; }
-
-        [JsonPropertyName("longitude")]
-        public double Longitude { get; set; }
-    }
-
-    public class ZaloImage
-    {
-        [JsonPropertyName("url")]
-        public string? Url { get; set; }
-
-        [JsonPropertyName("width")]
-        public int? Width { get; set; }
-
-        [JsonPropertyName("height")]
-        public int? Height { get; set; }
-    }
-
-    public class ZaloReplyTo
-    {
-        [JsonPropertyName("msg_id")]
-        public string MsgId { get; set; } = string.Empty;
-    }
 }
 

@@ -89,27 +89,18 @@ namespace SEP490.Modules.ZaloOrderModule.Constants
             public const string ORDER_CANCEL = "Đơn hàng đã được hủy.";
             public const string UNSUPPORTED_EVENT = "Xin lỗi, tôi chỉ có thể xử lý tin nhắn văn bản. Vui lòng gửi tin nhắn bằng chữ hoặc liên hệ nhân viên hỗ trợ.";
             public const string CONTACT_SUPPORT = "📞 Hotline: 1900-xxxx\n📧 Email: support@vngglass.com\n💬 Zalo: @vngglass_support";
+            
+            // Order placement flow messages
+            public const string ORDER_START_PHONE_REQUEST = "🎉 Bạn đã bắt đầu quá trình đặt hàng!\n\n📞 Vui lòng nhập số điện thoại của bạn để chúng tôi có thể phục vụ tốt hơn:";
+            public const string INVALID_PHONE_FORMAT = "❌ Số điện thoại không đúng định dạng. Vui lòng nhập lại số điện thoại hợp lệ (VD: 0123456789):";
+            public const string CUSTOMER_FOUND_ORDER_START = "Xin chào {0}!\n\n🎯 Đã bắt đầu tiến hành đặt hàng. Bạn vui lòng nhập thông tin sản phẩm theo định dạng:\n📝 Mã sản phẩm + Loại sản phẩm + Kích thước + Số lượng\n\n💡 Ví dụ: GL001 Kính cường lực 1000x2000mm 2";
+            public const string CUSTOMER_NOT_FOUND_ORDER_START = "🎯 Không tìm thấy thông tin khách hàng, xin quý khách liên hệ nhân viên để được hỗ trợ";
+            public const string INVALID_PRODUCT_FORMAT = "❌ Thông tin sản phẩm không đúng định dạng. Vui lòng nhập lại theo định dạng:\n📝 Mã sản phẩm + Loại sản phẩm + Kích thước + Số lượng\n\n💡 Ví dụ: GL001 Kính cường lực 1000x2000mm 2\n\n🎯 Hoặc nhắn \"Kết thúc\" để hoàn thành đơn hàng";
+            public const string PRODUCT_ADDED_SUCCESS = "✅ Đã thêm sản phẩm: {0} - {1} - {2} - SL: {3}\n\n📝 Nếu quý khách muốn sửa thông tin đơn hàng thì hãy cập nhật lại sản phẩm\n\n🎯 Nếu đã xác nhận hãy nhắn \"Kết thúc\" tôi sẽ gửi bạn bản xác nhận đơn hàng";
+            public const string NO_PRODUCTS_IN_ORDER = "❌ Chưa có sản phẩm nào trong đơn hàng. Vui lòng nhập thông tin sản phẩm trước:";
+            public const string ORDER_COMPLETED_SUCCESS = "🎉 Đơn hàng của bạn đã được tạo thành công!\n\n{0}\n\n📞 Nhân viên sẽ liên hệ với bạn trong vòng 30 phút để xác nhận đơn hàng.\n📋 Đơn hàng sẽ được xử lý trong 3-5 ngày làm việc.\n🚚 Giao hàng miễn phí trong phạm vi 50km.\n\nCảm ơn bạn đã tin tưởng VNG Glass!";
         }
 
-        // Product types
-        public static class ProductTypes
-        {
-            public const string TEMPERED_GLASS = "Kính cường lực";
-            public const string SAFETY_GLASS = "Kính an toàn";
-            public const string REFLECTIVE_GLASS = "Kính phản quang";
-            public const string SOUNDPROOF_GLASS = "Kính cách âm";
-        }
-
-        // Order states
-        public static class OrderStates
-        {
-            public const string PENDING = "Chờ xử lý";
-            public const string PROCESSING = "Đang xử lý";
-            public const string CONFIRMED = "Đã xác nhận";
-            public const string SHIPPED = "Đã giao hàng";
-            public const string DELIVERED = "Đã nhận hàng";
-            public const string CANCELLED = "Đã hủy";
-        }
     }
 }
 
