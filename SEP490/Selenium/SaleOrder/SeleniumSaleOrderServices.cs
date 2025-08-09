@@ -40,6 +40,19 @@ namespace SEP490.Selenium.SaleOrder
             passwordInput.SendKeys(_config["Misa:Password"]);
             IWebElement loginButton = driver.FindElement(By.CssSelector("#box-login-right > div > div > div.login-form-basic-container > div > div.login-form-btn-container.login-class > button"));
             loginButton.Click();
+            ClickIfExists(By.XPath("/html/body/div[5]/div/i"), driver, wait);
+
+            Thread.Sleep(1000);
+
+            // Đợi loading biến mất
+            wait.Until(d => d.FindElement(By.Id("loading-bg")).GetAttribute("style").Contains("display: none"));
+
+            // Ấn continue nếu có
+            ClickIfExists(
+                By.CssSelector("#app > div.w-full.overflow-auto.h-full > div > div > div.cnl-box-container.flexed > div > div.flexed-row.buttons > div:nth-child(1) > button > div"),
+                driver,
+                wait
+            );
             Thread.Sleep(5000);
         }
         private void CloseDriver()
@@ -167,6 +180,30 @@ namespace SEP490.Selenium.SaleOrder
                         ));
             exitButton.Click();
             Thread.Sleep(500);
+        }
+        public static bool ClickIfExists(By by, IWebDriver driver, WebDriverWait wait)
+        {
+            try
+            {
+                var element = wait.Until(d =>
+                {
+                    var elements = d.FindElements(by);
+                    return elements.FirstOrDefault(e => e.Displayed);
+                });
+
+                if (element != null)
+                {
+                    IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+                    js.ExecuteScript("arguments[0].click();", element);
+                    return true;
+                }
+            }
+            catch (WebDriverTimeoutException)
+            {
+                // Timeout after retries
+                return false;
+            }
+            return false;
         }
     }
 }
