@@ -17,7 +17,7 @@ namespace SEP490.Modules.ZaloOrderModule.DTO
     public class ZaloSendMessageRequest
     {
         [JsonPropertyName("recipient")]
-        public ZaloRecipient Recipient { get; set; } = new();
+        public ZaloRecipientSend Recipient { get; set; } = new();
 
         [JsonPropertyName("message")]
         public ZaloSendMessage Message { get; set; } = new();

@@ -405,7 +405,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             
             if (conversation.CustomerId.HasValue)
             {
-                summary += $"\n👤 Khách hàng: {conversation.UserName ?? "Khách hàng hiện tại"}";
+                summary += $"\n👤 Khách hàng: Khách hàng hiện tại";
             }
 
             return summary;

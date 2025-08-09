@@ -47,8 +47,8 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 _logger.LogInformation("Processing webhook event: {EventName} from user: {UserId}", 
                     request.EventName, request.Sender.Id);
 
-                // Update user info in conversation state
-                await _conversationStateService.UpdateUserInfoAsync(request.Sender.Id, request.Sender.Name, request.Sender.Avatar);
+                // Update user info in conversation state - only ID is available now
+                // await _conversationStateService.UpdateUserInfoAsync(request.Sender.Id, request.Sender.Name, request.Sender.Avatar);
 
                 switch (request.EventName.ToLower())
                 {
@@ -122,13 +122,15 @@ namespace SEP490.Modules.ZaloOrderModule.Services
 
                 var sendRequest = new ZaloSendMessageRequest
                 {
-                    Recipient = new ZaloRecipient { Id = recipientId },
+                    Recipient = new ZaloRecipientSend { Id = recipientId },
                     Message = new ZaloSendMessage { Text = message }
                 };
 
                 var client = _httpClientFactory.CreateClient();
                 // client.DefaultRequestHeaders.Add("access_token", token.AccessToken);
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
+                client.DefaultRequestHeaders.Remove("Authorization");
+                client.DefaultRequestHeaders.Add("access_token", token.AccessToken);
+                //client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
                 var accesstoken = token.AccessToken;
                 var json = JsonSerializer.Serialize(sendRequest);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
