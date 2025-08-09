@@ -6,7 +6,12 @@ namespace SEP490.Modules.ZaloOrderModule.Constants
         public static class Events
         {
             public const string USER_SEND_TEXT = "user_send_text";
-            
+            public const string USER_SEND_IMAGE = "user_send_image";
+            public const string USER_SEND_FILE = "user_send_file";
+            public const string USER_SEND_STICKER = "user_send_sticker";
+            public const string USER_SEND_LOCATION = "user_send_location";
+            public const string USER_SEND_CONTACT = "user_send_contact";
+            public const string USER_SEND_LINK = "user_send_link";
         }
 
         // Attachment types
@@ -82,6 +87,8 @@ namespace SEP490.Modules.ZaloOrderModule.Constants
             public const string ORDER_START = "Bạn đã bắt đầu quá trình đặt hàng.";
             public const string ORDER_CONFIRM = "Đơn hàng của bạn đã được xác nhận!";
             public const string ORDER_CANCEL = "Đơn hàng đã được hủy.";
+            public const string UNSUPPORTED_EVENT = "Xin lỗi, tôi chỉ có thể xử lý tin nhắn văn bản. Vui lòng gửi tin nhắn bằng chữ hoặc liên hệ nhân viên hỗ trợ.";
+            public const string CONTACT_SUPPORT = "📞 Hotline: 1900-xxxx\n📧 Email: support@vngglass.com\n💬 Zalo: @vngglass_support";
         }
 
         // Product types

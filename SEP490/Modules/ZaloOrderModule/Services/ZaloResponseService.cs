@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using SEP490.Modules.ZaloOrderModule.Constants;
 using SEP490.Modules.ZaloOrderModule.DTO;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
@@ -189,6 +190,17 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 MessageType = "text",
                 Intent = MessageIntents.GREETING,
                 Suggestions = new List<string> { "Đặt hàng", "Xem sản phẩm", "Hỏi giá", "Liên hệ" }
+            };
+        }
+
+        public async Task<MessageResponse> GetUnsupportedEventResponseAsync()
+        {
+            return new MessageResponse
+            {
+                Content = $"{ZaloWebhookConstants.DefaultMessages.UNSUPPORTED_EVENT}\n\n{ZaloWebhookConstants.DefaultMessages.CONTACT_SUPPORT}",
+                MessageType = "text",
+                Intent = MessageIntents.UNKNOWN,
+                Suggestions = new List<string> { "Liên hệ hỗ trợ", "Tạm biệt" }
             };
         }
     }

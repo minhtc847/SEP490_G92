@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using SEP490.Modules.ZaloOrderModule.Constants;
 using SEP490.Modules.ZaloOrderModule.DTO;
 using System.Security.Cryptography;
 using System.Text;
@@ -14,19 +15,22 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ZaloMessageProcessorService _messageProcessor;
         private readonly ZaloConversationStateService _conversationStateService;
+        private readonly ZaloResponseService _responseService;
 
         public ZaloWebhookService(
             ILogger<ZaloWebhookService> logger,
             IConfiguration configuration,
             IHttpClientFactory httpClientFactory,
             ZaloMessageProcessorService messageProcessor,
-            ZaloConversationStateService conversationStateService)
+            ZaloConversationStateService conversationStateService,
+            ZaloResponseService responseService)
         {
             _logger = logger;
             _configuration = configuration;
             _httpClientFactory = httpClientFactory;
             _messageProcessor = messageProcessor;
             _conversationStateService = conversationStateService;
+            _responseService = responseService;
         }
 
         public async Task<ZaloWebhookResponse> ProcessWebhookAsync(ZaloWebhookRequest request)
@@ -41,14 +45,10 @@ namespace SEP490.Modules.ZaloOrderModule.Services
 
                 switch (request.EventName.ToLower())
                 {
-                    case "user_send_text":
+                    case ZaloWebhookConstants.Events.USER_SEND_TEXT:
                         return await HandleTextMessageAsync(request);
-                    
-                    
-                    
                     default:
-                        _logger.LogWarning("Unhandled webhook event: {EventName}", request.EventName);
-                        return new ZaloWebhookResponse { Status = "ignored", Message = "Event not handled" };
+                        return await HandleNonTextEventAsync(request);
                 }
             }
             catch (Exception ex)
@@ -72,6 +72,35 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             await SendMessageToZaloAsync(request.Sender.Id, response.Content);
 
             return new ZaloWebhookResponse { Status = "success", Message = "Text message processed" };
+        }
+
+        private async Task<ZaloWebhookResponse> HandleNonTextEventAsync(ZaloWebhookRequest request)
+        {
+            _logger.LogWarning("Received non-text webhook event: {EventName} from user: {UserId} at {Timestamp}", 
+                request.EventName, request.Sender.Id, DateTime.UtcNow);
+
+            // Lấy tin nhắn phản hồi cho sự kiện không được hỗ trợ
+            var response = await _responseService.GetUnsupportedEventResponseAsync();
+
+            // Gửi tin nhắn thông báo cho người dùng
+            var messageSent = await SendMessageToZaloAsync(request.Sender.Id, response.Content);
+
+            if (messageSent)
+            {
+                _logger.LogInformation("Sent unsupported event notification to user: {UserId} for event: {EventName}", 
+                    request.Sender.Id, request.EventName);
+            }
+            else
+            {
+                _logger.LogError("Failed to send unsupported event notification to user: {UserId} for event: {EventName}", 
+                    request.Sender.Id, request.EventName);
+            }
+
+            return new ZaloWebhookResponse 
+            { 
+                Status = "ignored", 
+                Message = $"Event type '{request.EventName}' not supported - only text messages are handled" 
+            };
         }
 
         
