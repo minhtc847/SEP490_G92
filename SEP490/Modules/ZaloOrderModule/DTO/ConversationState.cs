@@ -78,12 +78,9 @@ namespace SEP490.Modules.ZaloOrderModule.DTO
     public static class MessageIntents
     {
         public const string PLACE_ORDER = "place_order";
-        public const string CONFIRM_ORDER = "confirm_order";
-        public const string CANCEL_ORDER = "cancel_order";
-        public const string INQUIRE_PRODUCT = "inquire_product";
-        public const string INQUIRE_PRICE = "inquire_price";
-        public const string GREETING = "greeting";
-        public const string GOODBYE = "goodbye";
+        public const string CHECK_ORDER = "check_order";
+        public const string PRODUCT_INFO = "product_info";
+        public const string CONTACT_STAFF = "contact_staff";
         public const string UNKNOWN = "unknown";
     }
 }

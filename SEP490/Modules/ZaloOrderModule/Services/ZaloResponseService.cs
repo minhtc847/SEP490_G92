@@ -20,19 +20,17 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 case UserStates.INQUIRY:
                     return new MessageResponse
                     {
-                        Content = "Xin chào! Chào mừng bạn đến với VNG Glass. Bạn có thể gõ 'đặt hàng' để bắt đầu quá trình đặt hàng.",
+                        Content = ZaloWebhookConstants.DefaultMessages.GREETING,
                         MessageType = "text",
-                        Intent = MessageIntents.GREETING,
-                        Suggestions = new List<string> { "Đặt hàng", "Xem sản phẩm", "Hỏi giá" }
+                        Intent = MessageIntents.UNKNOWN
                     };
 
                 case UserStates.ORDERING:
                     return new MessageResponse
                     {
-                        Content = "Bạn đang trong quá trình đặt hàng. Vui lòng cung cấp thông tin sản phẩm hoặc gõ 'kết thúc' để xác nhận.",
+                        Content = "Bạn đang trong quá trình đặt hàng. Vui lòng cung cấp thông tin sản phẩm hoặc gõ \"Nhân viên\" để được hỗ trợ.",
                         MessageType = "text",
-                        Intent = MessageIntents.PLACE_ORDER,
-                        Suggestions = new List<string> { "Kính cường lực", "Kính an toàn", "Kính phản quang", "Kết thúc" }
+                        Intent = MessageIntents.PLACE_ORDER
                     };
 
                 case UserStates.CONFIRMING:
@@ -40,7 +38,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     {
                         Content = "Đơn hàng của bạn đã được xác nhận! Chúng tôi sẽ liên hệ sớm nhất.",
                         MessageType = "text",
-                        Intent = MessageIntents.CONFIRM_ORDER,
+                        Intent = MessageIntents.CHECK_ORDER,
                         ShouldEndConversation = true
                     };
 
@@ -49,7 +47,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     {
                         Content = "Đơn hàng đã được hủy. Cảm ơn bạn đã quan tâm!",
                         MessageType = "text",
-                        Intent = MessageIntents.CANCEL_ORDER,
+                        Intent = MessageIntents.UNKNOWN,
                         ShouldEndConversation = true
                     };
 
@@ -58,14 +56,13 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     {
                         Content = "Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi. Bạn có muốn đặt hàng thêm không?",
                         MessageType = "text",
-                        Intent = MessageIntents.GREETING,
-                        Suggestions = new List<string> { "Đặt hàng", "Tạm biệt" }
+                        Intent = MessageIntents.UNKNOWN
                     };
 
                 default:
                     return new MessageResponse
                     {
-                        Content = "Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau.",
+                        Content = ZaloWebhookConstants.DefaultMessages.ERROR_MESSAGE,
                         MessageType = "text",
                         Intent = MessageIntents.UNKNOWN
                     };
@@ -76,10 +73,9 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         {
             return new MessageResponse
             {
-                Content = "Xin chào! Chào mừng bạn đến với VNG Glass. Chúng tôi chuyên cung cấp các loại kính chất lượng cao. Bạn có thể gõ 'đặt hàng' để bắt đầu quá trình đặt hàng.",
+                Content = ZaloWebhookConstants.DefaultMessages.GREETING,
                 MessageType = "text",
-                Intent = MessageIntents.GREETING,
-                Suggestions = new List<string> { "Đặt hàng", "Xem sản phẩm", "Hỏi giá", "Liên hệ" }
+                Intent = MessageIntents.UNKNOWN
             };
         }
 
@@ -87,15 +83,26 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         {
             return new MessageResponse
             {
-                Content = "Chúng tôi có các loại kính sau:\n\n" +
-                         "🔹 Kính cường lực - Chống va đập, an toàn cao\n" +
-                         "🔹 Kính an toàn - Chống vỡ, bảo vệ tối ưu\n" +
-                         "🔹 Kính phản quang - Chống nắng, tiết kiệm năng lượng\n" +
-                         "🔹 Kính cách âm - Giảm tiếng ồn hiệu quả\n\n" +
-                         "Bạn quan tâm loại nào?",
+                Content = "🏢 VNG Glass - Chuyên cung cấp các loại kính chất lượng cao:\n\n" +
+                         "🔹 KÍNH CƯỜNG LỰC\n" +
+                         "• Chống va đập, an toàn cao\n" +
+                         "• Phù hợp: Cửa, vách ngăn, lan can\n" +
+                         "• Độ dày: 8mm, 10mm, 12mm\n\n" +
+                         "🔹 KÍNH AN TOÀN\n" +
+                         "• Chống vỡ, bảo vệ tối ưu\n" +
+                         "• Phù hợp: Mái che, cửa sổ cao\n" +
+                         "• Độ dày: 6mm, 8mm, 10mm\n\n" +
+                         "🔹 KÍNH PHẢN QUANG\n" +
+                         "• Chống nắng, tiết kiệm năng lượng\n" +
+                         "• Phù hợp: Văn phòng, nhà ở\n" +
+                         "• Màu sắc: Xanh, xám, đồng\n\n" +
+                         "🔹 KÍNH CÁCH ÂM\n" +
+                         "• Giảm tiếng ồn hiệu quả\n" +
+                         "• Phù hợp: Phòng họp, studio\n" +
+                         "• Độ dày: 10mm, 12mm, 15mm\n\n" +
+                         "💡 Gõ \"Đặt hàng\" để bắt đầu đặt hàng ngay!",
                 MessageType = "text",
-                Intent = MessageIntents.INQUIRE_PRODUCT,
-                Suggestions = new List<string> { "Kính cường lực", "Kính an toàn", "Kính phản quang", "Kính cách âm", "Đặt hàng" }
+                Intent = MessageIntents.PRODUCT_INFO
             };
         }
 
@@ -110,7 +117,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                          "📍 Địa điểm lắp đặt\n\n" +
                          "Vui lòng cho biết bạn cần loại kính nào và kích thước để chúng tôi báo giá chính xác.",
                 MessageType = "text",
-                Intent = MessageIntents.INQUIRE_PRICE,
+                Intent = MessageIntents.PRODUCT_INFO,
                 Suggestions = new List<string> { "Kính cường lực", "Kính an toàn", "Kính phản quang", "Tư vấn" }
             };
         }
@@ -125,7 +132,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                          "🚚 Giao hàng miễn phí trong phạm vi 50km.\n\n" +
                          "Cảm ơn bạn đã tin tưởng VNG Glass!",
                 MessageType = "text",
-                Intent = MessageIntents.CONFIRM_ORDER,
+                Intent = MessageIntents.CHECK_ORDER,
                 ShouldEndConversation = true
             };
         }
@@ -140,7 +147,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                          "📧 Email: support@vngglass.com\n\n" +
                          "Cảm ơn bạn đã quan tâm đến sản phẩm của chúng tôi!",
                 MessageType = "text",
-                Intent = MessageIntents.CANCEL_ORDER,
+                Intent = MessageIntents.UNKNOWN,
                 ShouldEndConversation = true
             };
         }
@@ -149,7 +156,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         {
             return new MessageResponse
             {
-                Content = "📞 Liên hệ với chúng tôi:\n\n" +
+                Content = "👨‍💼 Liên hệ với chúng tôi:\n\n" +
                          "🏢 VNG Glass Company\n" +
                          "📍 Địa chỉ: 123 Đường ABC, Quận XYZ, TP.HCM\n" +
                          "📞 Hotline: 1900-xxxx\n" +
@@ -158,8 +165,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                          "⏰ Giờ làm việc: 8:00 - 18:00 (Thứ 2 - Thứ 7)\n\n" +
                          "Chúng tôi luôn sẵn sàng phục vụ bạn!",
                 MessageType = "text",
-                Intent = MessageIntents.INQUIRE_PRODUCT,
-                Suggestions = new List<string> { "Đặt hàng", "Xem sản phẩm", "Hỏi giá" }
+                Intent = MessageIntents.CONTACT_STAFF
             };
         }
 
@@ -179,17 +185,13 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             return new MessageResponse
             {
                 Content = "🔧 Hướng dẫn sử dụng:\n\n" +
-                         "📝 Để đặt hàng: Gõ 'đặt hàng'\n" +
-                         "📋 Xem sản phẩm: Gõ 'sản phẩm'\n" +
-                         "💰 Hỏi giá: Gõ 'giá' hoặc 'bao nhiêu'\n" +
-                         "📞 Liên hệ: Gõ 'liên hệ'\n" +
-                         "❌ Hủy đơn hàng: Gõ 'hủy'\n" +
-                         "✅ Xác nhận đơn hàng: Gõ 'kết thúc'\n" +
-                         "👋 Tạm biệt: Gõ 'tạm biệt'\n\n" +
-                         "Bạn cần hỗ trợ gì thêm không?",
+                         "📝 Để đặt hàng: Gõ \"Đặt hàng\"\n" +
+                         "📋 Xem trạng thái đơn hàng: Gõ \"Đơn hàng\"\n" +
+                         "🏢 Thông tin sản phẩm: Gõ \"Sản phẩm\"\n" +
+                         "👨‍💼 Liên hệ nhân viên: Gõ \"Nhân viên\"\n\n" +
+                         "⚠️ Lưu ý: Vui lòng gõ chính xác các lệnh trên để được hỗ trợ tốt nhất!",
                 MessageType = "text",
-                Intent = MessageIntents.GREETING,
-                Suggestions = new List<string> { "Đặt hàng", "Xem sản phẩm", "Hỏi giá", "Liên hệ" }
+                Intent = MessageIntents.UNKNOWN
             };
         }
 

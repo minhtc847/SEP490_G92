@@ -81,8 +81,8 @@ namespace SEP490.Modules.ZaloOrderModule.Constants
         // Default messages
         public static class DefaultMessages
         {
-            public const string GREETING = "Xin chào! Chào mừng bạn đến với VNG Glass.";
-            public const string UNKNOWN_INTENT = "Xin lỗi, tôi không hiểu ý bạn.";
+            public const string GREETING = "Xin chào! Chào mừng bạn đến với VNG Glass.\n\nVui lòng chọn một trong các lệnh sau:\n1. Gõ \"Đặt hàng\" để bắt đầu đặt hàng\n2. Gõ \"Đơn hàng\" để xem trạng thái đơn hàng\n3. Gõ \"Sản phẩm\" để nhận thông tin tư vấn\n4. Gõ \"Nhân viên\" để gọi nhân viên hỗ trợ";
+            public const string UNKNOWN_INTENT = "Lệnh không đúng. Vui lòng thử lại.\n\nCác lệnh có sẵn:\n1. \"Đặt hàng\" - Bắt đầu đặt hàng\n2. \"Đơn hàng\" - Xem trạng thái đơn hàng\n3. \"Sản phẩm\" - Thông tin tư vấn sản phẩm\n4. \"Nhân viên\" - Gọi nhân viên hỗ trợ";
             public const string ERROR_MESSAGE = "Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau.";
             public const string ORDER_START = "Bạn đã bắt đầu quá trình đặt hàng.";
             public const string ORDER_CONFIRM = "Đơn hàng của bạn đã được xác nhận!";

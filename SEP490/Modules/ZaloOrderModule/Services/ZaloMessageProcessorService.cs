@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using SEP490.Modules.ZaloOrderModule.DTO;
+using SEP490.Modules.ZaloOrderModule.Constants;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
@@ -71,29 +72,21 @@ namespace SEP490.Modules.ZaloOrderModule.Services
 
         private async Task<string> AnalyzeIntentAsync(string message, string currentState)
         {
-            var lowerMessage = message.ToLower();
+            // Chỉ xử lý đúng text, không phân biệt hoa thường
+            var trimmedMessage = message.Trim();
             
-            // Intent recognition based on keywords and current state
-            if (lowerMessage.Contains("đặt hàng") || lowerMessage.Contains("order") || lowerMessage.Contains("mua"))
+            // Chỉ xử lý 4 lệnh chính với text chính xác
+            if (trimmedMessage.Equals("Đặt hàng", StringComparison.OrdinalIgnoreCase))
                 return MessageIntents.PLACE_ORDER;
             
-            if (lowerMessage.Contains("kết thúc") || lowerMessage.Contains("xác nhận") || lowerMessage.Contains("confirm"))
-                return MessageIntents.CONFIRM_ORDER;
+            if (trimmedMessage.Equals("Đơn hàng", StringComparison.OrdinalIgnoreCase))
+                return MessageIntents.CHECK_ORDER;
             
-            if (lowerMessage.Contains("hủy") || lowerMessage.Contains("cancel") || lowerMessage.Contains("thôi"))
-                return MessageIntents.CANCEL_ORDER;
+            if (trimmedMessage.Equals("Sản phẩm", StringComparison.OrdinalIgnoreCase))
+                return MessageIntents.PRODUCT_INFO;
             
-            if (lowerMessage.Contains("sản phẩm") || lowerMessage.Contains("product") || lowerMessage.Contains("hàng"))
-                return MessageIntents.INQUIRE_PRODUCT;
-            
-            if (lowerMessage.Contains("giá") || lowerMessage.Contains("price") || lowerMessage.Contains("bao nhiêu"))
-                return MessageIntents.INQUIRE_PRICE;
-            
-            if (lowerMessage.Contains("xin chào") || lowerMessage.Contains("hello") || lowerMessage.Contains("hi"))
-                return MessageIntents.GREETING;
-            
-            if (lowerMessage.Contains("tạm biệt") || lowerMessage.Contains("goodbye") || lowerMessage.Contains("bye"))
-                return MessageIntents.GOODBYE;
+            if (trimmedMessage.Equals("Nhân viên", StringComparison.OrdinalIgnoreCase))
+                return MessageIntents.CONTACT_STAFF;
                 
             return MessageIntents.UNKNOWN;
         }
@@ -105,23 +98,14 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 case MessageIntents.PLACE_ORDER:
                     return await HandlePlaceOrderIntentAsync(zaloUserId, message, conversation);
                 
-                case MessageIntents.CONFIRM_ORDER:
-                    return await HandleConfirmOrderIntentAsync(zaloUserId, message, conversation);
+                case MessageIntents.CHECK_ORDER:
+                    return await HandleCheckOrderIntentAsync(zaloUserId, message, conversation);
                 
-                case MessageIntents.CANCEL_ORDER:
-                    return await HandleCancelOrderIntentAsync(zaloUserId, message, conversation);
+                case MessageIntents.PRODUCT_INFO:
+                    return await HandleProductInfoIntentAsync(zaloUserId, message, conversation);
                 
-                case MessageIntents.INQUIRE_PRODUCT:
-                    return await HandleInquireProductIntentAsync(zaloUserId, message, conversation);
-                
-                case MessageIntents.INQUIRE_PRICE:
-                    return await HandleInquirePriceIntentAsync(zaloUserId, message, conversation);
-                
-                case MessageIntents.GREETING:
-                    return await HandleGreetingIntentAsync(zaloUserId, message, conversation);
-                
-                case MessageIntents.GOODBYE:
-                    return await HandleGoodbyeIntentAsync(zaloUserId, message, conversation);
+                case MessageIntents.CONTACT_STAFF:
+                    return await HandleContactStaffIntentAsync(zaloUserId, message, conversation);
                 
                 default:
                     return await HandleUnknownIntentAsync(zaloUserId, message, conversation);
@@ -130,103 +114,81 @@ namespace SEP490.Modules.ZaloOrderModule.Services
 
         private async Task<MessageResponse> HandlePlaceOrderIntentAsync(string zaloUserId, string message, ConversationState conversation)
         {
-            if (conversation.CurrentState == UserStates.INQUIRY)
-            {
-                await _conversationStateService.UpdateStateAsync(zaloUserId, UserStates.ORDERING);
-                
-                return new MessageResponse
-                {
-                    Content = "Bạn đã bắt đầu quá trình đặt hàng. Vui lòng cung cấp thông tin sản phẩm bạn muốn đặt.",
-                    MessageType = "text",
-                    Intent = MessageIntents.PLACE_ORDER,
-                    Suggestions = new List<string> { "Kính cường lực", "Kính an toàn", "Kính phản quang" }
-                };
-            }
+            await _conversationStateService.UpdateStateAsync(zaloUserId, UserStates.ORDERING);
             
             return new MessageResponse
             {
-                Content = "Bạn đang trong quá trình đặt hàng. Vui lòng hoàn thành thông tin hoặc gõ 'kết thúc' để xác nhận.",
+                Content = "🎉 Bạn đã bắt đầu quá trình đặt hàng!\n\n" +
+                         "Vui lòng cung cấp thông tin sau:\n" +
+                         "• Loại kính bạn muốn đặt\n" +
+                         "• Kích thước (dài x rộng)\n" +
+                         "• Số lượng\n" +
+                         "• Địa chỉ lắp đặt\n\n" +
+                         "Nhân viên sẽ liên hệ với bạn trong vòng 30 phút để xác nhận đơn hàng.",
                 MessageType = "text",
-                Intent = MessageIntents.PLACE_ORDER
-            };
-        }
-
-        private async Task<MessageResponse> HandleConfirmOrderIntentAsync(string zaloUserId, string message, ConversationState conversation)
-        {
-            if (conversation.CurrentState == UserStates.ORDERING)
-            {
-                await _conversationStateService.UpdateStateAsync(zaloUserId, UserStates.CONFIRMING);
-                
-                return new MessageResponse
-                {
-                    Content = "Đơn hàng của bạn đã được xác nhận! Chúng tôi sẽ liên hệ sớm nhất.",
-                    MessageType = "text",
-                    Intent = MessageIntents.CONFIRM_ORDER,
-                    ShouldEndConversation = true
-                };
-            }
-            
-            return new MessageResponse
-            {
-                Content = "Bạn chưa có đơn hàng nào để xác nhận. Vui lòng gõ 'đặt hàng' để bắt đầu.",
-                MessageType = "text",
-                Intent = MessageIntents.CONFIRM_ORDER
-            };
-        }
-
-        private async Task<MessageResponse> HandleCancelOrderIntentAsync(string zaloUserId, string message, ConversationState conversation)
-        {
-            await _conversationStateService.UpdateStateAsync(zaloUserId, UserStates.CANCELLED);
-            
-            return new MessageResponse
-            {
-                Content = "Đơn hàng đã được hủy. Cảm ơn bạn đã quan tâm!",
-                MessageType = "text",
-                Intent = MessageIntents.CANCEL_ORDER,
+                Intent = MessageIntents.PLACE_ORDER,
                 ShouldEndConversation = true
             };
         }
 
-        private async Task<MessageResponse> HandleInquireProductIntentAsync(string zaloUserId, string message, ConversationState conversation)
+        private async Task<MessageResponse> HandleCheckOrderIntentAsync(string zaloUserId, string message, ConversationState conversation)
         {
             return new MessageResponse
             {
-                Content = "Chúng tôi có các loại kính: Kính cường lực, Kính an toàn, Kính phản quang. Bạn quan tâm loại nào?",
+                Content = "📋 Thông tin đơn hàng của bạn:\n\n" +
+                         "🔍 Để kiểm tra trạng thái đơn hàng, vui lòng:\n" +
+                         "• Cung cấp mã đơn hàng (nếu có)\n" +
+                         "• Hoặc số điện thoại đặt hàng\n\n" +
+                         "Nhân viên sẽ kiểm tra và phản hồi trong vòng 15 phút.",
                 MessageType = "text",
-                Intent = MessageIntents.INQUIRE_PRODUCT,
-                Suggestions = new List<string> { "Kính cường lực", "Kính an toàn", "Kính phản quang", "Đặt hàng" }
+                Intent = MessageIntents.CHECK_ORDER,
+                ShouldEndConversation = true
             };
         }
 
-        private async Task<MessageResponse> HandleInquirePriceIntentAsync(string zaloUserId, string message, ConversationState conversation)
+        private async Task<MessageResponse> HandleProductInfoIntentAsync(string zaloUserId, string message, ConversationState conversation)
         {
             return new MessageResponse
             {
-                Content = "Giá cả phụ thuộc vào loại kính và kích thước. Vui lòng cho biết bạn cần loại kính nào?",
+                Content = "🏢 VNG Glass - Chuyên cung cấp các loại kính chất lượng cao:\n\n" +
+                         "🔹 KÍNH CƯỜNG LỰC\n" +
+                         "• Chống va đập, an toàn cao\n" +
+                         "• Phù hợp: Cửa, vách ngăn, lan can\n" +
+                         "• Độ dày: 8mm, 10mm, 12mm\n\n" +
+                         "🔹 KÍNH AN TOÀN\n" +
+                         "• Chống vỡ, bảo vệ tối ưu\n" +
+                         "• Phù hợp: Mái che, cửa sổ cao\n" +
+                         "• Độ dày: 6mm, 8mm, 10mm\n\n" +
+                         "🔹 KÍNH PHẢN QUANG\n" +
+                         "• Chống nắng, tiết kiệm năng lượng\n" +
+                         "• Phù hợp: Văn phòng, nhà ở\n" +
+                         "• Màu sắc: Xanh, xám, đồng\n\n" +
+                         "🔹 KÍNH CÁCH ÂM\n" +
+                         "• Giảm tiếng ồn hiệu quả\n" +
+                         "• Phù hợp: Phòng họp, studio\n" +
+                         "• Độ dày: 10mm, 12mm, 15mm\n\n" +
+                         "💡 Gõ \"Đặt hàng\" để bắt đầu đặt hàng ngay!",
                 MessageType = "text",
-                Intent = MessageIntents.INQUIRE_PRICE,
-                Suggestions = new List<string> { "Kính cường lực", "Kính an toàn", "Kính phản quang" }
+                Intent = MessageIntents.PRODUCT_INFO
             };
         }
 
-        private async Task<MessageResponse> HandleGreetingIntentAsync(string zaloUserId, string message, ConversationState conversation)
+        private async Task<MessageResponse> HandleContactStaffIntentAsync(string zaloUserId, string message, ConversationState conversation)
         {
             return new MessageResponse
             {
-                Content = "Xin chào! Chào mừng bạn đến với VNG Glass. Bạn có thể gõ 'đặt hàng' để bắt đầu quá trình đặt hàng.",
+                Content = "👨‍💼 Liên hệ nhân viên hỗ trợ:\n\n" +
+                         "📞 Hotline: 1900-xxxx\n" +
+                         "📧 Email: support@vngglass.com\n" +
+                         "💬 Zalo: @vngglass_support\n" +
+                         "🌐 Website: www.vngglass.com\n\n" +
+                         "⏰ Giờ làm việc:\n" +
+                         "• Thứ 2 - Thứ 6: 8:00 - 18:00\n" +
+                         "• Thứ 7: 8:00 - 12:00\n" +
+                         "• Chủ nhật: Nghỉ\n\n" +
+                         "Nhân viên sẽ phản hồi trong vòng 15 phút!",
                 MessageType = "text",
-                Intent = MessageIntents.GREETING,
-                Suggestions = new List<string> { "Đặt hàng", "Xem sản phẩm", "Hỏi giá" }
-            };
-        }
-
-        private async Task<MessageResponse> HandleGoodbyeIntentAsync(string zaloUserId, string message, ConversationState conversation)
-        {
-            return new MessageResponse
-            {
-                Content = "Tạm biệt! Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi.",
-                MessageType = "text",
-                Intent = MessageIntents.GOODBYE,
+                Intent = MessageIntents.CONTACT_STAFF,
                 ShouldEndConversation = true
             };
         }
@@ -235,10 +197,9 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         {
             return new MessageResponse
             {
-                Content = "Xin lỗi, tôi không hiểu ý bạn. Bạn có thể gõ 'đặt hàng' để bắt đầu quá trình đặt hàng hoặc 'xin chào' để được hướng dẫn.",
+                Content = ZaloWebhookConstants.DefaultMessages.UNKNOWN_INTENT,
                 MessageType = "text",
-                Intent = MessageIntents.UNKNOWN,
-                Suggestions = new List<string> { "Đặt hàng", "Xin chào", "Xem sản phẩm" }
+                Intent = MessageIntents.UNKNOWN
             };
         }
     }
