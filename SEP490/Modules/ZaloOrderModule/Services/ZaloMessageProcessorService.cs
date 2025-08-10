@@ -90,7 +90,13 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         private async Task<string> AnalyzeIntentAsync(string message, string currentState)
         {
             var trimmedMessage = message.Trim();
-            
+
+            // Handle main commands - CANCEL can be used from any state
+            if (trimmedMessage.Equals("Hủy", StringComparison.OrdinalIgnoreCase) ||
+                trimmedMessage.Equals("Cancel", StringComparison.OrdinalIgnoreCase) ||
+                trimmedMessage.Equals("Thôi", StringComparison.OrdinalIgnoreCase))
+                return MessageIntents.CANCEL;
+
             // Handle special commands based on current state
             if (currentState == UserStates.WAITING_FOR_PHONE)
             {
@@ -111,11 +117,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 return MessageIntents.UNKNOWN;
             }
 
-            // Handle main commands - CANCEL can be used from any state
-            if (trimmedMessage.Equals("Hủy", StringComparison.OrdinalIgnoreCase) || 
-                trimmedMessage.Equals("Cancel", StringComparison.OrdinalIgnoreCase) ||
-                trimmedMessage.Equals("Thôi", StringComparison.OrdinalIgnoreCase))
-                return MessageIntents.CANCEL;
+        
             
             if (trimmedMessage.Equals("Đặt hàng", StringComparison.OrdinalIgnoreCase))
                 return MessageIntents.PLACE_ORDER;
