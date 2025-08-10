@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using SEP490.Modules.ZaloOrderModule.DTO;
 using SEP490.Modules.ZaloOrderModule.Services;
+using System.Text.Json;
 
 namespace SEP490.Modules.ZaloOrderModule.Controllers
 {
@@ -23,20 +24,20 @@ namespace SEP490.Modules.ZaloOrderModule.Controllers
         /// <summary>
         /// Webhook endpoint để nhận sự kiện tin nhắn từ Zalo
         /// </summary>
-        /// <param name="request">Dữ liệu webhook từ Zalo</param>
+        /// <param name="payload">Raw JSON payload từ Zalo</param>
         /// <returns>Kết quả xử lý webhook</returns>
         [HttpPost("webhook")]
-        public async Task<IActionResult> HandleWebhook([FromBody] ZaloWebhookRequest request)
+        public async Task<IActionResult> HandleWebhook([FromBody] JsonElement payload)
         {
             try
             {
-                _logger.LogInformation("Received webhook from Zalo: {EventName} from user {UserId}", 
-                    request.EventName, request.Sender.Id);
+                // Đọc event_name từ payload
+                var eventName = payload.GetProperty("event_name").GetString();
+                _logger.LogInformation("Received webhook event: {EventName}", eventName);
 
-                // Validate request
-                if (request == null || string.IsNullOrEmpty(request.EventName))
+                if (string.IsNullOrEmpty(eventName))
                 {
-                    _logger.LogWarning("Invalid webhook request received");
+                    _logger.LogWarning("Invalid webhook request - missing event_name");
                     return BadRequest(new ZaloWebhookResponse 
                     { 
                         Status = "error", 
@@ -44,11 +45,23 @@ namespace SEP490.Modules.ZaloOrderModule.Controllers
                     });
                 }
 
-                // Process the webhook
+                // Nếu không phải user_send_text thì trả 200 OK ngay
+                if (!eventName.Equals("user_send_text", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogInformation("Event {EventName} ignored - returning 200 OK", eventName);
+                    return Ok(new ZaloWebhookResponse 
+                    { 
+                        Status = "ok", 
+                        Message = "Event ignored" 
+                    });
+                }
+
+                // Chỉ xử lý sự kiện user_send_text
+                var request = JsonSerializer.Deserialize<ZaloWebhookRequest>(payload.ToString());
                 var response = await _webhookService.ProcessWebhookAsync(request);
 
                 _logger.LogInformation("Webhook processed successfully: {EventName} for user {UserId}", 
-                    request.EventName, request.Sender.Id);
+                    eventName, request?.Sender?.Id);
 
                 return Ok(response);
             }
