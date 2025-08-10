@@ -426,11 +426,10 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 //     {
                 //         Content = ZaloWebhookConstants.DefaultMessages.NO_PRODUCTS_IN_ORDER,
                 //         MessageType = "text",
-                        
                 //     };
                 // }
-
                 // Get messages from "Đặt hàng" to "Kết thúc"
+
                 var orderMessages = await _messageHistoryService.GetListMessageAsync(zaloUserId);
                 
                 if (orderMessages.Count == 0)
@@ -473,7 +472,8 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 }
 
                 // Generate order summary
-                var orderSummary = GenerateOrderSummary(conversation);
+                var updatedConversation = await _conversationStateService.GetConversationAsync(zaloUserId);
+                var orderSummary = GenerateOrderSummary(updatedConversation);
                 
                 await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.CONFIRMING);
 
@@ -632,27 +632,29 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     orderItems.Add(orderItem);
                 }
 
-                // Update conversation with new order items
-                await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
+                // Update conversation with new order items only
+                var updateSuccess = await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
                 {
                     // Add new items to existing order items
                     conv.OrderItems.AddRange(orderItems);
-                    
-                    // Update customer name if provided
-                    if (!string.IsNullOrEmpty(forwardResponse.CustomerName))
-                    {
-                        conv.UserName = forwardResponse.CustomerName;
-                    }
-                    
-                    // Add notes if provided
-                    if (!string.IsNullOrEmpty(forwardResponse.Notes))
-                    {
-                        conv.AddMessageToHistory($"Ghi chú: {forwardResponse.Notes}", "business");
-                    }
                 });
 
+                if (!updateSuccess)
+                {
+                    _logger.LogError("Failed to update conversation with new order items for user: {UserId}", zaloUserId);
+                    return false;
+                }
+
+                // Get updated conversation to verify the update
+                var updatedConversation = await _conversationStateService.GetConversationAsync(zaloUserId);
+                if (updatedConversation == null)
+                {
+                    _logger.LogError("Failed to retrieve updated conversation for user: {UserId}", zaloUserId);
+                    return false;
+                }
+
                 _logger.LogInformation("Successfully added {ItemCount} items to conversation for user: {UserId}. Total items: {TotalItems}", 
-                    orderItems.Count, zaloUserId, conversation.OrderItems.Count + orderItems.Count);
+                    orderItems.Count, zaloUserId, updatedConversation.OrderItems.Count);
                 
                 return true;
             }
