@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SEP490.Modules.ZaloOrderModule.DTO;
 using SEP490.Modules.ZaloOrderModule.Services;
@@ -12,13 +13,16 @@ namespace SEP490.Modules.ZaloOrderModule.Controllers
     {
         private readonly ILogger<ZaloWebhookController> _logger;
         private readonly IZaloWebhookService _webhookService;
+        private readonly IZaloWebhookServiceFactory _webhookServiceFactory;
 
         public ZaloWebhookController(
             ILogger<ZaloWebhookController> logger,
-            IZaloWebhookService webhookService)
+            IZaloWebhookService webhookService,
+            IZaloWebhookServiceFactory webhookServiceFactory)
         {
             _logger = logger;
             _webhookService = webhookService;
+            _webhookServiceFactory = webhookServiceFactory;
         }
 
         /// <summary>
@@ -65,7 +69,7 @@ namespace SEP490.Modules.ZaloOrderModule.Controllers
                     try
                     {
                         var request = JsonSerializer.Deserialize<ZaloWebhookRequest>(payload.ToString());
-                        await _webhookService.ProcessWebhookAsync(request);
+                        await _webhookServiceFactory.ProcessWebhookAsync(request);
                         _logger.LogInformation("Background webhook processed: {EventName} for user {UserId}", 
                             eventName, request?.Sender?.Id);
                     }

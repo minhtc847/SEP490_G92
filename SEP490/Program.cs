@@ -68,13 +68,16 @@ builder.Services.AddTransient<ZaloMessageProcessorService>();
 builder.Services.AddTransient<IZaloMessageHistoryService, ZaloMessageHistoryService>();
 builder.Services.AddTransient<IZaloCustomerService, ZaloCustomerService>();
 builder.Services.AddTransient<IZaloProductValidationService, ZaloProductValidationService>();
+builder.Services.AddScoped<IZaloTokenService, ZaloTokenService>();
+builder.Services.AddScoped<IZaloWebhookService, ZaloWebhookService>();
+builder.Services.AddSingleton<IZaloWebhookServiceFactory, ZaloWebhookServiceFactory>();
 
 // Register all services that inherit from BaseService
 var baseType = typeof(BaseService);
 
 var serviceTypes = Assembly.GetExecutingAssembly()
     .GetTypes()
-    .Where(t => t.IsClass && !t.IsAbstract && baseType.IsAssignableFrom(t));
+    .Where(t => t.IsClass && !t.IsAbstract && baseType.IsAssignableFrom(t) && t != typeof(ZaloWebhookService));
 
 foreach (var implementation in serviceTypes)
 {

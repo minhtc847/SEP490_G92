@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SEP490.Common.Services;
 using SEP490.DB;
@@ -21,6 +22,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         private readonly ZaloMessageProcessorService _messageProcessor;
         private readonly ZaloConversationStateService _conversationStateService;
         private readonly ZaloResponseService _responseService;
+        private readonly IZaloTokenService _zaloTokenService;
 
         public ZaloWebhookService(
             SEP490DbContext sEP490DbContext,
@@ -29,7 +31,8 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             IHttpClientFactory httpClientFactory,
             ZaloMessageProcessorService messageProcessor,
             ZaloConversationStateService conversationStateService,
-            ZaloResponseService responseService)
+            ZaloResponseService responseService,
+            IZaloTokenService zaloTokenService)
         {
             _context = sEP490DbContext;
             _logger = logger;
@@ -38,6 +41,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             _messageProcessor = messageProcessor;
             _conversationStateService = conversationStateService;
             _responseService = responseService;
+            _zaloTokenService = zaloTokenService;
         }
 
         public async Task<ZaloWebhookResponse> ProcessWebhookAsync(ZaloWebhookRequest request)
@@ -115,10 +119,12 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         {
             try
             {
-                var token = await _context.ZaloTokens.FirstOrDefaultAsync();
-                if (token == null)
-                    throw new Exception("loi");
-               
+                var accessToken = await _zaloTokenService.GetAccessTokenAsync();
+                if (string.IsNullOrEmpty(accessToken))
+                {
+                    _logger.LogError("Failed to get Zalo access token");
+                    return false;
+                }
 
                 var sendRequest = new ZaloSendMessageRequest
                 {
@@ -127,11 +133,9 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 };
 
                 var client = _httpClientFactory.CreateClient();
-                // client.DefaultRequestHeaders.Add("access_token", token.AccessToken);
                 client.DefaultRequestHeaders.Remove("Authorization");
-                client.DefaultRequestHeaders.Add("access_token", token.AccessToken);
-                //client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
-                var accesstoken = token.AccessToken;
+                client.DefaultRequestHeaders.Add("access_token", accessToken);
+                
                 var json = JsonSerializer.Serialize(sendRequest);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
