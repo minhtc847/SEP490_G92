@@ -45,23 +45,35 @@ namespace SEP490.Modules.ZaloOrderModule.Controllers
                     });
                 }
 
-                // Nếu không phải user_send_text thì trả 200 OK ngay
+                // Trả về 200 OK ngay lập tức cho tất cả sự kiện
+                var response = new ZaloWebhookResponse 
+                { 
+                    Status = "ok", 
+                    Message = "Webhook received" 
+                };
+
+                // Nếu không phải user_send_text thì chỉ log và trả về
                 if (!eventName.Equals("user_send_text", StringComparison.OrdinalIgnoreCase))
                 {
                     _logger.LogInformation("Event {EventName} ignored - returning 200 OK", eventName);
-                    return Ok(new ZaloWebhookResponse 
-                    { 
-                        Status = "ok", 
-                        Message = "Event ignored" 
-                    });
+                    return Ok(response);
                 }
 
-                // Chỉ xử lý sự kiện user_send_text
-                var request = JsonSerializer.Deserialize<ZaloWebhookRequest>(payload.ToString());
-                var response = await _webhookService.ProcessWebhookAsync(request);
-
-                _logger.LogInformation("Webhook processed successfully: {EventName} for user {UserId}", 
-                    eventName, request?.Sender?.Id);
+                // Xử lý user_send_text trong background (fire-and-forget)
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var request = JsonSerializer.Deserialize<ZaloWebhookRequest>(payload.ToString());
+                        await _webhookService.ProcessWebhookAsync(request);
+                        _logger.LogInformation("Background webhook processed: {EventName} for user {UserId}", 
+                            eventName, request?.Sender?.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error in background webhook processing: {EventName}", eventName);
+                    }
+                });
 
                 return Ok(response);
             }
@@ -69,10 +81,11 @@ namespace SEP490.Modules.ZaloOrderModule.Controllers
             {
                 _logger.LogError(ex, "Error processing webhook from Zalo");
                 
-                return StatusCode(500, new ZaloWebhookResponse 
+                // Vẫn trả về 200 OK để Zalo không retry
+                return Ok(new ZaloWebhookResponse 
                 { 
-                    Status = "error", 
-                    Message = "Internal server error" 
+                    Status = "ok", 
+                    Message = "Webhook received (with errors)" 
                 });
             }
         }
