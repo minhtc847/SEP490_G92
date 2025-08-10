@@ -260,6 +260,9 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                                     $"📞 Chúng tôi sẽ liên hệ với số điện thoại {conversation.CustomerPhone} để xác nhận và giao hàng.\n" +
                                     $"🙏 Cảm ơn bạn đã tin tưởng chúng tôi!";
 
+                // Delete the current conversation from Redis
+                await _conversationStateService.DeleteConversationAsync(zaloUserId);
+                
                 return new MessageResponse
                 {
                     Content = responseMessage,
