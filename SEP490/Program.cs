@@ -62,7 +62,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddSignalR();
 
 // Add ZaloOrderModule services
-builder.Services.AddTransient<ZaloConversationStateService>();
+builder.Services.AddSingleton<ZaloConversationStateService>();
 builder.Services.AddTransient<ZaloResponseService>();
 builder.Services.AddTransient<ZaloMessageProcessorService>();
 builder.Services.AddTransient<IZaloMessageHistoryService, ZaloMessageHistoryService>();
@@ -71,6 +71,7 @@ builder.Services.AddTransient<IZaloProductValidationService, ZaloProductValidati
 builder.Services.AddScoped<IZaloTokenService, ZaloTokenService>();
 builder.Services.AddScoped<IZaloWebhookService, ZaloWebhookService>();
 builder.Services.AddSingleton<IZaloWebhookServiceFactory, ZaloWebhookServiceFactory>();
+builder.Services.AddSingleton<IRedisHealthCheckService, RedisHealthCheckService>();
 
 // Register all services that inherit from BaseService
 var baseType = typeof(BaseService);

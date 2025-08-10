@@ -20,26 +20,71 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             
             try
             {
-                // Sử dụng cấu hình Redis Cloud của bạn
+                // Sử dụng cấu hình Redis Cloud với retry và timeout
                 _muxer = ConnectionMultiplexer.Connect(
                     new ConfigurationOptions
                     {
                         EndPoints = { { "redis-17281.crce185.ap-seast-1-1.ec2.redns.redis-cloud.com", 17281 } },
                         User = "default",
-                        Password = "y0HB5DwnkEtmMlnu1k7kGGsQIfJCI9bc"
+                        Password = "y0HB5DwnkEtmMlnu1k7kGGsQIfJCI9bc",
+                        ConnectTimeout = 10000,        // 10 seconds
+                        SyncTimeout = 10000,           // 10 seconds
+                        ConnectRetry = 3,              // 3 retries
+                        KeepAlive = 180                // 3 minutes
                     }
                 );
                 
                 _database = _muxer.GetDatabase();
                 
-                // Test connection
-                var pingResult = _database.Ping();
-                _redisAvailable = true;
-                _logger.LogInformation("Redis connection established successfully. Ping: {PingTime}ms", pingResult.TotalMilliseconds);
+                // Test connection with retry
+                var maxRetries = 3;
+                var retryCount = 0;
+                var pingResult = default(TimeSpan);
+                
+                while (retryCount < maxRetries)
+                {
+                    try
+                    {
+                        pingResult = _database.Ping();
+                        _redisAvailable = true;
+                        _logger.LogInformation("Redis connection established successfully. Ping: {PingTime}ms", pingResult.TotalMilliseconds);
+                        break;
+                    }
+                    catch (StackExchange.Redis.RedisConnectionException ex)
+                    {
+                        retryCount++;
+                        _logger.LogWarning(ex, "Redis connection attempt {RetryCount}/{MaxRetries} failed (connection error)", retryCount, maxRetries);
+                        
+                        if (retryCount >= maxRetries)
+                        {
+                            _logger.LogError("All Redis connection attempts failed, falling back to in-memory storage");
+                            _redisAvailable = false;
+                        }
+                        else
+                        {
+                            Thread.Sleep(1000 * retryCount); // Exponential backoff
+                        }
+                    }
+                    catch (StackExchange.Redis.RedisTimeoutException ex)
+                    {
+                        retryCount++;
+                        _logger.LogWarning(ex, "Redis connection attempt {RetryCount}/{MaxRetries} failed (timeout)", retryCount, maxRetries);
+                        
+                        if (retryCount >= maxRetries)
+                        {
+                            _logger.LogError("All Redis connection attempts failed due to timeout, falling back to in-memory storage");
+                            _redisAvailable = false;
+                        }
+                        else
+                        {
+                            Thread.Sleep(1000 * retryCount); // Exponential backoff
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Redis connection failed, falling back to in-memory storage");
+                _logger.LogError(ex, "Redis connection failed (unknown error), falling back to in-memory storage");
                 _redisAvailable = false;
             }
             
