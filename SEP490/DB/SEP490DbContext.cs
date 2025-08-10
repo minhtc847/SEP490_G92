@@ -33,6 +33,11 @@ namespace SEP490.DB
                 .Property(e => e.Products)
                 .HasConversion(productConverter);
 
+            modelBuilder.Entity<ZaloOrderDetail>()
+                .HasOne(zod => zod.ZaloOrder)
+                .WithMany(zo => zo.ZaloOrderDetails)
+                .HasForeignKey(zod => zod.ZaloOrderId);
+
         }
 
         // Define DbSet properties for your entities here
@@ -71,5 +76,7 @@ namespace SEP490.DB
         public DbSet<InvoiceDetails> InvoiceDetails { get; set; }
         public DbSet<Payments> Payments { get; set; }
         public DbSet<ProductionDefects> ProductionDefects { get; set; }
+        public DbSet<ZaloOrder> ZaloOrders { get; set; }
+        public DbSet<ZaloOrderDetail> ZaloOrderDetails { get; set; }
     }
 }
