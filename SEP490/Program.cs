@@ -181,6 +181,7 @@ app.UseHttpsRedirection();
 app.UseMiddleware<PermissionMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseStaticFiles();
 app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>
