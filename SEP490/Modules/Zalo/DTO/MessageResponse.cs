@@ -6,8 +6,10 @@ namespace SEP490.Modules.Zalo.DTO
     {
         [JsonPropertyName("sender_id")]
         public string? SenderId { get; set; }
+
         [JsonPropertyName("sender_type")]
-        public string? UserType { get; set; }
+        public string? SenderType { get; set; }
+
         [JsonPropertyName("message_type")]
         public string? MessageType { get; set; }
         [JsonPropertyName("content")]

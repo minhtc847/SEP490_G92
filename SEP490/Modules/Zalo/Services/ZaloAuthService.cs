@@ -92,7 +92,7 @@ namespace SEP490.Modules.Zalo.Services
                 {
                     SenderId = item.GetProperty("from_id").GetString(),
 
-                    UserType = item.GetProperty("from_display_name").GetString() == "Glass JSC" ? "business" : "user",
+                    SenderType = item.GetProperty("from_display_name").GetString() == "Glass JSC" ? "business" : "user",
 
                     MessageType = item.GetProperty("type").GetString(),
 

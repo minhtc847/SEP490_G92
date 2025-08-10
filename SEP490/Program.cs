@@ -67,6 +67,7 @@ builder.Services.AddTransient<ZaloResponseService>();
 builder.Services.AddTransient<ZaloMessageProcessorService>();
 builder.Services.AddTransient<IZaloMessageHistoryService, ZaloMessageHistoryService>();
 builder.Services.AddTransient<IZaloCustomerService, ZaloCustomerService>();
+builder.Services.AddTransient<IZaloProductValidationService, ZaloProductValidationService>();
 
 // Register all services that inherit from BaseService
 var baseType = typeof(BaseService);

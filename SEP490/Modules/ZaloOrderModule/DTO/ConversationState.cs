@@ -91,14 +91,23 @@ namespace SEP490.Modules.ZaloOrderModule.DTO
 
     public class OrderItem
     {
-        [JsonPropertyName("productCode")]
+        [JsonPropertyName("item_code")]
         public string ProductCode { get; set; } = string.Empty;
 
-        [JsonPropertyName("productType")]
+        [JsonPropertyName("item_type")]
         public string ProductType { get; set; } = string.Empty;
 
-        [JsonPropertyName("size")]
-        public string Size { get; set; } = string.Empty;
+        //[JsonPropertyName("size")]
+        //public string Size { get; set; } = string.Empty;
+
+        [JsonPropertyName("height")]
+        public float Height { get; set; } = 0;
+
+        [JsonPropertyName("width")]
+        public float Width { get; set; } = 0;
+
+        [JsonPropertyName("thickness")]
+        public float Thickness { get; set; } = 0;
 
         [JsonPropertyName("quantity")]
         public int Quantity { get; set; } = 0;
@@ -111,8 +120,8 @@ namespace SEP490.Modules.ZaloOrderModule.DTO
         public const string WAITING_FOR_PHONE = "waiting_for_phone";
         public const string WAITING_FOR_PRODUCT_INFO = "waiting_for_product_info";
         public const string CONFIRMING = "confirming";
-        public const string CANCELLED = "cancelled";
         public const string COMPLETED = "completed";
+        public const string CANCELLED = "cancelled";
     }
 
     public static class MessageIntents
@@ -120,6 +129,7 @@ namespace SEP490.Modules.ZaloOrderModule.DTO
         public const string PLACE_ORDER = "place_order";
         public const string CONTACT_STAFF = "contact_staff";
         public const string UNKNOWN = "unknown";
+        public const string ADD_ORDER_DETAIL = "add_order_detail";
         public const string PHONE_NUMBER = "phone_number";
         public const string FINISH_ORDER = "finish_order";
         public const string CANCEL = "cancel_order";

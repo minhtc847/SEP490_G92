@@ -31,8 +31,12 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     return null;
                 }
 
-                var customer = await _context.Customers
-                    .FirstOrDefaultAsync(c => c.Phone != null && NormalizePhoneNumber(c.Phone) == normalizedPhone);
+                // Fetch all customers with non-null phone numbers and filter in memory
+                var customers = await _context.Customers
+                    .Where(c => c.Phone != null)
+                    .ToListAsync();
+
+                var customer = customers.FirstOrDefault(c => NormalizePhoneNumber(c.Phone) == normalizedPhone);
 
                 if (customer != null)
                 {
@@ -59,18 +63,18 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 if (string.IsNullOrWhiteSpace(phoneNumber))
                     return false;
 
-                // B? kho?ng tr?ng và ký t? không c?n thi?t
+                // B? kho?ng tr?ng vï¿½ kï¿½ t? khï¿½ng c?n thi?t
                 var cleaned = phoneNumber.Trim();
 
-                // N?u b?t ??u b?ng +84 thì thay thành 0
+                // N?u b?t ??u b?ng +84 thï¿½ thay thï¿½nh 0
                 if (cleaned.StartsWith("+84"))
                     cleaned = "0" + cleaned.Substring(3);
 
-                // N?u b?t ??u b?ng 84 và dài > 9 thì thay thành 0
+                // N?u b?t ??u b?ng 84 vï¿½ dï¿½i > 9 thï¿½ thay thï¿½nh 0
                 else if (cleaned.StartsWith("84") && cleaned.Length > 9)
                     cleaned = "0" + cleaned.Substring(2);
 
-                // B? t?t c? ký t? không ph?i s?
+                // B? t?t c? kï¿½ t? khï¿½ng ph?i s?
                 cleaned = Regex.Replace(cleaned, @"\D", "");
 
                 // Regex: 10 s?, b?t ??u b?ng 03, 05, 07, 08, 09

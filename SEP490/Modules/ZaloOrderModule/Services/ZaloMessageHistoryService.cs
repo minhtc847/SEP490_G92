@@ -72,7 +72,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                         messages.Add(new ZaloMessageResponse
                         {
                             SenderId = zaloUserId,
-                            UserType = message.SenderType,
+                            SenderType = message.SenderType,
                             MessageType = message.MessageType,
                             MessageContent = message.Content,
                             SendTime = message.Timestamp

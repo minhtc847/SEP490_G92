@@ -31,7 +31,7 @@ namespace SEP490.Modules.Zalo.Services
                 messages = messages.Select(m => new
                 {
                     sender_id = m.SenderId,
-                    sender_type = m.UserType,
+                    sender_type = m.SenderType,
                     message_type = m.MessageType,
                     content = m.MessageContent,
                     send_time = m.SendTime.ToString("yyyy-MM-ddTHH:mm:ss")

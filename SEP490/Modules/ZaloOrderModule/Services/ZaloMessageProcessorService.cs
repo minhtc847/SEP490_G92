@@ -1,8 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualBasic;
 using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.DB.Models;
+using SEP490.Modules.LLMChat.Services;
 using SEP490.Modules.Zalo.Services;
 using SEP490.Modules.ZaloOrderModule.Constants;
 using SEP490.Modules.ZaloOrderModule.DTO;
@@ -19,6 +21,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         private readonly IZaloCustomerService _customerService;
         private readonly IZaloMessageHistoryService _messageHistoryService;
         private readonly IZaloChatForwardService _zaloChatForwardService;
+        private readonly IZaloProductValidationService _productValidationService;
 
         public ZaloMessageProcessorService(
             ILogger<ZaloMessageProcessorService> logger,
@@ -26,7 +29,8 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             ZaloResponseService responseService,
             IZaloCustomerService customerService,
             IZaloMessageHistoryService messageHistoryService,
-            IZaloChatForwardService zaloChatForwardService)
+            IZaloChatForwardService zaloChatForwardService,
+            IZaloProductValidationService productValidationService)
         {
             _logger = logger;
             _conversationStateService = conversationStateService;
@@ -34,6 +38,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             _customerService = customerService;
             _messageHistoryService = messageHistoryService;
             _zaloChatForwardService = zaloChatForwardService;
+            _productValidationService = productValidationService;
         }
 
         public async Task<MessageResponse> ProcessMessageAsync(string zaloUserId, string message)
@@ -114,7 +119,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 {
                     return MessageIntents.FINISH_ORDER;
                 }
-                return MessageIntents.UNKNOWN;
+                return MessageIntents.ADD_ORDER_DETAIL;
             }
 
         
@@ -138,6 +143,9 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 case MessageIntents.PHONE_NUMBER:
                     return await HandlePhoneNumberIntentAsync(zaloUserId, message, conversation);
                   
+                case MessageIntents.ADD_ORDER_DETAIL:
+                    return await HandleAddOrderDetailIntentAsync(zaloUserId, message, conversation);
+
                 case MessageIntents.FINISH_ORDER:
                     return await HandleFinishOrderIntentAsync(zaloUserId, message, conversation);
                 
@@ -152,10 +160,141 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             }
         }
 
+        private async Task<MessageResponse> HandleAddOrderDetailIntentAsync(string zaloUserId, string message, ConversationState conversation)
+        {
+            return new MessageResponse
+            {
+                Content = ZaloWebhookConstants.DefaultMessages.ASK_CONFIRM_ORDER,
+                MessageType = "text",
+                Intent = MessageIntents.ADD_ORDER_DETAIL
+            };
+        }
+
+        private async Task<MessageResponse> HandleSingleProductInputAsync(string zaloUserId, string message, ConversationState conversation)
+        {
+            // Validate the single product input
+            var validationResult = await _productValidationService.ValidateProductInputAsync(message);
+
+            if (!validationResult.IsValid)
+            {
+                return new MessageResponse
+                {
+                    Content = validationResult.ErrorMessage,
+                    MessageType = "text",
+                    Intent = MessageIntents.ADD_ORDER_DETAIL
+                };
+            }
+
+            // Parse dimensions to extract width, height, and thickness
+            var dimensionParts = validationResult.Dimensions.Split('*');
+            var width = float.Parse(dimensionParts[0]);
+            var height = float.Parse(dimensionParts[1]);
+            var thickness = float.Parse(dimensionParts[2].Replace("mm", ""));
+
+            // Add the validated product to the conversation state
+            await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
+            {
+                var orderItem = new OrderItem
+                {
+                    ProductCode = validationResult.ProductCode,
+                    ProductType = validationResult.ProductType,
+                    Width = width,
+                    Height = height,
+                    Thickness = thickness,
+                    Quantity = validationResult.Quantity
+                };
+                conv.OrderItems.Add(orderItem);
+            });
+
+            // Generate success message with product details
+            var successMessage = string.Format(
+                ZaloWebhookConstants.DefaultMessages.PRODUCT_ADDED_SUCCESS,
+                validationResult.ProductCode,
+                validationResult.ProductType,
+                validationResult.Dimensions,
+                validationResult.Quantity
+            );
+
+            return new MessageResponse
+            {
+                Content = successMessage,
+                MessageType = "text",
+                Intent = MessageIntents.ADD_ORDER_DETAIL
+            };
+        }
+
+        private async Task<MessageResponse> HandleMultipleProductsInputAsync(string zaloUserId, string message, ConversationState conversation)
+        {
+            // Validate multiple products input
+            var validationResult = await _productValidationService.ValidateMultipleProductsInputAsync(message);
+
+            if (!validationResult.IsValid)
+            {
+                return new MessageResponse
+                {
+                    Content = validationResult.ErrorMessage,
+                    MessageType = "text",
+                    Intent = MessageIntents.ADD_ORDER_DETAIL
+                };
+            }
+
+            // Add all valid products to the conversation state
+            await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
+            {
+                foreach (var validProduct in validationResult.ValidProducts)
+                {
+                    // Parse dimensions to extract width, height, and thickness
+                    var dimensionParts = validProduct.Dimensions.Split('*');
+                    var width = float.Parse(dimensionParts[0]);
+                    var height = float.Parse(dimensionParts[1]);
+                    var thickness = float.Parse(dimensionParts[2].Replace("mm", ""));
+
+                    var orderItem = new OrderItem
+                    {
+                        ProductCode = validProduct.ProductCode,
+                        ProductType = validProduct.ProductType,
+                        Width = width,
+                        Height = height,
+                        Thickness = thickness,
+                        Quantity = validProduct.Quantity
+                    };
+                    conv.OrderItems.Add(orderItem);
+                }
+            });
+
+            // Generate success message
+            string responseMessage;
+            if (validationResult.InvalidCount == 0)
+            {
+                // All products are valid
+                responseMessage = $"✅ Đã thêm thành công {validationResult.ValidCount} sản phẩm vào đơn hàng!\n\n";
+                responseMessage += "📝 Danh sách sản phẩm đã thêm:\n";
+                for (int i = 0; i < validationResult.ValidProducts.Count; i++)
+                {
+                    var product = validationResult.ValidProducts[i];
+                    responseMessage += $"{i + 1}. {product.ProductCode} - {product.ProductType} - {product.Dimensions} - SL: {product.Quantity}\n";
+                }
+            }
+            else
+            {
+                // Partial success - some products valid, some invalid
+                responseMessage = validationResult.ErrorMessage; // This contains the partial success message
+            }
+
+            responseMessage += "\n🎯 Nếu đã xác nhận hãy nhắn \"Kết thúc\" tôi sẽ gửi bạn bản xác nhận đơn hàng";
+
+            return new MessageResponse
+            {
+                Content = responseMessage,
+                MessageType = "text",
+                Intent = MessageIntents.ADD_ORDER_DETAIL
+            };
+        }
+
         private async Task<MessageResponse> HandlePlaceOrderIntentAsync(string zaloUserId, string message, ConversationState conversation)
         {
             // Start the order process by asking for phone number
-                            await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.WAITING_FOR_PHONE);
+            await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.WAITING_FOR_PHONE);
 
             return new MessageResponse
             {
@@ -208,7 +347,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 else
                 {
                     // Customer doesn't exist - for now, we'll proceed with order but note that customer creation is for later
-                    //await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.WAITING_FOR_PRODUCT_INFO);
+                    await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.NEW);
 
                     return new MessageResponse
                     {
@@ -437,7 +576,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             
             foreach (var item in conversation.OrderItems)
             {
-                summary += $"• {item.ProductCode} - {item.ProductType} - {item.Size} - SL: {item.Quantity}\n";
+                summary += $"• {item.ProductCode} - {item.ProductType} - {item.Width}*{item.Height}*{item.Thickness} mm - SL: {item.Quantity}\n";
             }
 
             summary += $"\n📞 Số điện thoại: {conversation.CustomerPhone}";
