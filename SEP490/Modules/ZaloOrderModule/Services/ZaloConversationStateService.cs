@@ -12,21 +12,34 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         private readonly IDatabase _database;
         private readonly TimeSpan _conversationExpiry;
         private readonly bool _redisAvailable;
+        private readonly ConnectionMultiplexer _muxer;
 
-        public ZaloConversationStateService(ILogger<ZaloConversationStateService> logger,
-            IConnectionMultiplexer redis)
+        public ZaloConversationStateService(ILogger<ZaloConversationStateService> logger)
         {
             _logger = logger;
             
             try
             {
-                _database = redis.GetDatabase();
+                // Sử dụng cấu hình Redis Cloud của bạn
+                _muxer = ConnectionMultiplexer.Connect(
+                    new ConfigurationOptions
+                    {
+                        EndPoints = { { "redis-17281.crce185.ap-seast-1-1.ec2.redns.redis-cloud.com", 17281 } },
+                        User = "default",
+                        Password = "y0HB5DwnkEtmMlnu1k7kGGsQIfJCI9bc"
+                    }
+                );
+                
+                _database = _muxer.GetDatabase();
+                
+                // Test connection
+                var pingResult = _database.Ping();
                 _redisAvailable = true;
-                _logger.LogInformation("Redis connection established successfully");
+                _logger.LogInformation("Redis connection established successfully. Ping: {PingTime}ms", pingResult.TotalMilliseconds);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Redis connection failed, falling back to in-memory storage");
+                _logger.LogError(ex, "Redis connection failed, falling back to in-memory storage");
                 _redisAvailable = false;
             }
             
@@ -288,6 +301,15 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 if (!string.IsNullOrEmpty(userAvatar))
                     conversation.UserAvatar = userAvatar;
             });
+        }
+
+        /// <summary>
+        /// Disposes the Redis connection
+        /// </summary>
+        public void Dispose()
+        {
+            _muxer?.Close();
+            _muxer?.Dispose();
         }
     }
 }
