@@ -59,26 +59,24 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 if (string.IsNullOrWhiteSpace(phoneNumber))
                     return false;
 
-                // Remove all non-digit characters
-                var digitsOnly = Regex.Replace(phoneNumber, @"[^\d]", "");
-                
-                // Vietnamese phone number patterns
-                var patterns = new[]
-                {
-                    @"^0[3|5|7|8|9][0-9]{8}$", // 03xx, 05xx, 07xx, 08xx, 09xx
-                    @"^84[3|5|7|8|9][0-9]{8}$", // 84 + 3xx, 5xx, 7xx, 8xx, 9xx
-                    @"^\+84[3|5|7|8|9][0-9]{8}$" // +84 + 3xx, 5xx, 7xx, 8xx, 9xx
-                };
+                // B? kho?ng tr?ng và ký t? không c?n thi?t
+                var cleaned = phoneNumber.Trim();
 
-                foreach (var pattern in patterns)
-                {
-                    if (Regex.IsMatch(digitsOnly, pattern))
-                    {
-                        return true;
-                    }
-                }
+                // N?u b?t ??u b?ng +84 thì thay thành 0
+                if (cleaned.StartsWith("+84"))
+                    cleaned = "0" + cleaned.Substring(3);
 
-                return false;
+                // N?u b?t ??u b?ng 84 và dài > 9 thì thay thành 0
+                else if (cleaned.StartsWith("84") && cleaned.Length > 9)
+                    cleaned = "0" + cleaned.Substring(2);
+
+                // B? t?t c? ký t? không ph?i s?
+                cleaned = Regex.Replace(cleaned, @"\D", "");
+
+                // Regex: 10 s?, b?t ??u b?ng 03, 05, 07, 08, 09
+                var pattern = @"^(03|05|07|08|09)\d{8}$";
+
+                return Regex.IsMatch(cleaned, pattern);
             }
             catch (Exception ex)
             {

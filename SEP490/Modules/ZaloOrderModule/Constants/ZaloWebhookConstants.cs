@@ -81,8 +81,8 @@ namespace SEP490.Modules.ZaloOrderModule.Constants
         // Default messages
         public static class DefaultMessages
         {
-            public const string GREETING = "Xin chào! Chào mừng bạn đến với VNG Glass.\n\nVui lòng chọn một trong các lệnh sau:\n1. Gõ \"Đặt hàng\" để bắt đầu đặt hàng\n2. Gõ \"Đơn hàng\" để xem trạng thái đơn hàng\n3. Gõ \"Sản phẩm\" để nhận thông tin tư vấn\n4. Gõ \"Nhân viên\" để gọi nhân viên hỗ trợ";
-            public const string UNKNOWN_INTENT = "Lệnh không đúng. Vui lòng thử lại.\n\nCác lệnh có sẵn:\n1. \"Đặt hàng\" - Bắt đầu đặt hàng\n2. \"Đơn hàng\" - Xem trạng thái đơn hàng\n3. \"Sản phẩm\" - Thông tin tư vấn sản phẩm\n4. \"Nhân viên\" - Gọi nhân viên hỗ trợ";
+            public const string GREETING = "Xin chào! Chào mừng bạn đến với VNG Glass.\n\nVui lòng chọn một trong các lệnh sau:\n1. Gõ \"Đặt hàng\" để bắt đầu đặt hàng\n2. Gõ \"Đơn hàng\" để xem trạng thái đơn hàng\n3. Gõ \"Sản phẩm\" để nhận thông tin tư vấn\n4. Gõ \"Nhân viên\" để gọi nhân viên hỗ trợ\n5. Gõ \"Hủy\" để hủy đơn hàng hiện tại";
+            public const string UNKNOWN_INTENT = "Lệnh không đúng. Vui lòng thử lại.\n\nCác lệnh có sẵn:\n1. \"Đặt hàng\" - Bắt đầu đặt hàng\n2. \"Đơn hàng\" - Xem trạng thái đơn hàng\n3. \"Sản phẩm\" - Thông tin tư vấn sản phẩm\n4. \"Nhân viên\" - Gọi nhân viên hỗ trợ\n5. \"Hủy\" - Hủy đơn hàng hiện tại";
             public const string ERROR_MESSAGE = "Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau.";
             public const string ORDER_START = "Bạn đã bắt đầu quá trình đặt hàng.";
             public const string ORDER_CONFIRM = "Đơn hàng của bạn đã được xác nhận!";
@@ -99,6 +99,7 @@ namespace SEP490.Modules.ZaloOrderModule.Constants
             public const string PRODUCT_ADDED_SUCCESS = "✅ Đã thêm sản phẩm: {0} - {1} - {2} - SL: {3}\n\n📝 Nếu quý khách muốn sửa thông tin đơn hàng thì hãy cập nhật lại sản phẩm\n\n🎯 Nếu đã xác nhận hãy nhắn \"Kết thúc\" tôi sẽ gửi bạn bản xác nhận đơn hàng";
             public const string NO_PRODUCTS_IN_ORDER = "❌ Chưa có sản phẩm nào trong đơn hàng. Vui lòng nhập thông tin sản phẩm trước:";
             public const string ORDER_COMPLETED_SUCCESS = "🎉 Đơn hàng của bạn đã được tạo thành công!\n\n{0}\n\n📞 Nhân viên sẽ liên hệ với bạn trong vòng 30 phút để xác nhận đơn hàng.\n📋 Đơn hàng sẽ được xử lý trong 3-5 ngày làm việc.\n🚚 Giao hàng miễn phí trong phạm vi 50km.\n\nCảm ơn bạn đã tin tưởng VNG Glass!";
+            public const string ORDER_CANCELLED_AND_DELETED = "✅ Đã hủy đơn hàng và xóa thông tin. Cảm ơn bạn đã sử dụng dịch vụ!\n\n🔄 Nếu cần hỗ trợ, hãy gửi tin nhắn 'Đặt hàng' để bắt đầu lại.";
         }
 
     }

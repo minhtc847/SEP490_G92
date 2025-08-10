@@ -111,7 +111,12 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 return MessageIntents.UNKNOWN;
             }
 
-            // Handle main commands
+            // Handle main commands - CANCEL can be used from any state
+            if (trimmedMessage.Equals("Hủy", StringComparison.OrdinalIgnoreCase) || 
+                trimmedMessage.Equals("Cancel", StringComparison.OrdinalIgnoreCase) ||
+                trimmedMessage.Equals("Thôi", StringComparison.OrdinalIgnoreCase))
+                return MessageIntents.CANCEL;
+            
             if (trimmedMessage.Equals("Đặt hàng", StringComparison.OrdinalIgnoreCase))
                 return MessageIntents.PLACE_ORDER;
             
@@ -137,6 +142,9 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 case MessageIntents.CONTACT_STAFF:
                     return await HandleContactStaffIntentAsync(zaloUserId, message, conversation);
                 
+                case MessageIntents.CANCEL:
+                    return await HandleCancelIntentAsync(zaloUserId, message, conversation);
+                
                 default:
                     return await HandleUnknownIntentAsync(zaloUserId, message, conversation);
             }
@@ -145,7 +153,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         private async Task<MessageResponse> HandlePlaceOrderIntentAsync(string zaloUserId, string message, ConversationState conversation)
         {
             // Start the order process by asking for phone number
-            await _conversationStateService.UpdateStateAsync(zaloUserId, UserStates.WAITING_FOR_PHONE);
+                            await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.WAITING_FOR_PHONE);
 
             return new MessageResponse
             {
@@ -186,7 +194,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                         conv.CustomerId = customer.Id;
                     });
 
-                    await _conversationStateService.UpdateStateAsync(zaloUserId, UserStates.WAITING_FOR_PRODUCT_INFO);
+                    await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.WAITING_FOR_PRODUCT_INFO);
 
                     return new MessageResponse
                     {
@@ -198,13 +206,12 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 else
                 {
                     // Customer doesn't exist - for now, we'll proceed with order but note that customer creation is for later
-                    await _conversationStateService.UpdateStateAsync(zaloUserId, UserStates.WAITING_FOR_PRODUCT_INFO);
+                    //await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.WAITING_FOR_PRODUCT_INFO);
 
                     return new MessageResponse
                     {
                         Content = ZaloWebhookConstants.DefaultMessages.CUSTOMER_NOT_FOUND_ORDER_START,
                         MessageType = "text",
-                        
                     };
                 }
             }
@@ -226,6 +233,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             {
                 if (conversation.OrderItems.Count == 0)
                 {
+                    await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.NEW);
                     return new MessageResponse
                     {
                         Content = ZaloWebhookConstants.DefaultMessages.NO_PRODUCTS_IN_ORDER,
@@ -279,7 +287,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 // Generate order summary
                 var orderSummary = GenerateOrderSummary(conversation);
                 
-                await _conversationStateService.UpdateStateAsync(zaloUserId, UserStates.CONFIRMING);
+                await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.CONFIRMING);
 
                 return new MessageResponse
                 {
@@ -320,6 +328,35 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 Intent = MessageIntents.CONTACT_STAFF,
                
             };
+        }
+
+        private async Task<MessageResponse> HandleCancelIntentAsync(string zaloUserId, string message, ConversationState conversation)
+        {
+            try
+            {
+                _logger.LogInformation("User {UserId} cancelled the conversation", zaloUserId);
+                
+                // Delete the current conversation from Redis
+                await _conversationStateService.DeleteConversationAsync(zaloUserId);
+                
+                return new MessageResponse
+                {
+                    Content = ZaloWebhookConstants.DefaultMessages.ORDER_CANCELLED_AND_DELETED,
+                    MessageType = "text",
+                    Intent = MessageIntents.CANCEL
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling cancel intent for user: {UserId}", zaloUserId);
+                
+                return new MessageResponse
+                {
+                    Content = "❌ Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại sau.",
+                    MessageType = "text",
+                    Intent = MessageIntents.CANCEL
+                };
+            }
         }
 
         private async Task<MessageResponse> HandleUnknownIntentAsync(string zaloUserId, string message, ConversationState conversation)

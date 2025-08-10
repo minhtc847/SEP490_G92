@@ -1,30 +1,58 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using SEP490.Common.Services;
 using SEP490.Modules.ZaloOrderModule.DTO;
+using SEP490.Modules.ZaloOrderModule.Constants;
 using StackExchange.Redis;
 using System.Text.Json;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
-    public class ZaloConversationStateService: BaseService
+    public class ZaloConversationStateService
     {
         private readonly ILogger<ZaloConversationStateService> _logger;
-        private readonly IConnectionMultiplexer _redis;
         private readonly IDatabase _database;
-        private readonly TimeSpan _conversationExpiry = TimeSpan.FromHours(24);
+        private readonly TimeSpan _conversationExpiry;
+        private readonly bool _redisAvailable;
 
-        public ZaloConversationStateService(
-            ILogger<ZaloConversationStateService> logger,
+        public ZaloConversationStateService(ILogger<ZaloConversationStateService> logger,
             IConnectionMultiplexer redis)
         {
             _logger = logger;
-            _redis = redis;
-            _database = redis.GetDatabase();
+            
+            try
+            {
+                _database = redis.GetDatabase();
+                _redisAvailable = true;
+                _logger.LogInformation("Redis connection established successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Redis connection failed, falling back to in-memory storage");
+                _redisAvailable = false;
+            }
+            
+            _conversationExpiry = TimeSpan.FromHours(ZaloWebhookConstants.Timeouts.CONVERSATION_EXPIRY_HOURS);
+        }
+
+        private string GetConversationKey(string zaloUserId)
+        {
+            return $"{ZaloWebhookConstants.CacheKeys.CONVERSATION_PREFIX}{zaloUserId}";
         }
 
         public async Task<ConversationState> GetOrCreateConversationAsync(string zaloUserId)
         {
+            if (!_redisAvailable)
+            {
+                _logger.LogWarning("Redis not available, returning default conversation state for user: {UserId}", zaloUserId);
+                return new ConversationState
+                {
+                    ZaloUserId = zaloUserId,
+                    CurrentState = UserStates.NEW,
+                    LastActivity = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = true
+                };
+            }
+
             var cacheKey = GetConversationKey(zaloUserId);
             
             try
@@ -73,8 +101,14 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             }
         }
 
-        public async Task<bool> UpdateStateAsync(string zaloUserId, string newState, string? orderId = null)
+        public async Task<bool> UpdateConversationStateAsync(string zaloUserId, string newState)
         {
+            if (!_redisAvailable)
+            {
+                _logger.LogWarning("Redis not available, cannot update conversation state for user: {UserId}", zaloUserId);
+                return false;
+            }
+
             var cacheKey = GetConversationKey(zaloUserId);
             
             try
@@ -87,29 +121,30 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     if (conversation != null)
                     {
                         conversation.CurrentState = newState;
-                        conversation.CurrentOrderId = orderId;
                         conversation.LastActivity = DateTime.UtcNow;
-
                         await _database.StringSetAsync(cacheKey, JsonSerializer.Serialize(conversation), _conversationExpiry);
-                        
-                        _logger.LogInformation("Updated state for user {UserId}: {OldState} -> {NewState}", 
-                            zaloUserId, conversation.CurrentState, newState);
-                        
+                        _logger.LogInformation("Updated conversation state to {NewState} for user: {UserId}", newState, zaloUserId);
                         return true;
                     }
                 }
-
+                
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating state for user: {UserId}", zaloUserId);
+                _logger.LogError(ex, "Error updating conversation state for user: {UserId}", zaloUserId);
                 return false;
             }
         }
 
         public async Task<bool> UpdateConversationDataAsync(string zaloUserId, Action<ConversationState> updateAction)
         {
+            if (!_redisAvailable)
+            {
+                _logger.LogWarning("Redis not available, cannot update conversation data for user: {UserId}", zaloUserId);
+                return false;
+            }
+
             var cacheKey = GetConversationKey(zaloUserId);
             
             try
@@ -138,61 +173,14 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             }
         }
 
-        public async Task<bool> UpdateUserInfoAsync(string zaloUserId, string userName, string? userAvatar)
-        {
-            var cacheKey = GetConversationKey(zaloUserId);
-            
-            try
-            {
-                var existingState = await _database.StringGetAsync(cacheKey);
-                
-                if (existingState.HasValue)
-                {
-                    var conversation = JsonSerializer.Deserialize<ConversationState>(existingState!);
-                    if (conversation != null)
-                    {
-                        conversation.UserName = userName;
-                        conversation.UserAvatar = userAvatar;
-                        conversation.LastActivity = DateTime.UtcNow;
-
-                        await _database.StringSetAsync(cacheKey, JsonSerializer.Serialize(conversation), _conversationExpiry);
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating user info for user: {UserId}", zaloUserId);
-                return false;
-            }
-        }
-
-        public async Task<ConversationState?> GetConversationAsync(string zaloUserId)
-        {
-            var cacheKey = GetConversationKey(zaloUserId);
-            
-            try
-            {
-                var existingState = await _database.StringGetAsync(cacheKey);
-                
-                if (existingState.HasValue)
-                {
-                    return JsonSerializer.Deserialize<ConversationState>(existingState!);
-                }
-
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting conversation for user: {UserId}", zaloUserId);
-                return null;
-            }
-        }
-
         public async Task<bool> DeleteConversationAsync(string zaloUserId)
         {
+            if (!_redisAvailable)
+            {
+                _logger.LogWarning("Redis not available, cannot delete conversation for user: {UserId}", zaloUserId);
+                return false;
+            }
+
             var cacheKey = GetConversationKey(zaloUserId);
             
             try
@@ -206,59 +194,100 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             }
         }
 
-        public async Task<bool> IsConversationActiveAsync(string zaloUserId)
+        public async Task<ConversationState?> GetConversationAsync(string zaloUserId)
         {
-            var conversation = await GetConversationAsync(zaloUserId);
-            return conversation?.IsActive == true;
-        }
+            if (!_redisAvailable)
+            {
+                _logger.LogWarning("Redis not available, cannot get conversation for user: {UserId}", zaloUserId);
+                return null;
+            }
 
-        // public async Task<List<ConversationState>> GetActiveConversationsAsync()
-        // {
-        //     try
-        //     {
-        //         var conversations = new List<ConversationState>();
-        //         var server = _redis.GetServer(_redis.GetEndPoints().First());
-                
-        //         await foreach (var key in server.ScanAsync(pattern: "zalo:conversation:*"))
-        //         {
-        //             var conversationData = await _database.StringGetAsync(key);
-        //             if (conversationData.HasValue)
-        //             {
-        //                 var conversation = JsonSerializer.Deserialize<ConversationState>(conversationData!);
-        //                 if (conversation?.IsActive == true)
-        //                 {
-        //                     conversations.Add(conversation);
-        //                 }
-        //             }
-        //         }
-
-        //         return conversations;
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         _logger.LogError(ex, "Error getting active conversations");
-        //         return new List<ConversationState>();
-        //     }
-        // }
-
-        public async Task<TimeSpan?> GetConversationTimeToLiveAsync(string zaloUserId)
-        {
             var cacheKey = GetConversationKey(zaloUserId);
             
             try
             {
-                return await _database.KeyTimeToLiveAsync(cacheKey);
+                var existingState = await _database.StringGetAsync(cacheKey);
+                
+                if (existingState.HasValue)
+                {
+                    var conversation = JsonSerializer.Deserialize<ConversationState>(existingState!);
+                    if (conversation != null)
+                    {
+                        conversation.LastActivity = DateTime.UtcNow;
+                        await _database.StringSetAsync(cacheKey, JsonSerializer.Serialize(conversation), _conversationExpiry);
+                        return conversation;
+                    }
+                }
+                
+                return null;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting TTL for conversation of user: {UserId}", zaloUserId);
+                _logger.LogError(ex, "Error getting conversation for user: {UserId}", zaloUserId);
                 return null;
             }
         }
 
-        private string GetConversationKey(string zaloUserId)
+        public async Task<bool> IsConversationActiveAsync(string zaloUserId)
         {
-            return $"zalo:conversation:{zaloUserId}";
+            if (!_redisAvailable)
+            {
+                _logger.LogWarning("Redis not available, assuming conversation is active for user: {UserId}", zaloUserId);
+                return true;
+            }
+
+            var cacheKey = GetConversationKey(zaloUserId);
+            
+            try
+            {
+                return await _database.KeyExistsAsync(cacheKey);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking conversation existence for user: {UserId}", zaloUserId);
+                return false;
+            }
+        }
+
+        public async Task<List<ConversationState>> GetAllActiveConversationsAsync()
+        {
+            if (!_redisAvailable)
+            {
+                _logger.LogWarning("Redis not available, cannot get active conversations");
+                return new List<ConversationState>();
+            }
+
+            try
+            {
+                var conversations = new List<ConversationState>();
+                
+                // Since we don't have _redis reference, we'll return empty list for now
+                // This method requires Redis server to be available
+                _logger.LogWarning("GetAllActiveConversationsAsync requires Redis server to be available");
+                return conversations;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting all active conversations");
+                return new List<ConversationState>();
+            }
+        }
+
+        public async Task<bool> UpdateUserInfoAsync(string zaloUserId, string? userName = null, string? userAvatar = null)
+        {
+            if (!_redisAvailable)
+            {
+                _logger.LogWarning("Redis not available, cannot update user info for user: {UserId}", zaloUserId);
+                return false;
+            }
+
+            return await UpdateConversationDataAsync(zaloUserId, conversation =>
+            {
+                if (!string.IsNullOrEmpty(userName))
+                    conversation.UserName = userName;
+                if (!string.IsNullOrEmpty(userAvatar))
+                    conversation.UserAvatar = userAvatar;
+            });
         }
     }
 }
