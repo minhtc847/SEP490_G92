@@ -26,6 +26,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         private readonly IZaloChatForwardService _zaloChatForwardService;
         private readonly IZaloProductValidationService _productValidationService;
         private readonly IZaloPriceCalculationService _priceCalculationService;
+        private readonly IZaloOrderService _zaloOrderService;
 
         public ZaloMessageProcessorService(
             ILogger<ZaloMessageProcessorService> logger,
@@ -35,7 +36,8 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             IZaloMessageHistoryService messageHistoryService,
             IZaloChatForwardService zaloChatForwardService,
             IZaloProductValidationService productValidationService,
-            IZaloPriceCalculationService priceCalculationService)
+            IZaloPriceCalculationService priceCalculationService,
+            IZaloOrderService zaloOrderService)
         {
             _logger = logger;
             _conversationStateService = conversationStateService;
@@ -45,6 +47,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             _zaloChatForwardService = zaloChatForwardService;
             _productValidationService = productValidationService;
             _priceCalculationService = priceCalculationService;
+            _zaloOrderService = zaloOrderService;
         }
 
         public async Task<MessageResponse> ProcessMessageAsync(string zaloUserId, string message)
@@ -128,6 +131,18 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 return MessageIntents.ADD_ORDER_DETAIL;
             }
 
+            // Handle confirmation intent when in CONFIRMING state
+            if (currentState == UserStates.CONFIRMING)
+            {
+                if (trimmedMessage.Equals("Xác nhận", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedMessage.Equals("Xac nhan", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedMessage.Equals("Ok", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedMessage.Equals("Đồng ý", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedMessage.Equals("Dong y", StringComparison.OrdinalIgnoreCase))
+                {
+                    return MessageIntents.CONFIRM_ORDER;
+                }
+            }
         
             
             if (trimmedMessage.Equals("Đặt hàng", StringComparison.OrdinalIgnoreCase))
@@ -155,8 +170,8 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 case MessageIntents.FINISH_ORDER:
                     return await HandleFinishOrderIntentAsync(zaloUserId, message, conversation);
 
-                // case MessageIntents.CONFIRM_ORDER:
-                //     return await HandleConFirmOrderIntentAsync(zaloUserId, message, conversation);
+                case MessageIntents.CONFIRM_ORDER:
+                    return await HandleConFirmOrderIntentAsync(zaloUserId, message, conversation);
 
                 case MessageIntents.CONTACT_STAFF:
                     return await HandleContactStaffIntentAsync(zaloUserId, message, conversation);
@@ -168,10 +183,102 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     return await HandleUnknownIntentAsync(zaloUserId, message, conversation);
             }
         }
-        // private async Task<MessageResponse> HandleConFirmOrderIntentAsync(string zaloUserId, string message, ConversationState conversation)
-        // {
+        private async Task<MessageResponse> HandleConFirmOrderIntentAsync(string zaloUserId, string message, ConversationState conversation)
+        {
+            try
+            {
+                _logger.LogInformation("Handling confirm order intent for user: {UserId}", zaloUserId);
 
-        // }
+                // Check if conversation has order items
+                if (!conversation.OrderItems.Any())
+                {
+                    return new MessageResponse
+                    {
+                        Content = "Bạn chưa có sản phẩm nào trong đơn hàng. Vui lòng thêm sản phẩm trước khi xác nhận.",
+                        MessageType = "text",
+                        Intent = MessageIntents.CONFIRM_ORDER
+                    };
+                }
+
+                // Check if customer phone is available
+                if (string.IsNullOrEmpty(conversation.CustomerPhone))
+                {
+                    return new MessageResponse
+                    {
+                        Content = "Vui lòng cung cấp số điện thoại để chúng tôi có thể liên hệ xác nhận đơn hàng.",
+                        MessageType = "text",
+                        Intent = MessageIntents.PHONE_NUMBER
+                    };
+                }
+
+                // Generate order code
+                var orderCode = $"ZO{DateTime.Now:yyyyMMddHHmmss}";
+
+                // Calculate total amount
+                var totalAmount = conversation.OrderItems.Sum(item => item.TotalPrice);
+
+                // Create order details
+                var orderDetails = conversation.OrderItems.Select(item => new CreateZaloOrderDetailDTO
+                {
+                    ProductName = $"{item.ProductCode} - {item.ProductType} - {item.Width}x{item.Height}x{item.Thickness}mm",
+                    Quantity = item.Quantity,
+                    UnitPrice = item.UnitPrice,
+                    TotalPrice = item.TotalPrice
+                }).ToList();
+
+                // Get customer information by phone number
+                var customer = await _customerService.GetCustomerByPhoneAsync(conversation.CustomerPhone);
+                var customerName = customer?.CustomerName ?? "Chưa có thông tin";
+
+                // Create Zalo order
+                var createOrderDto = new CreateZaloOrderDTO
+                {
+                    OrderCode = orderCode,
+                    ZaloUserId = zaloUserId,
+                    CustomerName = customerName,
+                    CustomerPhone = conversation.CustomerPhone,
+                    CustomerAddress = "", // Will be updated when customer provides address
+                    OrderDate = DateTime.Now,
+                    TotalAmount = totalAmount,
+                    Status = "Pending",
+                    Note = $"Đơn hàng từ Zalo - User ID: {zaloUserId}",
+                    ZaloOrderDetails = orderDetails
+                };
+
+                var createdOrder = await _zaloOrderService.CreateZaloOrderAsync(createOrderDto);
+
+                // Update conversation state to completed
+                await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.COMPLETED);
+
+                // Generate order summary
+                var orderSummary = GenerateOrderSummary(conversation);
+
+                var responseMessage = $"✅ Đơn hàng đã được xác nhận thành công!\n\n" +
+                                    $"📋 Mã đơn hàng: {orderCode}\n" +
+                                    $"💰 Tổng tiền: {totalAmount:N0} VNĐ\n\n" +
+                                    $"📦 Chi tiết đơn hàng:\n{orderSummary}\n\n" +
+                                    $"📞 Chúng tôi sẽ liên hệ với số điện thoại {conversation.CustomerPhone} để xác nhận và giao hàng.\n" +
+                                    $"🙏 Cảm ơn bạn đã tin tưởng chúng tôi!";
+
+                return new MessageResponse
+                {
+                    Content = responseMessage,
+                    MessageType = "text",
+                    Intent = MessageIntents.CONFIRM_ORDER
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling confirm order intent for user: {UserId}", zaloUserId);
+                
+                return new MessageResponse
+                {
+                    Content = "Xin lỗi, có lỗi xảy ra khi xác nhận đơn hàng. Vui lòng thử lại sau hoặc liên hệ nhân viên hỗ trợ.",
+                    MessageType = "text",
+                    Intent = MessageIntents.CONFIRM_ORDER
+                };
+            }
+        }
 
         private async Task<MessageResponse> HandleAddOrderDetailIntentAsync(string zaloUserId, string message, ConversationState conversation)
         {
