@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualBasic;
+using Microsoft.EntityFrameworkCore;
 using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.DB.Models;
@@ -8,6 +9,8 @@ using SEP490.Modules.LLMChat.Services;
 using SEP490.Modules.Zalo.Services;
 using SEP490.Modules.ZaloOrderModule.Constants;
 using SEP490.Modules.ZaloOrderModule.DTO;
+using SEP490.Modules.ZaloOrderModule.Services;
+using System.Linq;
 using ZaloLLMResponse = SEP490.Modules.Zalo.DTO.LLMResponse;
 using ZaloMessageResponse = SEP490.Modules.Zalo.DTO.MessageResponse;
 
@@ -22,6 +25,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         private readonly IZaloMessageHistoryService _messageHistoryService;
         private readonly IZaloChatForwardService _zaloChatForwardService;
         private readonly IZaloProductValidationService _productValidationService;
+        private readonly IZaloPriceCalculationService _priceCalculationService;
 
         public ZaloMessageProcessorService(
             ILogger<ZaloMessageProcessorService> logger,
@@ -30,7 +34,8 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             IZaloCustomerService customerService,
             IZaloMessageHistoryService messageHistoryService,
             IZaloChatForwardService zaloChatForwardService,
-            IZaloProductValidationService productValidationService)
+            IZaloProductValidationService productValidationService,
+            IZaloPriceCalculationService priceCalculationService)
         {
             _logger = logger;
             _conversationStateService = conversationStateService;
@@ -39,6 +44,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             _messageHistoryService = messageHistoryService;
             _zaloChatForwardService = zaloChatForwardService;
             _productValidationService = productValidationService;
+            _priceCalculationService = priceCalculationService;
         }
 
         public async Task<MessageResponse> ProcessMessageAsync(string zaloUserId, string message)
@@ -148,7 +154,10 @@ namespace SEP490.Modules.ZaloOrderModule.Services
 
                 case MessageIntents.FINISH_ORDER:
                     return await HandleFinishOrderIntentAsync(zaloUserId, message, conversation);
-                
+
+                // case MessageIntents.CONFIRM_ORDER:
+                //     return await HandleConFirmOrderIntentAsync(zaloUserId, message, conversation);
+
                 case MessageIntents.CONTACT_STAFF:
                     return await HandleContactStaffIntentAsync(zaloUserId, message, conversation);
                 
@@ -159,6 +168,10 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     return await HandleUnknownIntentAsync(zaloUserId, message, conversation);
             }
         }
+        // private async Task<MessageResponse> HandleConFirmOrderIntentAsync(string zaloUserId, string message, ConversationState conversation)
+        // {
+
+        // }
 
         private async Task<MessageResponse> HandleAddOrderDetailIntentAsync(string zaloUserId, string message, ConversationState conversation)
         {
@@ -191,6 +204,14 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             var height = float.Parse(dimensionParts[1]);
             var thickness = float.Parse(dimensionParts[2].Replace("mm", ""));
 
+            // Calculate unit price for this product
+            var unitPrice = await _priceCalculationService.CalculateUnitPriceAsync(
+                validationResult.ProductCode,
+                validationResult.ProductType,
+                width,
+                height
+            );
+
             // Add the validated product to the conversation state
             await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
             {
@@ -201,7 +222,9 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     Width = width,
                     Height = height,
                     Thickness = thickness,
-                    Quantity = validationResult.Quantity
+                    Quantity = validationResult.Quantity,
+                    UnitPrice = unitPrice,
+                    TotalPrice = unitPrice * validationResult.Quantity
                 };
                 conv.OrderItems.Add(orderItem);
             });
@@ -238,10 +261,32 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 };
             }
 
+            // Calculate unit prices for all valid products first
+            var productsWithPrices = new List<(ProductValidationResult Product, decimal UnitPrice)>();
+            
+            foreach (var validProduct in validationResult.ValidProducts)
+            {
+                // Parse dimensions to extract width, height, and thickness
+                var dimensionParts = validProduct.Dimensions.Split('*');
+                var width = float.Parse(dimensionParts[0]);
+                var height = float.Parse(dimensionParts[1]);
+                var thickness = float.Parse(dimensionParts[2].Replace("mm", ""));
+
+                // Calculate unit price for this product
+                var unitPrice = await _priceCalculationService.CalculateUnitPriceAsync(
+                    validProduct.ProductCode,
+                    validProduct.ProductType,
+                    width,
+                    height
+                );
+
+                productsWithPrices.Add((validProduct, unitPrice));
+            }
+
             // Add all valid products to the conversation state
             await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
             {
-                foreach (var validProduct in validationResult.ValidProducts)
+                foreach (var (validProduct, unitPrice) in productsWithPrices)
                 {
                     // Parse dimensions to extract width, height, and thickness
                     var dimensionParts = validProduct.Dimensions.Split('*');
@@ -256,7 +301,9 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                         Width = width,
                         Height = height,
                         Thickness = thickness,
-                        Quantity = validProduct.Quantity
+                        Quantity = validProduct.Quantity,
+                        UnitPrice = unitPrice,
+                        TotalPrice = unitPrice * validProduct.Quantity
                     };
                     conv.OrderItems.Add(orderItem);
                 }
@@ -372,16 +419,16 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         {
             try
             {
-                if (conversation.OrderItems.Count == 0)
-                {
-                    await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.NEW);
-                    return new MessageResponse
-                    {
-                        Content = ZaloWebhookConstants.DefaultMessages.NO_PRODUCTS_IN_ORDER,
-                        MessageType = "text",
+                // if (conversation.OrderItems.Count == 0)
+                // {
+                //     await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.NEW);
+                //     return new MessageResponse
+                //     {
+                //         Content = ZaloWebhookConstants.DefaultMessages.NO_PRODUCTS_IN_ORDER,
+                //         MessageType = "text",
                         
-                    };
-                }
+                //     };
+                // }
 
                 // Get messages from "Đặt hàng" to "Kết thúc"
                 var orderMessages = await _messageHistoryService.GetListMessageAsync(zaloUserId);
@@ -551,15 +598,61 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         {
             try
             {
-                // TODO: Implement order creation logic based on the forwardResponse
-                // This would typically involve:
-                // 1. Creating a new order in the database
-                // 2. Adding order items from forwardResponse.Items
-                // 3. Associating the order with the customer
-                // 4. Setting order status and other details
+                if (forwardResponse?.Items == null || !forwardResponse.Items.Any())
+                {
+                    _logger.LogWarning("No items found in forward response for user: {UserId}", zaloUserId);
+                    return false;
+                }
+
+                // Convert RespondItem to OrderItem and add to conversation
+                var orderItems = new List<OrderItem>();
                 
-                _logger.LogInformation("Order created successfully for user: {UserId} with {ItemCount} items", 
-                    zaloUserId, forwardResponse.Items?.Count ?? 0);
+                foreach (var item in forwardResponse.Items)
+                {
+                    // Calculate unit price for this item
+                    var unitPrice = await _priceCalculationService.CalculateUnitPriceAsync(
+                        item.ItemCode ?? string.Empty,
+                        item.ItemType ?? string.Empty,
+                        (float)item.Width,
+                        (float)item.Height
+                    );
+
+                    var orderItem = new OrderItem
+                    {
+                        ProductCode = item.ItemCode ?? string.Empty,
+                        ProductType = item.ItemType ?? string.Empty,
+                        Height = (float)item.Height,
+                        Width = (float)item.Width,
+                        Thickness = (float)item.Thickness,
+                        Quantity = item.Quantity,
+                        UnitPrice = unitPrice,
+                        TotalPrice = unitPrice * item.Quantity
+                    };
+                    
+                    orderItems.Add(orderItem);
+                }
+
+                // Update conversation with new order items
+                await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
+                {
+                    // Add new items to existing order items
+                    conv.OrderItems.AddRange(orderItems);
+                    
+                    // Update customer name if provided
+                    if (!string.IsNullOrEmpty(forwardResponse.CustomerName))
+                    {
+                        conv.UserName = forwardResponse.CustomerName;
+                    }
+                    
+                    // Add notes if provided
+                    if (!string.IsNullOrEmpty(forwardResponse.Notes))
+                    {
+                        conv.AddMessageToHistory($"Ghi chú: {forwardResponse.Notes}", "business");
+                    }
+                });
+
+                _logger.LogInformation("Successfully added {ItemCount} items to conversation for user: {UserId}. Total items: {TotalItems}", 
+                    orderItems.Count, zaloUserId, conversation.OrderItems.Count + orderItems.Count);
                 
                 return true;
             }
@@ -573,13 +666,17 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         private string GenerateOrderSummary(ConversationState conversation)
         {
             var summary = "📋 CHI TIẾT ĐƠN HÀNG:\n\n";
+            decimal totalOrderAmount = 0;
             
             foreach (var item in conversation.OrderItems)
             {
                 summary += $"• {item.ProductCode} - {item.ProductType} - {item.Width}*{item.Height}*{item.Thickness} mm - SL: {item.Quantity}\n";
+                summary += $"  💰 Đơn giá: {item.UnitPrice:N0} VNĐ - Thành tiền: {item.TotalPrice:N0} VNĐ\n\n";
+                totalOrderAmount += item.TotalPrice;
             }
 
-            summary += $"\n📞 Số điện thoại: {conversation.CustomerPhone}";
+            summary += $"💰 TỔNG TIỀN: {totalOrderAmount:N0} VNĐ\n\n";
+            summary += $"📞 Số điện thoại: {conversation.CustomerPhone}";
             
             if (conversation.CustomerId.HasValue)
             {

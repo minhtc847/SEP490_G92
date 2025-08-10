@@ -111,6 +111,12 @@ namespace SEP490.Modules.ZaloOrderModule.DTO
 
         [JsonPropertyName("quantity")]
         public int Quantity { get; set; } = 0;
+
+        [JsonPropertyName("unit_price")]
+        public decimal UnitPrice { get; set; } = 0;
+
+        [JsonPropertyName("total_price")]
+        public decimal TotalPrice { get; set; } = 0;
     }
 
     public static class UserStates
@@ -132,6 +138,7 @@ namespace SEP490.Modules.ZaloOrderModule.DTO
         public const string ADD_ORDER_DETAIL = "add_order_detail";
         public const string PHONE_NUMBER = "phone_number";
         public const string FINISH_ORDER = "finish_order";
+        public const string CONFIRM_ORDER = "confirm_order";
         public const string CANCEL = "cancel_order";
     }
 }
