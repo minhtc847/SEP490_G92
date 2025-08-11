@@ -5,10 +5,8 @@ import { Dialog, DialogPanel, Transition, TransitionChild } from "@headlessui/re
 import { Fragment } from "react";
 import sortBy from "lodash/sortBy";
 
-// API endpoints
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://localhost:7075/api/CuttingGlassManagement";
 
-// DTO types
 interface ProductDto {
   id: number;
   productName: string;
@@ -61,7 +59,6 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [selectedMaterialId, setSelectedMaterialId] = useState<number | null>(null);
 
-  // Sort states
   const [outputsSortStatus, setOutputsSortStatus] = useState<DataTableSortStatus>({
     columnAccessor: 'id',
     direction: 'asc',
@@ -75,19 +72,37 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
     direction: 'asc',
   });
 
-  // Sorted data states
   const [sortedOutputs, setSortedOutputs] = useState<any[]>([]);
   const [sortedMaterials, setSortedMaterials] = useState<any[]>([]);
   const [sortedGlassOutputs, setSortedGlassOutputs] = useState<any[]>([]);
 
-  // Fetch danh sách thành phẩm cho autocomplete
+  const validateQuantity = (quantity: string) => {
+    if (!quantity || quantity.trim() === '') {
+      Swal.fire({ title: 'Vui lòng nhập số lượng', icon: 'warning' });
+      return false;
+    }
+    const num = Number(quantity);
+    if (isNaN(num) || num <= 0) {
+      Swal.fire({ title: 'Số lượng phải là số dương hợp lệ', icon: 'warning' });
+      return false;
+    }
+    if (num > 999999999) {
+      Swal.fire({ title: 'Số lượng không được vượt quá 999,999,999', icon: 'warning' });
+      return false;
+    }
+    if (!Number.isInteger(num)) {
+      Swal.fire({ title: 'Số lượng phải là số nguyên', icon: 'warning' });
+      return false;
+    }
+    return true;
+  };
+
   useEffect(() => {
     fetch(`${API_BASE}/products/thanhpham`)
       .then((res) => res.json())
       .then((data) => setThanhPhamProducts(data));
   }, []);
 
-  // Fetch tổng hợp
   useEffect(() => {
     if (!productionOrderId) return;
     setLoading(true);
@@ -99,7 +114,6 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
       .finally(() => setLoading(false));
   }, [productionOrderId]);
 
-  // Sort effects
   useEffect(() => {
     const data = sortBy(summary.outputs, outputsSortStatus.columnAccessor);
     setSortedOutputs(outputsSortStatus.direction === 'desc' ? data.reverse() : data);
@@ -115,24 +129,22 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
     setSortedGlassOutputs(glassOutputsSortStatus.direction === 'desc' ? data.reverse() : data);
   }, [summary.glassOutputs, glassOutputsSortStatus]);
 
-  // Thêm kính dư tự do hoặc nguyên vật liệu/thành phẩm
   const handleAdd = async () => {
     if (!selectedProduct && !form.productName) {
       Swal.fire({ title: 'Vui lòng chọn hoặc nhập tên sản phẩm', icon: 'warning' });
       return;
     }
-    // Validation cho bán thành phẩm - phải chọn từ thành phẩm mục tiêu
     if (form.itemType === 'banThanhPham' && !selectedProduct) {
       Swal.fire({ title: 'Vui lòng chọn thành phẩm mục tiêu từ danh sách', icon: 'warning' });
       return;
     }
-    if (!form.quantity) {
-      Swal.fire({ title: 'Vui lòng nhập số lượng', icon: 'warning' });
+    // Validation cho số lượng
+    if (!validateQuantity(form.quantity)) {
       return;
     }
     try {
       let product = selectedProduct;
-      // Nếu sản phẩm chưa tồn tại, tạo mới
+
       if (!product) {
         const productRes = await fetch(`${API_BASE}/create-product`, {
           method: 'POST',
@@ -153,19 +165,17 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
         if (!form.selectedMaterialId || isNaN(Number(form.selectedMaterialId))) {
           Swal.fire({ title: 'Vui lòng chọn nguyên vật liệu!', icon: 'warning' });
           return;
-        }
-        // Kiểm tra duplicate trong glassOutputs (theo productId và cutGlassInvoiceMaterialId)
-        let duplicate = summary.glassOutputs.find((g: any) => 
+        }        
+        // Chỉ kiểm tra duplicate trong cùng nguyên vật liệu để tránh cộng dồn sai
+        const duplicate = summary.glassOutputs.find((g: any) => 
           (g.productId === product.id || g.productName === product.productName) && 
           (g.cutGlassInvoiceMaterialId === Number(form.selectedMaterialId) || g.materialId === Number(form.selectedMaterialId)) &&
-          g.isDC === true // Chỉ check duplicate cho kính dư (isDC = true)
+          g.isDC === true 
         );
-        if (!duplicate) {
-          duplicate = summary.glassOutputs.find((g: any) => g.productName === product.productName && g.isDC === true);
-        }
         if (duplicate) {
+          const materialName = summary.materials.find((m: any) => m.id === Number(form.selectedMaterialId))?.productName || form.selectedMaterialId;
           const result = await Swal.fire({
-            title: 'Đã tồn tại kính dư này. Bạn có muốn cộng dồn số lượng vào sản phẩm cũ không?',
+            title: `Đã tồn tại kính dư "${product.productName}" từ nguyên vật liệu "${materialName}". Bạn có muốn cộng dồn số lượng không?`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Cộng dồn',
@@ -208,7 +218,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
             body: JSON.stringify({
               productId: product!.id,
               amount: form.quantity,
-              productionOrderId: null, // revert lại null
+              productionOrderId: null, 
             }),
           });
           const output = await outputRes.json();
@@ -226,7 +236,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
           }),
         });
       } else if (form.itemType === 'banThanhPham') {
-        // Bắt buộc phải chọn nguyên vật liệu
+ 
         if (!form.selectedMaterialId || isNaN(Number(form.selectedMaterialId))) {
           Swal.fire({ title: 'Vui lòng chọn nguyên vật liệu!', icon: 'warning' });
           return;
@@ -234,11 +244,13 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
         // Check duplicate cho bán thành phẩm
         const duplicateBanThanhPham = summary.glassOutputs.find((g: any) => 
           (g.productId === product.id || g.productName === product.productName) && 
-          g.isDC === false // Chỉ check duplicate cho bán thành phẩm (isDC = false)
+          (g.cutGlassInvoiceMaterialId === Number(form.selectedMaterialId) || g.materialId === Number(form.selectedMaterialId)) &&
+          g.isDC === false 
         );
         if (duplicateBanThanhPham) {
+          const materialName = summary.materials.find((m: any) => m.id === Number(form.selectedMaterialId))?.productName || form.selectedMaterialId;
           const result = await Swal.fire({
-            title: 'Đã tồn tại bán thành phẩm này. Bạn có muốn cộng dồn số lượng vào sản phẩm cũ không?',
+            title: `Đã tồn tại bán thành phẩm "${product.productName}" từ nguyên vật liệu "${materialName}". Bạn có muốn cộng dồn số lượng không?`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Cộng dồn',
@@ -377,7 +389,12 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
 
   // Update item
   const handleUpdate = async () => {
-    if (!editingItem) return;
+    if (!editingItem) return;    
+
+    if (!validateQuantity(form.quantity)) {
+      return;
+    }
+    
     try {
       if (editingItem.hasOwnProperty('isDC')) {
         await fetch(`${API_BASE}/update-cut-glass-output/${editingItem.id}`, {
@@ -466,21 +483,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
         </button>
       </div>
       <div className="datatables">
-        {/* <h6 className="font-bold mb-2">Thành phẩm mục tiêu</h6>
-        <DataTable
-          noRecordsText={loading ? 'Đang tải...' : 'Không có thành phẩm mục tiêu nào'}
-          highlightOnHover
-          className="table-hover whitespace-nowrap"
-          records={sortedOutputs}
-          columns={[
-            { accessor: 'id', title: 'ID', sortable: true },
-            { accessor: 'productName', title: 'Tên thành phẩm mục tiêu', sortable: true },
-            { accessor: 'uom', title: 'Đơn vị', sortable: true },
-            { accessor: 'amount', title: 'Số lượng', sortable: true },
-          ]}
-          sortStatus={outputsSortStatus}
-          onSortStatusChange={setOutputsSortStatus}
-        /> */}
+
         <h6 className="font-bold mt-6 mb-2">Nguyên vật liệu</h6>
         <DataTable
           noRecordsText={loading ? 'Đang tải...' : 'Không có nguyên vật liệu nào'}
@@ -601,7 +604,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
                     </button>
                   </div>
                   <div className="p-5">
-                    {/* 1. Loại */}
+
                     {!isEditing && (
                       <div className="mb-4">
                         <label className="block mb-1">Loại</label>
@@ -642,7 +645,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
                         </div>
                       </div>
                     )}
-                    {/* 2. Chọn nguyên vật liệu */}
+
                     {!isEditing && (form.itemType === 'kinhDu' || form.itemType === 'banThanhPham') && (
                       <div className="mb-4">
                         <label className="block mb-1">Chọn nguyên vật liệu</label>
@@ -658,7 +661,7 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
                         </select>
                       </div>
                     )}
-                    {/* 3. Tên sản phẩm / kính dư / nguyên vật liệu hoặc Chọn thành phẩm mục tiêu */}
+
                     {!isEditing && (
                       <div className="mb-4">
                         <label className="block mb-1">
@@ -707,14 +710,23 @@ const CuttingGlassPage: React.FC<CuttingGlassPageProps> = ({ productionOrderId }
                         </datalist>
                       </div>
                     )}
-                    {/* Các trường còn lại giữ nguyên */}
+
                     <div className="mb-4">
                       <label className="block mb-1">Số lượng</label>
                       <input
                         type="number"
                         className="form-input"
                         value={form.quantity}
-                        onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || (/^\d+$/.test(value) && Number(value) <= 999999999 && Number(value) > 0)) {
+                            setForm((f) => ({ ...f, quantity: value }));
+                          }
+                        }}
+                        min="1"
+                        max="999999999"
+                        step="1"
+                        placeholder="Nhập số lượng (tối đa 999,999,999)"
                       />
                     </div>
                     <div className="mb-4">
