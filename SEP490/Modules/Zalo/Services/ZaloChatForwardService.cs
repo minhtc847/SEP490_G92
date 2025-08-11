@@ -42,7 +42,8 @@ namespace SEP490.Modules.Zalo.Services
             var json = JsonSerializer.Serialize(payload);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await client.PostAsync("http://localhost:8000/process_zalo_chat", content);
+            //var response = await client.PostAsync("http://localhost:8000/process_zalo_chat", content);
+            var response = await client.PostAsync(" https://a87fdccd7a52.ngrok-free.app/process_zalo_chat", content);
             response.EnsureSuccessStatusCode();
 
             var responseString = await response.Content.ReadAsStringAsync();
