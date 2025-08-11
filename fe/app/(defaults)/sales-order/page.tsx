@@ -307,9 +307,7 @@ const SalesOrderSummary = () => {
                                     >
                                         Chi tiết
                                     </button>
-                                    <button className="px-2 py-1 text-sm text-white bg-green-600 rounded hover:bg-green-800" onClick={handleUpdateMisa}>
-                                        Update MISA
-                                    </button>
+                                    
                                 </td>
                             </tr>
                         ))}

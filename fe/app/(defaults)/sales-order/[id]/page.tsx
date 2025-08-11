@@ -13,6 +13,8 @@ const SalesOrderDetailPage = () => {
     const router = useRouter();
     const [order, setOrder] = useState<OrderDetailDto | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isUpdatingMisa, setIsUpdatingMisa] = useState<boolean>(false);
+    const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
 
     useEffect(() => {
         if (!id || isNaN(Number(id))) return;
@@ -30,6 +32,22 @@ const SalesOrderDetailPage = () => {
 
         fetchData();
     }, [id]);
+
+    const handleUpdateMisa = async () => {
+        setIsUpdatingMisa(true);
+        setShowSuccessMessage(false);
+        
+        // Simulate 10-second delay
+        setTimeout(() => {
+            setIsUpdatingMisa(false);
+            setShowSuccessMessage(true);
+            
+            // Hide success message after 3 seconds
+            setTimeout(() => {
+                setShowSuccessMessage(false);
+            }, 3000);
+        }, 10000);
+    };
 
     if (loading) return <div className="p-6">Đang tải dữ liệu...</div>;
     if (!order) return <div className="p-6 text-red-600">Không tìm thấy đơn hàng với ID: {id}</div>;
@@ -153,8 +171,23 @@ const SalesOrderDetailPage = () => {
                     <button onClick={() => router.push(`/sales-order/edit/${id}`)} className="px-4 py-1 bg-blue-500 text-white rounded">
                         📝 Sửa
                     </button>
-                    <button onClick={() => alert('Đồng bộ thành công vào MISA!')} className="px-4 py-1 bg-green-600 text-white rounded">
-                        🔄 Update MISA
+                    <button 
+                        onClick={handleUpdateMisa} 
+                        disabled={isUpdatingMisa}
+                        className={`px-4 py-1 rounded transition ${
+                            isUpdatingMisa 
+                                ? 'bg-orange-400 text-white cursor-not-allowed' 
+                                : 'bg-orange-500 text-white hover:bg-orange-600'
+                        }`}
+                    >
+                        {isUpdatingMisa ? (
+                            <>
+                                <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                                Đang cập nhật MISA...
+                            </>
+                        ) : (
+                            '🔄 Update MISA'
+                        )}
                     </button>
                     <button onClick={handleExportToExcel} className="px-4 py-1 bg-gray-600 text-white rounded">
                         📊 Xuất Excel
@@ -164,6 +197,13 @@ const SalesOrderDetailPage = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Success Message */}
+            {showSuccessMessage && (
+                <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                    ✅ Cập nhật MISA thành công!
+                </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-sm">
                 <div>

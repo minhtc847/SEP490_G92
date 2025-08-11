@@ -9,6 +9,8 @@ const ProductDetailPage = () => {
     const router = useRouter();
     const [product, setProduct] = useState<ProductDetail | null>(null);
     const [glassStructureName, setGlassStructureName] = useState<string>('');
+    const [isUpdatingMisa, setIsUpdatingMisa] = useState<boolean>(false);
+    const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -34,11 +36,35 @@ const ProductDetailPage = () => {
         fetchData();
     }, [id]);
 
+    const handleUpdateMisa = async () => {
+        setIsUpdatingMisa(true);
+        setShowSuccessMessage(false);
+        
+        // Simulate 10-second delay
+        setTimeout(() => {
+            setIsUpdatingMisa(false);
+            setShowSuccessMessage(true);
+            
+            // Hide success message after 3 seconds
+            setTimeout(() => {
+                setShowSuccessMessage(false);
+            }, 3000);
+        }, 10000);
+    };
+
     if (!product) return <div className="p-6 text-red-600">Đang tải dữ liệu...</div>;
 
     return (
         <div className="p-6 bg-white rounded-lg shadow-md">
             <h2 className="text-xl font-bold mb-6">Chi tiết sản phẩm</h2>
+            
+            {/* Success Message */}
+            {showSuccessMessage && (
+                <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                    ✅ Cập nhật MISA thành công!
+                </div>
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block font-medium text-gray-700 mb-1">Tên sản phẩm</label>
@@ -93,6 +119,24 @@ const ProductDetailPage = () => {
                 </button>
                 <button onClick={() => router.push(`/products/edit/${product.id}`)} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
                     ✏️ Sửa sản phẩm
+                </button>
+                <button 
+                    onClick={handleUpdateMisa} 
+                    disabled={isUpdatingMisa}
+                    className={`px-4 py-2 rounded-lg transition ${
+                        isUpdatingMisa 
+                            ? 'bg-orange-400 text-white cursor-not-allowed' 
+                            : 'bg-orange-500 text-white hover:bg-orange-600'
+                    }`}
+                >
+                    {isUpdatingMisa ? (
+                        <>
+                            <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                            Đang cập nhật MISA...
+                        </>
+                    ) : (
+                        '🔄 Cập nhật MISA'
+                    )}
                 </button>
             </div>
         </div>
