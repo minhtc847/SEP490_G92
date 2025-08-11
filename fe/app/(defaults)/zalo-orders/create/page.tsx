@@ -6,7 +6,7 @@ import IconPlus from '@/components/icon/icon-plus';
 import IconTrash from '@/components/icon/icon-trash';
 import zaloOrderService, { CreateZaloOrder, CreateZaloOrderDetail } from '@/services/zaloOrderService';
 
-const CreateZaloOrder = () => {
+const CreateZaloOrders = () => {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState<CreateZaloOrder>({
@@ -324,4 +324,4 @@ const CreateZaloOrder = () => {
     );
 };
 
-export default CreateZaloOrder;
+export default CreateZaloOrders;
