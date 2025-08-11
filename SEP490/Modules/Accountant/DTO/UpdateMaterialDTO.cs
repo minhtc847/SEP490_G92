@@ -5,5 +5,6 @@
         public string ProductName { get; set; } 
         public int Uom { get; set; }
         public decimal Amount { get; set; }
+        public int ProductId { get; set; }
     }
 }

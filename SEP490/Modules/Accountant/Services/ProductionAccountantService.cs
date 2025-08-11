@@ -78,7 +78,7 @@ namespace SEP490.Modules.Accountant.Services
 
             if (output == null)
             {
-                Console.WriteLine($"Không tìm thấy ProductionOutput với Id: {outputId}");
+                Console.WriteLine("Không tìm thấy ProductionOutput ");
                 return null;
             }
 
@@ -118,7 +118,7 @@ namespace SEP490.Modules.Accountant.Services
 
             if (output == null)
             {
-                Console.WriteLine($" Không tìm thấy production_output với id = {id}");
+                Console.WriteLine(" Không tìm thấy production_output ");
                 return false;
             }
 
@@ -135,12 +135,21 @@ namespace SEP490.Modules.Accountant.Services
             var d = await _context.ProductionMaterials.FindAsync(id);
             if (d == null) return false;
 
-            var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == d.ProductId);
-            if (product == null) return false;
 
-            d.Product.ProductName = dto.ProductName;
-            product.UOM = ConvertIntToStringUOM(dto.Uom);
+            var newProduct = await _context.Products.FirstOrDefaultAsync(p => p.Id == dto.ProductId);
+            if (newProduct == null)
+            {
+                return false;
+            }
+
+            d.ProductId = dto.ProductId;
             d.Amount = dto.Amount;
+
+            // d.ProductName = newProduct.ProductName; 
+            // d.UOM = (UOM)newProduct.UOM; 
+            //d.Product.ProductName = dto.ProductName; 
+            //product.UOM = ConvertIntToStringUOM(dto.Uom); 
+            //d.UOM = (UOM)dto.Uom; 
 
             await _context.SaveChangesAsync();
             return true;
@@ -182,32 +191,27 @@ namespace SEP490.Modules.Accountant.Services
                 .FirstOrDefaultAsync(o =>
                     o.ProductionOrderId == productionOrderId &&
                     o.Id == outputId);
-
             if (output == null)
             {
-                Console.WriteLine($"Không tìm thấy output với ID: {outputId} trong production order {productionOrderId}");
+                Console.WriteLine("Không tìm thấy output trong production order");
                 return false;
             }
 
-            var existingProduct = await _context.Products
-                .FirstOrDefaultAsync(p => p.ProductName.ToUpper() == dto.ProductName.ToUpper());
+            var productToAdd = await _context.Products
+                .FirstOrDefaultAsync(p => p.Id == dto.ProductId);
 
-            if (existingProduct == null)
+            if (productToAdd == null)
             {
-                Console.WriteLine($"Không tìm thấy product với mã {dto.ProductName}. Không gán product_id.");
+                Console.WriteLine("Không tìm thấy product ");
             }
 
             var material = new ProductionMaterial
             {
                 ProductionOutputId = output.Id,
+                UOM = (UOM)dto.Uom,
                 Amount = dto.TotalQuantity,
-                ProductId = existingProduct?.Id ?? 0
+                ProductId = productToAdd.Id
             };
-
-            if (existingProduct == null)
-            {
-                throw new Exception($"Không tìm thấy product");
-            }
 
             _context.ProductionMaterials.Add(material);
             await _context.SaveChangesAsync();
@@ -238,3 +242,4 @@ namespace SEP490.Modules.Accountant.Services
         }
     }
 }
+

@@ -113,10 +113,9 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     totalQuantity: 0,
   })
 
-  // Product suggestions for autocomplete (for both materials and products)
-  const [productSuggestions, setProductSuggestions] = useState<ProductItem[]>([])
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
+  // Thêm state mới cho danh sách tất cả products
+  const [allProducts, setAllProducts] = useState<ProductItem[]>([])
+  const [isLoadingAllProducts, setIsLoadingAllProducts] = useState(false)
 
   // Add separate states for product add modal autocomplete
   const [productAddSuggestions, setProductAddSuggestions] = useState<ProductItem[]>([])
@@ -145,6 +144,36 @@ export default function ProductionOrderView({ params }: { params: { id: string }
       name: "Nguyen Tuan Kiet",
     },
   ]
+
+  // Thêm state mới cho modal xem chi tiết
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [detailContent, setDetailContent] = useState({ title: '', content: '' })
+
+  const closeAddProductModal = () => {
+    setShowAddProductModal(false)
+  }
+
+  const closeAddMaterialModal = () => {
+    setShowAddMaterialModal(false)
+  }
+
+  const closeProductModal = () => {
+    setShowProductModal(false)
+  }
+
+  const closeMaterialModal = () => {
+    setShowMaterialModal(false)
+  }
+
+  const showDetailInfo = (title: string, content: string) => {
+    setDetailContent({ title, content })
+    setShowDetailModal(true)
+  }
+
+  const closeDetailModal = () => {
+    setShowDetailModal(false)
+    setDetailContent({ title: '', content: '' })
+  }
 
   useEffect(() => {
     fetch(`https://localhost:7075/api/ProductionAccountantControllers/production-ordersDetails/${params.id}`)
@@ -257,10 +286,10 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   }
 
   const handleGoBack = () => {
-    router.push("/production-orders/view")
+    router.push("/production-orders/")
   }
 
-    const handleOperationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleOperationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value
     setSelectedOperation(value)
 
@@ -276,12 +305,42 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     }
   }
 
+  // Fetch tất cả products khi mở modal
+  const fetchAllProducts = async () => {
+    setIsLoadingAllProducts(true)
+    try {
+      const response = await fetch(`https://localhost:7075/api/Product`)
+      if (response.ok) {
+        const allProducts = await response.json()
+        console.log("📦 Raw products from API:", allProducts) // Log raw data
+
+        const processedProducts = allProducts.map((product: ProductItem) => {
+          return {
+            ...product,
+            uom: convertUOMToString(product.uom),
+          }
+        })
+        console.log("📦 All products (no type filter):", processedProducts)
+        setAllProducts(processedProducts)
+      } else {
+        console.error("API trả về lỗi:", response.status, response.statusText)
+        setAllProducts([])
+      }
+    } catch (error) {
+      console.error("Lỗi khi gọi API:", error)
+      setAllProducts([])
+    } finally {
+      setIsLoadingAllProducts(false)
+    }
+  }
+
   const handleAddProduct = () => {
     setAddProductForm({
       productName: "",
       uom: "",
       quantity: 0,
     })
+    fetchAllProducts() // Load tất cả products khi mở modal
     setShowAddProductModal(true)
   }
 
@@ -293,6 +352,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     const productToEdit = finishedProducts.find((p) => (p.outputId || p.id) === selectedProduct) || finishedProducts[0]
     setEditingProduct(productToEdit)
     setProductForm({ ...productToEdit })
+    fetchAllProducts() // Load tất cả products khi mở modal
     setShowProductModal(true)
   }
 
@@ -307,6 +367,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
       quantityPer: 0,
       totalQuantity: 0,
     })
+    fetchAllProducts() // Load tất cả products khi mở modal
     setShowAddMaterialModal(true)
   }
 
@@ -317,6 +378,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     }
     setEditingMaterial(selectedMaterial)
     setMaterialForm({ ...selectedMaterial })
+    fetchAllProducts() // Load tất cả products khi mở modal
     setShowMaterialModal(true)
   }
 
@@ -324,13 +386,10 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     e.preventDefault()
 
     if (!addProductForm.productName.trim()) {
-      alert("Vui lòng nhập tên thành phẩm!")
+      alert("Vui lòng chọn tên thành phẩm!")
       return
     }
-    if (!addProductForm.uom.toString().trim()) {
-      alert("Vui lòng nhập đơn vị tính!")
-      return
-    }
+    // UOM sẽ được lấy từ sản phẩm được chọn, không cần validate riêng
     if (addProductForm.quantity <= 0) {
       alert("Số lượng phải lớn hơn 0!")
       return
@@ -398,13 +457,10 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     e.preventDefault()
 
     if (!productForm.productName.trim()) {
-      alert("Vui lòng nhập tên thành phẩm!")
+      alert("Vui lòng chọn tên thành phẩm!")
       return
     }
-    if (!productForm.uom.toString().trim()) {
-      alert("Vui lòng nhập đơn vị tính!")
-      return
-    }
+    // UOM sẽ được lấy từ sản phẩm được chọn, không cần validate riêng
     if (productForm.quantity <= 0) {
       alert("Số lượng phải lớn hơn 0!")
       return
@@ -478,27 +534,34 @@ export default function ProductionOrderView({ params }: { params: { id: string }
       alert("Vui lòng nhập tên nguyên vật liệu!")
       return
     }
-    if (!materialForm.uom.toString().trim()) {
-      alert("Vui lòng nhập đơn vị tính!")
-      return
-    }
     if (materialForm.totalQuantity <= 0) {
       alert("Tổng số lượng phải lớn hơn 0!")
       return
     }
 
-    // Convert UOM từ string sang int trước khi gửi lên server
+    // Tìm productId dựa trên productName
+    const selectedMaterialProduct = allProducts.find((p) => p.productName === materialForm.productName.trim())
+
+    if (!selectedMaterialProduct?.id) {
+      alert("Không tìm thấy ID sản phẩm cho nguyên vật liệu đã chọn. Vui lòng chọn lại!")
+      console.error("Không tìm thấy ID sản phẩm cho nguyên vật liệu:", materialForm.productName)
+      return
+    }
+
     const updatedMaterialForm = {
-      productName: materialForm.productName.trim(),
-      uom: convertStringToUOMInt(materialForm.uom.toString()),
+      productId: selectedMaterialProduct.id, 
+      productName: materialForm.productName.trim(), 
       amount: materialForm.totalQuantity,
     }
 
-    console.log("Updating material:", updatedMaterialForm)
-    console.log("Selected product outputId:", selectedProductData.outputId)
+    console.log("--- Bắt đầu cập nhật nguyên vật liệu ---")
+    console.log("Payload gửi đi:", updatedMaterialForm)
+    console.log("ID nguyên vật liệu cần cập nhật (editingMaterial.id):", editingMaterial.id)
+    console.log("ID sản phẩm được chọn (selectedMaterialProduct.id):", selectedMaterialProduct.id)
+    console.log("Tên sản phẩm được chọn (materialForm.productName):", materialForm.productName)
+    console.log("Tổng số lượng (materialForm.totalQuantity):", materialForm.totalQuantity)
 
     const updateUrl = `https://localhost:7075/api/ProductionAccountantControllers/update-material-info/${editingMaterial.id}`
-    console.log("🔧 ID của nguyên vật liệu cần cập nhật:", editingMaterial?.id)
 
     fetch(updateUrl, {
       method: "PUT",
@@ -521,7 +584,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
           }
         }
         const responseText = await res.text()
-        console.log("Update success response:", responseText)
+        console.log("Update success response (raw text):", responseText)
         return responseText
       })
       .then(() => {
@@ -556,95 +619,14 @@ export default function ProductionOrderView({ params }: { params: { id: string }
         setShowMaterialModal(false)
         setEditingMaterial(null)
         setSelectedMaterial(null)
+        console.log("--- Kết thúc cập nhật nguyên vật liệu ---")
       })
       .catch((err) => {
         console.error("Cập nhật nguyên vật liệu lỗi:", err)
         alert(`Cập nhật nguyên vật liệu thất bại: ${err.message}`)
+        console.log("--- Cập nhật nguyên vật liệu thất bại ---")
       })
   }
-
-  const fetchProductSuggestions = async (searchTerm: string) => {
-    if (searchTerm.length < 2) {
-      setProductSuggestions([])
-      setShowSuggestions(false)
-      return
-    }
-
-    setIsLoadingSuggestions(true)
-    try {
-      const response = await fetch(`https://localhost:7075/api/Product`)
-      if (response.ok) {
-        const allProducts = await response.json()
-        console.log("📦 Dữ liệu sản phẩm:", allProducts)
-
-        // Convert UOM từ int sang string cho suggestions
-        const processedProducts = allProducts.map((product: ProductItem) => ({
-          ...product,
-          uom: convertUOMToString(product.uom),
-        }))
-
-        const filteredProducts = processedProducts.filter((product: ProductItem) =>
-          product.productName.toLowerCase().includes(searchTerm.toLowerCase()),
-        )
-        console.log("Kết quả lọc:", filteredProducts)
-        setProductSuggestions(filteredProducts.slice(0, 10))
-        setShowSuggestions(true)
-      } else {
-        console.error("API trả về lỗi:", response.status, response.statusText)
-        setProductSuggestions([])
-        setShowSuggestions(false)
-      }
-    } catch (error) {
-      console.error("Lỗi khi gọi API:", error)
-      setProductSuggestions([])
-      setShowSuggestions(false)
-    } finally {
-      setIsLoadingSuggestions(false)
-    }
-  }
-
-  const handleProductCodeChange = (value: string) => {
-    setAddMaterialForm({ ...addMaterialForm, productName: value })
-    console.log("Đang tìm kiếm:", value)
-    fetchProductSuggestions(value)
-  }
-
-  const handleSuggestionSelect = (suggestion: ProductItem) => {
-    setAddMaterialForm({
-      ...addMaterialForm,
-      productName: suggestion.productName,
-      uom: suggestion.uom,
-    })
-    setShowSuggestions(false)
-    setProductSuggestions([])
-  }
-
-  const closeProductModal = () => {
-    setShowProductModal(false)
-    setEditingProduct(null)
-  }
-
-  const closeMaterialModal = () => {
-    setShowMaterialModal(false)
-    setEditingMaterial(null)
-  }
-
-  const closeAddProductModal = () => {
-    setShowAddProductModal(false)
-    setAddProductForm({ productName: "", uom: "", quantity: 0 })
-    setShowProductAddSuggestions(false)
-    setProductAddSuggestions([])
-  }
-
-  const closeAddMaterialModal = () => {
-    setShowAddMaterialModal(false)
-    setAddMaterialForm({ productName: "", uom: "", quantityPer: 0, totalQuantity: 0 })
-    setShowSuggestions(false)
-    setProductSuggestions([])
-  }
-
-  const totalQuantity = finishedProducts.reduce((sum, item) => sum + item.quantity, 0)
-  const totalMaterialQuantity = currentMaterials.reduce((sum, item) => sum + item.totalQuantity, 0)
 
   const handleAddMaterialFormSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -656,26 +638,34 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
     // Validate dữ liệu trước khi gửi
     if (!addMaterialForm.productName.trim()) {
-      alert("Vui lòng nhập tên nguyên vật liệu!")
+      alert("Vui lòng chọn tên nguyên vật liệu!")
       return
     }
-    if (!addMaterialForm.uom.toString().trim()) {
-      alert("Vui lòng chọn đơn vị tính!")
-      return
-    }
+    // UOM sẽ được lấy từ sản phẩm được chọn, không cần validate riêng
     if (addMaterialForm.totalQuantity <= 0) {
       alert("Tổng số lượng phải lớn hơn 0!")
       return
     }
 
-    // Sửa lại cách gửi data - chỉ gửi những field mà API expect
+    const selectedAddMaterialProduct = allProducts.find((p) => p.productName === addMaterialForm.productName.trim())
+
+    if (!selectedAddMaterialProduct?.id) {
+      alert("Không tìm thấy ID sản phẩm cho nguyên vật liệu đã chọn. Vui lòng chọn lại!")
+      console.error("Không tìm thấy ID sản phẩm cho nguyên vật liệu:", addMaterialForm.productName)
+      return
+    }
+
     const materialData = {
-      productName: addMaterialForm.productName.trim(),
+      productId: selectedAddMaterialProduct.id, 
+      productName: addMaterialForm.productName.trim(), 
+      uom: convertStringToUOMInt(addMaterialForm.uom.toString()), 
       totalQuantity: addMaterialForm.totalQuantity,
     }
 
-    console.log("Đang gửi dữ liệu NVL:", materialData)
+    console.log("--- Bắt đầu thêm nguyên vật liệu ---")
+    console.log("Đang gửi dữ liệu NVL payload:", materialData)
     console.log("Selected product outputId:", selectedProductData.outputId)
+    console.log("🔧 productId được gửi:", selectedAddMaterialProduct.id)
 
     const url = `https://localhost:7075/api/ProductionAccountantControllers/add-material-info/${params.id}?outputId=${selectedProductData.outputId}`
 
@@ -734,17 +724,22 @@ export default function ProductionOrderView({ params }: { params: { id: string }
         alert("Thêm nguyên vật liệu thành công!")
         setShowAddMaterialModal(false)
         setAddMaterialForm({ productName: "", uom: "", quantityPer: 0, totalQuantity: 0 })
-        setShowSuggestions(false)
-        setProductSuggestions([])
+        console.log("--- Kết thúc thêm nguyên vật liệu ---")
       })
       .catch((err) => {
         console.error("Lỗi chi tiết:", err)
         alert(`Thêm nguyên vật liệu thất bại: ${err.message}`)
+        console.log("--- Thêm nguyên vật liệu thất bại ---")
       })
   }
 
   const handleAddProductCodeChange = async (value: string) => {
+    // This function is no longer needed for the select dropdown,
+    // but keeping it for now if there's any other usage.
+    // For the select, we just set the value directly.
     setAddProductForm({ ...addProductForm, productName: value })
+    // The autocomplete logic below is now redundant for the select dropdown
+    // but might be useful if you revert to autocomplete or have other inputs.
     console.log("Đang tìm kiếm sản phẩm:", value)
     if (value.length < 2) {
       setProductAddSuggestions([])
@@ -786,6 +781,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   }
 
   const handleProductAddSuggestionSelect = (suggestion: ProductItem) => {
+    // This function is no longer needed for the select dropdown
     setAddProductForm({
       ...addProductForm,
       productName: suggestion.productName,
@@ -930,8 +926,8 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   }}
                 />
               )}
-              {selectedOperation === "xuat-keo-bytul" && (
-                exportGlueButylProducts.length > 0 ? (
+              {selectedOperation === "xuat-keo-bytul" &&
+                (exportGlueButylProducts.length > 0 ? (
                   <GlueButylExportModalComponent
                     products={exportGlueButylProducts}
                     type={"Ghép Kính"}
@@ -945,12 +941,9 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                     }}
                   />
                 ) : (
-                  <div className="text-sm text-gray-500">
-                    Không có sản phẩm nào để xuất keo butyl
-                  </div>
-                )
-              )}
-              <select 
+                  <div className="text-sm text-gray-500">Không có sản phẩm nào để xuất keo butyl</div>
+                ))}
+              <select
                 className="px-4 py-2 border border-[#4361ee] text-[#4361ee] rounded shadow-sm focus:ring-2 focus:ring-[#4361ee] focus:outline-none text-sm"
                 value={selectedOperation}
                 onChange={handleOperationChange}
@@ -973,47 +966,43 @@ export default function ProductionOrderView({ params }: { params: { id: string }
             {/* Thành phẩm */}
             <div>
               <h2 className="font-semibold text-[#4361ee] mb-2">Thành phẩm</h2>
-              <table className="w-full border rounded shadow text-sm">
-                <thead className="bg-[#edf0ff]">
-                  <tr>
-                    <th className="border p-2">STT</th>
-                    <th className="border p-2">Tên TP</th>
-                    <th className="border p-2">ĐVT</th>
-                    <th className="border p-2">Số lượng</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {finishedProducts.map((item, index) => (
-                    <tr
-                      key={`${item.productName}-${index}`}
-                      onClick={() => {
-                        const productId = item.outputId || item.id
-                        if (productId) {
-                          handleProductSelect(productId)
-                        }
-                      }}
-                      className={`cursor-pointer hover:bg-blue-50 transition-colors ${
-                        selectedProduct === (item.outputId || item.id)
-                          ? "bg-[#edf0ff] border-l-4 border-[#4361ee] font-bold"
-                          : ""
-                      }`}
-                    >
-                      <td className="border p-2">{index + 1}</td>
-                      <td className="border p-2">{item.productName}</td>
-                      <td className="border p-2">{item.uom}</td>
-                      <td className="border p-2 text-right">{Number(item.quantity).toFixed(2)}</td>
+              <div className="border rounded shadow overflow-x-auto">
+                <table className="w-full text-sm" style={{ minWidth: '600px' }}>
+                  <thead className="bg-[#edf0ff]">
+                    <tr>
+                      <th className="border p-2 w-12">STT</th>
+                      <th className="border p-2 min-w-[200px]">Tên TP</th>
+                      <th className="border p-2 w-16">ĐVT</th>
+                      <th className="border p-2 w-24">Số lượng</th>
                     </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-[#f4f7ff]">
-                    <td colSpan={3} className="border p-2 text-right font-semibold">
-                      Tổng:
-                    </td>
-                    <td className="border p-2 text-right font-semibold">{totalQuantity.toFixed(2)}</td>
-                  </tr>
-                </tfoot>
-              </table>
+                  </thead>
+                  <tbody>
+                    {finishedProducts.map((item, index) => (
+                      <tr
+                        key={`${item.productName}-${index}`}
+                        onClick={() => {
+                          const productId = item.outputId || item.id
+                          if (productId) {
+                            handleProductSelect(productId)
+                          }
+                        }}
+                        className={`hover:bg-blue-50 transition-colors ${
+                          selectedProduct === (item.outputId || item.id)
+                            ? "bg-[#edf0ff] border-l-4 border-[#4361ee] font-bold"
+                            : ""
+                        }`}
+                      >
+                        <td className="border p-2 text-center">{index + 1}</td>
+                        <td className="border p-2 break-words max-w-0" title={item.productName}>
+                          <div className="truncate">{item.productName}</div>
+                        </td>
+                        <td className="border p-2 text-center">{item.uom}</td>
+                        <td className="border p-2 text-right">{Number(item.quantity).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               <div className="flex gap-2 mt-3">
                 <button
                   onClick={handleAddProduct}
@@ -1035,7 +1024,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
               <div className="flex justify-between items-center mb-2">
                 <h2 className="font-semibold text-[#4361ee]">
                   Định mức NVL cho:{" "}
-                  <span className="bg-[#edf0ff] text-[#4361ee] px-2 py-1 rounded font-mono">
+                  <span className="bg-[#edf0ff] text-[#4361ee] px-2 py-1 rounded font-mono text-xs">
                     {selectedProductData?.productName || ""}
                   </span>
                 </h2>
@@ -1055,66 +1044,68 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   )}
                 </div>
               </div>
-              <table className="w-full border rounded shadow text-sm" key={`materials-${selectedProduct}`}>
-                <thead className="bg-[#edf0ff]">
-                  <tr>
-                    <th className="border p-2">STT</th>
-                    <th className="border p-2">Tên NVL</th>
-                    <th className="border p-2">ĐVT</th>
-                    <th className="border p-2">Tổng SL</th>
-                    <th className="border p-2">SL / 1 SP</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan={5} className="p-4 text-center text-gray-500 italic">
-                        Đang tải dữ liệu...
-                      </td>
-                    </tr>
-                  ) : currentMaterials.length > 0 ? (
-                    currentMaterials.map((material, index) => (
-                      <tr
-                        key={`${selectedProduct}-${material.id}-${index}`}
-                        className={`cursor-pointer transition-colors ${
-                          selectedMaterial?.productName === material.productName
-                            ? "bg-[#e8f5e8] border-l-4 border-[#28a745] font-bold"
-                            : "hover:bg-blue-50"
-                        }`}
-                        onClick={() => handleMaterialSelect(material)}
-                        title="Click để chọn nguyên vật liệu này"
-                      >
-                        <td className="border p-2">{index + 1}</td>
-                        <td className="border p-2 truncate" title={material.productName}>
-                          {material.productName}
-                        </td>
-                        <td className="border p-2">{material.uom}</td>
-                        <td className="border p-2 text-right">{material.totalQuantity}</td>
-                        <td className="border p-2 text-right">{material.quantityPer}</td>
+              <div className="border rounded shadow">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm" style={{ minWidth: '700px' }} key={`materials-${selectedProduct}`}>
+                    <thead className="bg-[#edf0ff]">
+                      <tr>
+                        <th className="border p-2 w-12">STT</th>
+                        <th className="border p-2 min-w-[250px]">Tên NVL</th>
+                        <th className="border p-2 w-16">ĐVT</th>
+                        <th className="border p-2 w-24">Tổng SL</th>
+                        <th className="border p-2 w-24">SL / 1 SP</th>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="border p-4 text-center text-gray-500 italic">
-                        {selectedProduct
-                          ? `Không có nguyên vật liệu cho sản phẩm ${selectedProduct}`
-                          : "Chọn sản phẩm để xem nguyên vật liệu"}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-                {currentMaterials.length > 0 && (
-                  <tfoot>
-                    <tr className="bg-[#f4f7ff]">
-                      <td colSpan={3} className="border p-2 text-right font-semibold">
-                        Tổng:
-                      </td>
-                      <td className="border p-2 text-right font-semibold">{totalMaterialQuantity}</td>
-                      <td className="border p-2" />
-                    </tr>
-                  </tfoot>
-                )}
-              </table>
+                    </thead>
+                    <tbody>
+                      {loading ? (
+                        <tr>
+                          <td colSpan={5} className="p-4 text-center text-gray-500 italic">
+                            Đang tải dữ liệu...
+                          </td>
+                        </tr>
+                      ) : currentMaterials.length > 0 ? (
+                        currentMaterials.map((material, index) => (
+                          <tr
+                            key={`${selectedProduct}-${material.id}-${index}`}
+                            className={`cursor-pointer transition-colors ${
+                              selectedMaterial?.productName === material.productName
+                                ? "bg-[#e8f5e8] border-l-4 border-[#28a745] font-bold"
+                                : "hover:bg-blue-50"
+                            }`}
+                            onClick={() => handleMaterialSelect(material)}
+                            title="Click để chọn nguyên vật liệu này"
+                          >
+                            <td className="border p-2 text-center">{index + 1}</td>
+                            <td className="border p-2 break-words max-w-0">
+                              <div 
+                                className="truncate cursor-pointer hover:text-blue-600 hover:underline" 
+                                title="Click để xem đầy đủ tên nguyên vật liệu"
+                                onClick={(e) => {
+                                  e.stopPropagation() // Ngăn không cho trigger row selection
+                                  showDetailInfo('Tên nguyên vật liệu', material.productName)
+                                }}
+                              >
+                                {material.productName}
+                              </div>
+                            </td>
+                            <td className="border p-2 text-center">{material.uom}</td>
+                            <td className="border p-2 text-right">{material.totalQuantity}</td>
+                            <td className="border p-2 text-right">{material.quantityPer}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="border p-4 text-center text-gray-500 italic">
+                            {selectedProduct
+                              ? `Không có nguyên vật liệu cho sản phẩm ${selectedProduct}`
+                              : "Chọn sản phẩm để xem nguyên vật liệu"}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
               <div className="flex gap-2 mt-3">
                 <button
                   onClick={handleAddMaterial}
@@ -1129,10 +1120,10 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   }`}
                   disabled={!selectedMaterial}
                   title={
-                    selectedMaterial ? `Cập nhật ${selectedMaterial.productName})` : "Chọn nguyên vật liệu để cập nhật"
+                    selectedMaterial ? `Cập nhật ${selectedMaterial.productName}` : "Chọn nguyên vật liệu để cập nhật"
                   }
                 >
-                  Sửa {selectedMaterial ? `(${selectedMaterial.productName})` : ""}
+                  Sửa {selectedMaterial ? `(${selectedMaterial.productName.length > 20 ? selectedMaterial.productName.substring(0, 20) + '...' : selectedMaterial.productName})` : ""}
                 </button>
               </div>
             </div>
@@ -1191,61 +1182,49 @@ export default function ProductionOrderView({ params }: { params: { id: string }
               </button>
             </div>
             <form onSubmit={handleAddProductFormSubmit} className="space-y-4">
-              <div className="relative">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tên thành phẩm</label>
-                <input
-                  type="text"
-                  value={addProductForm.productName}
-                  onChange={(e) => handleAddProductCodeChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
-                  required
-                  placeholder="Nhập tên thành phẩm (tối thiểu 2 ký tự)"
-                  autoComplete="off"
-                />
-                {/* Suggestions Dropdown for Add Product */}
-                {showProductAddSuggestions && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                    {isLoadingProductAddSuggestions ? (
-                      <div className="p-3 text-center text-gray-500">
-                        <div className="animate-spin h-4 w-4 border-b-2 border-[#4361ee] rounded-full mx-auto mb-2" />
-                        Đang tìm kiếm...
-                      </div>
-                    ) : productAddSuggestions.length > 0 ? (
-                      productAddSuggestions.map((suggestion, index) => (
-                        <div
-                          key={`add-product-${suggestion.productName}-${index}`}
-                          className="p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                          onClick={() => handleProductAddSuggestionSelect(suggestion)}
-                        >
-                          <div className="text-gray-700 text-sm font-semibold">{suggestion.productName}</div>
-                          <div className="text-gray-500 text-xs">ĐVT: {suggestion.uom}</div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="p-3 text-center text-gray-500 text-sm">
-                        Không tìm thấy sản phẩm nào
-                        <div className="text-xs mt-1">Bạn có thể nhập thông tin mới</div>
-                      </div>
-                    )}
+                {isLoadingAllProducts ? (
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 flex items-center justify-center">
+                    <div className="animate-spin h-4 w-4 border-b-2 border-[#4361ee] rounded-full mr-2" />
+                    <span className="text-gray-500">Đang tải danh sách sản phẩm...</span>
                   </div>
+                ) : (
+                  <select
+                    value={addProductForm.productName}
+                    onChange={(e) => {
+                      const selectedProduct = allProducts.find((p) => p.productName === e.target.value)
+                      setAddProductForm({
+                        ...addProductForm,
+                        productName: e.target.value,
+                        uom: selectedProduct ? selectedProduct.uom : "", // Tự động điền UOM
+                      })
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
+                    required
+                  >
+                    <option value="">-- Chọn thành phẩm --</option>
+                    {allProducts.map((product, index) => (
+                      <option key={`${product.productName}-${index}`} value={product.productName}>
+                        {product.productName} ({product.uom})
+                      </option>
+                    ))}
+                  </select>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
-                <select
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Đơn vị tính
+                  <span className="text-xs text-blue-600 ml-2"></span>
+                </label>
+                <input
+                  type="text"
                   value={addProductForm.uom}
-                  onChange={(e) => setAddProductForm({ ...addProductForm, uom: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
-                  required
-                >
-                  <option value="">Chọn đơn vị tính</option>
-                  <option value="Tấm">Tấm</option>
-                  <option value="Kg">Kg</option>
-                  <option value="M">M</option>
-                  <option value="L">L</option>
-                  <option value="Ml">Ml</option>
-                  <option value="g">g</option>
-                </select>
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
+                  readOnly
+                  placeholder="Đơn vị tính sẽ được lấy từ sản phẩm"
+                  title="Đơn vị tính không thể chỉnh sửa, sẽ được lấy từ sản phẩm được chọn"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
@@ -1304,63 +1283,49 @@ export default function ProductionOrderView({ params }: { params: { id: string }
               </button>
             </div>
             <form onSubmit={handleAddMaterialFormSubmit} className="space-y-4">
-              <div className="relative">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tên nguyên vật liệu</label>
-                <input
-                  type="text"
-                  value={addMaterialForm.productName}
-                  onChange={(e) => handleProductCodeChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
-                  required
-                  placeholder="Nhập tên nguyên vật liệu (tối thiểu 2 ký tự)"
-                  autoComplete="off"
-                />
-                {/* Suggestions Dropdown */}
-                {showSuggestions && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                    {isLoadingSuggestions ? (
-                      <div className="p-3 text-center text-gray-500">
-                        <div className="animate-spin h-4 w-4 border-b-2 border-[#4361ee] rounded-full mx-auto mb-2" />
-                        Đang tìm kiếm...
-                      </div>
-                    ) : productSuggestions.length > 0 ? (
-                      productSuggestions.map((suggestion, index) => (
-                        <div
-                          key={`${suggestion.productName}-${index}`}
-                          className="p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                          onClick={() => handleSuggestionSelect(suggestion)}
-                        >
-                          <div className="text-gray-700 text-sm font-semibold">{suggestion.productName}</div>
-                          <div className="text-gray-500 text-xs">
-                            Tên: {suggestion.productName} | ĐVT: {suggestion.uom}
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="p-3 text-center text-gray-500 text-sm">
-                        Không tìm thấy sản phẩm nào
-                        <div className="text-xs mt-1">Bạn có thể nhập thông tin mới</div>
-                      </div>
-                    )}
+                {isLoadingAllProducts ? (
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 flex items-center justify-center">
+                    <div className="animate-spin h-4 w-4 border-b-2 border-[#4361ee] rounded-full mr-2" />
+                    <span className="text-gray-500">Đang tải danh sách sản phẩm...</span>
                   </div>
+                ) : (
+                  <select
+                    value={addMaterialForm.productName}
+                    onChange={(e) => {
+                      const selectedProduct = allProducts.find((p) => p.productName === e.target.value)
+                      setAddMaterialForm({
+                        ...addMaterialForm,
+                        productName: e.target.value,
+                        uom: selectedProduct ? selectedProduct.uom : "", // Tự động điền UOM
+                      })
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
+                    required
+                  >
+                    <option value="">-- Chọn nguyên vật liệu --</option>
+                    {allProducts.map((product, index) => (
+                      <option key={`${product.productName}-${index}`} value={product.productName}>
+                        {product.productName} ({product.uom})
+                      </option>
+                    ))}
+                  </select>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
-                <select
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Đơn vị tính
+                  <span className="text-xs text-blue-600 ml-2"></span>
+                </label>
+                <input
+                  type="text"
                   value={addMaterialForm.uom}
-                  onChange={(e) => setAddMaterialForm({ ...addMaterialForm, uom: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
-                  required
-                >
-                  <option value="">Chọn đơn vị tính</option>
-                  <option value="Tấm">Tấm</option>
-                  <option value="Kg">Kg</option>
-                  <option value="M">M</option>
-                  <option value="L">L</option>
-                  <option value="Ml">Ml</option>
-                  <option value="g">g</option>
-                </select>
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
+                  readOnly
+                  placeholder="Đơn vị tính sẽ được lấy từ sản phẩm"
+                  title="Đơn vị tính không thể chỉnh sửa, sẽ được lấy từ sản phẩm được chọn"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tổng số lượng</label>
@@ -1428,31 +1393,47 @@ export default function ProductionOrderView({ params }: { params: { id: string }
             <form onSubmit={handleProductFormSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tên thành phẩm</label>
-                <input
-                  type="text"
-                  value={productForm.productName}
-                  onChange={(e) => setProductForm({ ...productForm, productName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
-                  required
-                  placeholder="Nhập tên thành phẩm"
-                />
+                {isLoadingAllProducts ? (
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 flex items-center justify-center">
+                    <div className="animate-spin h-4 w-4 border-b-2 border-[#4361ee] rounded-full mr-2" />
+                    <span className="text-gray-500">Đang tải danh sách sản phẩm...</span>
+                  </div>
+                ) : (
+                  <select
+                    value={productForm.productName}
+                    onChange={(e) => {
+                      const selectedProduct = allProducts.find((p) => p.productName === e.target.value)
+                      setProductForm({
+                        ...productForm,
+                        productName: e.target.value,
+                        uom: selectedProduct ? selectedProduct.uom : "", // Tự động điền UOM
+                      })
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
+                    required
+                  >
+                    <option value="">-- Chọn thành phẩm --</option>
+                    {allProducts.map((product, index) => (
+                      <option key={`${product.productName}-${index}`} value={product.productName}>
+                        {product.productName} ({product.uom})
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
-                <select
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Đơn vị tính
+                  <span className="text-xs text-blue-600 ml-2"></span>
+                </label>
+                <input
+                  type="text"
                   value={productForm.uom}
-                  onChange={(e) => setProductForm({ ...productForm, uom: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
-                  required
-                >
-                  <option value="">Chọn đơn vị tính</option>
-                  <option value="Tấm">Tấm</option>
-                  <option value="Kg">Kg</option>
-                  <option value="M">M</option>
-                  <option value="L">L</option>
-                  <option value="Ml">Ml</option>
-                  <option value="g">g</option>
-                </select>
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
+                  readOnly
+                  placeholder="Đơn vị tính sẽ được lấy từ sản phẩm"
+                  title="Đơn vị tính không thể chỉnh sửa, sẽ được lấy từ sản phẩm được chọn"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
@@ -1487,7 +1468,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
         </div>
       )}
 
-      {/* 🔥 POPUP CẬP NHẬT NGUYÊN VẬT LIỆU */}
+      {/* 🔥 POPUP CẬP NHẬT NGUYÊN VẬT LIỆU - ĐÃ SỬA ĐỔI */}
       {showMaterialModal && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
@@ -1508,31 +1489,47 @@ export default function ProductionOrderView({ params }: { params: { id: string }
             <form onSubmit={handleMaterialFormSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tên nguyên vật liệu</label>
-                <input
-                  type="text"
-                  value={materialForm.productName}
-                  onChange={(e) => setMaterialForm({ ...materialForm, productName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
-                  required
-                  placeholder="Nhập tên nguyên vật liệu"
-                />
+                {isLoadingAllProducts ? (
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 flex items-center justify-center">
+                    <div className="animate-spin h-4 w-4 border-b-2 border-[#4361ee] rounded-full mr-2" />
+                    <span className="text-gray-500">Đang tải danh sách sản phẩm...</span>
+                  </div>
+                ) : (
+                  <select
+                    value={materialForm.productName}
+                    onChange={(e) => {
+                      const selectedProduct = allProducts.find((p) => p.productName === e.target.value)
+                      setMaterialForm({
+                        ...materialForm,
+                        productName: e.target.value,
+                        uom: selectedProduct ? selectedProduct.uom : materialForm.uom,
+                      })
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
+                    required
+                  >
+                    <option value="">-- Chọn nguyên vật liệu --</option>
+                    {allProducts.map((product, index) => (
+                      <option key={`${product.productName}-${index}`} value={product.productName}>
+                        {product.productName} ({product.uom})
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
-                <select
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Đơn vị tính
+                  <span className="text-xs text-blue-600 ml-2"></span>
+                </label>
+                <input
+                  type="text"
                   value={materialForm.uom}
-                  onChange={(e) => setMaterialForm({ ...materialForm, uom: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
-                  required
-                >
-                  <option value="">Chọn đơn vị tính</option>
-                  <option value="Tấm">Tấm</option>
-                  <option value="Kg">Kg</option>
-                  <option value="M">M</option>
-                  <option value="L">L</option>
-                  <option value="Ml">Ml</option>
-                  <option value="g">g</option>
-                </select>
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
+                  readOnly
+                  placeholder="Đơn vị tính sẽ được lấy từ sản phẩm"
+                  title="Đơn vị tính không thể chỉnh sửa, sẽ được lấy từ sản phẩm được chọn"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng / 1 SP</label>
@@ -1590,6 +1587,39 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL XEM CHI TIẾT */}
+      {showDetailModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeDetailModal()
+          }}
+        >
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg mx-4 animate-in fade-in duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-[#4361ee]">{detailContent.title}</h3>
+              <button
+                onClick={closeDetailModal}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"
+              >
+                ×
+              </button>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-md border">
+              <p className="text-gray-800 break-words leading-relaxed">{detailContent.content}</p>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={closeDetailModal}
+                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors font-medium"
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}
