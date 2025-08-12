@@ -12,6 +12,7 @@ import IconUser from '@/components/icon/icon-user';
 import IconUsers from '@/components/icon/icon-users';
 import { CustomerListDto, getCustomerList, deleteCustomerById } from './service';
 import { FiSearch } from 'react-icons/fi';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const CustomersListPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -58,92 +59,94 @@ const CustomersListPage = () => {
     if (loading) return <div className="panel">Đang tải dữ liệu...</div>;
 
     return (
-        <div className="panel">
-            <div className="mb-5">
-                <h2 className="text-xl font-semibold mb-4">Danh sách khách hàng và nhà cung cấp</h2>
+        <ProtectedRoute>
+            <div className="panel">
+                <div className="mb-5">
+                    <h2 className="text-xl font-semibold mb-4">Danh sách khách hàng và nhà cung cấp</h2>
 
-                <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex w-full max-w-[710px] gap-3">
-                        <div className="relative flex-1 min-w-[200px]">
-                            <input type="text" placeholder="Tìm kiếm theo tên khách hàng" className="form-input flex-1 min-w-[200px]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                            <button
-                                type="button"
-                                className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow z-10"
-                            >
-                                <FiSearch className="text-white w-4 h-4" />
-                            </button>
+                    <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex w-full max-w-[710px] gap-3">
+                            <div className="relative flex-1 min-w-[200px]">
+                                <input type="text" placeholder="Tìm kiếm theo tên khách hàng" className="form-input flex-1 min-w-[200px]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                                <button
+                                    type="button"
+                                    className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow z-10"
+                                >
+                                    <FiSearch className="text-white w-4 h-4" />
+                                </button>
+                            </div>
+                            <select className="form-select w-68 sm:w-56" value={customerTypeFilter} onChange={(e) => setCustomerTypeFilter(e.target.value as any)}>
+                                <option value="all">Khách hàng và nhà cung cấp</option>
+                                <option value="customer">Khách hàng</option>
+                                <option value="supplier">Nhà cung cấp</option>
+                            </select>
                         </div>
-                        <select className="form-select w-68 sm:w-56" value={customerTypeFilter} onChange={(e) => setCustomerTypeFilter(e.target.value as any)}>
-                            <option value="all">Khách hàng và nhà cung cấp</option>
-                            <option value="customer">Khách hàng</option>
-                            <option value="supplier">Nhà cung cấp</option>
-                        </select>
+
+                        <Link href="/customers/create">
+                            <button className="btn btn-success">
+                                <IconPlus className="mr-2" />
+                                Thêm khách hàng
+                            </button>
+                        </Link>
+                    </div>
+                    <br />
+
+                    {/* Bảng */}
+                    <div className="table-responsive">
+                        <table className="table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tên</th>
+                                    <th>SĐT</th>
+                                    <th>Địa chỉ</th>
+                                    <th>Loại</th>
+                                    <th>Chiết khấu</th>
+                                    <th className="text-center">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filtered.map((c) => (
+                                    <tr key={c.id}>
+                                        <td>{c.customerName}</td>
+                                        <td>{c.phone}</td>
+                                        <td>{c.address}</td>
+                                        <td>
+                                            <span className={c.isSupplier ? 'text-orange-600' : 'text-blue-600'}>{c.isSupplier ? 'Nhà cung cấp' : 'Khách hàng'}</span>
+                                        </td>
+                                        <td>{(c.discount ?? 0) * 100}%</td>
+                                        <td className="text-center">
+                                            <div className="flex justify-center gap-2">
+                                                <Tippy content="Xem">
+                                                    <Link href={`/customers/${c.id}`}>
+                                                        <button className="btn btn-sm btn-outline-primary">
+                                                            <IconEye />
+                                                        </button>
+                                                    </Link>
+                                                </Tippy>
+                                                <Tippy content="Sửa">
+                                                    <Link href={`/customers/${c.id}/edit`}>
+                                                        <button className="btn btn-sm btn-outline-warning">
+                                                            <IconEdit />
+                                                        </button>
+                                                    </Link>
+                                                </Tippy>
+                                                <Tippy content="Xoá">
+                                                    <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(c.id, c.customerName)}>
+                                                        <IconTrashLines />
+                                                    </button>
+                                                </Tippy>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
 
-                    <Link href="/customers/create">
-                        <button className="btn btn-success">
-                            <IconPlus className="mr-2" />
-                            Thêm khách hàng
-                        </button>
-                    </Link>
+                    {filtered.length === 0 && <div className="text-center py-8 text-gray-500">Không tìm thấy khách hàng nào</div>}
                 </div>
-                <br />
-
-                {/* Bảng */}
-                <div className="table-responsive">
-                    <table className="table-hover">
-                        <thead>
-                            <tr>
-                                <th>Tên</th>
-                                <th>SĐT</th>
-                                <th>Địa chỉ</th>
-                                <th>Loại</th>
-                                <th>Chiết khấu</th>
-                                <th className="text-center">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filtered.map((c) => (
-                                <tr key={c.id}>
-                                    <td>{c.customerName}</td>
-                                    <td>{c.phone}</td>
-                                    <td>{c.address}</td>
-                                    <td>
-                                        <span className={c.isSupplier ? 'text-orange-600' : 'text-blue-600'}>{c.isSupplier ? 'Nhà cung cấp' : 'Khách hàng'}</span>
-                                    </td>
-                                    <td>{(c.discount ?? 0) * 100}%</td>
-                                    <td className="text-center">
-                                        <div className="flex justify-center gap-2">
-                                            <Tippy content="Xem">
-                                                <Link href={`/customers/${c.id}`}>
-                                                    <button className="btn btn-sm btn-outline-primary">
-                                                        <IconEye />
-                                                    </button>
-                                                </Link>
-                                            </Tippy>
-                                            <Tippy content="Sửa">
-                                                <Link href={`/customers/${c.id}/edit`}>
-                                                    <button className="btn btn-sm btn-outline-warning">
-                                                        <IconEdit />
-                                                    </button>
-                                                </Link>
-                                            </Tippy>
-                                            <Tippy content="Xoá">
-                                                <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(c.id, c.customerName)}>
-                                                    <IconTrashLines />
-                                                </button>
-                                            </Tippy>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-
-                {filtered.length === 0 && <div className="text-center py-8 text-gray-500">Không tìm thấy khách hàng nào</div>}
             </div>
-        </div>
+        </ProtectedRoute>
     );
 };
 

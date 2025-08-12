@@ -23,6 +23,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     const token = useSelector((state: IRootState) => state.auth.token);
     const { hasPermission, roleId, isAuthenticated: authFromHook } = usePermissions();
     const [isLoading, setIsLoading] = useState(true);
+    const [isRedirecting, setIsRedirecting] = useState(false);
 
     useEffect(() => {
         // Check if we have a token but user data is not loaded yet
@@ -40,29 +41,54 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     useEffect(() => {
         if (isLoading) return;
 
+        // Nếu chưa đăng nhập, redirect đến login
         if (!isAuthenticated && !token) {
-            router.push(fallbackPath);
+            if (!isRedirecting) {
+                setIsRedirecting(true);
+                router.push(fallbackPath);
+            }
             return;
         }
 
         // Check role requirement
         if (requiredRole && roleId !== requiredRole) {
-            router.push('/unauthorized');
+            if (!isRedirecting) {
+                setIsRedirecting(true);
+                router.push('/unauthorized');
+            }
             return;
         }
 
         // Check permission requirement
         if (requiredPermission && !hasPermission(requiredPermission)) {
-            router.push('/unauthorized');
+            if (!isRedirecting) {
+                setIsRedirecting(true);
+                router.push('/unauthorized');
+            }
             return;
         }
-    }, [isAuthenticated, requiredPermission, requiredRole, roleId, router, fallbackPath, hasPermission, token, isLoading]);
+    }, [isAuthenticated, requiredPermission, requiredRole, roleId, router, fallbackPath, hasPermission, token, isLoading, isRedirecting]);
 
     // Show loading while checking authentication
     if (isLoading || (token && !isAuthenticated)) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-gray-600">Đang kiểm tra xác thực...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Show loading when redirecting
+    if (isRedirecting) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-gray-600">Đang chuyển hướng...</p>
+                </div>
             </div>
         );
     }
@@ -71,7 +97,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     if (!isAuthenticated) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-gray-600">Đang chuyển hướng đến trang đăng nhập...</p>
+                </div>
             </div>
         );
     }
@@ -83,6 +112,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
                 <div className="text-center">
                     <h1 className="text-2xl font-bold text-red-600 mb-4">Không có quyền truy cập</h1>
                     <p className="text-gray-600">Bạn không có quyền truy cập trang này.</p>
+                    <p className="text-gray-600 mt-2">Đang chuyển hướng...</p>
                 </div>
             </div>
         );
@@ -95,6 +125,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
                 <div className="text-center">
                     <h1 className="text-2xl font-bold text-red-600 mb-4">Không có quyền truy cập</h1>
                     <p className="text-gray-600">Bạn không có quyền truy cập trang này.</p>
+                    <p className="text-gray-600 mt-2">Đang chuyển hướng...</p>
                 </div>
             </div>
         );
