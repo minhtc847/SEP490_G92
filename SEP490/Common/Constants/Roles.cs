@@ -3,9 +3,9 @@ namespace SEP490.Common.Constants
     public static class Roles
     {
       
-        public const string MANAGER = "Manager";
-        public const string ACCOUNTANT = "Accountant";
-        public const string PRODUCTION = "Production";
+        public const string MANAGER = "Chủ xưởng";
+        public const string ACCOUNTANT = "Kế toán";
+        public const string PRODUCTION = "Sản xuất";
         public const string CUSTOMER_SERVICE = "CustomerService";
     }
 }
