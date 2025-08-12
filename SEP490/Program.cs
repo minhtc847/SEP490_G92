@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SEP490.Common.Services;
+using SEP490.Common.Constants;
 using SEP490.DB;
 using SEP490.Hubs;
 using SEP490.Modules.Auth.Middleware;
@@ -13,8 +15,10 @@ using SEP490.Modules.ZaloOrderModule.Services;
 using SEP490.Modules.ProductionOrders.Services;
 using StackExchange.Redis;
 using System;
+using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,6 +53,26 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "your-secret-key-here"))
         };
     });
+
+// Add Authorization
+builder.Services.AddAuthorization(options =>
+{
+    // Default policy - require authentication
+    options.DefaultPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+
+    // Role-based policies
+
+    options.AddPolicy("Manager", policy =>
+        policy.RequireRole(Roles.MANAGER));
+
+    options.AddPolicy("ProductionAccess", policy =>
+        policy.RequireRole(Roles.PRODUCTION, Roles.MANAGER));
+
+    options.AddPolicy("AccountantAccess", policy =>
+        policy.RequireRole(Roles.ACCOUNTANT, Roles.MANAGER));
+});
 
 // Add services to the container.
 builder.Services.AddScoped<IOrderService, OrderService>();
@@ -94,8 +118,35 @@ foreach (var implementation in serviceTypes)
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "VNG Glass API", Version = "v1" });
+    
+    // Add JWT Authentication to Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
 
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
 // Configure CORS
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
 

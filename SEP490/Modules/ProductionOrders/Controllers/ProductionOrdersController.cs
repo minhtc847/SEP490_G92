@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SEP490.Common.Attributes;
+using SEP490.Common.Constants;
 using SEP490.Modules.ProductionOrders.Services;
 using SEP490.DB.Models;
 using SEP490.Modules.ProductionOrders.DTO;
@@ -8,6 +11,7 @@ namespace SEP490.Modules.ProductionOrders.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize] // Yêu cầu authentication
     public class ProductionOrdersController : ControllerBase
     {
         private readonly IProductionOrdersService _productionOrdersService;
@@ -17,6 +21,7 @@ namespace SEP490.Modules.ProductionOrders.Controllers
         }
 
         [HttpGet("by-plan/{productionPlanId}")]
+        [AuthorizeRoles( Roles.MANAGER, Roles.PRODUCTION, Roles.ACCOUNTANT)]
         public async Task<ActionResult<List<ProductionOrdersByPlanDto>>> GetByPlanId(int productionPlanId)
         {
             var orders = await _productionOrdersService.GetProductionOrdersByPlanIdAsync(productionPlanId);
@@ -28,6 +33,7 @@ namespace SEP490.Modules.ProductionOrders.Controllers
         }
 
         [HttpGet("all")]
+        [AuthorizeRoles( Roles.MANAGER, Roles.PRODUCTION, Roles.ACCOUNTANT)]
         public async Task<ActionResult<List<ProductionOrdersByPlanDto>>> GetAll()
         {
             var orders = await _productionOrdersService.GetAllProductionOrdersAsync();
@@ -57,6 +63,7 @@ namespace SEP490.Modules.ProductionOrders.Controllers
         }
 
         [HttpPost("defects")]
+        [AuthorizeRoles( Roles.MANAGER, Roles.PRODUCTION)]
         public async Task<IActionResult> CreateDefectReport([FromBody] CreateDefectReportDto dto)
         {
             var result = await _productionOrdersService.CreateDefectReportAsync(dto);
@@ -66,6 +73,7 @@ namespace SEP490.Modules.ProductionOrders.Controllers
         }
 
         [HttpPut("defects/{defectId}")]
+        [AuthorizeRoles( Roles.MANAGER, Roles.PRODUCTION)]
         public async Task<IActionResult> UpdateDefectReport(int defectId, [FromBody] UpdateDefectReportDto dto)
         {
             var result = await _productionOrdersService.UpdateDefectReportAsync(defectId, dto);

@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SEP490.Common.Attributes;
+using SEP490.Common.Constants;
 using SEP490.Modules.CustomerModule.DTO;
 using SEP490.Modules.CustomerModule.Service;
 
@@ -7,6 +10,7 @@ namespace SEP490.Modules.CustomerModule.Controller
 {
     [Route("api/customers")]
     [ApiController]
+    [Authorize] // Yêu cầu authentication
     public class CustomerController : ControllerBase
     {
         private readonly ICustomerService _customerService;
@@ -17,6 +21,7 @@ namespace SEP490.Modules.CustomerModule.Controller
         }
 
         [HttpGet]
+        [AuthorizeRoles( Roles.MANAGER,  Roles.ACCOUNTANT)]
         public ActionResult<List<CustomerListDto>> GetAllBasic()
         {
             var customers = _customerService.GetAllCustomersBasic();
@@ -35,6 +40,7 @@ namespace SEP490.Modules.CustomerModule.Controller
         }
 
         [HttpPost]
+        [AuthorizeRoles( Roles.MANAGER, Roles.ACCOUNTANT)]
         public IActionResult CreateCustomer([FromBody] UpdateCustomerDto dto)
         {
             var createdCustomer = _customerService.AddCustomer(dto);
@@ -52,6 +58,7 @@ namespace SEP490.Modules.CustomerModule.Controller
         }
 
         [HttpDelete("{id}")]
+        [AuthorizeRoles(Roles.MANAGER)]
         public async Task<IActionResult> DeleteCustomer(int id)
         {
             try

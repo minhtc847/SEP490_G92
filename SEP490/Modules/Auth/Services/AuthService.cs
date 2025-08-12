@@ -179,16 +179,24 @@ namespace SEP490.Modules.Auth.Services
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"] ?? "your-secret-key-here");
             
+            var claims = new List<Claim>
+            {
+                new Claim("userId", account.Id.ToString()),
+                new Claim("username", account.UserName),
+                new Claim("roleId", account.RoleId.ToString()),
+                new Claim("employeeId", account.EmployeeId.ToString())
+            };
+
+            // Add role claim for authorization
+            if (account.Role != null)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, account.Role.RoleName));
+                claims.Add(new Claim("roleName", account.Role.RoleName));
+            }
+            
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim("userId", account.Id.ToString()),
-                    new Claim("username", account.UserName),
-                    new Claim("roleId", account.RoleId.ToString()),
-                    new Claim("roleName", account.Role?.RoleName ?? ""),
-                    new Claim("employeeId", account.EmployeeId.ToString())
-                }),
+                Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddDays(7),
                 Issuer = _configuration["Jwt:Issuer"],
                 Audience = _configuration["Jwt:Audience"],

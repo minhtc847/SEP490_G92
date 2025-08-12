@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using SEP490.Common.Attributes;
+using SEP490.Common.Constants;
 using SEP490.DB;
 using SEP490.DB.Models;
 using SEP490.Hubs;
@@ -12,6 +15,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
 {
     [Route("api/orders")]
     [ApiController]
+    [Authorize] // Yêu cầu authentication
     public class OrderController : ControllerBase
     {
         private readonly SEP490DbContext _context;
@@ -68,6 +72,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
         }
 
         [HttpGet]
+        [AuthorizeRoles(Roles.MANAGER, Roles.ACCOUNTANT)]
         public ActionResult<List<OrderDto>> GetAllOrders()
         {
             var orders = _orderService.GetAllOrders();
@@ -149,6 +154,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
         }
 
         [HttpPost]
+        [AuthorizeRoles( Roles.MANAGER, Roles.ACCOUNTANT)]
         public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
         {
             try
@@ -254,6 +260,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
 
         // GET: api/orders/{id}
         [HttpGet("{id}")]
+        [AuthorizeRoles( Roles.MANAGER,Roles.ACCOUNTANT)]
         public ActionResult<OrderDetailDto> GetOrderDetail(int id)
         {
             var orderDetail = _orderService.GetOrderDetailById(id);
@@ -305,6 +312,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
         }
 
         [HttpPut("{id}")]
+        [AuthorizeRoles( Roles.MANAGER, Roles.ACCOUNTANT)]
         public IActionResult UpdateOrderDetail(int id, [FromBody] UpdateOrderDetailDto dto)
         {
             var success = _orderService.UpdateOrderDetailById(id, dto);
@@ -315,6 +323,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
         }
 
         [HttpPut("{id}/status")]
+        [AuthorizeRoles( Roles.MANAGER, Roles.ACCOUNTANT)]
         public IActionResult UpdateOrderStatus(int id, [FromBody] UpdateOrderStatusDto dto)
         {
             try
@@ -332,6 +341,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
         }
 
         [HttpDelete("{id}")]
+        [AuthorizeRoles(Roles.MANAGER)]
         public IActionResult DeleteOrder(int id)
         {
             try
