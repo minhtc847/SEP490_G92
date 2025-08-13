@@ -11,6 +11,7 @@ import {
     deletePayment
 } from '../service';
 import { FiArrowLeft, FiPlus, FiTrash2, FiEdit, FiDownload, FiSend } from 'react-icons/fi';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 // Using browser alert for notifications - can be replaced with a proper toast library
 const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
     if (type === 'success') {
@@ -188,6 +189,8 @@ const InvoiceDetailPage = () => {
     }
 
     return (
+        <ProtectedRoute requiredRole={[1, 2]}>
+
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
@@ -456,6 +459,8 @@ const InvoiceDetailPage = () => {
                 </div>
             )}
         </div>
+        </ProtectedRoute>
+
     );
 };
 

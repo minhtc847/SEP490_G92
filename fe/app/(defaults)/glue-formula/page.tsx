@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Swal from 'sweetalert2';
 import formularService, { FormularData, FormularGroup } from '../../../services/formularService';
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 function GlueTable({ title, data, inputValue, onInputChange, onCalc }: any) {
   return (
@@ -115,6 +116,8 @@ export default function GlueFormulaPage() {
   }
 
   return (
+    <ProtectedRoute>
+
     <div style={{ maxWidth: 900, margin: "0 auto", padding: 32, backgroundColor: "#f9fafb" }}>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Công thức keo</h1>
@@ -130,5 +133,6 @@ export default function GlueFormulaPage() {
         />
       ))}
     </div>
+    </ProtectedRoute>
   );
 } 

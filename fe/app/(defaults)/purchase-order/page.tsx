@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { importPurchaseOrder, deletePurchaseOrder, getPurchaseOrders, PurchaseOrderDto, updatePurchaseOrderStatus } from './service';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -101,6 +102,8 @@ const PurchaseOrderPage = () => {
     if (loading) return <div className="p-6">Đang tải đơn hàng mua...</div>;
 
     return (
+        <ProtectedRoute requiredRole={[1, 2]}>
+
         <div className="p-6 bg-white rounded-lg shadow">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Danh sách đơn hàng mua</h2>
@@ -323,6 +326,8 @@ const PurchaseOrderPage = () => {
             {/* Phân trang */}
             <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </div>
+        </ProtectedRoute>
+
     );
 };
 

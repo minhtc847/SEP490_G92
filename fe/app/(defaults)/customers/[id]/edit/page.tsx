@@ -9,6 +9,7 @@ import IconSave from '@/components/icon/icon-save';
 import IconTrashLines from '@/components/icon/icon-trash-lines';
 import IconRefresh from '@/components/icon/icon-refresh';
 import { getCustomerById, updateCustomerById, deleteCustomerById } from './service';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 interface Customer {
     id: number;
@@ -133,6 +134,7 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
         );
 
     return (
+        <ProtectedRoute requiredRole={[1, 2]}>
         <div className="flex gap-6">
             <div className="flex-1">
                 <form onSubmit={handleSubmit} className="panel space-y-6">
@@ -198,7 +200,8 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
                         </button>
                     </div>
                 </form>
+                </div>
             </div>
-        </div>
+        </ProtectedRoute>
     );
 }

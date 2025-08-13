@@ -17,6 +17,7 @@ import {
     updatePurchaseOrder,
     UpdatePurchaseOrderDto,
 } from './service';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const toPositiveInt = (v: string | number | null): number | null => {
     if (v === null || v === '') return null;
@@ -235,6 +236,8 @@ const PurchaseOrderEditPage = () => {
     if (error) return <div className="p-6 text-red-500">{error}</div>;
 
     return (
+        <ProtectedRoute requiredRole={[1,2]}>
+
         <div className="max-w-6xl mx-auto p-6 space-y-6">
             <h1 className="text-2xl font-bold">Chỉnh sửa đơn hàng mua</h1>
 
@@ -435,6 +438,8 @@ const PurchaseOrderEditPage = () => {
                 </button>
             </div>
         </div>
+        </ProtectedRoute>
+
     );
 };
 

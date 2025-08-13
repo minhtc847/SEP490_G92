@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getDeliveries, DeliveryDto, updateDeliveryStatus } from './service';
 import { FiSearch } from 'react-icons/fi';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -23,6 +24,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: nu
     };
 
     return (
+        <ProtectedRoute requiredRole={[1, 2]}>
         <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
             <button
                 onClick={() => onPageChange(currentPage - 1)}
@@ -40,6 +42,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: nu
                 &gt;
             </button>
         </div>
+        </ProtectedRoute>
     );
 };
 

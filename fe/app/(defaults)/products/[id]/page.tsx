@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getProductById, getGlassStructureById, ProductDetail, GlassStructureOption } from './service';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const ProductDetailPage = () => {
     const { id } = useParams();
@@ -55,6 +56,8 @@ const ProductDetailPage = () => {
     if (!product) return <div className="p-6 text-red-600">Đang tải dữ liệu...</div>;
 
     return (
+        <ProtectedRoute requiredRole={[1, 2]}>
+
         <div className="p-6 bg-white rounded-lg shadow-md">
             <h2 className="text-xl font-bold mb-6">Chi tiết sản phẩm</h2>
             
@@ -140,6 +143,8 @@ const ProductDetailPage = () => {
                 </button>
             </div>
         </div>
+        </ProtectedRoute>
+
     );
 };
 

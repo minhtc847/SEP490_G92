@@ -10,6 +10,7 @@ import {
     DebtSummaryDto 
 } from './service';
 import { FiSearch, FiFilter, FiRefreshCw, FiEye, FiDownload, FiTrendingUp, FiTrendingDown, FiDollarSign } from 'react-icons/fi';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 // Using browser alert for notifications
 const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
@@ -124,6 +125,8 @@ const DebtManagementPage = () => {
     }
 
     return (
+        <ProtectedRoute requiredRole={[1, 2]}>
+
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
@@ -357,6 +360,7 @@ const DebtManagementPage = () => {
                 </div>
             </div>
         </div>
+        </ProtectedRoute>
     );
 };
 

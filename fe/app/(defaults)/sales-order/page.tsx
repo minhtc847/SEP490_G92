@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getOrders, OrderDto } from '@/app/(defaults)/sales-order/service';
 import { FiSearch } from 'react-icons/fi';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -144,6 +145,8 @@ const SalesOrderSummary = () => {
     }
 
     return (
+        <ProtectedRoute requiredRole={[1, 2]}>
+
         <div className="p-6 bg-white rounded-lg shadow">
             <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Tóm tắt đơn hàng</h2>
@@ -318,6 +321,8 @@ const SalesOrderSummary = () => {
             {/* Phân trang */}
             <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </div>
+        </ProtectedRoute>
+
     );
 };
 

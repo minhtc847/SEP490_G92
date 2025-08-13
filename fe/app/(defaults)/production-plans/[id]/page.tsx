@@ -21,6 +21,7 @@ import CutGlassModal from '@/components/VNG/manager/production-orders/modals/Cut
 import GlueGlassModal from '@/components/VNG/manager/production-orders/modals/GlueGlassModal';
 import PourGlueModal from '@/components/VNG/manager/production-orders/modals/PourGlueModal';
 import ListOutputsPP from '@/components/VNG/manager/production-plans/list-outputs-of-pp/list-outputs-pp-components';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const ProductionPlanDetailPage = () => {
     const { id } = useParams();
@@ -251,6 +252,8 @@ const ProductionPlanDetailPage = () => {
     }, [tabs, id, materialDetail]);
 
     return (
+        <ProtectedRoute>
+
         <div>
             <div className="panel">
                 <div className="mb-5">
@@ -554,6 +557,8 @@ const ProductionPlanDetailPage = () => {
                 />
             </div>
         </div>
+        </ProtectedRoute>
+
     );
 };
 

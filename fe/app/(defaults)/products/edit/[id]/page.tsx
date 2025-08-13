@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import AsyncSelect from 'react-select/async';
 import { getProductById, updateProduct, deleteProduct, ProductDetail, getGlassStructureById } from './service';
 import { searchGlassStructures, GlassStructureOption } from '@/app/(defaults)/products/edit/[id]/service';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const ProductEditPage = () => {
     const { id } = useParams();
@@ -97,6 +98,8 @@ const ProductEditPage = () => {
     if (!formData) return <div className="p-6 text-red-600">Đang tải dữ liệu...</div>;
 
     return (
+        <ProtectedRoute requiredRole={[1, 2]}>
+
         <div className="p-6 bg-white rounded-lg shadow-md">
             <h2 className="text-xl font-bold mb-6">Chỉnh sửa sản phẩm</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -177,6 +180,8 @@ const ProductEditPage = () => {
                 </div>
             </form>
         </div>
+        </ProtectedRoute>
+
     );
 };
 

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getDebtByCustomerId, DebtDto } from '../service';
 import { FiArrowLeft, FiDownload, FiEye, FiTrendingUp, FiTrendingDown, FiDollarSign } from 'react-icons/fi';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 // Using browser alert for notifications
 const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
@@ -131,7 +132,8 @@ const CustomerDebtDetailPage = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <ProtectedRoute requiredRole={[1, 2]}>
+<div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="mb-8">
@@ -343,6 +345,8 @@ const CustomerDebtDetailPage = () => {
                 </div>
             </div>
         </div>
+        </ProtectedRoute>
+        
     );
 };
 

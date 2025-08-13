@@ -6,6 +6,7 @@ import { getInvoices, InvoiceDto } from '@/app/(defaults)/invoices/service';
 import { FiSearch } from 'react-icons/fi';
 import OrderSelectionModal from '@/components/invoices/OrderSelectionModal';
 import DeliverySelectionModal from '@/components/invoices/DeliverySelectionModal';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -161,7 +162,8 @@ const InvoiceSummary = () => {
     }
 
     return (
-        <>
+        <ProtectedRoute requiredRole={[1, 2]}>
+
             <div className="p-6 bg-white rounded-lg shadow">
                 <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-xl font-semibold">Tóm tắt hóa đơn</h2>
@@ -374,7 +376,7 @@ const InvoiceSummary = () => {
                 isOpen={isDeliveryModalOpen}
                 onClose={() => setIsDeliveryModalOpen(false)}
             />
-        </>
+        </ProtectedRoute>
     );
 };
 

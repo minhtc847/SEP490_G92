@@ -10,6 +10,7 @@ import ChemicalExportModalComponent from "@/components/VNG/manager/chemical-expo
 import ListChemicalExport from "@/components/VNG/manager/chemical-export/list-chemical-export"
 import type { Chemical, Product } from "@/app/(defaults)/production-plans/service"
 import ListExportsPO from "@/components/VNG/manager/production-plans/list-export-glue-components"
+import ProtectedRoute from "@/components/auth/ProtectedRoute"
 
 // Helper functions để convert UOM giữa int và string
 const convertUOMToString = (uom: number | string): string => {
@@ -859,6 +860,8 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   const toggleTabs = (tab: string) => setTabs(tab)
 
   return (
+    <ProtectedRoute>
+
     <div className="panel">
       <div className="mb-5">
         <ul className="flex flex-wrap -mb-px border-b border-[#e0e6ed] dark:border-[#191e3a]">
@@ -1624,5 +1627,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
         </div>
       )}
     </div>
+    </ProtectedRoute>
+
   )
 }

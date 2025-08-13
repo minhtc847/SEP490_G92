@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PriceQuoteDetail, createPriceQuote, checkProductCodeExists, checkProductNameExists, getAllCategories } from './service';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const PriceQuoteCreatePage = () => {
     const router = useRouter();
@@ -65,6 +66,8 @@ const PriceQuoteCreatePage = () => {
     };
 
     return (
+        <ProtectedRoute requiredRole={[1, 2]}>
+
         <div className="p-6 bg-white rounded-lg shadow-md">
             <h2 className="text-xl font-bold mb-4">Tạo báo giá mới</h2>
 
@@ -129,6 +132,8 @@ const PriceQuoteCreatePage = () => {
                 </div>
             </form>
         </div>
+        </ProtectedRoute>
+
     );
 };
 

@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import AddInvoiceComponent from '@/components/VNG/invoice/AddInvoiceComponent';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const CreateInvoicePage = () => {
     const router = useRouter();
@@ -16,6 +17,8 @@ const CreateInvoicePage = () => {
     };
 
     return (
+        <ProtectedRoute requiredRole={[1, 2]}>
+
         <div className="p-6">
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">Tạo hóa đơn mới</h1>
@@ -27,6 +30,8 @@ const CreateInvoicePage = () => {
                 onCancel={handleCancel}
             />
         </div>
+        </ProtectedRoute>
+
     );
 };
 

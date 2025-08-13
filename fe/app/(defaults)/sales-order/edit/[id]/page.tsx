@@ -15,6 +15,7 @@ import {
     checkProductCodeExists,
     deleteOrderById,
 } from '@/app/(defaults)/sales-order/edit/[id]/service';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 type GlassStructure = {
     id: number;
@@ -299,6 +300,8 @@ const SalesOrderEditPage = () => {
     const finalAmount = totalAmount - discountAmount;
 
     return (
+        <ProtectedRoute requiredRole={[1, 2]}>
+
         <div className="max-w-6xl mx-auto p-6">
             <h2 className="text-2xl font-bold mb-4">Chỉnh sửa Đơn Hàng: {id}</h2>
 
@@ -576,6 +579,8 @@ const SalesOrderEditPage = () => {
                 </button>
             </div>
         </div>
+        </ProtectedRoute>
+
     );
 };
 

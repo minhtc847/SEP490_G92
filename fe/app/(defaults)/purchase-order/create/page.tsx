@@ -18,6 +18,7 @@ import {
     getAllProductNames,
     createProductNVL,
 } from './service';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const toPositiveInt = (v: string | number): number | null => {
     const n = typeof v === 'string' ? Number(v) : v;
@@ -200,6 +201,8 @@ const PurchaseOrderCreatePage = () => {
     };
 
     return (
+        <ProtectedRoute requiredRole={[1]}>
+
         <div className="max-w-6xl mx-auto p-6 space-y-6">
             <h1 className="text-2xl font-bold">Tạo đơn hàng mua</h1>
 
@@ -388,6 +391,8 @@ const PurchaseOrderCreatePage = () => {
                 </button>
             </div>
         </div>
+        </ProtectedRoute>
+
     );
 };
 

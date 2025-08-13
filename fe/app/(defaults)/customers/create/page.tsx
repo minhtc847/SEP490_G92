@@ -7,6 +7,7 @@ import IconArrowLeft from '@/components/icon/icon-arrow-left';
 import IconRefresh from '@/components/icon/icon-refresh';
 import Link from 'next/link';
 import { createCustomer } from '@/app/(defaults)/customers/create/service';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const CustomerCreatePage = () => {
     const router = useRouter();
@@ -64,7 +65,8 @@ const CustomerCreatePage = () => {
     };
 
     return (
-        <div className="panel">
+        <ProtectedRoute requiredRole={[1, 2]}>
+            <div className="panel">
             <div className="mb-5">
                 <div className="mb-6 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -145,6 +147,8 @@ const CustomerCreatePage = () => {
                 </form>
             </div>
         </div>
+    </ProtectedRoute>
+        
     );
 };
 

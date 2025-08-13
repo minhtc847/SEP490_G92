@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getPriceQuoteById, updatePriceQuote, PriceQuoteDetail, deletePriceQuote } from './service';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const PriceQuoteEditPage = () => {
     const { id } = useParams();
@@ -63,6 +64,8 @@ const PriceQuoteEditPage = () => {
     }
 
     return (
+        <ProtectedRoute requiredRole={[1, 2]}>
+
         <div className="p-6 bg-white rounded-lg shadow-md">
             <h2 className="text-xl font-bold mb-6">Chỉnh sửa báo giá</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -125,6 +128,8 @@ const PriceQuoteEditPage = () => {
                 </div>
             </form>
         </div>
+        </ProtectedRoute>
+
     );
 };
 

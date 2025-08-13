@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AddDeliveryComponent from '@/components/VNG/delivery/AddDeliveryComponent';
 import { getSalesOrdersForDelivery, SalesOrderOption } from '../service';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const DeliveryCreatePage = () => {
     const router = useRouter();
@@ -78,6 +79,8 @@ const DeliveryCreatePage = () => {
     }
 
     return (
+        <ProtectedRoute requiredRole={[1, 2]}>
+
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="container mx-auto px-4">
                 <div className="mb-6">
@@ -92,6 +95,7 @@ const DeliveryCreatePage = () => {
                 <AddDeliveryComponent />
             </div>
         </div>
+        </ProtectedRoute>
     );
 };
 

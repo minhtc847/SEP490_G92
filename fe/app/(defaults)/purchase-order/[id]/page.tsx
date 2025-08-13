@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getPurchaseOrderById, PurchaseOrderWithDetailsDto, updatePurchaseOrderStatus } from './service';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const getStatusBadgeClass = (status: string) => {
     switch (status) {
@@ -66,6 +67,8 @@ const PurchaseOrderDetailPage = () => {
     const handleEdit = () => router.push(`/purchase-order/edit/${id}`);
 
     return (
+        <ProtectedRoute requiredRole={[1, 2]}>
+
         <div className="p-6">
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl font-bold">Chi tiết đơn hàng mua: {order.code}</h1>
@@ -176,6 +179,8 @@ const PurchaseOrderDetailPage = () => {
                 ◀ Quay lại
             </button>
         </div>
+        </ProtectedRoute>
+
     );
 };
 

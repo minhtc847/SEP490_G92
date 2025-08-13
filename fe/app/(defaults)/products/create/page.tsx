@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AsyncSelect from 'react-select/async';
 import { createProductNVL, createProduct, checkProductNameExists, getGlassStructures, GlassStructure } from './service';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 export type OrderItem = {
     id: number;
@@ -169,6 +170,8 @@ const ProductCreatePage = () => {
     };
 
     return (
+        <ProtectedRoute requiredRole={[1, 2]}>
+
         <div>
             <div>
                 <h1 className="text-xl font-bold">Thêm sản phẩm (Thành Phẩm)</h1>
@@ -308,6 +311,8 @@ const ProductCreatePage = () => {
                 </div>
             </div>
         </div>
+        </ProtectedRoute>
+
     );
 };
 

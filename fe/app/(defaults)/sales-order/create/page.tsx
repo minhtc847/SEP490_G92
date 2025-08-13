@@ -17,6 +17,7 @@ import {
     getAllProductNames,
 } from '@/app/(defaults)/sales-order/create/service';
 import AsyncSelect from 'react-select/async';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const SalesOrderCreatePage = () => {
     const router = useRouter();
@@ -291,6 +292,8 @@ const SalesOrderCreatePage = () => {
     const finalAmount = totalAmount - discountAmount;
 
     return (
+        <ProtectedRoute requiredRole={[1, 2]}>
+
         <div className="max-w-6xl mx-auto p-6">
             <h2 className="text-2xl font-bold mb-4">Tạo đơn hàng mới</h2>
 
@@ -590,6 +593,8 @@ const SalesOrderCreatePage = () => {
                 </button>
             </div>
         </div>
+        </ProtectedRoute>
+
     );
 };
 

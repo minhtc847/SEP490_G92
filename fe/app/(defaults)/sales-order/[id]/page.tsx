@@ -6,6 +6,7 @@ import { getOrderDetailById, OrderDetailDto } from '@/app/(defaults)/sales-order
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import ExcelJS from 'exceljs';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const SalesOrderDetailPage = () => {
     const params = useParams();
@@ -164,6 +165,8 @@ const SalesOrderDetailPage = () => {
     const { customerName, address, phone, orderDate, orderCode, discount, products, totalAmount, totalQuantity } = order;
 
     return (
+        <ProtectedRoute requiredRole={[1, 2]}>
+
         <div className="p-6">
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl font-bold">Chi tiết đơn hàng: {orderCode}</h1>
@@ -294,6 +297,8 @@ const SalesOrderDetailPage = () => {
                 ◀ Quay lại
             </button>
         </div>
+        </ProtectedRoute>
+
     );
 };
 
