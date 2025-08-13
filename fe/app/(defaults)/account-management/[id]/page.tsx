@@ -184,7 +184,7 @@ const AccountDetailPage = () => {
                     </div>
 
                     {/* Thống kê hoạt động (có thể mở rộng sau) */}
-                    <div className="mt-6 bg-white rounded-lg border p-6">
+                    {/* <div className="mt-6 bg-white rounded-lg border p-6">
                         <h3 className="text-lg font-semibold mb-4 text-purple-600">Thống kê hoạt động</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="text-center p-4 bg-blue-50 rounded-lg">
@@ -200,7 +200,7 @@ const AccountDetailPage = () => {
                                 <div className="text-sm text-gray-600">Lần cập nhật</div>
                             </div>
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* Nút quay lại */}
                     <div className="mt-6 flex justify-center">
