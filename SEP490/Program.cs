@@ -15,6 +15,7 @@ using StackExchange.Redis;
 using System;
 using System.Reflection;
 using System.Text;
+using SEP490.Modules.InventorySlipModule.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,6 +58,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICuttingGlassManagementService, CuttingGlassManagementService>();
 builder.Services.AddScoped<IDocumentMaterialService, DocumentMaterialService>();
 builder.Services.AddScoped<IZaloOrderService, ZaloOrderService>();
+builder.Services.AddScoped<IInventorySlipService, InventorySlipService>();
 builder.Services.AddHttpClient<ZaloChatService>();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();

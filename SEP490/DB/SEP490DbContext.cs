@@ -38,6 +38,48 @@ namespace SEP490.DB
                 .WithMany(zo => zo.ZaloOrderDetails)
                 .HasForeignKey(zod => zod.ZaloOrderId);
 
+            modelBuilder.Entity<InventorySlip>()
+                .HasOne(s => s.ProductionOrder)
+                .WithMany()
+                .HasForeignKey(s => s.ProductionOrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+                
+            modelBuilder.Entity<InventorySlip>()
+                .HasOne(s => s.CreatedByEmployee)
+                .WithMany()
+                .HasForeignKey(s => s.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            modelBuilder.Entity<InventorySlipDetail>()
+                .HasOne(d => d.InventorySlip)
+                .WithMany(s => s.Details)
+                .HasForeignKey(d => d.InventorySlipId)
+                .OnDelete(DeleteBehavior.Cascade);
+                
+            modelBuilder.Entity<InventorySlipDetail>()
+                .HasOne(d => d.Product)
+                .WithMany()
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+                
+            modelBuilder.Entity<InventorySlipDetail>()
+                .HasOne(d => d.ProductionOutput)
+                .WithMany()
+                .HasForeignKey(d => d.ProductionOutputId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<MaterialOutputMapping>()
+                .HasOne(m => m.InputDetail)
+                .WithMany(d => d.InputMappings)
+                .HasForeignKey(m => m.InputDetailId)
+                .OnDelete(DeleteBehavior.Cascade);
+                
+            modelBuilder.Entity<MaterialOutputMapping>()
+                .HasOne(m => m.OutputDetail)
+                .WithMany(d => d.OutputMappings)
+                .HasForeignKey(m => m.OutputDetailId)
+                .OnDelete(DeleteBehavior.Cascade);
+
         }
 
         // Define DbSet properties for your entities here
@@ -78,5 +120,8 @@ namespace SEP490.DB
         public DbSet<ProductionDefects> ProductionDefects { get; set; }
         public DbSet<ZaloOrder> ZaloOrders { get; set; }
         public DbSet<ZaloOrderDetail> ZaloOrderDetails { get; set; }
+        public DbSet<InventorySlip> InventorySlips { get; set; }
+        public DbSet<InventorySlipDetail> InventorySlipDetails { get; set; }
+        public DbSet<MaterialOutputMapping> MaterialOutputMappings { get; set; }
     }
 }

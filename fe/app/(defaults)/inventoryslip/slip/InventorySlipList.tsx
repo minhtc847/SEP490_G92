@@ -1,0 +1,351 @@
+'use client';
+import { useState } from 'react';
+import { InventorySlip, InventorySlipDetail, MaterialOutputMappingDto } from '../service';
+import IconEdit from '@/components/icon/icon-edit';
+import IconTrash from '@/components/icon/icon-trash';
+import IconEye from '@/components/icon/icon-eye';
+import IconArrowLeft from '@/components/icon/icon-arrow-left';
+
+interface InventorySlipListProps {
+    slips: InventorySlip[];
+    onEdit: (slip: InventorySlip) => void;
+    onDelete: (slipId: number) => void;
+    onRefresh: () => void;
+}
+
+const InventorySlipList = ({ slips, onEdit, onDelete, onRefresh }: InventorySlipListProps) => {
+    const [expandedSlips, setExpandedSlips] = useState<Set<number>>(new Set());
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
+
+    const toggleExpanded = (slipId: number) => {
+        const newExpanded = new Set(expandedSlips);
+        if (newExpanded.has(slipId)) {
+            newExpanded.delete(slipId);
+        } else {
+            newExpanded.add(slipId);
+        }
+        setExpandedSlips(newExpanded);
+    };
+
+    const handleDelete = (slipId: number) => {
+        setShowDeleteConfirm(null);
+        onDelete(slipId);
+    };
+
+    const getTransactionTypeText = (type: string) => {
+        switch (type) {
+            case 'In': return 'Nhập kho';
+            case 'Out': return 'Xuất kho';
+            default: return type;
+        }
+    };
+
+    const getTransactionTypeBadge = (type: string) => {
+        switch (type) {
+            case 'In': return 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200';
+            case 'Out': return 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200';
+            default: return 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200';
+        }
+    };
+
+    const getSlipTypeText = (productionOrderType: string | undefined) => {
+        switch (productionOrderType) {
+            case 'Cắt kính': return 'Phiếu cắt kính';
+            case 'Ghép kính': return 'Phiếu xuất keo butyl';
+            case 'Sản xuất keo':
+            case 'Đổ keo': return 'Phiếu xuất hóa chất';
+            default: return productionOrderType || '-';
+        }
+    };
+
+    if (slips.length === 0) {
+        return (
+            <div className="text-center py-8 text-gray-500">
+                Chưa có phiếu kho nào cho lệnh sản xuất này.
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            {slips.map((slip) => (
+                <div key={slip.id} className="border rounded-lg overflow-hidden">
+                    {/* Slip Header */}
+                    <div className="bg-gray-50 p-4 border-b">
+                        <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-4 mb-2">
+                                    <h4 className="text-lg font-semibold text-blue-600">
+                                        {slip.slipCode}
+                                    </h4>
+                                    <span className={`${getTransactionTypeBadge(slip.transactionType)}`}>
+                                        {getTransactionTypeText(slip.transactionType)}
+                                    </span>
+                                    <span className="text-sm text-gray-600">
+                                        {getSlipTypeText(slip.productionOrderType)}
+                                    </span>
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                    <p><strong>Ngày tạo:</strong> {new Date(slip.slipDate).toLocaleDateString()}</p>
+                                    <p><strong>Người tạo:</strong> {slip.createdByEmployeeName}</p>
+                                    {slip.description && (
+                                        <p><strong>Mô tả:</strong> {slip.description}</p>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => toggleExpanded(slip.id)}
+                                    className="px-3 py-1 text-sm border border-blue-300 text-blue-700 bg-white hover:bg-blue-50 rounded-md transition-colors"
+                                    title={expandedSlips.has(slip.id) ? 'Thu gọn' : 'Mở rộng'}
+                                >
+                                    <IconEye className="w-4 h-4" />
+                                    {expandedSlips.has(slip.id) ? ' Thu gọn' : ' Chi tiết'}
+                                </button>
+                                <button
+                                    onClick={() => onEdit(slip)}
+                                    className="px-3 py-1 text-sm border border-blue-600 text-blue-600 bg-white hover:bg-blue-50 rounded-md transition-colors"
+                                    title="Chỉnh sửa"
+                                >
+                                    <IconEdit className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => setShowDeleteConfirm(slip.id)}
+                                    className="px-3 py-1 text-sm border border-red-300 text-red-700 bg-white hover:bg-red-50 rounded-md transition-colors"
+                                    title="Xóa"
+                                >
+                                    <IconTrash className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Slip Details */}
+                    {expandedSlips.has(slip.id) && (
+                        <div className="p-4">
+                            <h5 className="font-medium mb-3">Chi tiết phiếu:</h5>
+                            
+                            {/* For Cut Glass Slips - Show hierarchical structure */}
+                            {slip.productionOrderType === 'Cắt kính' ? (
+                                <CutGlassSlipDetails slip={slip} />
+                            ) : (
+                                /* For other slip types - Show flat structure */
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                                                                 <thead>
+                                             <tr className="bg-gray-50">
+                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
+                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã SP</th>
+                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên sản phẩm</th>
+                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại</th>
+                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượng</th>
+                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn vị</th>
+                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ghi chú</th>
+                                             </tr>
+                                         </thead>
+                                                                                     <tbody>
+                                                 {slip.details.map((detail, index) => (
+                                                     <tr key={detail.id} className="bg-white hover:bg-gray-50">
+                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
+                                                         <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-900">
+                                                             {detail.productCode}
+                                                         </td>
+                                                         <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
+                                                             {detail.productName}
+                                                         </td>
+                                                         <td className="px-6 py-4 whitespace-nowrap">
+                                                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                                                                 {detail.productType}
+                                                             </span>
+                                                         </td>
+                                                         <td className="px-6 py-4 whitespace-nowrap font-semibold text-gray-900">
+                                                             {detail.quantity}
+                                                         </td>
+                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{detail.uom || '-'}</td>
+                                                         <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title={detail.note}>
+                                                             {detail.note || '-'}
+                                                         </td>
+                                                     </tr>
+                                                 ))}
+                                             </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            ))}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                        <h3 className="text-lg font-semibold mb-4">Xác nhận xóa</h3>
+                        <p className="text-gray-600 mb-6">
+                            Bạn có chắc chắn muốn xóa phiếu này? Hành động này không thể hoàn tác.
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowDeleteConfirm(null)}
+                                className="px-4 py-2 border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 rounded-md transition-colors"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                onClick={() => handleDelete(showDeleteConfirm)}
+                                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                            >
+                                Xóa
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// Component for displaying cut glass slip details in hierarchical structure
+const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
+    const [expandedMaterials, setExpandedMaterials] = useState<Set<number>>(new Set());
+
+    const toggleExpanded = (materialId: number) => {
+        const newExpanded = new Set(expandedMaterials);
+        if (newExpanded.has(materialId)) {
+            newExpanded.delete(materialId);
+        } else {
+            newExpanded.add(materialId);
+        }
+        setExpandedMaterials(newExpanded);
+    };
+
+    // Separate raw materials from output products
+    const rawMaterials = slip.details.filter(detail => 
+        detail.productType === 'NVL' || detail.productType === 'Nguyên vật liệu'
+    );
+    
+    const outputProducts = slip.details.filter(detail => 
+        detail.productType !== 'NVL' && detail.productType !== 'Nguyên vật liệu'
+    );
+
+    // Create a mapping from raw material to its output products
+    const materialOutputMap = new Map<number, InventorySlipDetail[]>();
+    
+    // For now, we'll use a simple heuristic: if there are mappings in the detail, use them
+    // Otherwise, we'll show all output products for each raw material
+    rawMaterials.forEach(material => {
+        if (material.outputMappings && material.outputMappings.length > 0) {
+            // Use actual mappings if available
+            const outputs = material.outputMappings.map(mapping => {
+                const outputDetail = outputProducts.find(d => d.id === mapping.outputDetailId);
+                return outputDetail;
+            }).filter(Boolean) as InventorySlipDetail[];
+            
+            materialOutputMap.set(material.id, outputs);
+        } else {
+            // Fallback: show all output products for each raw material
+            materialOutputMap.set(material.id, outputProducts);
+        }
+    });
+
+    return (
+        <div className="space-y-4">
+            {/* Raw Materials Section */}
+            <div>
+                <h6 className="font-medium text-blue-800 mb-3">Nguyên vật liệu (Kính lớn)</h6>
+                <div className="space-y-3">
+                    {rawMaterials.map((material) => {
+                        const outputs = materialOutputMap.get(material.id) || [];
+                        const isExpanded = expandedMaterials.has(material.id);
+                        
+                        return (
+                            <div key={material.id} className="border rounded-lg overflow-hidden">
+                                {/* Material Header - Clickable */}
+                                <div 
+                                    className="bg-blue-50 p-3 cursor-pointer hover:bg-blue-100 transition-colors"
+                                    onClick={() => toggleExpanded(material.id)}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-3">
+                                            {isExpanded ? (
+                                                <IconArrowLeft className="w-4 h-4 text-blue-600 rotate-90" />
+                                            ) : (
+                                                <IconArrowLeft className="w-4 h-4 text-blue-600 -rotate-90" />
+                                            )}
+                                            <div className="flex-1">
+                                                <div className="font-medium text-blue-900">
+                                                    {material.productName}
+                                                </div>
+                                                <div className="text-sm text-blue-700">
+                                                    Mã: {material.productCode} | 
+                                                    Số lượng: {material.quantity} {material.uom || 'cái'} | 
+                                                    {outputs.length > 0 ? ` Tạo ra ${outputs.length} sản phẩm` : ' Chưa có sản phẩm đầu ra'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Output Products - Expandable */}
+                                {isExpanded && outputs.length > 0 && (
+                                    <div className="border-t bg-white">
+                                        <div className="p-3">
+                                                                                         <h6 className="font-medium text-gray-700 mb-2 block">
+                                                 Sản phẩm đầu ra:
+                                             </h6>
+                                            <div className="space-y-2">
+                                                {outputs.map((output) => (
+                                                    <div key={output.id} className="flex items-center justify-between p-2 bg-gray-50 rounded border-l-4 border-green-400">
+                                                        <div className="flex-1">
+                                                            <div className="font-medium text-gray-800">
+                                                                {output.productName}
+                                                            </div>
+                                                            <div className="text-sm text-gray-600">
+                                                                Mã: {output.productCode} | 
+                                                                Số lượng: {output.quantity} {output.uom || 'cái'} | 
+                                                                Loại: {output.productType}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center space-x-2">
+                                                                                                                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                                                 output.productType === 'Bán thành phẩm' || output.productType === 'BTP' 
+                                                                     ? 'bg-green-100 text-green-800 border border-green-200' 
+                                                                     : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                                                             }`}>
+                                                                 {output.productType === 'Bán thành phẩm' || output.productType === 'BTP' 
+                                                                     ? 'Bán thành phẩm' 
+                                                                     : 'Kính dư'}
+                                                             </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* No Output Products Message */}
+                                {isExpanded && outputs.length === 0 && (
+                                    <div className="border-t bg-white p-3">
+                                        <div className="text-center text-gray-500 text-sm py-4">
+                                            Chưa có sản phẩm đầu ra nào được liên kết với nguyên vật liệu này.
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Summary */}
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                <div className="text-sm text-gray-600">
+                    <p><strong>Tổng cộng:</strong> {rawMaterials.length} nguyên vật liệu, {outputProducts.length} sản phẩm đầu ra</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default InventorySlipList;
