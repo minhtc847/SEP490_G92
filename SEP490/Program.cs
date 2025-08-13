@@ -99,6 +99,9 @@ builder.Services.AddScoped<IZaloWebhookService, ZaloWebhookService>();
 builder.Services.AddSingleton<IZaloWebhookServiceFactory, ZaloWebhookServiceFactory>();
 builder.Services.AddSingleton<IRedisHealthCheckService, RedisHealthCheckService>();
 
+// Add AccountManagement services
+builder.Services.AddScoped<SEP490.Modules.AccountManagement.Services.IAccountManagementService, SEP490.Modules.AccountManagement.Services.AccountManagementService>();
+
 // Register all services that inherit from BaseService
 var baseType = typeof(BaseService);
 

@@ -261,6 +261,35 @@ const Sidebar = () => {
             );
         }
 
+        // Account Management - Factory Manager only
+        if (isFactoryManager()) {
+            items.push(
+                <li key="account-management" className="menu nav-item">
+                    <button type="button" className={`${currentMenu === "account-management" ? "active" : ""} nav-link group w-full`} onClick={() => toggleMenu("account-management")}>
+                        <div className="flex items-center">
+                            <IconMenuUsers className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Quản Lý Tài Khoản
+                            </span>
+                        </div>
+                        <div className={currentMenu !== "account-management" ? "-rotate-90 rtl:rotate-90" : ""}>
+                            <IconCaretDown />
+                        </div>
+                    </button>
+                    <AnimateHeight duration={300} height={currentMenu === "account-management" ? "auto" : 0}>
+                        <ul className="sub-menu text-gray-500">
+                            <li>
+                                <Link href="/account-management">Danh Sách Tài Khoản</Link>
+                            </li>
+                            <li>
+                                <Link href="/account-management/create">Tạo Tài Khoản</Link>
+                            </li>
+                        </ul>
+                    </AnimateHeight>
+                </li>
+            );
+        }
+
         // Products - Factory Manager and Accountant
         if (isFactoryManager() || isAccountant()) {
             items.push(
