@@ -71,7 +71,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
                 if (roleId === 1) {
                     router.push('/'); // Factory Manager - Dashboard
                 } else if (roleId === 2) {
-                    router.push('/price-quotes'); // Accountant - Price Quotes
+                    router.push('/'); // Accountant - Price Quotes
                 } else if (roleId === 3) {
                     router.push('/production-orders'); // Production Staff - Production Orders
                 } else {

@@ -3,27 +3,35 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { IRootState } from '@/store';
-import { usePermissions } from '@/hooks/usePermissions';
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
-    requiredPermission?: string;
-    requiredRole?: number;
+    requiredRole?: number | number[];
     fallbackPath?: string;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     children,
-    requiredPermission,
     requiredRole,
     fallbackPath = '/auth/cover-login'
 }) => {
     const router = useRouter();
     const isAuthenticated = useSelector((state: IRootState) => state.auth.isAuthenticated);
     const token = useSelector((state: IRootState) => state.auth.token);
-    const { hasPermission, roleId, isAuthenticated: authFromHook } = usePermissions();
+    const roleId = useSelector((state: IRootState) => state.auth.user?.roleId);
     const [isLoading, setIsLoading] = useState(true);
     const [isRedirecting, setIsRedirecting] = useState(false);
+
+    // Helper function to check if user has required role
+    const hasRequiredRole = (): boolean => {
+        if (!requiredRole || !roleId) return true;
+        
+        if (Array.isArray(requiredRole)) {
+            return requiredRole.includes(roleId);
+        } else {
+            return roleId === requiredRole;
+        }
+    };
 
     useEffect(() => {
         // Check if we have a token but user data is not loaded yet
@@ -51,23 +59,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         }
 
         // Check role requirement
-        if (requiredRole && roleId !== requiredRole) {
+        if (requiredRole && !hasRequiredRole()) {
             if (!isRedirecting) {
                 setIsRedirecting(true);
                 router.push('/unauthorized');
             }
             return;
         }
-
-        // Check permission requirement
-        if (requiredPermission && !hasPermission(requiredPermission)) {
-            if (!isRedirecting) {
-                setIsRedirecting(true);
-                router.push('/unauthorized');
-            }
-            return;
-        }
-    }, [isAuthenticated, requiredPermission, requiredRole, roleId, router, fallbackPath, hasPermission, token, isLoading, isRedirecting]);
+    }, [isAuthenticated, requiredRole, roleId, router, fallbackPath, token, isLoading, isRedirecting]);
 
     // Show loading while checking authentication
     if (isLoading || (token && !isAuthenticated)) {
@@ -106,20 +105,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
 
     // Check role requirement
-    if (requiredRole && roleId !== requiredRole) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold text-red-600 mb-4">Không có quyền truy cập</h1>
-                    <p className="text-gray-600">Bạn không có quyền truy cập trang này.</p>
-                    <p className="text-gray-600 mt-2">Đang chuyển hướng...</p>
-                </div>
-            </div>
-        );
-    }
-
-    // Check permission requirement
-    if (requiredPermission && !hasPermission(requiredPermission)) {
+    if (requiredRole && !hasRequiredRole()) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">

@@ -110,7 +110,7 @@ const PriceQuotePage = () => {
     };
 
     return (
-        <ProtectedRoute>
+        <ProtectedRoute requiredRole={2}>
             <div className="p-6 bg-white rounded-lg shadow">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold text-gray-800">Báo giá</h2>

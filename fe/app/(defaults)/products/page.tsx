@@ -87,7 +87,7 @@ const ProductListPage = () => {
     };
 
     return (
-        <ProtectedRoute>
+        <ProtectedRoute requiredRole={1}>
             <div className="p-6 bg-white rounded-lg shadow">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold text-gray-800">Danh sách sản phẩm</h2>

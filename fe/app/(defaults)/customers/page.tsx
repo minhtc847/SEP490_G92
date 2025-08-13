@@ -59,7 +59,7 @@ const CustomersListPage = () => {
     if (loading) return <div className="panel">Đang tải dữ liệu...</div>;
 
     return (
-        <ProtectedRoute>
+        <ProtectedRoute requiredRole={1}>
             <div className="panel">
                 <div className="mb-5">
                     <h2 className="text-xl font-semibold mb-4">Danh sách khách hàng và nhà cung cấp</h2>

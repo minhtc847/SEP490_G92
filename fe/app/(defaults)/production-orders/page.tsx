@@ -51,7 +51,7 @@ const ProductionOrdersPage = () => {
     }, [orders, page, pageSize]);
 
     return (
-        <ProtectedRoute>
+        <ProtectedRoute requiredRole={3}>
             <div>
                 <div className="mb-5">
                     <h1 className="text-2xl font-bold">Danh sách lệnh sản xuất</h1>
