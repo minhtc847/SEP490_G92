@@ -38,7 +38,7 @@ export interface UploadResponse {
 }
 
 class DocumentService {
-  private baseUrl = 'http://localhost:8000/api/documents';
+  private baseUrl = process.env.NEXT_PUBLIC_BASE_URL ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/documents` : 'https://localhost:7075/api/documents';
 
   // Get all documents
   async getAllDocuments(): Promise<DocumentMaterial[]> {
