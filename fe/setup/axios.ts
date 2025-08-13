@@ -2,7 +2,7 @@ import axios, { isAxiosError } from 'axios';
 
 // Create an instance of Axios for external API
 const externalAxios = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_BASE_URL || "https://localhost:7001", // Change baseURL if needed
+    baseURL: process.env.NEXT_PUBLIC_BASE_URL || "https://localhost:7075", // Change baseURL if needed
     headers: {
         'Content-Type': 'application/json',
     },
