@@ -96,6 +96,19 @@ namespace SEP490.Modules.ProductionOrders.Services
 
         public async Task<Product> CreateProductAsync(CreateProductionProductDto dto)
         {
+
+            if (string.IsNullOrWhiteSpace(dto.ProductName))
+                throw new Exception("Tên sản phẩm không được để trống.");
+
+            if (_context.Products.Any(p => p.ProductName == dto.ProductName))
+                throw new Exception("Tên sản phẩm đã tồn tại.");
+
+            if (string.IsNullOrWhiteSpace(dto.UOM))
+                throw new Exception("Đơn vị tính không được để trống.");
+
+            if (dto.ProductType != "Thành phẩm")
+                throw new Exception("Chỉ được tạo sản phẩm loại 'Thành phẩm'.");
+
             var product = new Product
             {
                 ProductCode = dto.ProductCode,
@@ -110,6 +123,20 @@ namespace SEP490.Modules.ProductionOrders.Services
 
         public async Task<ProductionOutput> CreateProductionOutputAsync(CreateProductionOutputDto dto)
         {
+            if (dto.Amount <= 0)
+                throw new ArgumentException("Amount must be greater than 0.");
+
+            var exists = await _context.Products.AnyAsync(p => p.Id == dto.ProductId);
+            if (!exists)
+                throw new ArgumentException("ProductId does not exist.");
+
+            if (dto.ProductionOrderId.HasValue)
+            {
+                var poExists = await _context.ProductionOrders.AnyAsync(p => p.Id == dto.ProductionOrderId);
+                if (!poExists)
+                    throw new ArgumentException("ProductionOrderId does not exist.");
+            }
+
             var output = new ProductionOutput
             {
                 ProductId = dto.ProductId,
@@ -123,6 +150,9 @@ namespace SEP490.Modules.ProductionOrders.Services
 
         public async Task<CutGlassInvoiceMaterial> CreateMaterialAsync(CutGlassInvoiceMaterial material)
         {
+            if (material.quantity <= 0)
+                throw new ArgumentException("Số lượng phải lớn hơn 0");
+
             material.CreatedAt = DateTime.Now;
             material.UpdatedAt = DateTime.Now;
             _context.CutGlassInvoiceMaterials.Add(material);
@@ -196,6 +226,7 @@ namespace SEP490.Modules.ProductionOrders.Services
             {
                 throw new Exception($"Material with ID {id} not found");
             }
+
             material.quantity = dto.Quantity;
             material.note = dto.Note;
             material.UpdatedAt = DateTime.Now;

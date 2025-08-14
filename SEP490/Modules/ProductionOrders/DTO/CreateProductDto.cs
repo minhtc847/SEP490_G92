@@ -5,5 +5,7 @@ namespace SEP490.Modules.ProductionOrders.DTO
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
         public string UOM { get; set; }
+
+        public string? ProductType { get; set; }
     }
 } 
