@@ -2,6 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using SEP490.DB;
 using SEP490.DB.Models;
 using SEP490.Modules.InventorySlipModule.DTO;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace SEP490.Modules.InventorySlipModule.Service
 {
@@ -37,7 +43,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
             }
         }
 
-        public async Task<InventorySlipDto> CreateCutGlassSlipAsync(CreateInventorySlipDto dto, object mappingInfo = null)
+        public async Task<InventorySlipDto> CreateCutGlassSlipAsync(CreateInventorySlipDto dto, MappingInfoDto mappingInfo = null)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -57,117 +63,34 @@ namespace SEP490.Modules.InventorySlipModule.Service
 
                 var details = new List<InventorySlipDetail>();
                 
-                var productClassifications = new List<dynamic>();
-                if (mappingInfo != null)
-                {
-                    try
-                    {
-                        // Try to deserialize directly from the mappingInfo object
-                        var mappingInfoJson = System.Text.Json.JsonSerializer.Serialize(mappingInfo);
-                        var mappingInfoElement = System.Text.Json.JsonDocument.Parse(mappingInfoJson).RootElement;
-                        
-                        if (mappingInfoElement.TryGetProperty("productClassifications", out var classificationsElement))
-                        {
-                            // Use proper deserialization options
-                            var options = new System.Text.Json.JsonSerializerOptions
-                            {
-                                PropertyNameCaseInsensitive = true
-                            };
-                            
-                            // Try to deserialize as a strongly-typed list first
-                            try
-                            {
-                                var classificationsJson = classificationsElement.GetRawText();
-                                
-                                // Create a simple anonymous type for deserialization
-                                var tempClassifications = System.Text.Json.JsonSerializer.Deserialize<List<object>>(classificationsJson, options);
-                                
-                                // Convert to dynamic list
-                                productClassifications = tempClassifications?.Cast<dynamic>().ToList() ?? new List<dynamic>();
-                            }
-                            catch (Exception innerEx)
-                            {
-                                // Fallback to dynamic deserialization
-                                productClassifications = System.Text.Json.JsonSerializer.Deserialize<List<dynamic>>(classificationsElement.GetRawText());
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-
-                    }
-                }
-                
                 foreach (var detailDto in dto.Details)
                 {
                     var detailIndex = dto.Details.IndexOf(detailDto);
                     
-                    // Find corresponding product classification
-                    var classification = productClassifications.FirstOrDefault(c => 
-                        c.GetType().GetProperty("index")?.GetValue(c)?.ToString() == detailIndex.ToString());
+                    // Find corresponding product classification from mappingInfo
+                    var classification = mappingInfo?.ProductClassifications?.FirstOrDefault(c => c.Index == detailIndex);
                     
+                    int? productionOutputId = null;
                     if (classification != null)
                     {
-                        var indexProp = classification.GetType().GetProperty("index");
-                        var productTypeProp = classification.GetType().GetProperty("productType");
-                        var productionOutputIdProp = classification.GetType().GetProperty("productionOutputId");
-                        
-                        if (indexProp != null && productTypeProp != null && productionOutputIdProp != null)
+                        if (classification.ProductType == "Bán thành phẩm" && classification.ProductionOutputId.HasValue)
                         {
-                            var index = indexProp.GetValue(classification);
-                            var productType = productTypeProp.GetValue(classification)?.ToString();
-                            var productionOutputIdValue = productionOutputIdProp.GetValue(classification);
-                            
-                            int? productionOutputId = null;
-                            if (productionOutputIdValue != null && productionOutputIdValue.ToString() != "0" && productionOutputIdValue.ToString() != "-1")
-                            {
-                                productionOutputId = Convert.ToInt32(productionOutputIdValue);
-                            }
-                            
-                            var detail = new InventorySlipDetail
-                            {
-                                InventorySlipId = slip.Id,
-                                ProductId = detailDto.ProductId,
-                                Quantity = detailDto.Quantity,
-                                Note = detailDto.Note,
-                                SortOrder = detailDto.SortOrder,
-                                ProductionOutputId = productionOutputId,
-                                CreatedAt = DateTime.Now,
-                                UpdatedAt = DateTime.Now
-                            };
-                            details.Add(detail);
-                        }
-                        else
-                        {
-                            var detail = new InventorySlipDetail
-                            {
-                                InventorySlipId = slip.Id,
-                                ProductId = detailDto.ProductId,
-                                Quantity = detailDto.Quantity,
-                                Note = detailDto.Note,
-                                SortOrder = detailDto.SortOrder,
-                                ProductionOutputId = detailDto.ProductionOutputId,
-                                CreatedAt = DateTime.Now,
-                                UpdatedAt = DateTime.Now
-                            };
-                            details.Add(detail);
+                            productionOutputId = classification.ProductionOutputId.Value;
                         }
                     }
-                    else
+                    
+                    var detail = new InventorySlipDetail
                     {
-                        var detail = new InventorySlipDetail
-                        {
-                            InventorySlipId = slip.Id,
-                            ProductId = detailDto.ProductId,
-                            Quantity = detailDto.Quantity,
-                            Note = detailDto.Note,
-                            SortOrder = detailDto.SortOrder,
-                            ProductionOutputId = detailDto.ProductionOutputId,
-                            CreatedAt = DateTime.Now,
-                            UpdatedAt = DateTime.Now
-                        };
-                        details.Add(detail);
-                    }
+                        InventorySlipId = slip.Id,
+                        ProductId = detailDto.ProductId,
+                        Quantity = detailDto.Quantity,
+                        Note = detailDto.Note,
+                        SortOrder = detailDto.SortOrder,
+                        ProductionOutputId = productionOutputId,
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now
+                    };
+                    details.Add(detail);
                 }
 
                 _context.InventorySlipDetails.AddRange(details);
@@ -205,6 +128,9 @@ namespace SEP490.Modules.InventorySlipModule.Service
                         await _context.SaveChangesAsync();
                     }
                 }
+
+                // Update ProductionOutput finished quantities for semi-finished products
+                await UpdateProductionOutputFinishedQuantitiesAsync(details, mappingInfo);
 
                 await transaction.CommitAsync();
                 var result = await GetInventorySlipByIdAsync(slip.Id);
@@ -256,6 +182,9 @@ namespace SEP490.Modules.InventorySlipModule.Service
 
                 _context.InventorySlipDetails.AddRange(details);
                 await _context.SaveChangesAsync();
+
+                // Update ProductionOutput finished quantities for semi-finished products
+                await UpdateProductionOutputFinishedQuantitiesAsync(details, new MappingInfoDto()); // Pass an empty MappingInfoDto
 
                 await transaction.CommitAsync();
                 return await GetInventorySlipByIdAsync(slip.Id);
@@ -1086,6 +1015,67 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 HasPreviousPage = hasPreviousPage,
                 HasNextPage = hasNextPage
             };
+        }
+
+        /// <summary>
+        /// Updates the finished quantities in ProductionOutput for semi-finished products
+        /// </summary>
+        private async Task UpdateProductionOutputFinishedQuantitiesAsync(List<InventorySlipDetail> details, MappingInfoDto mappingInfo)
+        {
+            try
+            {
+                // Group details by production output ID for semi-finished products
+                var semiFinishedDetails = new List<(int ProductionOutputId, decimal Quantity)>();
+                
+                foreach (var detail in details)
+                {
+                    if (detail.ProductionOutputId.HasValue)
+                    {
+                        // For cut glass slips, use productClassifications to determine product type
+                        if (mappingInfo?.ProductClassifications != null && mappingInfo.ProductClassifications.Any())
+                        {
+                            // Find the corresponding classification by matching productId
+                            var classification = mappingInfo.ProductClassifications.FirstOrDefault(c => c.ProductId == detail.ProductId);
+                            
+                            if (classification != null)
+                            {
+                                if (classification.ProductType == "Bán thành phẩm")
+                                {
+                                    semiFinishedDetails.Add((detail.ProductionOutputId.Value, detail.Quantity));
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // For non-cut glass slips, if ProductionOutputId is set, it's a semi-finished product
+                            semiFinishedDetails.Add((detail.ProductionOutputId.Value, detail.Quantity));
+                        }
+                    }
+                }
+
+                // Update ProductionOutput finished quantities
+                foreach (var (productionOutputId, quantity) in semiFinishedDetails)
+                {
+                    var productionOutput = await _context.ProductionOutputs
+                        .FirstOrDefaultAsync(po => po.Id == productionOutputId);
+                    
+                    if (productionOutput != null)
+                    {
+                        var oldFinished = productionOutput.Finished ?? 0;
+                        productionOutput.Finished = oldFinished + (int)quantity;
+                    }
+                }
+
+                if (semiFinishedDetails.Any())
+                {
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the error but don't throw to avoid breaking the main transaction
+                Console.WriteLine($"Error updating ProductionOutput finished quantities: {ex.Message}");
+            }
         }
     }
 }

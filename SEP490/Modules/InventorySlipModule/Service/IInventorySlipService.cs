@@ -14,7 +14,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
         Task<List<InventorySlipDetailDto>> GetOutputsFromInputMaterialAsync(int inputDetailId);
         Task<List<InventorySlipDetailDto>> GetInputMaterialsForOutputAsync(int outputDetailId);
 
-        Task<InventorySlipDto> CreateCutGlassSlipAsync(CreateInventorySlipDto dto, object mappingInfo = null);
+        Task<InventorySlipDto> CreateCutGlassSlipAsync(CreateInventorySlipDto dto, MappingInfoDto mappingInfo = null);
         Task<InventorySlipDto> CreateChemicalExportSlipAsync(CreateInventorySlipDto dto);
         Task<InventorySlipDto> CreateGlueButylSlipAsync(CreateInventorySlipDto dto);
         

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using SEP490.Modules.InventorySlipModule.DTO;
 using SEP490.Modules.InventorySlipModule.Service;
+using System;
+using System.Threading.Tasks;
 
 namespace SEP490.Modules.InventorySlipModule.Controller
 {
@@ -167,12 +169,16 @@ namespace SEP490.Modules.InventorySlipModule.Controller
         {
             try
             {
+                Console.WriteLine($"CreateCutGlassSlip called with requestData type: {requestData?.GetType().Name}");
+                Console.WriteLine($"RequestData: {System.Text.Json.JsonSerializer.Serialize(requestData)}");
+                
                 // Parse the request data to extract both dto and mappingInfo
                 var jsonElement = (System.Text.Json.JsonElement)requestData;
                 
                 CreateInventorySlipDto dto;
                 if (jsonElement.TryGetProperty("formData", out var formDataElement))
                 {
+                    Console.WriteLine("Found formData property");
                     // Use proper deserialization options for case-insensitive property matching
                     var options = new System.Text.Json.JsonSerializerOptions
                     {
@@ -205,6 +211,7 @@ namespace SEP490.Modules.InventorySlipModule.Controller
                 }
                 else
                 {
+                    Console.WriteLine("No formData property found, using fallback approach");
                     // Always use the fallback approach since direct deserialization seems to have issues
                     // Deserialize as a generic object first
                     var rawData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(jsonElement.GetRawText());
@@ -248,16 +255,45 @@ namespace SEP490.Modules.InventorySlipModule.Controller
                     return BadRequest(new { message = "Dữ liệu không hợp lệ - DTO null!" });
                 }
 
+                Console.WriteLine($"DTO created successfully. ProductionOrderId: {dto.ProductionOrderId}, Details count: {dto.Details?.Count ?? 0}");
+
                 if (!await _inventorySlipService.ValidateSlipCreationAsync(dto))
                 {
                     return BadRequest(new { message = "Dữ liệu không hợp lệ!" });
                 }
 
                 // Extract mappingInfo if present
-                object mappingInfo = null;
+                MappingInfoDto mappingInfo = null;
                 if (jsonElement.TryGetProperty("mappingInfo", out var mappingInfoElement))
                 {
-                    mappingInfo = System.Text.Json.JsonSerializer.Deserialize<object>(mappingInfoElement.GetRawText());
+                    Console.WriteLine("Found mappingInfo property");
+                    
+                    // Use proper deserialization options for case-insensitive property matching
+                    var mappingOptions = new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = null
+                    };
+                    
+                    mappingInfo = System.Text.Json.JsonSerializer.Deserialize<MappingInfoDto>(mappingInfoElement.GetRawText(), mappingOptions);
+                    Console.WriteLine($"mappingInfo deserialized: {System.Text.Json.JsonSerializer.Serialize(mappingInfo)}");
+                    
+                    // Debug: Check if properties are correctly mapped
+                    if (mappingInfo != null)
+                    {
+                        Console.WriteLine($"mappingInfo.ProductClassifications count: {mappingInfo.ProductClassifications?.Count ?? 0}");
+                        if (mappingInfo.ProductClassifications != null)
+                        {
+                            foreach (var pc in mappingInfo.ProductClassifications)
+                            {
+                                Console.WriteLine($"ProductClassification: Index={pc.Index}, ProductId={pc.ProductId}, ProductType={pc.ProductType}, ProductionOutputId={pc.ProductionOutputId}");
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No mappingInfo property found in request");
                 }
 
                 var result = await _inventorySlipService.CreateCutGlassSlipAsync(dto, mappingInfo);
@@ -266,6 +302,8 @@ namespace SEP490.Modules.InventorySlipModule.Controller
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error in CreateCutGlassSlip: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return BadRequest(new { message = "Tạo phiếu cắt kính thất bại!", error = ex.Message });
             }
         }

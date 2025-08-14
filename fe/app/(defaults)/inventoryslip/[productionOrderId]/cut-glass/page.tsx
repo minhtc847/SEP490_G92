@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { fetchProductionOrderInfo, ProductionOrderInfo, createCutGlassSlip, updateInventorySlip, addMappings } from '../../service';
+import { fetchProductionOrderInfo, ProductionOrderInfo, createCutGlassSlip, addMappings } from '../../service';
 import InventorySlipForm from '../../slip/InventorySlipForm';
 
 const CutGlassSlipPage = () => {
@@ -101,22 +101,7 @@ const CutGlassSlipPage = () => {
         }
     };
 
-    const handleSlipUpdated = async (slip: any) => {
-        try {
-            // Update the slip using the service
-            const updatedSlip = await updateInventorySlip(slip.id, slip);
-            
-            if (!updatedSlip) {
-                throw new Error('Failed to update slip');
-            }
 
-            alert('Cập nhật phiếu cắt kính thành công!');
-            router.push(`/inventoryslip/${productionOrderId}`);
-        } catch (error) {
-            console.error('Error updating slip:', error);
-            alert('Có lỗi xảy ra khi cập nhật phiếu');
-        }
-    };
 
     const handleCancel = () => {
         router.push(`/inventoryslip/${productionOrderId}`);
@@ -158,9 +143,7 @@ const CutGlassSlipPage = () => {
             <div className="bg-white border rounded-lg shadow-sm p-6">
                 <InventorySlipForm
                     productionOrderInfo={productionOrderInfo}
-                    existingSlip={null}
                     onSlipCreated={handleSlipCreated}
-                    onSlipUpdated={handleSlipUpdated}
                     onCancel={handleCancel}
                 />
             </div>

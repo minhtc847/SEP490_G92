@@ -4,8 +4,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { 
     fetchInventorySlipsByProductionOrder, 
     fetchProductionOrderInfo,
-    deleteInventorySlip,
-    updateInventorySlip,
     searchProducts,
     InventorySlip,
     ProductionOrderInfo,
@@ -131,64 +129,11 @@ const ProductionOrderInventorySlipPage = () => {
         setSelectedSlip(null);
     };
 
-    const handleSlipUpdated = async (updatedSlip: any) => {
-        try {
-            if (!updatedSlip || !updatedSlip.id) {
-                alert('Dữ liệu phiếu không hợp lệ - thiếu ID');
-                return;
-            }         
-        
-            const updateData = {
-                productionOrderId: updatedSlip.productionOrderId,
-                description: updatedSlip.description,
-                details: updatedSlip.details,
-                mappings: [] 
-            };
-            
-            // Call the API to update the slip on the backend
-            const result = await updateInventorySlip(updatedSlip.id, updateData);
-            
-            if (result) {                             
-                setInventorySlips(prev => prev.map(slip => 
-                    slip.id === result.id ? result : slip
-                ));
-                
-                setShowCreateForm(false);
-                setSelectedSlip(null);
-                
-                alert('Cập nhật phiếu kho thành công!');
-                
-                await loadData();
-            } else {
-                alert('Có lỗi xảy ra khi cập nhật phiếu kho');
-            }
-        } catch (error) {
-            console.error('handleSlipUpdated: Error updating slip:', error);
-            alert('Có lỗi xảy ra khi cập nhật phiếu kho');
-        }
-    };
 
-    const handleSlipDeleted = async (slipId: number) => {
-        try {
-            const success = await deleteInventorySlip(slipId);
-            
-            if (success) {
-                setInventorySlips(prev => {
-                    const newList = prev.filter(slip => slip.id !== slipId);
-                    return newList;
-                });
-            } else {
-                console.error('Failed to delete inventory slip');
-            }
-        } catch (error) {
-            console.error('Error deleting inventory slip:', error);
-        }
-    };
 
-    const handleEditSlip = (slip: InventorySlip) => {
-        setSelectedSlip(slip);
-        setShowCreateForm(true);
-    };
+
+
+
 
     const getSlipTypeText = (type: string | undefined) => {
         switch (type) {
@@ -871,7 +816,7 @@ const ProductionOrderInventorySlipPage = () => {
                                 )}
                             </div>
 
-                            {/* Save Changes Button */}
+                            {/* Cancel Button */}
                             <div className="flex justify-end space-x-4 pt-6 border-t">
                                 <button
                                     type="button"
@@ -883,34 +828,13 @@ const ProductionOrderInventorySlipPage = () => {
                                 >
                                     Hủy
                                 </button>
-                                <button
-                                    onClick={() => {
-                                        if (!selectedSlip.description?.trim()) {
-                                            alert('Vui lòng nhập mô tả phiếu');
-                                            return;
-                                        }
-                                        
-                                        const invalidDetails = selectedSlip.details?.filter(d => d.quantity <= 0);
-                                        if (invalidDetails && invalidDetails.length > 0) {
-                                            alert('Vui lòng nhập số lượng > 0 cho tất cả sản phẩm');
-                                            return;
-                                        }
-                                        
-                                        handleSlipUpdated(selectedSlip!);
-                                    }}
-                                    className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600"
-                                >
-                                    💾 Lưu thay đổi
-                                </button>
                             </div>
                         </div>
                     ) : (
                         // Create Form 
                         <InventorySlipForm
                             productionOrderInfo={productionOrderInfo}
-                            existingSlip={selectedSlip}
                             onSlipCreated={handleSlipCreated}
-                            onSlipUpdated={handleSlipUpdated}
                             onCancel={() => {
                                 setShowCreateForm(false);
                                 setSelectedSlip(null);
@@ -925,8 +849,6 @@ const ProductionOrderInventorySlipPage = () => {
                 <h3 className="text-lg font-semibold mb-4">Danh sách phiếu kho</h3>
                 <InventorySlipList
                     slips={inventorySlips}
-                    onEdit={handleEditSlip}
-                    onDelete={handleSlipDeleted}
                     onRefresh={loadData}
                 />
             </div>

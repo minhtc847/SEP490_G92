@@ -5,17 +5,13 @@ import { CreateInventorySlipDto, CreateInventorySlipDetailDto, CreateMaterialOut
 
 interface InventorySlipFormProps {
     productionOrderInfo: ProductionOrderInfo;
-    existingSlip?: any;
     onSlipCreated: (slip: any, mappingInfo?: any) => void;
-    onSlipUpdated?: (slip: any) => void;
     onCancel: () => void;
 }
 
 export default function InventorySlipForm({ 
     productionOrderInfo, 
-    existingSlip, 
     onSlipCreated, 
-    onSlipUpdated, 
     onCancel 
 }: InventorySlipFormProps) {
     const [formData, setFormData] = useState<CreateInventorySlipDto>({
@@ -42,52 +38,18 @@ export default function InventorySlipForm({
         unitPrice: '',
         quantity: '',
         note: ''
-    });    
-
+    });
+    
     const [productSearch, setProductSearch] = useState('');
     const [selectedProduct, setSelectedProduct] = useState<ProductInfo | null>(null);
     const [isCreatingNewProduct, setIsCreatingNewProduct] = useState(false);
     const [selectedRawMaterial, setSelectedRawMaterial] = useState<CreateInventorySlipDetailDto | null>(null);
     const [rawMaterialDetailIndices, setRawMaterialDetailIndices] = useState<Set<number>>(new Set());
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     const isCutGlassSlip = productionOrderInfo.type === 'Cắt kính';
 
-    useEffect(() => {
-        if (existingSlip) {
-            setFormData({
-                productionOrderId: existingSlip.productionOrderId,
-                description: existingSlip.description || '',
-                details: existingSlip.details || [],
-                mappings: []
-            });
-            
-            if (existingSlip.details && existingSlip.details.length > 0) {
-                const newMappingDisplay: {[key: number]: number[]} = {};
-                const newTempMappings: CreateMaterialOutputMappingDto[] = [];
-                
-                existingSlip.details.forEach((detail: any, detailIndex: number) => {
-                    if (detail.outputMappings && detail.outputMappings.length > 0) {
-                        detail.outputMappings.forEach((mapping: any) => {
-                            const outputIndex = existingSlip.details.findIndex((d: any) => d.id === mapping.outputDetailId);
-                            if (outputIndex !== -1) {
-                                if (!newMappingDisplay[detailIndex]) newMappingDisplay[detailIndex] = [];
-                                newMappingDisplay[detailIndex].push(outputIndex);                                
-                                
-                                newTempMappings.push({
-                                    inputDetailId: detailIndex,
-                                    outputDetailId: outputIndex, 
-                                    note: mapping.note || ''
-                                });
-                            }
-                        });
-                    }
-                });
-                
-                setMappingDisplay(newMappingDisplay);
-                setTempMappings(newTempMappings);
-            }
-        }
-    }, [existingSlip]);
+
 
     const handleAddDetail = () => {
         const newDetail: CreateInventorySlipDetailDto = {
@@ -117,13 +79,13 @@ export default function InventorySlipForm({
             ...prev,
             details: prev.details.filter((_: CreateInventorySlipDetailDto, i: number) => i !== index)
         }));
-       
+
         setRawMaterialDetailIndices(prev => {
             const updated = new Set<number>();
             prev.forEach((i: number) => {
-                if (i === index) {                   
+                if (i === index) {
                     return;
-                }                
+                }
                 updated.add(i > index ? i - 1 : i);
             });
             return updated;
@@ -144,8 +106,8 @@ export default function InventorySlipForm({
             setTempMappings((prev: CreateMaterialOutputMappingDto[]) => {
                 const newMappings = [...prev, mapping];
                 return newMappings;
-            });            
-
+            });
+            
             setMappingDisplay(prev => {
                 const newDisplay = {
                     ...prev,
@@ -242,23 +204,23 @@ export default function InventorySlipForm({
                         note: `Tự động mapping từ Kính dư mới`
                     };
                     
-                    setTempMappings((prev: CreateMaterialOutputMappingDto[]) => [...prev, mapping]);                    
-
+                    setTempMappings((prev: CreateMaterialOutputMappingDto[]) => [...prev, mapping]);
+                    
                     setMappingDisplay(prev => ({
                         ...prev,
                         [inputDetailIndex]: [...(prev[inputDetailIndex] || []), newDetailIndex]
-                    }));                    
-
+                    }));
+                    
                     const rawMaterialName = productionOrderInfo.rawMaterials?.find(p => p.id === selectedRawMaterial.productId)?.productName;
                     alert(`Kính dư mới đã được tạo và tự động mapping vào nguyên vật liệu: ${rawMaterialName}`);
                     
                     setSelectedRawMaterial(null);
                 }
             }
-                        
+
              if (newProduct.productType === 'NVL' && productionOrderInfo.rawMaterials) {
                  productionOrderInfo.rawMaterials.push(newProductInfo);
-             } else if (newProduct.productType === 'Kính dư' && productionOrderInfo.rawMaterials) {                
+             } else if (newProduct.productType === 'Kính dư' && productionOrderInfo.rawMaterials) {
                  productionOrderInfo.rawMaterials.push(newProductInfo);
              }
 
@@ -319,20 +281,20 @@ export default function InventorySlipForm({
             });
 
             if (!hasRawMaterial) {
-                alert('Phiếu cắt kính phải có ít nhất một nguyên vật liệu (kính lớn)');
+                alert('Phiếu kho phải có ít nhất một nguyên vật liệu (kính lớn)');
                 return;
             }
 
             if (!hasOutputProduct) {
-                alert('Phiếu cắt kính phải có ít nhất một sản phẩm đầu ra (bán thành phẩm hoặc kính dư)');
+                alert('Phiếu kho phải có ít nhất một sản phẩm đầu ra (bán thành phẩm hoặc kính dư)');
                 return;
             }
-            
-            const rawMaterialDetails = formData.details.filter((detail, index) => {                
+
+            const rawMaterialDetails = formData.details.filter((detail, index) => {
                 return rawMaterialDetailIndices.has(index);
             });
 
-            const unmappedRawMaterials = rawMaterialDetails.filter((detail, index) => {                
+            const unmappedRawMaterials = rawMaterialDetails.filter((detail, index) => {
                 const hasMapping = tempMappings.some(mapping => mapping.inputDetailId === index);
                 return !hasMapping;
             });
@@ -346,31 +308,20 @@ export default function InventorySlipForm({
                 return;
             }
         }
-        
-        if (existingSlip && onSlipUpdated) {            
-            if (isCutGlassSlip) {               
-                const formDataWithMappings = {
-                    ...formData,
-                    id: existingSlip.id, // Include the ID for update operations
-                    mappings: tempMappings
-                };
-                onSlipUpdated(formDataWithMappings);
-            } else {
-                const formDataWithId = {
-                    ...formData,
-                    id: existingSlip.id 
-                };
-                onSlipUpdated(formDataWithId);
-            }
-        } else {
-            // Create new slip
+
+        // Show confirmation popup instead of creating slip immediately
+        setShowConfirmModal(true);
+    };
+
+    const handleConfirmCreate = () => {
+        // Create new slip after confirmation
             if (isCutGlassSlip) {
                 const mappingInfo = {
                     tempMappings,
-                    productClassifications: formData.details.map((detail, index) => {                        
+                    productClassifications: formData.details.map((detail, index) => {
                         const isRawMaterial = rawMaterialDetailIndices.has(index);
                         const isSemiFinished = productionOrderInfo.productionOutputs?.some(po => po.productId === detail.productId);
-                                               
+                        
                         let finalProductionOutputId = detail.productionOutputId;
                         if (isSemiFinished && !finalProductionOutputId) {
                             const correspondingProductionOutput = productionOrderInfo.productionOutputs?.find(
@@ -381,7 +332,7 @@ export default function InventorySlipForm({
                             }
                         }
                         
-                        return {
+                    const classification = {
                             index,
                             productId: detail.productId,
                             productType: isRawMaterial ? 'NVL' : 
@@ -389,14 +340,24 @@ export default function InventorySlipForm({
                                         'Kính dư', // Everything else is glass remnant
                             productionOutputId: finalProductionOutputId
                         };
-                    })
-                };
+                    
+                    console.log(`Classification for detail ${index}:`, classification);
+                    return classification;
+                })
+            };
+            
+            console.log('Final mappingInfo:', mappingInfo);
+            console.log('productClassifications count:', mappingInfo.productClassifications.length);
+            console.log('formData.details:', formData.details);
+            console.log('rawMaterialDetailIndices:', Array.from(rawMaterialDetailIndices));
+            console.log('productionOrderInfo.productionOutputs:', productionOrderInfo.productionOutputs);
                 
                 onSlipCreated(formData, mappingInfo);
             } else {
                 onSlipCreated(formData);
             }
-        }
+        
+        setShowConfirmModal(false);
     };
 
 
@@ -417,16 +378,16 @@ export default function InventorySlipForm({
     };
 
     const handleProductSearch = (searchValue: string) => {
-        setProductSearch(searchValue);        
-
+        setProductSearch(searchValue);
+        
         let foundProduct: ProductInfo | null = null;
         
         if (newProduct.productType === 'Kính dư') {
             foundProduct = productionOrderInfo.rawMaterials?.find(p => 
                 p.productName?.toLowerCase().includes(searchValue.toLowerCase())
             ) || null;
-        } else if (newProduct.productType === 'Bán thành phẩm') {            
-            const linkedSemiFinishedProducts = productionOrderInfo.semiFinishedProducts?.filter(p => {                
+        } else if (newProduct.productType === 'Bán thành phẩm') {
+            const linkedSemiFinishedProducts = productionOrderInfo.semiFinishedProducts?.filter(p => {
                 return productionOrderInfo.productionOutputs?.some(po => po.productId === p.id);
             }) || [];
             
@@ -492,11 +453,11 @@ export default function InventorySlipForm({
                 setMappingDisplay(prev => ({
                     ...prev,
                     [inputDetailIndex]: [...(prev[inputDetailIndex] || []), newDetailIndex]
-                }));                
+                }));
                 
                 const rawMaterialName = productionOrderInfo.rawMaterials?.find(p => p.id === selectedRawMaterial.productId)?.productName;
                 alert(`Sản phẩm có sẵn đã được thêm và tự động mapping vào nguyên vật liệu: ${rawMaterialName}`);
-                              
+                
                 setSelectedRawMaterial(null);
             }
         }
@@ -588,20 +549,20 @@ export default function InventorySlipForm({
                         note: `Tự động mapping từ Kính dư mới`
                     };
                     
-                    setTempMappings((prev: CreateMaterialOutputMappingDto[]) => [...prev, mapping]);                    
+                    setTempMappings((prev: CreateMaterialOutputMappingDto[]) => [...prev, mapping]);
                     
                     setMappingDisplay(prev => ({
                         ...prev,
                         [inputDetailIndex]: [...(prev[inputDetailIndex] || []), newDetailIndex]
-                    }));                    
-                   
+                    }));
+                    
                     const rawMaterialName = productionOrderInfo.rawMaterials?.find(p => p.id === selectedRawMaterial.productId)?.productName;
                     alert(`Kính dư mới đã được thêm và tự động mapping vào nguyên vật liệu: ${rawMaterialName}`);
-                             
+                    
                     setSelectedRawMaterial(null);
                 }
             }
-            
+
              if (productionOrderInfo.rawMaterials) {
                  productionOrderInfo.rawMaterials.push(newProductInfo);
              }
@@ -639,9 +600,9 @@ export default function InventorySlipForm({
         if (!newProduct.quantity || parseFloat(newProduct.quantity) <= 0) {
             alert('Vui lòng nhập số lượng > 0');
             return;
-        }        
+        }
         
-        const hasRawMaterials = formData.details.some((detail, index) => {            
+        const hasRawMaterials = formData.details.some((detail, index) => {
             return rawMaterialDetailIndices.has(index);
         });
         
@@ -665,7 +626,7 @@ export default function InventorySlipForm({
         
         if (correspondingProductionOutput) {
             newDetail.productionOutputId = correspondingProductionOutput.id;
-        } else {            
+        } else {
             alert('Không tìm thấy thông tin đầu ra sản xuất cho bán thành phẩm đã chọn. Vui lòng liên hệ quản trị viên.');
             return;
         }
@@ -674,7 +635,7 @@ export default function InventorySlipForm({
         setFormData((prev: CreateInventorySlipDto) => ({
             ...prev,
             details: [...prev.details, newDetail]
-        }));      
+        }));
         // Auto-mapping for cut glass slips: ONLY when user explicitly selects a raw material
         if (isCutGlassSlip && selectedRawMaterial) {
             const inputDetailIndex = formData.details.findIndex(d => d.productId === selectedRawMaterial.productId);
@@ -691,8 +652,8 @@ export default function InventorySlipForm({
                 setMappingDisplay(prev => ({
                     ...prev,
                     [inputDetailIndex]: [...(prev[inputDetailIndex] || []), newDetailIndex]
-                }));                
-
+                }));
+                
                 const rawMaterialName = productionOrderInfo.rawMaterials?.find(p => p.id === selectedRawMaterial.productId)?.productName;
                 alert(`Bán thành phẩm đã được thêm và tự động mapping vào nguyên vật liệu: ${rawMaterialName}`);
                 
@@ -723,7 +684,7 @@ export default function InventorySlipForm({
     return (
         <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow">
             <h2 className="text-2xl font-bold mb-6">
-                {existingSlip ? 'Chỉnh sửa phiếu kho' : 'Tạo phiếu kho mới'}
+                Tạo phiếu kho mới
             </h2>
 
             <form onSubmit={handleSubmit}>
@@ -885,8 +846,8 @@ export default function InventorySlipForm({
                                                  >
                                                      Xóa
                                                  </button>
-                                             </div>                                             
-
+                                             </div>
+                                             
                                              {mappingDisplay[index] && mappingDisplay[index].length > 0 && (
                                                  <div className="mt-3 p-3 bg-green-50 rounded-md border border-green-200">
                                                      <h5 className="text-sm font-medium text-green-800 mb-2">
@@ -1138,7 +1099,7 @@ export default function InventorySlipForm({
                              <div className="mb-4">
                                  <h5 className="text-md font-medium text-yellow-700 mb-3">Kính dư (Tái sử dụng)</h5>
                                  <div className="space-y-3">
-                                     {formData.details.map((detail, index) => {                                         
+                                     {formData.details.map((detail, index) => {
                                          const isRawMaterial = rawMaterialDetailIndices.has(index);
                                          const isSemiFinished = detail.productionOutputId || 
                                              productionOrderInfo.productionOutputs?.some(po => po.productId === detail.productId);
@@ -1393,9 +1354,6 @@ export default function InventorySlipForm({
                                         <p className="text-xs text-blue-600 mt-1">
                                             <strong>Lưu ý:</strong> Chỉ hiển thị những bán thành phẩm được liên kết với lệnh sản xuất này
                                         </p>
-                                        <p className="text-xs text-yellow-600 mt-1">
-                                            <strong>Lưu ý:</strong> Kính dư được lưu với product_type là "NVL" và hiển thị tất cả có sẵn
-                                        </p>
                                     </div>
                                 </div>
                             )}
@@ -1615,6 +1573,47 @@ export default function InventorySlipForm({
                     </div>
                 )}
 
+                {/* Confirmation Modal */}
+                {showConfirmModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                            <div className="flex items-center mb-4">
+                                <div className="flex-shrink-0">
+                                    <svg className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div className="ml-3">
+                                    <h3 className="text-lg font-medium text-gray-900">
+                                        Xác nhận tạo phiếu
+                                    </h3>
+                                </div>
+                            </div>
+                            <div className="mt-2">
+                                <p className="text-sm text-gray-500">
+                                    Bạn có chắc chắn muốn tạo phiếu kho này không? Hành động này sẽ cập nhật số lượng hoàn thành trong kế hoạch sản xuất.
+                                </p>
+                            </div>
+                            <div className="mt-4 flex justify-end space-x-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmModal(false)}
+                                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                                >
+                                    Hủy
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmCreate}
+                                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                                >
+                                    Xác nhận
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Form Actions */}
                 <div className="flex justify-end space-x-4 pt-6 border-t">
                     <button
@@ -1628,11 +1627,10 @@ export default function InventorySlipForm({
                         type="submit"
                         className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600"
                     >
-                        {existingSlip ? 'Cập nhật' : 'Tạo phiếu'}
+                        Tạo phiếu
                     </button>
                 </div>
             </form>
-            
         </div>
     );
 }

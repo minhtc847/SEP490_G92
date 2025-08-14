@@ -110,9 +110,7 @@ const ChemicalExportSlipPage = () => {
             <div className="panel">
                 <InventorySlipForm
                     productionOrderInfo={productionOrderInfo}
-                    existingSlip={null}
                     onSlipCreated={handleSlipCreated}
-                    onSlipUpdated={handleSlipUpdated}
                     onCancel={handleCancel}
                 />
             </div>

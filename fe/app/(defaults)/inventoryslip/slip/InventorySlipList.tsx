@@ -1,21 +1,16 @@
 'use client';
 import { useState } from 'react';
 import { InventorySlip, InventorySlipDetail, MaterialOutputMappingDto } from '../service';
-import IconEdit from '@/components/icon/icon-edit';
-import IconTrash from '@/components/icon/icon-trash';
 import IconEye from '@/components/icon/icon-eye';
 import IconArrowLeft from '@/components/icon/icon-arrow-left';
 
 interface InventorySlipListProps {
     slips: InventorySlip[];
-    onEdit: (slip: InventorySlip) => void;
-    onDelete: (slipId: number) => void;
     onRefresh: () => void;
 }
 
-const InventorySlipList = ({ slips, onEdit, onDelete, onRefresh }: InventorySlipListProps) => {
+const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
     const [expandedSlips, setExpandedSlips] = useState<Set<number>>(new Set());
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
 
     const toggleExpanded = (slipId: number) => {
         const newExpanded = new Set(expandedSlips);
@@ -27,10 +22,7 @@ const InventorySlipList = ({ slips, onEdit, onDelete, onRefresh }: InventorySlip
         setExpandedSlips(newExpanded);
     };
 
-    const handleDelete = (slipId: number) => {
-        setShowDeleteConfirm(null);
-        onDelete(slipId);
-    };
+
 
     const getSlipTypeText = (productionOrderType: string | undefined) => {
         switch (productionOrderType) {
@@ -82,20 +74,6 @@ const InventorySlipList = ({ slips, onEdit, onDelete, onRefresh }: InventorySlip
                                 >
                                     <IconEye className="w-4 h-4" />
                                     {expandedSlips.has(slip.id) ? ' Thu gọn' : ' Chi tiết'}
-                                </button>
-                                <button
-                                    onClick={() => onEdit(slip)}
-                                    className="px-3 py-1 text-sm border border-blue-600 text-blue-600 bg-white hover:bg-blue-50 rounded-md transition-colors"
-                                    title="Chỉnh sửa"
-                                >
-                                    <IconEdit className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => setShowDeleteConfirm(slip.id)}
-                                    className="px-3 py-1 text-sm border border-red-300 text-red-700 bg-white hover:bg-red-50 rounded-md transition-colors"
-                                    title="Xóa"
-                                >
-                                    <IconTrash className="w-4 h-4" />
                                 </button>
                             </div>
                         </div>
@@ -157,31 +135,7 @@ const InventorySlipList = ({ slips, onEdit, onDelete, onRefresh }: InventorySlip
                 </div>
             ))}
 
-            {/* Delete Confirmation Modal */}
-            {showDeleteConfirm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                        <h3 className="text-lg font-semibold mb-4">Xác nhận xóa</h3>
-                        <p className="text-gray-600 mb-6">
-                            Bạn có chắc chắn muốn xóa phiếu này? Hành động này không thể hoàn tác.
-                        </p>
-                        <div className="flex justify-end gap-3">
-                            <button
-                                onClick={() => setShowDeleteConfirm(null)}
-                                className="px-4 py-2 border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 rounded-md transition-colors"
-                            >
-                                Hủy
-                            </button>
-                            <button
-                                onClick={() => handleDelete(showDeleteConfirm)}
-                                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-                            >
-                                Xóa
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+
         </div>
     );
 };
