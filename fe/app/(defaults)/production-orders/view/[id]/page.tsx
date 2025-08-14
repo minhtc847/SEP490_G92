@@ -11,6 +11,7 @@ import ListChemicalExport from "@/components/VNG/manager/chemical-export/list-ch
 import type { Chemical, Product } from "@/app/(defaults)/production-plans/service"
 import ListExportsPO from "@/components/VNG/manager/production-plans/list-export-glue-components"
 import ProtectedRoute from "@/components/auth/ProtectedRoute"
+import externalAxios from "@/setup/axios"
 
 // Helper functions để convert UOM giữa int và string
 const convertUOMToString = (uom: number | string): string => {
@@ -177,9 +178,9 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   }
 
   useEffect(() => {
-    fetch(`https://localhost:7075/api/ProductionAccountantControllers/production-ordersDetails/${params.id}`)
-      .then((res) => res.json())
-      .then((data: ProductItem[]) => {
+    externalAxios.get(`/api/ProductionAccountantControllers/production-ordersDetails/${params.id}`)
+      .then((response) => {
+        const data: ProductItem[] = response.data
         console.log("Dữ liệu thành phẩm nhận được:", data)
 
         // Convert UOM từ int sang string cho hiển thị
@@ -226,21 +227,13 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     }
 
     const outputId = selectedProductData.outputId
-    const url = `https://localhost:7075/api/ProductionAccountantControllers/products-materials-by-output/${outputId}`
     console.log("Fetching materials with outputId:", outputId, "for product:", selectedProduct)
 
-    fetch(url)
-      .then((res) => {
-        if (res.status === 404) return { notFound: true }
-        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`)
-        return res.json()
-      })
-      .then((data: ApiResponse | { notFound: boolean }) => {
+    externalAxios.get(`/api/ProductionAccountantControllers/products-materials-by-output/${outputId}`)
+      .then((response) => {
+        const data: ApiResponse = response.data
         console.log("Materials data received:", data)
-        if ("notFound" in data) {
-          setCurrentMaterials([])
-          return
-        }
+        
         if (data && data.materials && Array.isArray(data.materials)) {
           const selectedProductQuantity = getSelectedProductQuantity()
 
@@ -267,9 +260,9 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   }, [params.id, selectedProduct, finishedProducts])
 
   useEffect(() => {
-    fetch(`https://localhost:7075/api/ProductionAccountantControllers/production-order-info/${params.id}`)
-      .then((res) => res.json())
-      .then((data) => {
+    externalAxios.get(`/api/ProductionAccountantControllers/production-order-info/${params.id}`)
+      .then((response) => {
+        const data = response.data
         if (data?.description) setOrderDescription(data.description)
       })
   }, [params.id])
@@ -310,23 +303,18 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   const fetchAllProducts = async () => {
     setIsLoadingAllProducts(true)
     try {
-      const response = await fetch(`https://localhost:7075/api/Product`)
-      if (response.ok) {
-        const allProducts = await response.json()
-        console.log("📦 Raw products from API:", allProducts) // Log raw data
+      const response = await externalAxios.get(`/api/Product`)
+      const allProducts = response.data
+      console.log("📦 Raw products from API:", allProducts) // Log raw data
 
-        const processedProducts = allProducts.map((product: ProductItem) => {
-          return {
-            ...product,
-            uom: convertUOMToString(product.uom),
-          }
-        })
-        console.log("📦 All products (no type filter):", processedProducts)
-        setAllProducts(processedProducts)
-      } else {
-        console.error("API trả về lỗi:", response.status, response.statusText)
-        setAllProducts([])
-      }
+      const processedProducts = allProducts.map((product: ProductItem) => {
+        return {
+          ...product,
+          uom: convertUOMToString(product.uom),
+        }
+      })
+      console.log("📦 All products (no type filter):", processedProducts)
+      setAllProducts(processedProducts)
     } catch (error) {
       console.error("Lỗi khi gọi API:", error)
       setAllProducts([])
