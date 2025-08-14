@@ -21,7 +21,7 @@ namespace SEP490.Selenium.Product
         private void InitSelenium()
         {
             var options = new ChromeOptions();
-            options.AddArgument("--headless=new");
+            //options.AddArgument("--headless=new");
             options.AddArgument("--lang=vi-VN");
             options.AddArgument("--no-sandbox");
             options.AddArgument("--disable-dev-shm-usage");
