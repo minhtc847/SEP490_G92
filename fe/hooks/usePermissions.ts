@@ -100,7 +100,8 @@ const getRolePermissions = (roleId: number): string[] => {
                 'production.view',
                 'customers.view',
                 'quotes.view', 'quotes.create', 'quotes.edit',
-                'reports.view', 'reports.create'
+                'reports.view', 'reports.create',
+                'inventoryslip.view'
             ];
         case 3: // Bộ phận sản xuất
             return [

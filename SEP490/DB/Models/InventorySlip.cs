@@ -4,8 +4,6 @@ public class InventorySlip
 {
     public int Id { get; set; }
     public string? SlipCode { get; set; }
-    public DateTime SlipDate { get; set; }
-    public TransactionType TransactionType { get; set; }
     public string? Description { get; set; }
     
     // Foreign key references
@@ -20,10 +18,4 @@ public class InventorySlip
     // Timestamps
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
-}
-
-public enum TransactionType
-{
-    In,     // Nhập kho
-    Out     // Xuất kho
 }

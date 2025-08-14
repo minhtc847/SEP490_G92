@@ -316,8 +316,8 @@ const Sidebar = () => {
             </li>
         );
 
-        // Inventory Slip Management - Production Staff and Factory Manager
-        if (isProductionStaff() || isFactoryManager()) {
+        // Inventory Slip Management - Production Staff, Factory Manager, and Accountant
+        if (isProductionStaff() || isFactoryManager() || isAccountant()) {
             items.push(
                 <li key="inventoryslip" className="menu nav-item">
                     <Link href="/inventoryslip" className="nav-link group w-full">

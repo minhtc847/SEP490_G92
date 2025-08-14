@@ -2,8 +2,6 @@
 export interface InventorySlipListItem {
     id: number;
     slipCode: string;
-    slipDate: string;
-    transactionType: string;
     description?: string;
     productionOrderId: number;
     productionOrderCode?: string;
@@ -39,8 +37,6 @@ export interface MaterialOutputMappingDto {
 export interface InventorySlip {
     id: number;
     slipCode: string;
-    slipDate: string;
-    transactionType: string;
     description?: string;
     productionOrderId: number;
     productionOrderCode?: string;
@@ -54,10 +50,9 @@ export interface InventorySlip {
 
 export interface CreateInventorySlipDto {
     productionOrderId: number;
-    transactionType: string;
     description?: string;
     details: CreateInventorySlipDetailDto[];
-    mappings?: CreateMaterialOutputMappingDto[];
+    mappings: CreateMaterialOutputMappingDto[];
 }
 
 export interface CreateInventorySlipDetailDto {
@@ -122,6 +117,27 @@ export interface CreateInventoryProductDto {
     thickness?: number;
     weight?: number;
     unitPrice?: number;
+}
+
+// New interfaces for pagination
+export interface PaginatedProductsDto {
+    products: ProductInfo[];
+    totalCount: number;
+    pageNumber: number;
+    pageSize: number;
+    totalPages: number;
+    hasPreviousPage: boolean;
+    hasNextPage: boolean;
+}
+
+export interface ProductSearchRequestDto {
+    productionOrderId: number;
+    productType?: string; // "NVL", "Bán thành phẩm", "Kính dư"
+    searchTerm?: string;
+    pageNumber: number;
+    pageSize: number;
+    sortBy?: string; // "ProductName", "ProductCode", "Id"
+    sortDescending: boolean;
 }
 
 // API calls
@@ -195,20 +211,25 @@ export const createInventorySlip = async (dto: CreateInventorySlipDto): Promise<
     }
 };
 
-export const createCutGlassSlip = async (dto: CreateInventorySlipDto): Promise<InventorySlip | null> => {
+export const createCutGlassSlip = async (dto: CreateInventorySlipDto, mappingInfo?: any): Promise<InventorySlip | null> => {
     try {
+        // Prepare request body with both dto and mappingInfo
+        const requestBody = mappingInfo ? { formData: dto, mappingInfo } : dto;
+        
         const response = await fetch(`${API_BASE}/cut-glass`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 ...authHeaders(),
             },
-            body: JSON.stringify(dto),
+            body: JSON.stringify(requestBody),
         });
         if (!response.ok) {
             throw new Error('Failed to create cut glass slip');
         }
         const json = await response.json();
+        console.log('createCutGlassSlip response:', json);
+        console.log('createCutGlassSlip response.data:', json?.data);
         return json?.data ?? json;
     } catch (error) {
         console.error('Error creating cut glass slip:', error);
@@ -335,6 +356,27 @@ export const updateInventorySlip = async (id: number, dto: CreateInventorySlipDt
         return json?.data ?? json;
     } catch (error) {
         console.error('Error updating inventory slip:', error);
+        return null;
+    }
+};
+
+// Paginated product search for cut glass slips
+export const searchProducts = async (request: ProductSearchRequestDto): Promise<PaginatedProductsDto | null> => {
+    try {
+        const response = await fetch(`${API_BASE}/products/search`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...authHeaders(),
+            },
+            body: JSON.stringify(request),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to search products');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error searching products:', error);
         return null;
     }
 };

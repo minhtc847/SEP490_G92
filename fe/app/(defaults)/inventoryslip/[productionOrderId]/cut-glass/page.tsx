@@ -51,7 +51,7 @@ const CutGlassSlipPage = () => {
     const handleSlipCreated = async (slip: any, mappingInfo?: any) => {
         try {
             // Create the slip using the service
-            const createdSlip = await createCutGlassSlip(slip);
+            const createdSlip = await createCutGlassSlip(slip, mappingInfo);
             
             if (!createdSlip) {
                 throw new Error('Failed to create slip');
@@ -59,8 +59,13 @@ const CutGlassSlipPage = () => {
 
             // If we have mapping info, process it
             if (mappingInfo && mappingInfo.tempMappings && mappingInfo.tempMappings.length > 0) {
+                // Safety check for createdSlip.details
+                if (!createdSlip.details || !Array.isArray(createdSlip.details)) {
+                    throw new Error('Created slip details is invalid');
+                }
+                
                 // Convert index-based mappings to actual detail IDs
-                const actualMappings = mappingInfo.tempMappings.map(mapping => {
+                const actualMappings = mappingInfo.tempMappings.map((mapping: any) => {
                     // Find the actual detail IDs by matching product IDs
                     const inputDetail = createdSlip.details.find(d => 
                         d.productId === slip.details[mapping.inputDetailId]?.productId
@@ -74,7 +79,7 @@ const CutGlassSlipPage = () => {
                         outputDetailId: outputDetail?.id || 0,
                         note: mapping.note
                     };
-                }).filter(m => m.inputDetailId > 0 && m.outputDetailId > 0);
+                }).filter((m: any) => m.inputDetailId > 0 && m.outputDetailId > 0);
 
                 if (actualMappings.length > 0) {
                     const mappingSuccess = await addMappings(createdSlip.id, actualMappings);
@@ -88,7 +93,11 @@ const CutGlassSlipPage = () => {
             router.push(`/inventoryslip/${productionOrderId}`);
         } catch (error) {
             console.error('Error creating slip:', error);
-            alert('Có lỗi xảy ra khi tạo phiếu');
+            if (error instanceof Error) {
+                alert(`Có lỗi xảy ra khi tạo phiếu: ${error.message}`);
+            } else {
+                alert('Có lỗi xảy ra khi tạo phiếu');
+            }
         }
     };
 
@@ -116,7 +125,7 @@ const CutGlassSlipPage = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
-                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
             </div>
         );
     }
@@ -127,7 +136,7 @@ const CutGlassSlipPage = () => {
                 <h2 className="text-xl text-red-500">Không tìm thấy thông tin lệnh sản xuất</h2>
                 <button
                     onClick={() => router.push('/inventoryslip')}
-                    className="btn btn-primary mt-4"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors mt-4"
                 >
                     Quay lại danh sách
                 </button>
@@ -146,7 +155,7 @@ const CutGlassSlipPage = () => {
                 </div>
             </div>
 
-            <div className="panel">
+            <div className="bg-white border rounded-lg shadow-sm p-6">
                 <InventorySlipForm
                     productionOrderInfo={productionOrderInfo}
                     existingSlip={null}

@@ -32,22 +32,6 @@ const InventorySlipList = ({ slips, onEdit, onDelete, onRefresh }: InventorySlip
         onDelete(slipId);
     };
 
-    const getTransactionTypeText = (type: string) => {
-        switch (type) {
-            case 'In': return 'Nhập kho';
-            case 'Out': return 'Xuất kho';
-            default: return type;
-        }
-    };
-
-    const getTransactionTypeBadge = (type: string) => {
-        switch (type) {
-            case 'In': return 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200';
-            case 'Out': return 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200';
-            default: return 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200';
-        }
-    };
-
     const getSlipTypeText = (productionOrderType: string | undefined) => {
         switch (productionOrderType) {
             case 'Cắt kính': return 'Phiếu cắt kính';
@@ -78,15 +62,12 @@ const InventorySlipList = ({ slips, onEdit, onDelete, onRefresh }: InventorySlip
                                     <h4 className="text-lg font-semibold text-blue-600">
                                         {slip.slipCode}
                                     </h4>
-                                    <span className={`${getTransactionTypeBadge(slip.transactionType)}`}>
-                                        {getTransactionTypeText(slip.transactionType)}
-                                    </span>
-                                    <span className="text-sm text-gray-600">
+                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200`}>
                                         {getSlipTypeText(slip.productionOrderType)}
                                     </span>
                                 </div>
                                 <div className="text-sm text-gray-600">
-                                    <p><strong>Ngày tạo:</strong> {new Date(slip.slipDate).toLocaleDateString()}</p>
+                                    <p><strong>Ngày tạo:</strong> {new Date(slip.createdAt).toLocaleDateString()}</p>
                                     <p><strong>Người tạo:</strong> {slip.createdByEmployeeName}</p>
                                     {slip.description && (
                                         <p><strong>Mô tả:</strong> {slip.description}</p>
@@ -220,19 +201,29 @@ const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
     };
 
     // Separate raw materials from output products
-    const rawMaterials = slip.details.filter(detail => 
-        detail.productType === 'NVL' || detail.productType === 'Nguyên vật liệu'
-    );
+    // Check for all possible raw material productType values
+    const rawMaterials = slip.details.filter(detail => {
+        const isRawMaterial = detail.productType === 'NVL' || 
+                             detail.productType === 'Nguyên vật liệu' || 
+                             detail.productType === 'raw_material';
+        
+        return isRawMaterial;
+    });
     
-    const outputProducts = slip.details.filter(detail => 
-        detail.productType !== 'NVL' && detail.productType !== 'Nguyên vật liệu'
-    );
+    const outputProducts = slip.details.filter(detail => {
+        const isOutputProduct = detail.productType === 'Bán thành phẩm' || 
+                               detail.productType === 'BTP' || 
+                               detail.productType === 'semi_finished' ||
+                               detail.productType === 'Kính dư' ||
+                               detail.productType === 'Kính';
+        
+        return isOutputProduct;
+    });
 
     // Create a mapping from raw material to its output products
     const materialOutputMap = new Map<number, InventorySlipDetail[]>();
     
-    // For now, we'll use a simple heuristic: if there are mappings in the detail, use them
-    // Otherwise, we'll show all output products for each raw material
+    // Use the actual mappings from the backend
     rawMaterials.forEach(material => {
         if (material.outputMappings && material.outputMappings.length > 0) {
             // Use actual mappings if available
@@ -243,8 +234,8 @@ const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
             
             materialOutputMap.set(material.id, outputs);
         } else {
-            // Fallback: show all output products for each raw material
-            materialOutputMap.set(material.id, outputProducts);
+            // If no mappings, show empty array (don't show all output products)
+            materialOutputMap.set(material.id, []);
         }
     });
 
@@ -307,15 +298,15 @@ const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center space-x-2">
-                                                                                                                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                                                 output.productType === 'Bán thành phẩm' || output.productType === 'BTP' 
-                                                                     ? 'bg-green-100 text-green-800 border border-green-200' 
-                                                                     : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                                                             }`}>
-                                                                 {output.productType === 'Bán thành phẩm' || output.productType === 'BTP' 
-                                                                     ? 'Bán thành phẩm' 
-                                                                     : 'Kính dư'}
-                                                             </span>
+                                                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                                                output.productType === 'Bán thành phẩm' || output.productType === 'BTP' || output.productType === 'semi_finished'
+                                                                    ? 'bg-green-100 text-green-800 border border-green-200' 
+                                                                    : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                                                            }`}>
+                                                                {output.productType === 'Bán thành phẩm' || output.productType === 'BTP' || output.productType === 'semi_finished'
+                                                                    ? 'Bán thành phẩm' 
+                                                                    : 'Kính dư'}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 ))}

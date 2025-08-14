@@ -37,17 +37,14 @@ namespace SEP490.Modules.InventorySlipModule.Service
             }
         }
 
-        public async Task<InventorySlipDto> CreateCutGlassSlipAsync(CreateInventorySlipDto dto)
+        public async Task<InventorySlipDto> CreateCutGlassSlipAsync(CreateInventorySlipDto dto, object mappingInfo = null)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Create main slip
                 var slip = new InventorySlip
                 {
-                    SlipCode = await GenerateSlipCodeAsync(dto.ProductionOrderId, dto.TransactionType),
-                    SlipDate = DateTime.Now,
-                    TransactionType = Enum.Parse<TransactionType>(dto.TransactionType),
+                    SlipCode = await GenerateSlipCodeAsync(dto.ProductionOrderId),
                     Description = dto.Description,
                     ProductionOrderId = dto.ProductionOrderId,
                     CreatedBy = 1, // TODO: Get from current user context
@@ -58,22 +55,119 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 _context.InventorySlips.Add(slip);
                 await _context.SaveChangesAsync();
 
-                // Create details
                 var details = new List<InventorySlipDetail>();
+                
+                var productClassifications = new List<dynamic>();
+                if (mappingInfo != null)
+                {
+                    try
+                    {
+                        // Try to deserialize directly from the mappingInfo object
+                        var mappingInfoJson = System.Text.Json.JsonSerializer.Serialize(mappingInfo);
+                        var mappingInfoElement = System.Text.Json.JsonDocument.Parse(mappingInfoJson).RootElement;
+                        
+                        if (mappingInfoElement.TryGetProperty("productClassifications", out var classificationsElement))
+                        {
+                            // Use proper deserialization options
+                            var options = new System.Text.Json.JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            };
+                            
+                            // Try to deserialize as a strongly-typed list first
+                            try
+                            {
+                                var classificationsJson = classificationsElement.GetRawText();
+                                
+                                // Create a simple anonymous type for deserialization
+                                var tempClassifications = System.Text.Json.JsonSerializer.Deserialize<List<object>>(classificationsJson, options);
+                                
+                                // Convert to dynamic list
+                                productClassifications = tempClassifications?.Cast<dynamic>().ToList() ?? new List<dynamic>();
+                            }
+                            catch (Exception innerEx)
+                            {
+                                // Fallback to dynamic deserialization
+                                productClassifications = System.Text.Json.JsonSerializer.Deserialize<List<dynamic>>(classificationsElement.GetRawText());
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
+                }
+                
                 foreach (var detailDto in dto.Details)
                 {
-                    var detail = new InventorySlipDetail
+                    var detailIndex = dto.Details.IndexOf(detailDto);
+                    
+                    // Find corresponding product classification
+                    var classification = productClassifications.FirstOrDefault(c => 
+                        c.GetType().GetProperty("index")?.GetValue(c)?.ToString() == detailIndex.ToString());
+                    
+                    if (classification != null)
                     {
-                        InventorySlipId = slip.Id,
-                        ProductId = detailDto.ProductId,
-                        Quantity = detailDto.Quantity,
-                        Note = detailDto.Note,
-                        SortOrder = detailDto.SortOrder,
-                        ProductionOutputId = detailDto.ProductionOutputId,
-                        CreatedAt = DateTime.Now,
-                        UpdatedAt = DateTime.Now
-                    };
-                    details.Add(detail);
+                        var indexProp = classification.GetType().GetProperty("index");
+                        var productTypeProp = classification.GetType().GetProperty("productType");
+                        var productionOutputIdProp = classification.GetType().GetProperty("productionOutputId");
+                        
+                        if (indexProp != null && productTypeProp != null && productionOutputIdProp != null)
+                        {
+                            var index = indexProp.GetValue(classification);
+                            var productType = productTypeProp.GetValue(classification)?.ToString();
+                            var productionOutputIdValue = productionOutputIdProp.GetValue(classification);
+                            
+                            int? productionOutputId = null;
+                            if (productionOutputIdValue != null && productionOutputIdValue.ToString() != "0" && productionOutputIdValue.ToString() != "-1")
+                            {
+                                productionOutputId = Convert.ToInt32(productionOutputIdValue);
+                            }
+                            
+                            var detail = new InventorySlipDetail
+                            {
+                                InventorySlipId = slip.Id,
+                                ProductId = detailDto.ProductId,
+                                Quantity = detailDto.Quantity,
+                                Note = detailDto.Note,
+                                SortOrder = detailDto.SortOrder,
+                                ProductionOutputId = productionOutputId,
+                                CreatedAt = DateTime.Now,
+                                UpdatedAt = DateTime.Now
+                            };
+                            details.Add(detail);
+                        }
+                        else
+                        {
+                            var detail = new InventorySlipDetail
+                            {
+                                InventorySlipId = slip.Id,
+                                ProductId = detailDto.ProductId,
+                                Quantity = detailDto.Quantity,
+                                Note = detailDto.Note,
+                                SortOrder = detailDto.SortOrder,
+                                ProductionOutputId = detailDto.ProductionOutputId,
+                                CreatedAt = DateTime.Now,
+                                UpdatedAt = DateTime.Now
+                            };
+                            details.Add(detail);
+                        }
+                    }
+                    else
+                    {
+                        var detail = new InventorySlipDetail
+                        {
+                            InventorySlipId = slip.Id,
+                            ProductId = detailDto.ProductId,
+                            Quantity = detailDto.Quantity,
+                            Note = detailDto.Note,
+                            SortOrder = detailDto.SortOrder,
+                            ProductionOutputId = detailDto.ProductionOutputId,
+                            CreatedAt = DateTime.Now,
+                            UpdatedAt = DateTime.Now
+                        };
+                        details.Add(detail);
+                    }
                 }
 
                 _context.InventorySlipDetails.AddRange(details);
@@ -83,27 +177,40 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 if (dto.Mappings != null && dto.Mappings.Any())
                 {
                     var mappings = new List<MaterialOutputMapping>();
+                    
+                    // Convert indices to actual detail IDs
                     foreach (var mappingDto in dto.Mappings)
                     {
-                        var mapping = new MaterialOutputMapping
+                        // Find the actual detail IDs using indices
+                        var inputDetail = details.ElementAtOrDefault(mappingDto.InputDetailId);
+                        var outputDetail = details.ElementAtOrDefault(mappingDto.OutputDetailId);
+                        
+                        if (inputDetail != null && outputDetail != null)
                         {
-                            InputDetailId = mappingDto.InputDetailId,
-                            OutputDetailId = mappingDto.OutputDetailId,
-                            Note = mappingDto.Note,
-                            CreatedAt = DateTime.Now,
-                            UpdatedAt = DateTime.Now
-                        };
-                        mappings.Add(mapping);
+                            var mapping = new MaterialOutputMapping
+                            {
+                                InputDetailId = inputDetail.Id,
+                                OutputDetailId = outputDetail.Id,
+                                Note = mappingDto.Note,
+                                CreatedAt = DateTime.Now,
+                                UpdatedAt = DateTime.Now
+                            };
+                            mappings.Add(mapping);
+                        }
                     }
 
-                    _context.MaterialOutputMappings.AddRange(mappings);
-                    await _context.SaveChangesAsync();
+                    if (mappings.Any())
+                    {
+                        _context.MaterialOutputMappings.AddRange(mappings);
+                        await _context.SaveChangesAsync();
+                    }
                 }
 
                 await transaction.CommitAsync();
-                return await GetInventorySlipByIdAsync(slip.Id);
+                var result = await GetInventorySlipByIdAsync(slip.Id);
+                return result;
             }
-            catch
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
                 throw;
@@ -118,9 +225,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 // Create main slip
                 var slip = new InventorySlip
                 {
-                    SlipCode = await GenerateSlipCodeAsync(dto.ProductionOrderId, dto.TransactionType),
-                    SlipDate = DateTime.Now,
-                    TransactionType = Enum.Parse<TransactionType>(dto.TransactionType),
+                    SlipCode = await GenerateSlipCodeAsync(dto.ProductionOrderId),
                     Description = dto.Description,
                     ProductionOrderId = dto.ProductionOrderId,
                     CreatedBy = 1, // TODO: Get from current user context
@@ -170,18 +275,56 @@ namespace SEP490.Modules.InventorySlipModule.Service
 
         public async Task<InventorySlipDto> GetInventorySlipByIdAsync(int id)
         {
-            var slip = await _context.InventorySlips
-                .Include(s => s.ProductionOrder)
-                .Include(s => s.CreatedByEmployee)
-                .Include(s => s.Details)
-                    .ThenInclude(d => d.Product)
-                .Include(s => s.Details)
-                    .ThenInclude(d => d.ProductionOutput)
-                .FirstOrDefaultAsync(s => s.Id == id);
+            try
+            {
+                var slip = await _context.InventorySlips
+                    .Include(s => s.ProductionOrder)
+                    .Include(s => s.CreatedByEmployee)
+                    .Include(s => s.Details)
+                        .ThenInclude(d => d.Product)
+                    .Include(s => s.Details)
+                        .ThenInclude(d => d.ProductionOutput)
+                    .Include(s => s.Details)
+                        .ThenInclude(d => d.OutputMappings)
+                    .FirstOrDefaultAsync(s => s.Id == id);
 
-            if (slip == null) return null;
-
-            return MapToDto(slip);
+                if (slip == null)
+                {
+                    return null;
+                }
+                
+                if (slip.Details != null)
+                {
+                    foreach (var detail in slip.Details)
+                    {
+                        // Load OutputMappings where this detail is the INPUT (raw material)
+                        var outputMappings = await _context.MaterialOutputMappings
+                            .Include(m => m.OutputDetail)
+                                .ThenInclude(od => od.Product)
+                            .Where(m => m.InputDetailId == detail.Id)
+                            .ToListAsync();
+                        
+                        detail.OutputMappings = outputMappings;
+                        
+                        // Load InputMappings where this detail is the OUTPUT (created from other products)
+                        var inputMappings = await _context.MaterialOutputMappings
+                            .Include(m => m.InputDetail)
+                                .ThenInclude(id => id.Product)
+                            .Where(m => m.OutputDetailId == detail.Id)
+                            .ToListAsync();
+                        
+                        // Set the InputMappings navigation property
+                        detail.InputMappings = inputMappings;
+                    }
+                }
+                
+                var result = MapToDto(slip);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
         public async Task<List<InventorySlipDto>> GetAllInventorySlipsAsync()
@@ -199,16 +342,51 @@ namespace SEP490.Modules.InventorySlipModule.Service
 
         public async Task<List<InventorySlipDto>> GetInventorySlipsByProductionOrderAsync(int productionOrderId)
         {
-            var slips = await _context.InventorySlips
-                .Include(s => s.ProductionOrder)
-                .Include(s => s.CreatedByEmployee)
-                .Include(s => s.Details)
-                    .ThenInclude(d => d.Product)
-                .Where(s => s.ProductionOrderId == productionOrderId)
-                .OrderByDescending(s => s.CreatedAt)
-                .ToListAsync();
+            try
+            {
+                var slips = await _context.InventorySlips
+                    .Include(s => s.ProductionOrder)
+                    .Include(s => s.CreatedByEmployee)
+                    .Include(s => s.Details)
+                        .ThenInclude(d => d.Product)
+                    .Include(s => s.Details)
+                        .ThenInclude(d => d.ProductionOutput)
+                    .Where(s => s.ProductionOrderId == productionOrderId)
+                    .OrderByDescending(s => s.CreatedAt)
+                    .ToListAsync();
+               
+                foreach (var slip in slips)
+                {
+                    if (slip.Details != null)
+                    {
+                        foreach (var detail in slip.Details)
+                        {                            
+                            var outputMappings = await _context.MaterialOutputMappings
+                                .Include(m => m.OutputDetail)
+                                    .ThenInclude(od => od.Product)
+                                .Where(m => m.InputDetailId == detail.Id)
+                                .ToListAsync();
+                            
+                            detail.OutputMappings = outputMappings;                            
+                            
+                            var inputMappings = await _context.MaterialOutputMappings
+                                .Include(m => m.InputDetail)
+                                    .ThenInclude(id => id.Product)
+                                .Where(m => m.OutputDetailId == detail.Id)
+                                .ToListAsync();
+                            
+                            detail.InputMappings = inputMappings;
+                        }
+                    }
+                }
 
-            return slips.Select(MapToDto).ToList();
+                var result = slips.Select(MapToDto).ToList();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
         public async Task<bool> DeleteInventorySlipAsync(int id)
@@ -221,40 +399,29 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 
                 if (slip == null) 
                 {
-                    Console.WriteLine($"DeleteInventorySlipAsync: Slip with ID {id} not found");
                     return false;
                 }
 
-                Console.WriteLine($"DeleteInventorySlipAsync: Found slip {id} with {slip.Details.Count} details");
-
-                // Delete related mappings first
                 var detailIds = slip.Details.Select(d => d.Id).ToList();
                 var mappings = await _context.MaterialOutputMappings
                     .Where(m => detailIds.Contains(m.InputDetailId) || detailIds.Contains(m.OutputDetailId))
                     .ToListAsync();
-                
-                Console.WriteLine($"DeleteInventorySlipAsync: Found {mappings.Count} mappings to delete");
                 
                 if (mappings.Any())
                 {
                     _context.MaterialOutputMappings.RemoveRange(mappings);
                 }
 
-                // Delete details
                 _context.InventorySlipDetails.RemoveRange(slip.Details);
                 
-                // Delete main slip
                 _context.InventorySlips.Remove(slip);
                 
-                var result = await _context.SaveChangesAsync();
-                Console.WriteLine($"DeleteInventorySlipAsync: SaveChanges result: {result} rows affected");
+                await _context.SaveChangesAsync();
                 
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"DeleteInventorySlipAsync: Exception occurred: {ex.Message}");
-                Console.WriteLine($"DeleteInventorySlipAsync: Stack trace: {ex.StackTrace}");
                 throw;
             }
         }
@@ -281,7 +448,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
 
                     if (productionMaterial?.ProductionOutput?.ProductionOrder == null)
                     {
-                        return null; // Not found anywhere
+                        return null; 
                     }
 
                     productionOrder = productionMaterial.ProductionOutput.ProductionOrder;
@@ -340,7 +507,31 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     UnitPrice = po.Product?.UnitPrice
                 }).ToList();
 
-                // Glass products (existing glass that can be reused)
+                
+                var semiFinishedProductsFromDb = await _context.Products
+                    .Where(p => p.ProductType == "Bán thành phẩm" || p.ProductType == "BTP")
+                    .ToListAsync();
+                
+                var additionalSemiFinishedProducts = semiFinishedProductsFromDb
+                    .Where(p => !productionOutputs.Any(po => po.ProductId == p.Id)) // Don't duplicate
+                    .Select(p => new ProductInfoDto
+                    {
+                        Id = p.Id,
+                        ProductCode = p.ProductCode,
+                        ProductName = p.ProductName,
+                        ProductType = p.ProductType,
+                        UOM = p.UOM,
+                        Height = p.Height,
+                        Width = p.Width,
+                        Thickness = p.Thickness,
+                        Weight = p.Weight,
+                        Quantity = p.quantity,
+                        UnitPrice = p.UnitPrice
+                    }).ToList();
+                
+                semiFinishedProducts.AddRange(additionalSemiFinishedProducts);
+
+                // Glass products 
                 var glassProductsFromDb = await _context.Products
                     .Where(p => p.ProductType == "Kính dư" || p.ProductType == "Kính")
                     .ToListAsync();
@@ -476,26 +667,29 @@ namespace SEP490.Modules.InventorySlipModule.Service
         public async Task<bool> ValidateSlipCreationAsync(CreateInventorySlipDto dto)
         {
             if (dto.Details == null || !dto.Details.Any())
+            {
                 return false;
+            }
 
             var productionOrder = await _context.ProductionOrders
                 .FirstOrDefaultAsync(po => po.Id == dto.ProductionOrderId);
             
             if (productionOrder == null)
+            {
                 return false;
+            }
 
             return true;
         }
 
-        public async Task<string> GenerateSlipCodeAsync(int productionOrderId, string transactionType)
+        public async Task<string> GenerateSlipCodeAsync(int productionOrderId)
         {
             var productionOrder = await _context.ProductionOrders
-                .FirstOrDefaultAsync(po => po.Id == productionOrderId);
-            
-            var prefix = transactionType == "Out" ? "XK" : "NK";
+                .FirstOrDefaultAsync(po => po.Id == productionOrderId);            
+            var prefix = "PH"; 
             var date = DateTime.Now.ToString("yyyyMMdd");
             var count = await _context.InventorySlips
-                .CountAsync(s => s.ProductionOrderId == productionOrderId && s.TransactionType == Enum.Parse<TransactionType>(transactionType));
+                .CountAsync(s => s.ProductionOrderId == productionOrderId);
             
             return $"{prefix}-{productionOrder?.ProductionOrderCode}-{date}-{count + 1:D3}";
         }
@@ -545,7 +739,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 Thickness = dto.Thickness,
                 Weight = dto.Weight,
                 UnitPrice = dto.UnitPrice,
-                quantity = 0 // Start with 0 quantity
+                quantity = 0 
             };
 
             _context.Products.Add(product);
@@ -581,8 +775,34 @@ namespace SEP490.Modules.InventorySlipModule.Service
 
                 // Update main slip properties
                 existingSlip.Description = dto.Description;
-                existingSlip.TransactionType = Enum.Parse<TransactionType>(dto.TransactionType);
                 existingSlip.UpdatedAt = DateTime.Now;
+
+                // Snapshot old details and mappings BEFORE removing them so we can restore mappings afterwards
+                var oldDetails = existingSlip.Details.ToList();
+                var oldDetailIds = oldDetails.Select(d => d.Id).ToList();
+
+                var oldMappingsSnapshot = await _context.MaterialOutputMappings
+                    .Include(m => m.InputDetail)
+                    .Include(m => m.OutputDetail)
+                    .Where(m => oldDetailIds.Contains(m.InputDetailId) || oldDetailIds.Contains(m.OutputDetailId))
+                    .Select(m => new
+                    {
+                        InputProductId = m.InputDetail.ProductId,
+                        InputSortOrder = m.InputDetail.SortOrder,
+                        OutputProductId = m.OutputDetail.ProductId,
+                        OutputSortOrder = m.OutputDetail.SortOrder,
+                        m.Note
+                    })
+                    .ToListAsync();
+
+                // Remove existing mappings (they reference old detail IDs)
+                var existingMappings = await _context.MaterialOutputMappings
+                    .Where(m => oldDetailIds.Contains(m.InputDetailId) || oldDetailIds.Contains(m.OutputDetailId))
+                    .ToListAsync();
+                if (existingMappings.Any())
+                {
+                    _context.MaterialOutputMappings.RemoveRange(existingMappings);
+                }
 
                 // Remove existing details
                 _context.InventorySlipDetails.RemoveRange(existingSlip.Details);
@@ -608,41 +828,61 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 _context.InventorySlipDetails.AddRange(details);
                 await _context.SaveChangesAsync(); // Save to get new detail IDs
 
-                // Remove existing mappings
-                var existingMappings = await _context.MaterialOutputMappings
-                    .Where(m => existingSlip.Details.Select(d => d.Id).Contains(m.InputDetailId) || 
-                               existingSlip.Details.Select(d => d.Id).Contains(m.OutputDetailId))
-                    .ToListAsync();
-
-                if (existingMappings.Any())
+                // If client did not provide new mappings, restore previous mappings using snapshot
+                if (dto.Mappings == null || !dto.Mappings.Any())
                 {
-                    _context.MaterialOutputMappings.RemoveRange(existingMappings);
+                    if (oldMappingsSnapshot.Any())
+                    {                        
+                        var newDetailsLookup = details
+                            .GroupBy(d => new { d.ProductId, d.SortOrder })
+                            .ToDictionary(g => g.Key, g => g.First());
+
+                        var mappingsToRestore = new List<MaterialOutputMapping>();
+                        foreach (var snap in oldMappingsSnapshot)
+                        {
+                            var inputKey = new { ProductId = snap.InputProductId, SortOrder = snap.InputSortOrder };
+                            var outputKey = new { ProductId = snap.OutputProductId, SortOrder = snap.OutputSortOrder };
+
+                            if (newDetailsLookup.TryGetValue(inputKey, out var newInput) &&
+                                newDetailsLookup.TryGetValue(outputKey, out var newOutput))
+                            {
+                                mappingsToRestore.Add(new MaterialOutputMapping
+                                {
+                                    InputDetailId = newInput.Id,
+                                    OutputDetailId = newOutput.Id,
+                                    Note = snap.Note,
+                                    CreatedAt = DateTime.Now,
+                                    UpdatedAt = DateTime.Now
+                                });
+                            }
+                        }
+
+                        if (mappingsToRestore.Any())
+                        {
+                            _context.MaterialOutputMappings.AddRange(mappingsToRestore);
+                        }
+                    }
                 }
-
-                // Create new mappings if provided
-                if (dto.Mappings != null && dto.Mappings.Any())
-                {
+                else
+                {                    
                     var mappings = new List<MaterialOutputMapping>();
                     foreach (var mappingDto in dto.Mappings)
                     {
-                        // Find the new detail IDs by matching product IDs
-                        var inputDetail = details.FirstOrDefault(d => d.ProductId == dto.Details[mappingDto.InputDetailId].ProductId);
-                        var outputDetail = details.FirstOrDefault(d => d.ProductId == dto.Details[mappingDto.OutputDetailId].ProductId);
-                        
-                        if (inputDetail != null && outputDetail != null)
+                        if (mappingDto.InputDetailId >= 0 && mappingDto.InputDetailId < details.Count &&
+                            mappingDto.OutputDetailId >= 0 && mappingDto.OutputDetailId < details.Count)
                         {
-                            var mapping = new MaterialOutputMapping
+                            var inputDetail = details[mappingDto.InputDetailId];
+                            var outputDetail = details[mappingDto.OutputDetailId];
+                            mappings.Add(new MaterialOutputMapping
                             {
                                 InputDetailId = inputDetail.Id,
                                 OutputDetailId = outputDetail.Id,
                                 Note = mappingDto.Note,
                                 CreatedAt = DateTime.Now,
                                 UpdatedAt = DateTime.Now
-                            };
-                            mappings.Add(mapping);
+                            });
                         }
                     }
-
                     if (mappings.Any())
                     {
                         _context.MaterialOutputMappings.AddRange(mappings);
@@ -652,9 +892,10 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return await GetInventorySlipByIdAsync(existingSlip.Id);
+                var result = await GetInventorySlipByIdAsync(existingSlip.Id);
+                return result;
             }
-            catch
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
                 throw;
@@ -663,33 +904,187 @@ namespace SEP490.Modules.InventorySlipModule.Service
 
         private InventorySlipDto MapToDto(InventorySlip slip)
         {
+            // Get all product IDs that are production outputs for this production order
+            var productionOutputProductIds = _context.ProductionOutputs
+                .Where(po => po.ProductionOrderId == slip.ProductionOrderId)
+                .Select(po => po.ProductId)
+                .ToList();
+
+            var details = new List<InventorySlipDetailDto>();
+            foreach (var detail in slip.Details.OrderBy(d => d.SortOrder))
+            {                
+                string productType;
+                
+                if (detail.OutputMappings != null && detail.OutputMappings.Any())
+                {
+                    // This detail has output mappings (is an input to an output)
+                    productType = "NVL";
+                }
+                else if (productionOutputProductIds.Contains(detail.ProductId))
+                {
+                    // This detail's product is found in production outputs for this production order
+                    productType = "Bán thành phẩm";
+                }
+                else if (detail.InputMappings != null && detail.InputMappings.Any())
+                {
+                    // This detail has input mappings (is an output from an input) and is not a semi-finished product
+                    productType = "Kính dư";
+                }
+                else
+                {
+                    // Fallback to the product's own type
+                    productType = detail.Product?.ProductType ?? "NVL";
+                }
+
+                var detailDto = new InventorySlipDetailDto
+                {
+                    Id = detail.Id,
+                    ProductId = detail.ProductId,
+                    ProductCode = detail.Product?.ProductCode,
+                    ProductName = detail.Product?.ProductName,
+                    ProductType = productType,
+                    UOM = detail.Product?.UOM,
+                    Quantity = detail.Quantity,
+                    Note = detail.Note,
+                    SortOrder = detail.SortOrder,
+                    ProductionOutputId = detail.ProductionOutputId,
+                    OutputMappings = detail.OutputMappings?.Select(m => new MaterialOutputMappingDto
+                    {
+                        Id = m.Id,
+                        OutputDetailId = m.OutputDetailId,
+                        OutputProductName = m.OutputDetail?.Product?.ProductName,
+                        OutputProductCode = m.OutputDetail?.Product?.ProductCode,
+                        Note = m.Note
+                    }).ToList() ?? new List<MaterialOutputMappingDto>()
+                };
+                
+                details.Add(detailDto);
+            }
+
             return new InventorySlipDto
             {
                 Id = slip.Id,
                 SlipCode = slip.SlipCode,
-                SlipDate = slip.SlipDate,
-                TransactionType = slip.TransactionType.ToString(),
                 Description = slip.Description,
                 ProductionOrderId = slip.ProductionOrderId,
                 ProductionOrderCode = slip.ProductionOrder?.ProductionOrderCode,
                 ProductionOrderType = slip.ProductionOrder?.Type,
                 CreatedBy = slip.CreatedBy,
-                CreatedByEmployeeName = slip.CreatedByEmployee?.FullName ?? "Employee " + slip.CreatedBy,
+                CreatedByEmployeeName = slip.CreatedByEmployee?.FullName,
                 CreatedAt = slip.CreatedAt,
                 UpdatedAt = slip.UpdatedAt,
-                Details = slip.Details.Select(d => new InventorySlipDetailDto
-                {
-                    Id = d.Id,
-                    ProductId = d.ProductId,
-                    ProductCode = d.Product?.ProductCode,
-                    ProductName = d.Product?.ProductName,
-                    ProductType = d.Product?.ProductType,
-                    UOM = d.Product?.UOM,
-                    Quantity = d.Quantity,
-                    Note = d.Note,
-                    SortOrder = d.SortOrder,
-                    ProductionOutputId = d.ProductionOutputId
-                }).ToList()
+                Details = details
+            };
+        }
+        
+        public async Task<PaginatedProductsDto> GetPaginatedProductsAsync(ProductSearchRequestDto request)
+        {
+            var productionOrder = await _context.ProductionOrders
+                .FirstOrDefaultAsync(po => po.Id == request.ProductionOrderId);
+            
+            if (productionOrder == null || productionOrder.Type != "Cắt kính")
+            {
+                throw new ArgumentException("Production order not found or not a cut glass order");
+            }
+
+            IQueryable<Product> baseQuery = _context.Products.AsQueryable();
+            
+            switch (request.ProductType?.ToLower())
+            {
+                case "nvl":
+                case "nguyên vật liệu":
+                    baseQuery = baseQuery.Where(p => p.ProductType == "NVL" || p.ProductType == "Nguyên vật liệu");
+                    break;
+                case "bán thành phẩm":
+                case "btp":
+                    baseQuery = baseQuery.Where(p => p.ProductType == "Bán thành phẩm" || p.ProductType == "BTP");
+                    break;
+                case "kính dư":
+                case "kính":
+                    baseQuery = baseQuery.Where(p => p.ProductType == "Kính dư" || p.ProductType == "Kính");
+                    break;
+                default:
+                    // If no specific type, include all relevant types for cut glass
+                    baseQuery = baseQuery.Where(p => 
+                        p.ProductType == "NVL" || 
+                        p.ProductType == "Nguyên vật liệu" ||
+                        p.ProductType == "Bán thành phẩm" ||  
+                        p.ProductType == "Kính dư" 
+                    );
+                    break;
+            }
+
+            // Apply search term if provided
+            if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+            {
+                var searchTerm = request.SearchTerm.ToLower();
+                baseQuery = baseQuery.Where(p => 
+                    p.ProductName.ToLower().Contains(searchTerm) ||
+                    p.ProductCode.ToLower().Contains(searchTerm)
+                );
+            }
+
+            // Get total count for pagination
+            var totalCount = await baseQuery.CountAsync();
+
+            // Apply sorting
+            switch (request.SortBy?.ToLower())
+            {
+                case "productname":
+                    baseQuery = request.SortDescending 
+                        ? baseQuery.OrderByDescending(p => p.ProductName)
+                        : baseQuery.OrderBy(p => p.ProductName);
+                    break;
+                case "productcode":
+                    baseQuery = request.SortDescending 
+                        ? baseQuery.OrderByDescending(p => p.ProductCode)
+                        : baseQuery.OrderBy(p => p.ProductCode);
+                    break;
+                case "id":
+                    baseQuery = request.SortDescending 
+                        ? baseQuery.OrderByDescending(p => p.Id)
+                        : baseQuery.OrderBy(p => p.Id);
+                    break;
+                default:
+                    baseQuery = baseQuery.OrderBy(p => p.ProductName);
+                    break;
+            }
+
+            var skip = (request.PageNumber - 1) * request.PageSize;
+            var products = await baseQuery
+                .Skip(skip)
+                .Take(request.PageSize)
+                .ToListAsync();
+
+            var productDtos = products.Select(p => new ProductInfoDto
+            {
+                Id = p.Id,
+                ProductCode = p.ProductCode,
+                ProductName = p.ProductName,
+                ProductType = p.ProductType,
+                UOM = p.UOM,
+                Height = p.Height,
+                Width = p.Width,
+                Thickness = p.Thickness,
+                Weight = p.Weight,
+                Quantity = p.quantity,
+                UnitPrice = p.UnitPrice
+            }).ToList();
+
+            // Calculate pagination info
+            var totalPages = (int)Math.Ceiling((double)totalCount / request.PageSize);
+            var hasPreviousPage = request.PageNumber > 1;
+            var hasNextPage = request.PageNumber < totalPages;
+
+            return new PaginatedProductsDto
+            {
+                Products = productDtos,
+                TotalCount = totalCount,
+                PageNumber = request.PageNumber,
+                PageSize = request.PageSize,
+                TotalPages = totalPages,
+                HasPreviousPage = hasPreviousPage,
+                HasNextPage = hasNextPage
             };
         }
     }

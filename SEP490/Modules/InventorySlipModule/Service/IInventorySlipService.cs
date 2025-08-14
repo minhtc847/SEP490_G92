@@ -14,12 +14,12 @@ namespace SEP490.Modules.InventorySlipModule.Service
         Task<List<InventorySlipDetailDto>> GetOutputsFromInputMaterialAsync(int inputDetailId);
         Task<List<InventorySlipDetailDto>> GetInputMaterialsForOutputAsync(int outputDetailId);
 
-        Task<InventorySlipDto> CreateCutGlassSlipAsync(CreateInventorySlipDto dto);
+        Task<InventorySlipDto> CreateCutGlassSlipAsync(CreateInventorySlipDto dto, object mappingInfo = null);
         Task<InventorySlipDto> CreateChemicalExportSlipAsync(CreateInventorySlipDto dto);
         Task<InventorySlipDto> CreateGlueButylSlipAsync(CreateInventorySlipDto dto);
         
         Task<bool> ValidateSlipCreationAsync(CreateInventorySlipDto dto);
-        Task<string> GenerateSlipCodeAsync(int productionOrderId, string transactionType);
+        Task<string> GenerateSlipCodeAsync(int productionOrderId);
 
         // Accept create-mapping DTO for adding mappings
         Task<bool> AddMappingsAsync(int slipId, List<CreateMaterialOutputMappingDto> mappings);
@@ -29,5 +29,8 @@ namespace SEP490.Modules.InventorySlipModule.Service
         
         // Update existing inventory slip
         Task<InventorySlipDto> UpdateInventorySlipAsync(int id, CreateInventorySlipDto dto);
+        
+        // Paginated product search for cut glass slips
+        Task<PaginatedProductsDto> GetPaginatedProductsAsync(ProductSearchRequestDto request);
     }
 }

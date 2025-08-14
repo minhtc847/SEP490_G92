@@ -4,8 +4,6 @@ namespace SEP490.Modules.InventorySlipModule.DTO
     {
         public int Id { get; set; }
         public string? SlipCode { get; set; }
-        public DateTime SlipDate { get; set; }
-        public string TransactionType { get; set; } = string.Empty;
         public string? Description { get; set; }
         
         public int ProductionOrderId { get; set; }
@@ -50,7 +48,6 @@ namespace SEP490.Modules.InventorySlipModule.DTO
     public class CreateInventorySlipDto
     {
         public int ProductionOrderId { get; set; }
-        public string TransactionType { get; set; } = string.Empty;
         public string? Description { get; set; }
         public List<CreateInventorySlipDetailDto> Details { get; set; } = new List<CreateInventorySlipDetailDto>();
         public List<CreateMaterialOutputMappingDto>? Mappings { get; set; }
@@ -124,5 +121,28 @@ namespace SEP490.Modules.InventorySlipModule.DTO
         public decimal? Thickness { get; set; }
         public decimal? Weight { get; set; }
         public decimal? UnitPrice { get; set; }
+    }
+
+    // DTOs for pagination
+    public class PaginatedProductsDto
+    {
+        public List<ProductInfoDto> Products { get; set; } = new List<ProductInfoDto>();
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
+        public bool HasPreviousPage { get; set; }
+        public bool HasNextPage { get; set; }
+    }
+
+    public class ProductSearchRequestDto
+    {
+        public int ProductionOrderId { get; set; }
+        public string? ProductType { get; set; } // "NVL", "Bán thành phẩm", "Kính dư"
+        public string? SearchTerm { get; set; }
+        public int PageNumber { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public string? SortBy { get; set; } // "ProductName", "ProductCode", "CreatedAt"
+        public bool SortDescending { get; set; } = false;
     }
 }

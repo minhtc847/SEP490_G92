@@ -163,16 +163,105 @@ namespace SEP490.Modules.InventorySlipModule.Controller
 
         // Special endpoints for different slip types
         [HttpPost("cut-glass")]
-        public async Task<IActionResult> CreateCutGlassSlip([FromBody] CreateInventorySlipDto dto)
+        public async Task<IActionResult> CreateCutGlassSlip([FromBody] object requestData)
         {
             try
             {
+                // Parse the request data to extract both dto and mappingInfo
+                var jsonElement = (System.Text.Json.JsonElement)requestData;
+                
+                CreateInventorySlipDto dto;
+                if (jsonElement.TryGetProperty("formData", out var formDataElement))
+                {
+                    // Use proper deserialization options for case-insensitive property matching
+                    var options = new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = null
+                    };
+                    
+                    dto = System.Text.Json.JsonSerializer.Deserialize<CreateInventorySlipDto>(formDataElement.GetRawText(), options);
+                    
+                    // If deserialization fails, fall back to manual construction
+                    if (dto == null || dto.ProductionOrderId == 0 || dto.Details?.Count == 0)
+                    {
+                        // Deserialize the formData element as a generic object
+                        var formDataRaw = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(formDataElement.GetRawText());
+                        if (formDataRaw != null)
+                        {
+                            dto = new CreateInventorySlipDto
+                            {
+                                ProductionOrderId = Convert.ToInt32(formDataRaw["productionOrderId"].ToString()),
+                                Description = formDataRaw["description"]?.ToString() ?? "",
+                                Details = System.Text.Json.JsonSerializer.Deserialize<List<CreateInventorySlipDetailDto>>(
+                                    formDataRaw["details"].ToString(), options),
+                                Mappings = formDataRaw.ContainsKey("mappings") && formDataRaw["mappings"] != null
+                                    ? System.Text.Json.JsonSerializer.Deserialize<List<CreateMaterialOutputMappingDto>>(
+                                        formDataRaw["mappings"].ToString(), options)
+                                    : new List<CreateMaterialOutputMappingDto>()
+                            };
+                        }
+                    }
+                }
+                else
+                {
+                    // Always use the fallback approach since direct deserialization seems to have issues
+                    // Deserialize as a generic object first
+                    var rawData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(jsonElement.GetRawText());
+                    if (rawData != null)
+                    {
+                        // Try direct deserialization with explicit options
+                        var fullJson = jsonElement.GetRawText();
+                        
+                        var options = new System.Text.Json.JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true,
+                            PropertyNamingPolicy = null
+                        };
+                        
+                        dto = System.Text.Json.JsonSerializer.Deserialize<CreateInventorySlipDto>(fullJson, options);
+                        
+                        if (dto == null || dto.ProductionOrderId == 0 || dto.Details?.Count == 0)
+                        {
+                            // Fallback to manual construction if direct deserialization fails
+                            dto = new CreateInventorySlipDto
+                            {
+                                ProductionOrderId = Convert.ToInt32(rawData["productionOrderId"].ToString()),
+                                Description = rawData["description"]?.ToString() ?? "",
+                                Details = System.Text.Json.JsonSerializer.Deserialize<List<CreateInventorySlipDetailDto>>(
+                                    rawData["details"].ToString(), options),
+                                Mappings = rawData.ContainsKey("mappings") && rawData["mappings"] != null
+                                    ? System.Text.Json.JsonSerializer.Deserialize<List<CreateMaterialOutputMappingDto>>(
+                                        rawData["mappings"].ToString(), options)
+                                    : new List<CreateMaterialOutputMappingDto>()
+                            };
+                        }
+                    }
+                    else
+                    {
+                        dto = null;
+                    }
+                }
+
+                if (dto == null)
+                {
+                    return BadRequest(new { message = "Dữ liệu không hợp lệ - DTO null!" });
+                }
+
                 if (!await _inventorySlipService.ValidateSlipCreationAsync(dto))
                 {
                     return BadRequest(new { message = "Dữ liệu không hợp lệ!" });
                 }
 
-                var result = await _inventorySlipService.CreateCutGlassSlipAsync(dto);
+                // Extract mappingInfo if present
+                object mappingInfo = null;
+                if (jsonElement.TryGetProperty("mappingInfo", out var mappingInfoElement))
+                {
+                    mappingInfo = System.Text.Json.JsonSerializer.Deserialize<object>(mappingInfoElement.GetRawText());
+                }
+
+                var result = await _inventorySlipService.CreateCutGlassSlipAsync(dto, mappingInfo);
+                
                 return Ok(new { message = "Tạo phiếu cắt kính thành công!", data = result });
             }
             catch (Exception ex)
@@ -225,11 +314,26 @@ namespace SEP490.Modules.InventorySlipModule.Controller
             try
             {
                 var result = await _inventorySlipService.CreateProductAsync(dto);
-                return Ok(new { message = "Tạo sản phẩm thành công!", data = result });
+                return Ok(result);
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = "Tạo sản phẩm thất bại!", error = ex.Message });
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+        
+        // Paginated product search for cut glass slips
+        [HttpPost("products/search")]
+        public async Task<IActionResult> SearchProducts([FromBody] ProductSearchRequestDto request)
+        {
+            try
+            {
+                var result = await _inventorySlipService.GetPaginatedProductsAsync(request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
             }
         }
 
