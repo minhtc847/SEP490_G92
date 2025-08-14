@@ -54,11 +54,11 @@ const CreateAccountPage = () => {
         }
 
         if (!formData.employeeId) {
-            newErrors.employeeId = 'Vui lòng chọn nhân viên';
+            newErrors.employeeId = 0;
         }
 
         if (!formData.roleId) {
-            newErrors.roleId = 'Vui lòng chọn vai trò';
+            newErrors.roleId = 0;
         }
 
         setErrors(newErrors);
