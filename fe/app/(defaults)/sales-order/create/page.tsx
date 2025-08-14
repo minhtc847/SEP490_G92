@@ -54,7 +54,7 @@ const SalesOrderCreatePage = () => {
     function generateProductName(structure: GlassStructure | undefined, width: number, height: number, thickness: number) {
         if (!structure || !width || !height || !thickness) return '';
         // Ví dụ: Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng
-        return `${structure.productName} | KT: ${width}*${height}*${thickness} mm | ${structure.productCode || ''}`.trim();
+        return `Kính ${structure.productCode} phút, KT: ${width}*${height}*${thickness} mm`.trim();
     }
 
     // Thêm useEffect để auto tạo tên khi người dùng chọn cấu trúc + nhập kích thước
