@@ -83,15 +83,20 @@ namespace SEP490.Selenium.Product
         {
             InitSelenium();
             Login();
-            Thread.Sleep(5000); // Wait for the page to load
-            wait.Until(d =>
-            {
-                var overlays = d.FindElements(By.CssSelector(".ms-popup--background"));
-                return overlays.Count == 0 || !overlays.Any(o => o.Displayed);
-            });
+            Thread.Sleep(3000); // Wait for the page to load
+            //wait.Until(d =>
+            //{
+            //    var overlays = d.FindElements(By.CssSelector(".ms-popup--background"));
+            //    return overlays.Count == 0 || !overlays.Any(o => o.Displayed);
+            //});
 
-            var button = wait.Until(drv => drv.FindElement(By.XPath("//div[contains(@class, 'ms-button-text') and contains(text(), 'Thêm')]")));
-            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", button);
+            //var button = wait.Until(drv => drv.FindElement(By.XPath("//div[contains(@class, 'ms-button-text') and contains(text(), 'Thêm')]")));
+            //((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", button);
+            ClickIfExists(
+                By.XPath("//div[contains(@class, 'ms-button-text') and contains(text(), 'Thêm')]"),
+                driver,
+                wait
+                );
             Thread.Sleep(500); // Wait for the modal to open
             AddField(input);
             CloseDriver();
@@ -115,10 +120,54 @@ namespace SEP490.Selenium.Product
             catVaThemButton.Click();
             Thread.Sleep(1500); // Wait for the action to complete
         }
+        //public static bool ClickIfExists(By by, IWebDriver driver, WebDriverWait wait)
+        //{
+        //    try
+        //    {
+        //        var element = wait.Until(d =>
+        //        {
+        //            var elements = d.FindElements(by);
+        //            return elements.FirstOrDefault(e => e.Displayed);
+        //        });
+
+        //        if (element != null)
+        //        {
+        //            IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+        //            js.ExecuteScript("arguments[0].click();", element);
+        //            return true;
+        //        }
+        //    }
+        //    catch (WebDriverTimeoutException)
+        //    {
+        //        // Timeout after retries
+        //        return false;
+        //    }
+        //    return false;
+        //}
         public static bool ClickIfExists(By by, IWebDriver driver, WebDriverWait wait)
         {
             try
             {
+                // 1. Chờ overlay biến mất tối đa 5s
+                var shortWait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
+                try
+                {
+                    shortWait.Until(d =>
+                    {
+                        var overlays = d.FindElements(By.CssSelector(".ms-popup--background"));
+                        return overlays.Count == 0 || overlays.All(o =>
+                        {
+                            var style = o.GetAttribute("style") ?? "";
+                            return !o.Displayed || style.Contains("display: none") || style.Contains("visibility: hidden");
+                        });
+                    });
+                }
+                catch (WebDriverTimeoutException)
+                {
+                    // Overlay vẫn tồn tại → bỏ qua để force click
+                }
+
+                // 2. Tìm element
                 var element = wait.Until(d =>
                 {
                     var elements = d.FindElements(by);
@@ -127,14 +176,22 @@ namespace SEP490.Selenium.Product
 
                 if (element != null)
                 {
-                    IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
-                    js.ExecuteScript("arguments[0].click();", element);
+                    try
+                    {
+                        element.Click(); // Click bình thường
+                    }
+                    catch (ElementClickInterceptedException)
+                    {
+                        // 3. Nếu bị chặn → click bằng JavaScript
+                        IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+                        js.ExecuteScript("arguments[0].click();", element);
+                    }
                     return true;
                 }
             }
             catch (WebDriverTimeoutException)
             {
-                // Timeout after retries
+                // Không tìm thấy element
                 return false;
             }
             return false;
