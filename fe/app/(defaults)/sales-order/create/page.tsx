@@ -82,6 +82,7 @@ const SalesOrderCreatePage = () => {
         orderCode: '',
         discount: 0,
         status: 'Pending',
+        isUpdateMisa: false,
         orderItems: [] as OrderItem[],
     });
 
@@ -264,6 +265,7 @@ const SalesOrderCreatePage = () => {
                 orderDate: form.orderDate,
                 discount: form.discount / 100,
                 status: form.status,
+                isUpdateMisa: form.isUpdateMisa,
                 products: form.orderItems.map((item) => ({
                     productId: item.productId,
                     productCode: '',
@@ -338,6 +340,18 @@ const SalesOrderCreatePage = () => {
                         <option value="Delivered">Hoàn thành</option>
                         <option value="Cancelled">Đã huỷ</option>
                     </select>
+                </div>
+                <div>
+                    <label className="flex items-center space-x-2">
+                        <input
+                            type="checkbox"
+                            checked={form.isUpdateMisa}
+                            onChange={(e) => setForm((prev) => ({ ...prev, isUpdateMisa: e.target.checked }))}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                        />
+                        <span className="font-medium text-gray-700">Cập nhật MISA</span>
+                    </label>
+                    <p className="text-sm text-gray-500 mt-1">Đánh dấu nếu đơn hàng đã được cập nhật vào hệ thống MISA</p>
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Khách hàng có sẵn</label>

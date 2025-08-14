@@ -6,6 +6,7 @@ export interface Product {
     productType: string;
     uom: string;
     quantity: number;
+    isupdatemisa: boolean;
 }
 
 export const getProducts = async (): Promise<Product[]> => {

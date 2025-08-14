@@ -176,6 +176,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 Weight = dto.Weight,
                 UnitPrice = calculatedUnitPrice,
                 GlassStructureId = dto.GlassStructureId,
+                isupdatemisa = dto.isupdatemisa
             };
 
             _context.Products.Add(product);

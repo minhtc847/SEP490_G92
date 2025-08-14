@@ -50,6 +50,7 @@ const SalesOrderEditPage = () => {
         status: string;
         deliveryStatus: string;
         orderItems: OrderItem[];
+        isUpdateMisa: boolean;
     }>({
         customer: '',
         address: '',
@@ -60,6 +61,7 @@ const SalesOrderEditPage = () => {
         status: 'Pending',
         deliveryStatus: 'NotShipped',
         orderItems: [],
+        isUpdateMisa: false,
     });
 
     useEffect(() => {
@@ -76,6 +78,7 @@ const SalesOrderEditPage = () => {
                 status: data.status,
                 deliveryStatus: data.deliveryStatus,
                 orderItems: data.products,
+                isUpdateMisa: data.isUpdateMisa,
             });
             const glassList = await getGlassStructures();
             setGlassStructures(glassList);
@@ -272,6 +275,7 @@ const SalesOrderEditPage = () => {
                 discount: form.discount / 100,
                 status: form.status,
                 deliveryStatus: form.deliveryStatus,
+                isUpdateMisa: form.isUpdateMisa,
                 products: form.orderItems.map((item) => ({
                     productId: item.productId,
                     productCode: item.productCode,
@@ -359,6 +363,18 @@ const SalesOrderEditPage = () => {
                             ))}
                         </select>
                     </div>
+                </div>
+                <div>
+                    <label className="flex items-center space-x-2">
+                        <input
+                            type="checkbox"
+                            checked={form.isUpdateMisa}
+                            onChange={(e) => setForm((prev) => ({ ...prev, isUpdateMisa: e.target.checked }))}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                        />
+                        <span className="font-medium text-gray-700">Cập nhật MISA</span>
+                    </label>
+                    <p className="text-sm text-gray-500 mt-1">Đánh dấu nếu đơn hàng đã được cập nhật vào hệ thống MISA</p>
                 </div>
             </div>
 

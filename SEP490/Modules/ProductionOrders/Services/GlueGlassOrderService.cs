@@ -287,7 +287,8 @@ namespace SEP490.Modules.ProductionOrders.Services
                 Thickness = null,
                 Weight = null,
                 UnitPrice = null,
-                GlassStructureId = null
+                GlassStructureId = null,
+                isupdatemisa = false
             };
 
             await _context.Products.AddAsync(newProduct);

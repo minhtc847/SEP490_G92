@@ -17,6 +17,7 @@ export interface CreateProductDto {
     thickness?: number | null;
     unitPrice: number;
     glassStructureId?: number | null;
+    isupdatemisa?: boolean;
 }
 
 export interface GlassStructure {

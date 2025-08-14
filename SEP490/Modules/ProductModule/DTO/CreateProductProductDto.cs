@@ -12,5 +12,6 @@
         public decimal? Weight { get; set; }
         public decimal? UnitPrice { get; set; }
         public int GlassStructureId { get; set; }
+        public bool isupdatemisa { get; set; } = false;
     }
 }

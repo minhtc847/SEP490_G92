@@ -13,6 +13,7 @@
         public decimal? UnitPrice { get; set; }
         public int? GlassStructureId { get; set; }
         public double Quantity { get; set; }
+        public bool isupdatemisa { get; set; }
     }
 
 }

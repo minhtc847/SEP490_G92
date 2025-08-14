@@ -31,6 +31,7 @@ const ProductCreatePage = () => {
         thickness: 0,
         unitPrice: 0,
         glassStructureId: undefined as number | undefined,
+        isupdatemisa: false,
     });
 
     const [newMaterialProductForm, setNewMaterialProductForm] = useState({
@@ -39,6 +40,7 @@ const ProductCreatePage = () => {
         height: 0,
         thickness: 0,
         uom: '',
+        isupdatemisa: false,
     });
 
     const [form, setForm] = useState({
@@ -97,6 +99,7 @@ const ProductCreatePage = () => {
                 height: null,
                 thickness: null,
                 unitPrice: 0,
+                isupdatemisa: newMaterialProductForm.isupdatemisa,
             };
 
             const p = await createProductNVL(payload);
@@ -114,7 +117,7 @@ const ProductCreatePage = () => {
 
             setForm((f) => ({ ...f, items: [...f.items, newItem] }));
             setShowAddProductForm(false);
-            setNewMaterialProductForm({ productName: '', width: 0, height: 0, thickness: 0, uom: '' });
+            setNewMaterialProductForm({ productName: '', width: 0, height: 0, thickness: 0, uom: '', isupdatemisa: false });
 
             alert(`Đã tạo sản phẩm thành công: ${p.productName}`);
             router.push(`/products/${p.id}`);
@@ -157,6 +160,7 @@ const ProductCreatePage = () => {
             thickness: newFinishedProductForm.thickness,
             unitPrice: 0,
             glassStructureId: newFinishedProductForm.glassStructureId,
+            isupdatemisa: newFinishedProductForm.isupdatemisa,
         };
 
         try {
@@ -260,6 +264,19 @@ const ProductCreatePage = () => {
                         </div>
                     </div>
 
+                    <div className="mt-4">
+                        <label className="flex items-center space-x-2">
+                            <input
+                                type="checkbox"
+                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                                defaultChecked={false}
+                                onChange={(e) => setNewFinishedProductForm((p) => ({ ...p, isupdatemisa: e.target.checked }))}
+                            />
+                            <span className="font-medium text-gray-700">Cập nhật MISA</span>
+                        </label>
+                        <p className="text-sm text-gray-500 mt-1">Đánh dấu nếu sản phẩm đã được cập nhật vào hệ thống MISA</p>
+                    </div>
+
                     <div className="mt-4 flex gap-4">
                         <button className="btn btn-sm btn-primary" onClick={handleSave}>
                             Lưu sản phẩm
@@ -301,6 +318,19 @@ const ProductCreatePage = () => {
                                 onChange={(e) => setNewMaterialProductForm((prev) => ({ ...prev, uom: e.target.value }))}
                             />
                         </div>
+                    </div>
+
+                    <div className="mt-4">
+                        <label className="flex items-center space-x-2">
+                            <input
+                                type="checkbox"
+                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                                checked={newMaterialProductForm.isupdatemisa}
+                                onChange={(e) => setNewMaterialProductForm((prev) => ({ ...prev, isupdatemisa: e.target.checked }))}
+                            />
+                            <span className="font-medium text-gray-700">Cập nhật MISA</span>
+                        </label>
+                        <p className="text-sm text-gray-500 mt-1">Đánh dấu nếu sản phẩm đã được cập nhật vào hệ thống MISA</p>
                     </div>
 
                     <div className="mt-4 flex gap-4">

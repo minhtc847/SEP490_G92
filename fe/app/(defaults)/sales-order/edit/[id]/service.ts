@@ -19,6 +19,7 @@ export interface UpdateOrderPayload {
     discount: number;
     status: string;
     deliveryStatus: string;
+    isUpdateMisa: boolean;
     products: UpdateProductDto[];
 }
 
@@ -45,6 +46,7 @@ export interface OrderDetailDto {
     phone: string;
     discount: number;
     products: OrderItem[];
+    isUpdateMisa: boolean;
 }
 
 export interface GlassStructure {
@@ -108,6 +110,7 @@ export interface UpdateOrderPayload {
     discount: number;
     status: string;
     deliveryStatus: string;
+    isUpdateMisa: boolean;
     products: UpdateProductDto[];
 }
 
@@ -134,6 +137,7 @@ export interface OrderDetailDto {
     phone: string;
     discount: number;
     products: OrderItem[];
+    isUpdateMisa: boolean;
 }
 
 export interface GlassStructure {

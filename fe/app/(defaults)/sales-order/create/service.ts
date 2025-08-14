@@ -19,6 +19,7 @@ export interface CreateOrderDto {
     orderDate: string;
     discount: number;
     status: string;
+    isUpdateMisa: boolean;
     products: CreateOrderItem[];
 }
 
@@ -66,6 +67,7 @@ export interface OrderDetailDto {
     phone: string;
     discount: number;
     products: OrderItem[];
+    isUpdateMisa: boolean;
 }
 
 export interface GlassStructure {

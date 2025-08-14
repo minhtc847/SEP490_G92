@@ -162,6 +162,7 @@ const ProductListPage = () => {
                                 <th>Loại SP</th>
                                 <th>Số lượng</th>
                                 <th>Đơn vị tính</th>
+                                <th>Cập nhật MISA</th>
                                 <th>Hành động</th>
                             </tr>
                         </thead>
@@ -172,6 +173,15 @@ const ProductListPage = () => {
                                     <td>{product.productType}</td>
                                     <td>{product.quantity}</td> 
                                     <td>{product.uom}</td>
+                                    <td>
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                            product.isupdatemisa 
+                                                ? 'bg-green-100 text-green-800' 
+                                                : 'bg-gray-100 text-gray-800'
+                                        }`}>
+                                            {product.isupdatemisa ? 'Đã cập nhật' : 'Chưa cập nhật'}
+                                        </span>
+                                    </td>
                                     <td className="flex gap-2">
                                         <button onClick={() => router.push(`/products/${product.id}`)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-300 transition" title="Chi tiết">
                                             <IconEye className="w-5 h-5 text-gray-700" />

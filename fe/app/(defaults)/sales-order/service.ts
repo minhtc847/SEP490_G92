@@ -8,6 +8,7 @@ export interface OrderDto {
     status: number;
     deliveryStatus: number;
     totalAmount: number;
+    isUpdateMisa: boolean;
 }
 
 export const getOrders = async (): Promise<OrderDto[]> => {

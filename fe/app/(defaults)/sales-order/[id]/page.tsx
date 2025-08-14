@@ -233,6 +233,16 @@ const SalesOrderDetailPage = () => {
                 <div>
                     <strong>Giao hàng:</strong> {getDeliveryStatusText(order.deliveryStatus)}
                 </div>
+                <div>
+                    <strong>Trạng thái cập nhật MISA:</strong>
+                    <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+                        order.isUpdateMisa 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                    }`}>
+                        {order.isUpdateMisa ? 'Đã cập nhật' : 'Chưa cập nhật'}
+                    </span>
+                </div>
             </div>
 
             <table className="w-full border-collapse border text-sm mb-6">

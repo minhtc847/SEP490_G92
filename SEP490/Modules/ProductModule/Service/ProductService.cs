@@ -33,7 +33,8 @@ namespace SEP490.Modules.ProductModule.Service
                     UnitPrice = p.UnitPrice,
                     GlassStructureId = p.GlassStructureId,
                     Quantity = p.quantity,
-                    GlassStructureProductName = p.GlassStructure.ProductName
+                    GlassStructureProductName = p.GlassStructure.ProductName,
+                    isupdatemisa = p.isupdatemisa
                 })
                 .ToList();
         }
@@ -51,7 +52,8 @@ namespace SEP490.Modules.ProductModule.Service
                 Thickness = dto.Thickness,
                 Weight = dto.Weight,
                 UnitPrice = dto.UnitPrice,
-                GlassStructureId = dto.GlassStructureId
+                GlassStructureId = dto.GlassStructureId,
+                isupdatemisa = dto.isupdatemisa
             };
 
             _context.Products.Add(newProduct);
@@ -94,6 +96,7 @@ namespace SEP490.Modules.ProductModule.Service
             product.Weight = dto.Weight;
             product.UnitPrice = dto.UnitPrice;
             product.quantity = dto.Quantity;
+            product.isupdatemisa = dto.isupdatemisa;
 
             if (dto.GlassStructureId.HasValue)
             {

@@ -266,6 +266,7 @@ const SalesOrderSummary = () => {
                             <th>Thành Tiền</th>
                             <th>Trạng Thái</th>
                             <th>Giao Hàng</th>
+                            <th>Cập nhật MISA</th>
                             <th>Hành Động</th>
                         </tr>
                     </thead>
@@ -296,7 +297,15 @@ const SalesOrderSummary = () => {
                                 <td>
                                     <span className={`badge ${getDeliveryStatusClass(order.deliveryStatus)}`}>{getDeliveryStatusText(order.deliveryStatus)}</span>
                                 </td>
-
+                                <td>
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        order.isUpdateMisa 
+                                            ? 'bg-green-100 text-green-800' 
+                                            : 'bg-gray-100 text-gray-800'
+                                    }`}>
+                                        {order.isUpdateMisa ? 'Đã cập nhật' : 'Chưa cập nhật'}
+                                    </span>
+                                </td>
                                 <td className="flex gap-2">
                                     <button
                                         className="px-2 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-800"

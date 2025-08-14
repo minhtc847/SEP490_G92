@@ -165,7 +165,8 @@ namespace SEP490.Modules.ProductionOrders.Services
                 Thickness = thickness,
                 Weight = null,
                 UnitPrice = null,
-                GlassStructureId = null
+                GlassStructureId = null,
+                isupdatemisa = false
             };
         }
     }

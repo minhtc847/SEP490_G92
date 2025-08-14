@@ -165,6 +165,19 @@ const ProductEditPage = () => {
                             value={selectedGlassStructure}
                         />
                     </div>
+                    <div>
+                        <label className="flex items-center space-x-2">
+                            <input
+                                type="checkbox"
+                                name="isupdatemisa"
+                                checked={formData.isupdatemisa}
+                                onChange={(e) => setFormData(prev => prev ? { ...prev, isupdatemisa: e.target.checked } : null)}
+                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                            />
+                            <span className="font-medium text-gray-700">Cập nhật MISA</span>
+                        </label>
+                        <p className="text-sm text-gray-500 mt-1">Đánh dấu nếu sản phẩm đã được cập nhật vào hệ thống MISA</p>
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap gap-4 pt-4">

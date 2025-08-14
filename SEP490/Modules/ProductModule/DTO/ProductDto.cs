@@ -13,4 +13,5 @@
     public int? GlassStructureId { get; set; }
     public string GlassStructureProductName { get; set; } = string.Empty;
     public double Quantity { get; set; }
+    public bool isupdatemisa { get; set; }
 }

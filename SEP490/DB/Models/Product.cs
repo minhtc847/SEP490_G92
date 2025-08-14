@@ -13,5 +13,6 @@ public class Product
     public double quantity { get; set; } = 0; // Assuming this is the quantity of the product
     public decimal? UnitPrice { get; set; }
     public int? GlassStructureId { get; set; }
-    public GlassStructure? GlassStructure { get; set; } 
+    public GlassStructure? GlassStructure { get; set; }
+    public bool isupdatemisa { get; set; } = false;
 }

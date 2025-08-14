@@ -206,7 +206,8 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                         Height = p.Height?.ToString(),
                         Thickness = p.Thickness,
                         UOM = "Tấm",
-                        ProductType = "NVL"
+                        ProductType = "NVL",
+                        isupdatemisa = false
                     };
                     _context.Products.Add(product);
                     await _context.SaveChangesAsync();
@@ -250,7 +251,8 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                 Thickness = dto.Thickness,
                 Weight = dto.Weight,
                 UnitPrice = dto.UnitPrice,
-                GlassStructureId = dto.GlassStructureId
+                GlassStructureId = dto.GlassStructureId,
+                isupdatemisa = dto.isupdatemisa
             };
 
             _context.Products.Add(product);

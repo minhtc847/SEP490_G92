@@ -26,6 +26,7 @@ export interface OrderDetailDto {
   totalAmount: number;
   status: number;
   deliveryStatus: number;
+  isUpdateMisa: boolean;
 }
 
 export const getOrderDetailById = async (id: number): Promise<OrderDetailDto> => {
