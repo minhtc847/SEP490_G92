@@ -84,8 +84,14 @@ namespace SEP490.Selenium.Product
             InitSelenium();
             Login();
             Thread.Sleep(5000); // Wait for the page to load
+            wait.Until(d =>
+            {
+                var overlays = d.FindElements(By.CssSelector(".ms-popup--background"));
+                return overlays.Count == 0 || !overlays.Any(o => o.Displayed);
+            });
+
             var button = wait.Until(drv => drv.FindElement(By.XPath("//div[contains(@class, 'ms-button-text') and contains(text(), 'Thêm')]")));
-            button.Click();
+            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", button);
             Thread.Sleep(500); // Wait for the modal to open
             AddField(input);
             CloseDriver();
