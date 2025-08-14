@@ -195,8 +195,8 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
                                                         <th>Loại keo</th>
                                                         <th>Tổng keo (kg)</th>
                                                         <th>Số lượng cần đổ</th>
-                                                        <th>Số lượng đã đổ</th>
-                                                        <th>Số lượng còn lại</th>
+                                                        {/* <th>Số lượng đã đổ</th>
+                                                        <th>Số lượng còn lại</th> */}
                                                     </tr>
                                                 </thead>
                                                 <tbody>

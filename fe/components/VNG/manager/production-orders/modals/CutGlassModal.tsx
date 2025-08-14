@@ -176,8 +176,8 @@ const CutGlassModal = ({ isOpen, onClose, products, materialProducts, production
                                                         <th>STT</th>
                                                         <th>Tên sản phẩm</th>
                                                         <th>Số lượng cần cắt</th>
-                                                        <th>Số lượng đã cắt</th>
-                                                        <th>Số lượng còn lại</th>
+                                                        {/* <th>Số lượng đã cắt</th> */}
+                                                        {/* <th>Số lượng còn lại</th> */}
                                                         <th>Số lớp kính</th>
                                                     </tr>
                                                 </thead>

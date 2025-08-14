@@ -161,9 +161,9 @@ const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productio
                                                         <th>STT</th>
                                                         <th>Tên sản phẩm</th>
                                                         <th>Số lượng cần ghép</th>
-                                                        <th>Số lượng đã ghép</th>
+                                                        {/* <th>Số lượng đã ghép</th>
                                                         <th>Số lượng còn lại</th>
-                                                        <th>Số lượng đã cắt kính</th>
+                                                        <th>Số lượng đã cắt kính</th> */}
                                                     </tr>
                                                 </thead>
                                                 <tbody>
