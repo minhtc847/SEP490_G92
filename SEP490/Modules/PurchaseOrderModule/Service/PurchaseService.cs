@@ -94,6 +94,8 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
             var customer = await _context.Customers
                 .FirstOrDefaultAsync(c => c.CustomerName == dto.CustomerName && c.IsSupplier);
 
+
+
             if (customer == null)
             {
                 customer = new Customer
@@ -118,6 +120,13 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
 
             foreach (var p in dto.Products)
             {
+
+                var product = await _context.Products.FirstOrDefaultAsync(x => x.ProductName == p.ProductName);
+                if (product == null)
+                {
+                    throw new InvalidOperationException($"Product '{p.ProductName}' does not exist");
+                }
+
                 var detail = new PurchaseOrderDetail
                 {
                     PurchaseOrderId = order.Id,
@@ -287,16 +296,6 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
             if (order == null) return false;
 
             order.Status = status;
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
-        public async Task<bool> ChangeStatusToOrderedAsync(int orderId)
-        {
-            var order = await _context.PurchaseOrders.FirstOrDefaultAsync(o => o.Id == orderId);
-            if (order == null) return false;
-
-            order.Status = PurchaseStatus.Ordered;
             await _context.SaveChangesAsync();
             return true;
         }

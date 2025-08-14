@@ -20,7 +20,6 @@ namespace TestVNG.Serivces
             _context = CreateInMemoryDbContext();
             _productService = new ProductService(_context);
 
-            // Seed test data
             SeedTestData(_context);
         }
 
@@ -30,14 +29,11 @@ namespace TestVNG.Serivces
         [Fact]
         public void GetAllProducts_ShouldReturnEmptyList_WhenNoProductsExist()
         {
-            // Arrange
             _context = CreateInMemoryDbContext();
             _productService = new ProductService(_context);
 
-            // Act
             var result = _productService.GetAllProducts();
 
-            // Assert
             Assert.NotNull(result);
             Assert.Empty(result);
         }
@@ -45,27 +41,22 @@ namespace TestVNG.Serivces
         [Fact]
         public void GetAllProducts_ShouldReturnProducts_WithoutGlassStructure()
         {
-            // Arrange
             _context = CreateInMemoryDbContext();
             _context.Products.Add(TestData.GetSampleProducts().First(p => p.GlassStructureId == null));
             _context.SaveChanges();
             _productService = new ProductService(_context);
 
-            // Act
             var result = _productService.GetAllProducts();
 
-            // Assert
             Assert.Single(result);
             var product = result.First();
             Assert.Equal("PROD001", product.ProductCode);
-            Assert.Null(product.GlassStructureId);
-            Assert.Equal(string.Empty, product.GlassStructureProductName);
+            Assert.Null(product.GlassStructureProductName);
         }
 
         [Fact]
         public void GetAllProducts_ShouldReturnProducts_WithGlassStructure()
         {
-            // Arrange
             _context = CreateInMemoryDbContext();
             var glassStructures = TestData.GetSampleGlassStructures();
             var products = TestData.GetSampleProducts();
@@ -76,10 +67,8 @@ namespace TestVNG.Serivces
 
             _productService = new ProductService(_context);
 
-            // Act
             var result = _productService.GetAllProducts();
 
-            // Assert
             Assert.Single(result);
             var product = result.First();
             Assert.Equal("PROD002", product.ProductCode);
@@ -92,23 +81,19 @@ namespace TestVNG.Serivces
         [Fact]
         public void GetProductById_ShouldReturnNull_WhenIdIsNotFound()
         {
-            // Arrange
             _context = CreateInMemoryDbContext();
             _context.Products.AddRange(TestData.GetSampleProducts());
             _context.SaveChanges();
             _productService = new ProductService(_context);
 
-            // Act
             var result = _productService.GetProductById(999);
 
-            // Assert
             Assert.Null(result);
         }
 
         [Fact]
         public void GetProductById_ShouldReturnProduct_WhenIdExists()
         {
-            // Arrange
             _context = CreateInMemoryDbContext();
 
             var glassStructure = TestData.GetSampleGlassStructures().First();
@@ -123,10 +108,8 @@ namespace TestVNG.Serivces
 
             _productService = new ProductService(_context);
 
-            // Act
             var result = _productService.GetProductById(insertedProduct.Id);
 
-            // Assert
             Assert.NotNull(result);
             Assert.Equal("PROD002", result.ProductCode);
             Assert.NotNull(result.GlassStructure);
@@ -136,16 +119,13 @@ namespace TestVNG.Serivces
         [Fact]
         public void GetProductById_ShouldReturnNull_WhenIdIsNegative()
         {
-            // Arrange
             _context = CreateInMemoryDbContext();
             _context.Products.AddRange(TestData.GetSampleProducts());
             _context.SaveChanges();
             _productService = new ProductService(_context);
 
-            // Act
-            var result = _productService.GetProductById(-1); // ID không hợp lệ
+            var result = _productService.GetProductById(-1); 
 
-            // Assert
             Assert.Null(result);
         }
 
@@ -154,7 +134,6 @@ namespace TestVNG.Serivces
         [Fact]
         public void UpdateProduct_ShouldReturnFalse_WhenIdDoesNotExist()
         {
-            // Arrange
             _context = CreateInMemoryDbContext();
             _context.Products.AddRange(TestData.GetSampleProducts());
             _context.SaveChanges();
@@ -175,17 +154,14 @@ namespace TestVNG.Serivces
                 GlassStructureId = null
             };
 
-            // Act
             var result = _productService.UpdateProduct(999, dto);
 
-            // Assert
             Assert.False(result);
         }
 
         [Fact]
         public void UpdateProduct_ShouldReturnFalse_WhenIdIsInvalid()
         {
-            // Arrange
             _context = CreateInMemoryDbContext();
             _context.Products.AddRange(TestData.GetSampleProducts());
             _context.SaveChanges();
@@ -206,17 +182,14 @@ namespace TestVNG.Serivces
                 GlassStructureId = null
             };
 
-            // Act
             var result = _productService.UpdateProduct(-1, dto);
 
-            // Assert
             Assert.False(result);
         }
 
         [Fact]
         public void UpdateProduct_ShouldReturnTrue_WhenIdExists_AndValidData()
         {
-            // Arrange
             _context = CreateInMemoryDbContext();
             _context.GlassStructures.AddRange(TestData.GetSampleGlassStructures());
             _context.Products.AddRange(TestData.GetSampleProducts());
@@ -240,10 +213,8 @@ namespace TestVNG.Serivces
 
             var productId = _context.Products.First().Id;
 
-            // Act
             var result = _productService.UpdateProduct(productId, dto);
 
-            // Assert
             Assert.True(result);
 
             var updated = _context.Products.First(p => p.Id == productId);
@@ -253,9 +224,8 @@ namespace TestVNG.Serivces
         }
 
         [Fact]
-        public void UpdateProduct_ShouldAllow_ProductNameIsNull()
+        public void UpdateProduct_ShouldThrow_WhenProductNameIsNull()
         {
-            // Arrange
             _context = CreateInMemoryDbContext();
             _context.Products.AddRange(TestData.GetSampleProducts());
             _context.SaveChanges();
@@ -278,19 +248,14 @@ namespace TestVNG.Serivces
                 GlassStructureId = null
             };
 
-            // Act
-            var result = _productService.UpdateProduct(productId, dto);
-
-            // Assert
-            Assert.True(result);
-            var product = _context.Products.First(p => p.Id == productId);
-            Assert.Null(product.ProductName);
+            var ex = Assert.Throws<ArgumentException>(() => _productService.UpdateProduct(productId, dto));
+            Assert.Equal("ProductName is required", ex.Message);
         }
+
 
         [Fact]
         public void UpdateProduct_ShouldRemoveGlassStructure_WhenGlassStructureIdIsNull()
         {
-            // Arrange
             _context = CreateInMemoryDbContext();
             _context.GlassStructures.AddRange(TestData.GetSampleGlassStructures());
             _context.Products.AddRange(TestData.GetSampleProducts());
@@ -311,13 +276,11 @@ namespace TestVNG.Serivces
                 Weight = productWithGlass.Weight,
                 UnitPrice = productWithGlass.UnitPrice,
                 Quantity = productWithGlass.quantity,
-                GlassStructureId = null // remove
+                GlassStructureId = null
             };
 
-            // Act
             var result = _productService.UpdateProduct(productWithGlass.Id, dto);
 
-            // Assert
             Assert.True(result);
             var updated = _context.Products.First(p => p.Id == productWithGlass.Id);
             Assert.Null(updated.GlassStructureId);
@@ -326,7 +289,6 @@ namespace TestVNG.Serivces
         [Fact]
         public void UpdateProduct_ShouldSetGlassStructure_WhenValidGlassStructureId()
         {
-            // Arrange
             _context = CreateInMemoryDbContext();
             _context.GlassStructures.AddRange(TestData.GetSampleGlassStructures());
             _context.Products.AddRange(TestData.GetSampleProducts());
@@ -350,19 +312,16 @@ namespace TestVNG.Serivces
                 GlassStructureId = 1
             };
 
-            // Act
             var result = _productService.UpdateProduct(product.Id, dto);
 
-            // Assert
             Assert.True(result);
             var updated = _context.Products.First(p => p.Id == product.Id);
             Assert.Equal(1, updated.GlassStructureId);
         }
 
         [Fact]
-        public void UpdateProduct_ShouldSetGlassStructureToNull_WhenInvalidGlassStructureId()
+        public void UpdateProduct_ShouldThrow_WhenGlassStructureIdIsInvalid()
         {
-            // Arrange
             _context = CreateInMemoryDbContext();
             _context.Products.AddRange(TestData.GetSampleProducts());
             _context.SaveChanges();
@@ -385,29 +344,25 @@ namespace TestVNG.Serivces
                 GlassStructureId = 999 
             };
 
-            // Act
-            var result = _productService.UpdateProduct(product.Id, dto);
-
-            // Assert
-            Assert.True(result);
-            var updated = _context.Products.First(p => p.Id == product.Id);
-            Assert.Equal(999, updated.GlassStructureId);
+            var ex = Assert.Throws<ArgumentException>(() => _productService.UpdateProduct(product.Id, dto));
+            Assert.Equal("Invalid GlassStructureId", ex.Message);
         }
 
         [Fact]
-        public void UpdateProduct_ShouldFail_WhenProductNameIsDuplicated()
+        public void UpdateProduct_ShouldThrow_WhenProductNameIsDuplicated()
         {
-            // Arrange
-            var existingProduct = _context.Products.First();
             _context = CreateInMemoryDbContext();
             _context.GlassStructures.AddRange(TestData.GetSampleGlassStructures());
             _context.Products.AddRange(TestData.GetSampleProducts());
             _context.SaveChanges();
             _productService = new ProductService(_context);
 
+            var existingProductName = _context.Products.Skip(1).First().ProductName;
+            var productId = _context.Products.First().Id;
+
             var dto = new UpdateProductProductDto
             {
-                ProductName = existingProduct.ProductName,
+                ProductName = existingProductName,
                 ProductCode = "NEWCODE",
                 ProductType = "TP",
                 UOM = "Tấm",
@@ -420,24 +375,14 @@ namespace TestVNG.Serivces
                 GlassStructureId = 1
             };
 
-            var productId = _context.Products.First().Id;
-
-            // Act
-            var result = _productService.UpdateProduct(productId, dto);
-
-            // Assert
-            Assert.True(result);
-
-            var updated = _context.Products.First(p => p.Id == productId);
-            Assert.Equal("Updated Product", updated.ProductName);
-            Assert.Equal("NEWCODE", updated.ProductCode);
-            Assert.Equal(1, updated.GlassStructureId);
+            var ex = Assert.Throws<ArgumentException>(() => _productService.UpdateProduct(productId, dto));
+            Assert.Equal("Duplicate ProductName", ex.Message);
         }
 
+
         [Fact]
-        public void UpdateProduct_ShouldFail_WhenGlassStructureIsInvalid()
+        public void UpdateProduct_ShouldThrow_WhenGlassStructureIsInvalid()
         {
-            // Arrange
             _context = CreateInMemoryDbContext();
             _context.GlassStructures.AddRange(TestData.GetSampleGlassStructures());
             _context.Products.AddRange(TestData.GetSampleProducts());
@@ -461,53 +406,61 @@ namespace TestVNG.Serivces
 
             var productId = _context.Products.First().Id;
 
-            // Act
-            var result = _productService.UpdateProduct(productId, dto);
-
-            // Assert
-            Assert.True(result);
-
-            var updated = _context.Products.First(p => p.Id == productId);
-            Assert.Equal("Updated Product", updated.ProductName);
-            Assert.Equal("NEWCODE", updated.ProductCode);
-            Assert.Equal(1, updated.GlassStructureId);
+            var ex = Assert.Throws<ArgumentException>(() => _productService.UpdateProduct(productId, dto));
+            Assert.Equal("Invalid GlassStructureId", ex.Message);
         }
+
 
         //-------------------- DeleteProduct ---------------------
 
         [Fact]
         public void DeleteProduct_ShouldReturnFalse_WhenIdIsInvalid()
         {
-            // Act
             var result = _productService.DeleteProduct(-1);
 
-            // Assert
             Assert.False(result);
         }
 
+        [Fact]
+        public void DeleteProduct_ShouldReturnTrue_WhenIdExists_AndNotUsedInOrder()
+        {
+            using var context = CreateInMemoryDbContext();
+            context.Products.Add(new Product
+            {
+                Id = 1,
+                ProductCode = "PROD001",
+                ProductName = "Test Product"
+            });
+            context.SaveChanges();
+
+            var service = new ProductService(context);
+
+            var result = service.DeleteProduct(1);
+
+            Assert.True(result);
+            Assert.Empty(context.Products);
+        }
 
         [Fact]
-        public async Task DeleteProduct_ShouldReturnTrue_WhenIdExists()
+        public void DeleteProduct_ShouldThrow_WhenProductUsedInOrder()
         {
+            using var context = CreateInMemoryDbContext();
+            SeedTestData(context);
+            var service = new ProductService(context);
 
-            // Act
-            var result = _productService.DeleteProduct(1);
+            var ex = Assert.Throws<InvalidOperationException>(() => service.DeleteProduct(1));
 
-            // Assert
-            Assert.True(result);
-            Assert.Null( _context.Products.FindAsync(1));
+            Assert.Equal("Sản phẩm đang được sử dụng trong đơn hàng, không thể xoá!", ex.Message);
         }
+
 
         [Fact]
         public async Task DeleteProduct_ShouldReturnFalse_WhenIdDoesNotExist()
         {
-            // Arrange
             int nonExistentId = 9999;
 
-            // Act
             var result = _productService.DeleteProduct(nonExistentId);
 
-            // Assert
             Assert.False(result);
         }
 
@@ -529,7 +482,7 @@ namespace TestVNG.Serivces
         {
             var dto = new CreateProductProductDto
             {
-                ProductName = "Product 1", // đã tồn tại trong TestData
+                ProductName = "Product 1",
                 ProductCode = "NEW002"
             };
 
@@ -543,7 +496,7 @@ namespace TestVNG.Serivces
             {
                 ProductName = "Unique Product",
                 ProductCode = "NEW003",
-                GlassStructureId = -5 // ID không hợp lệ
+                GlassStructureId = -5
             };
 
             _productService.CreateProduct(dto);
@@ -556,7 +509,7 @@ namespace TestVNG.Serivces
             {
                 ProductName = "Unique Product 2",
                 ProductCode = "NEW004",
-                GlassStructureId = 999 // không tồn tại trong TestData
+                GlassStructureId = 999 
             };
 
             _productService.CreateProduct(dto);
@@ -569,7 +522,7 @@ namespace TestVNG.Serivces
             {
                 ProductName = "Glass Linked Product",
                 ProductCode = "NEW006",
-                GlassStructureId = 1 // tồn tại trong TestData
+                GlassStructureId = 1 
             };
 
             _productService.CreateProduct(dto);

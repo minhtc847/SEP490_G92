@@ -27,7 +27,6 @@ const toPositiveNumber = (v: string | number): number | null => {
     const n = typeof v === 'string' ? Number(v) : v;
     return Number.isFinite(n) && n > 0 ? n : null;
 };
-const PRODUCT_NAME_REGEX = /^Kính .+ KT: \d+\*\d+\*\d+ mm$/;
 
 const PurchaseOrderCreatePage = () => {
     const router = useRouter();

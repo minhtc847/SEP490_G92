@@ -12,12 +12,18 @@ namespace SEP490.Modules.InvoiceModule.Service
     {
         private readonly SEP490DbContext _context;
         private readonly IPaymentService _paymentService;
+        private SEP490DbContext context;
 
         public InvoiceService(SEP490DbContext context, IPaymentService paymentService)
         {
             _context = context;
             _paymentService = paymentService;
         }
+
+        //public InvoiceService(SEP490DbContext context)
+        //{
+        //    _context = context;
+        //}
 
         public List<InvoiceDto> GetAllInvoices()
         {

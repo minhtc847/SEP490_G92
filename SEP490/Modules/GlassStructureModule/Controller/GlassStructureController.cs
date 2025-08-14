@@ -40,9 +40,7 @@ namespace SEP490.Modules.GlassStructureModule.Controller
         [HttpPut("{id}")]
         public IActionResult Update(int id, [FromBody] UpdateGlassStructureDto dto)
         {
-            var success = _service.UpdateGlassStructureById(id, dto);
-            if (!success)
-                return NotFound(new { message = "Không tìm thấy cấu trúc kính để cập nhật." });
+            _service.UpdateGlassStructureById(id, dto);
 
             return Ok(new { message = "Cập nhật thành công!" });
         }

@@ -6,7 +6,7 @@ namespace SEP490.Modules.GlassStructureModule.Service
     {
         List<GlassStructureDto> GetAllGlassStructures();
         GlassStructureDto? GetGlassStructureById(int id);
-        bool UpdateGlassStructureById(int id, UpdateGlassStructureDto dto);
+        Task<bool> UpdateGlassStructureById(int id, UpdateGlassStructureDto dto);
         bool DeleteGlassStructureById(int id);
         GlassStructureDto AddGlassStructure(UpdateGlassStructureDto dto);
 

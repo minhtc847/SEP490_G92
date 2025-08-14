@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TestVNG.Setup;
+
 
 namespace TestVNG.Setup
 {
@@ -34,8 +36,15 @@ namespace TestVNG.Setup
 
         protected void SeedTestData(SEP490DbContext context)
         {
+            context.Customers.AddRange(TestData.GetSampleCustomers());
+            context.Invoices.AddRange(TestData.GetSampleInvoices());
             context.GlassStructures.AddRange(TestData.GetSampleGlassStructures());
             context.Products.AddRange(TestData.GetSampleProducts());
+            context.Employees.AddRange(TestData.GetSampleEmployees());
+            context.PurchaseOrders.AddRange(TestData.GetSamplePurchaseOrders());
+            context.SaleOrders.AddRange(TestData.GetSampleSaleOrders());
+            context.OrderDetails.AddRange(TestData.GetSampleOrderDetails());
+            context.OrderDetailProducts.AddRange(TestData.GetSampleOrderDetailProducts());
             context.SaveChanges();
         }
 

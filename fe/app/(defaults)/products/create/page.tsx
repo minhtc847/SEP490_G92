@@ -32,6 +32,20 @@ const ProductCreatePage = () => {
         glassStructureId: undefined as number | undefined,
     });
 
+    function generateProductName(structureName: string, width: number, height: number, thickness: number) {
+        // Ví dụ: cấu trúc kính: "EI60 phút, VNG-MK cữ kính đứng"
+        // Kết quả: "Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng"
+        return `Kính ${structureName.replace(/^Kính\s*/i, '').trim()}, KT: ${width}*${height}*${thickness} mm`;
+    }
+
+    useEffect(() => {
+        const structure = glassStructures.find((g) => g.id === newFinishedProductForm.glassStructureId);
+        if (structure && newFinishedProductForm.width && newFinishedProductForm.height && newFinishedProductForm.thickness) {
+            const newName = generateProductName(structure.productName, newFinishedProductForm.width, newFinishedProductForm.height, newFinishedProductForm.thickness);
+            setNewFinishedProductForm((prev) => ({ ...prev, productName: newName }));
+        }
+    }, [newFinishedProductForm.glassStructureId, newFinishedProductForm.width, newFinishedProductForm.height, newFinishedProductForm.thickness, glassStructures]);
+
     const [newMaterialProductForm, setNewMaterialProductForm] = useState({
         productName: '',
         width: 0,
@@ -139,11 +153,11 @@ const ProductCreatePage = () => {
             alert('Tên sản phẩm đã tồn tại.');
             return;
         }
-        const regex = /^Kính .+ phút, KT: \d+\*\d+\*\d+ mm, .+$/;
-        if (!regex.test(newFinishedProductForm.productName)) {
-            alert('Tên sản phẩm sai định dạng.\n\nVí dụ đúng: Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng');
-            return;
-        }
+        // const regex = /^Kính .+ phút, KT: \d+\*\d+\*\d+ mm, .+$/;
+        // if (!regex.test(newFinishedProductForm.productName)) {
+        //     alert('Tên sản phẩm sai định dạng.\n\nVí dụ đúng: Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng');
+        //     return;
+        // }
         if (!newFinishedProductForm.glassStructureId) {
             alert('Vui lòng chọn cấu trúc kính.');
             return;
@@ -180,11 +194,17 @@ const ProductCreatePage = () => {
                             ⚠️ Tên sản phẩm phải theo định dạng: <strong>Kính [loại] phút, KT: [rộng]*[cao]*[dày] mm, [mô tả thêm]</strong>
                             <br />
                             <span>
-                                Ví dụ: <code>Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng</code>
+                                Ví dụ: <code>Kính chống cháy dùng keo Nano cao cấp EI 15, KT: 100*200*10 mm</code>
                             </span>
                         </p>
 
                         <label className="block mb-1 font-medium">Tên sản phẩm</label>
+                        {/* <input
+                            className="input input-bordered w-full"
+                            value={newFinishedProductForm.productName}
+                            onChange={(e) => handleFinishedProductNameChange(e.target.value)}
+                            placeholder="VD: Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng"
+                        /> */}
                         <input
                             className="input input-bordered w-full"
                             value={newFinishedProductForm.productName}
@@ -194,7 +214,7 @@ const ProductCreatePage = () => {
                         {isProductNameDuplicate && <p className="text-red-500 text-sm">Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.</p>}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    {/* <div className="grid grid-cols-3 gap-4">
                         <div>
                             <label className="block mb-1 font-medium">Rộng (mm)</label>
                             <input
@@ -225,7 +245,50 @@ const ProductCreatePage = () => {
                                 onChange={(e) => setNewFinishedProductForm((p) => ({ ...p, thickness: +e.target.value }))}
                             />
                         </div>
+                    </div> */}
+
+                    <div className="grid grid-cols-3 gap-4">
+                        <div>
+                            <label className="block mb-1 font-medium">Rộng (mm)</label>
+                            <input
+                                type="number"
+                                className="input input-bordered w-full"
+                                value={newFinishedProductForm.width}
+                                onChange={(e) => setNewFinishedProductForm((p) => ({ ...p, width: +e.target.value }))}
+                            />
+                        </div>
+                        <div>
+                            <label className="block mb-1 font-medium">Cao (mm)</label>
+                            <input
+                                type="number"
+                                className="input input-bordered w-full"
+                                value={newFinishedProductForm.height}
+                                onChange={(e) => setNewFinishedProductForm((p) => ({ ...p, height: +e.target.value }))}
+                            />
+                        </div>
+                        <div>
+                            <label className="block mb-1 font-medium">Dày (mm)</label>
+                            <input
+                                type="number"
+                                className="input input-bordered w-full"
+                                value={newFinishedProductForm.thickness}
+                                onChange={(e) => setNewFinishedProductForm((p) => ({ ...p, thickness: +e.target.value }))}
+                            />
+                        </div>
                     </div>
+
+                    {/* <div>
+                        <label className="block mb-1 font-medium">Cấu trúc kính</label>
+                        <AsyncSelect
+                            cacheOptions
+                            defaultOptions
+                            loadOptions={(input, cb) =>
+                                cb(glassStructures.filter((g) => g.productName.toLowerCase().includes(input.toLowerCase())).map((g) => ({ label: g.productName, value: g.id })))
+                            }
+                            onChange={(opt) => setNewFinishedProductForm((p) => ({ ...p, glassStructureId: opt ? opt.value : undefined }))}
+                            value={glassStructures.filter((g) => g.id === newFinishedProductForm.glassStructureId).map((g) => ({ label: g.productName, value: g.id }))[0] || null}
+                        />
+                    </div> */}
 
                     <div>
                         <label className="block mb-1 font-medium">Cấu trúc kính</label>
@@ -239,6 +302,23 @@ const ProductCreatePage = () => {
                             value={glassStructures.filter((g) => g.id === newFinishedProductForm.glassStructureId).map((g) => ({ label: g.productName, value: g.id }))[0] || null}
                         />
                     </div>
+
+                    {/* <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block mb-1 font-medium">Diện tích (m²)</label>
+                            <div className="input input-bordered bg-gray-100">{((newFinishedProductForm.width * newFinishedProductForm.height) / 1_000_000).toFixed(2)}</div>
+                        </div>
+                        <div>
+                            <label className="block mb-1 font-medium">Đơn giá (₫)</label>
+                            <div className="input input-bordered bg-gray-100">
+                                {(() => {
+                                    const area = (newFinishedProductForm.width * newFinishedProductForm.height) / 1_000_000;
+                                    const s = glassStructures.find((g) => g.id === newFinishedProductForm.glassStructureId);
+                                    return ((s?.unitPrice || 0) * area).toFixed(0);
+                                })()}
+                            </div>
+                        </div>
+                    </div> */}
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
