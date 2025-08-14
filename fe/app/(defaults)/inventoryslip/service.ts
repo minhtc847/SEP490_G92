@@ -23,6 +23,8 @@ export interface InventorySlipDetail {
     note?: string;
     sortOrder: number;
     productionOutputId?: number;
+    targetProductName?: string;
+    targetProductCode?: string;
     outputMappings?: MaterialOutputMappingDto[];
 }
 
@@ -53,6 +55,14 @@ export interface CreateInventorySlipDto {
     description?: string;
     details: CreateInventorySlipDetailDto[];
     mappings: CreateMaterialOutputMappingDto[];
+    
+    // Thêm trường để lưu số lượng sản phẩm mục tiêu cho phiếu xuất vật liệu
+    productionOutputTargets?: ProductionOutputTargetDto[];
+}
+
+export interface ProductionOutputTargetDto {
+    productionOutputId: number;
+    targetQuantity: number;
 }
 
 export interface CreateInventorySlipDetailDto {
@@ -207,6 +217,29 @@ export const createInventorySlip = async (dto: CreateInventorySlipDto): Promise<
         return json?.data ?? json;
     } catch (error) {
         console.error('Error creating inventory slip:', error);
+        return null;
+    }
+};
+
+export const createMaterialExportSlip = async (dto: CreateInventorySlipDto): Promise<InventorySlip | null> => {
+    try {
+        // Determine which endpoint to use based on production order type
+        // This will be handled by the backend based on the production order type
+        const response = await fetch(`${API_BASE}/create`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...authHeaders(),
+            },
+            body: JSON.stringify(dto),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to create material export slip');
+        }
+        const json = await response.json();
+        return json?.data ?? json;
+    } catch (error) {
+        console.error('Error creating material export slip:', error);
         return null;
     }
 };
@@ -378,5 +411,31 @@ export const searchProducts = async (request: ProductSearchRequestDto): Promise<
     } catch (error) {
         console.error('Error searching products:', error);
         return null;
+    }
+};
+
+// Production Material interface and functions
+export interface ProductionMaterial {
+    id: number;
+    productId: number;
+    productName: string;
+    productCode: string;
+    uom: string;
+    amount: number;
+    productionOutputId: number;
+}
+
+export const fetchMaterialsByProductionOutput = async (productionOutputId: number): Promise<ProductionMaterial[]> => {
+    try {
+        const response = await fetch(`${API_BASE}/materials/production-output/${productionOutputId}`, { 
+            headers: { ...authHeaders() } 
+        });
+        if (!response.ok) {
+            throw new Error('Failed to fetch materials by production output');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching materials by production output:', error);
+        return [];
     }
 };

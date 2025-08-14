@@ -185,22 +185,13 @@ const ProductionOrderInventorySlipPage = () => {
                                 Tạo phiếu cắt kính
                             </button>
                         )}
-                        {productionOrderInfo.type === 'Ghép kính' && (
+                        {(productionOrderInfo.type === 'Ghép kính' || ['Sản xuất keo', 'Đổ keo'].includes(productionOrderInfo.type)) && (
                             <button
-                                onClick={() => router.push(`/inventoryslip/${productionOrderId}/butyl-glue-export`)}
+                                onClick={() => router.push(`/inventoryslip/${productionOrderId}/material-export`)}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                             >
                                 <IconPlus className="w-4 h-4 mr-2" />
-                                Tạo phiếu xuất keo butyl
-                            </button>
-                        )}
-                        {['Sản xuất keo', 'Đổ keo'].includes(productionOrderInfo.type) && (
-                            <button
-                                onClick={() => router.push(`/inventoryslip/${productionOrderId}/chemical-export`)}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                            >
-                                <IconPlus className="w-4 h-4 mr-2" />
-                                Tạo phiếu xuất hóa chất
+                                {productionOrderInfo.type === 'Ghép kính' ? 'Tạo phiếu xuất keo butyl' : 'Tạo phiếu xuất hóa chất'}
                             </button>
                         )}
                     </div>

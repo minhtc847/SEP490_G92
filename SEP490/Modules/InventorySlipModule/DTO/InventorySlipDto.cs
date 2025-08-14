@@ -32,6 +32,10 @@ namespace SEP490.Modules.InventorySlipModule.DTO
         public int SortOrder { get; set; }
         public int? ProductionOutputId { get; set; }
         
+        // Thông tin sản phẩm mục tiêu (cho phiếu xuất vật liệu)
+        public string? TargetProductName { get; set; }
+        public string? TargetProductCode { get; set; }
+        
         // For mapping relationships (cut glass slips)
         public List<MaterialOutputMappingDto> OutputMappings { get; set; } = new List<MaterialOutputMappingDto>();
     }
@@ -51,6 +55,15 @@ namespace SEP490.Modules.InventorySlipModule.DTO
         public string? Description { get; set; }
         public List<CreateInventorySlipDetailDto> Details { get; set; } = new List<CreateInventorySlipDetailDto>();
         public List<CreateMaterialOutputMappingDto>? Mappings { get; set; }
+        
+        // Thêm trường để lưu số lượng sản phẩm mục tiêu cho phiếu xuất vật liệu
+        public List<ProductionOutputTargetDto> ProductionOutputTargets { get; set; } = new List<ProductionOutputTargetDto>();
+    }
+
+    public class ProductionOutputTargetDto
+    {
+        public int ProductionOutputId { get; set; }
+        public decimal TargetQuantity { get; set; }
     }
 
     public class CreateInventorySlipDetailDto

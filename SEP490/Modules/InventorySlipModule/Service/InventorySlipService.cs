@@ -162,7 +162,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 _context.InventorySlips.Add(slip);
                 await _context.SaveChangesAsync();
 
-                // Create details
+                // Create details - Sử dụng ProductionOutputId để gom nhóm nguyên liệu theo sản phẩm mục tiêu
                 var details = new List<InventorySlipDetail>();
                 foreach (var detailDto in dto.Details)
                 {
@@ -173,7 +173,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                         Quantity = detailDto.Quantity,
                         Note = detailDto.Note,
                         SortOrder = detailDto.SortOrder,
-                        ProductionOutputId = detailDto.ProductionOutputId,
+                        ProductionOutputId = detailDto.ProductionOutputId, // Sử dụng để gom nhóm
                         CreatedAt = DateTime.Now,
                         UpdatedAt = DateTime.Now
                     };
@@ -183,8 +183,8 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 _context.InventorySlipDetails.AddRange(details);
                 await _context.SaveChangesAsync();
 
-                // Update ProductionOutput finished quantities for semi-finished products
-                await UpdateProductionOutputFinishedQuantitiesAsync(details, new MappingInfoDto()); // Pass an empty MappingInfoDto
+                // Cập nhật ProductionOutput finished quantities cho phiếu xuất vật liệu
+                await UpdateProductionOutputFinishedQuantitiesForMaterialExportAsync(dto);
 
                 await transaction.CommitAsync();
                 return await GetInventorySlipByIdAsync(slip.Id);
@@ -198,7 +198,8 @@ namespace SEP490.Modules.InventorySlipModule.Service
 
         public async Task<InventorySlipDto> CreateGlueButylSlipAsync(CreateInventorySlipDto dto)
         {
-            // Similar to chemical export slip
+            // Tạo phiếu xuất keo butyl - Sử dụng cùng logic với chemical export
+            // Không sử dụng ProductionOutputId cho phiếu xuất vật liệu
             return await CreateChemicalExportSlipAsync(dto);
         }
 
@@ -247,7 +248,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     }
                 }
                 
-                var result = MapToDto(slip);
+                var result = await MapToDtoAsync(slip);
                 return result;
             }
             catch (Exception ex)
@@ -266,7 +267,12 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 .OrderByDescending(s => s.CreatedAt)
                 .ToListAsync();
 
-            return slips.Select(MapToDto).ToList();
+            var result = new List<InventorySlipDto>();
+            foreach (var slip in slips)
+            {
+                result.Add(await MapToDtoAsync(slip));
+            }
+            return result;
         }
 
         public async Task<List<InventorySlipDto>> GetInventorySlipsByProductionOrderAsync(int productionOrderId)
@@ -309,8 +315,12 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     }
                 }
 
-                var result = slips.Select(MapToDto).ToList();
-                return result;
+                            var result = new List<InventorySlipDto>();
+            foreach (var slip in slips)
+            {
+                result.Add(await MapToDtoAsync(slip));
+            }
+            return result;
             }
             catch (Exception ex)
             {
@@ -482,24 +492,30 @@ namespace SEP490.Modules.InventorySlipModule.Service
             }
             else
             {
-                // For chemical export and glue butyl export: use existing logic
-                var availableProducts = await _context.ProductionOutputs
-                    .Include(po => po.Product)
-                    .Where(po => po.ProductionOrderId == productionOrderId)
-                    .Select(po => po.Product)
-                    .Distinct()
+                // For chemical export and glue butyl export: get materials from production_materials
+                var productionMaterials = await _context.ProductionMaterials
+                    .Include(pm => pm.Product)
+                    .Include(pm => pm.ProductionOutput)
+                    .Where(pm => pm.ProductionOutput.ProductionOrderId == productionOrderId)
                     .ToListAsync();
 
-                // Also add some common raw materials
-                var rawMaterialsFromDb = await _context.Products
-                    .Where(p => p.ProductType == "Nguyên vật liệu" || p.ProductType == "Kính")
+                // Get unique products from production materials
+                var materialProducts = productionMaterials
+                    .Select(pm => pm.Product)
+                    .Where(p => p != null)
+                    .Distinct()
+                    .ToList();
+
+                // Also add some common raw materials that might be needed
+                var additionalRawMaterials = await _context.Products
+                    .Where(p => p.ProductType == "Nguyên vật liệu" || p.ProductType == "NVL")
                     .ToListAsync();
 
                 // Combine and remove duplicates
                 var allProducts = new List<Product>();
-                allProducts.AddRange(availableProducts);
+                allProducts.AddRange(materialProducts);
                 
-                foreach (var raw in rawMaterialsFromDb)
+                foreach (var raw in additionalRawMaterials)
                 {
                     if (!allProducts.Any(p => p.Id == raw.Id))
                     {
@@ -690,6 +706,29 @@ namespace SEP490.Modules.InventorySlipModule.Service
             };
         }
 
+        /// <summary>
+        /// Lấy danh sách nguyên liệu từ production_materials dựa trên production_output_id
+        /// </summary>
+        public async Task<List<ProductionMaterialDto>> GetMaterialsByProductionOutputAsync(int productionOutputId)
+        {
+            var materials = await _context.ProductionMaterials
+                .Include(pm => pm.Product)
+                .Include(pm => pm.ProductionOutput)
+                .Where(pm => pm.ProductionOutputId == productionOutputId)
+                .ToListAsync();
+
+            return materials.Select(pm => new ProductionMaterialDto
+            {
+                Id = pm.Id,
+                ProductId = pm.ProductId,
+                ProductName = pm.Product?.ProductName ?? $"Sản phẩm {pm.ProductId}",
+                ProductCode = pm.Product?.ProductCode ?? "",
+                UOM = pm.UOM?.ToString() ?? pm.Product?.UOM ?? "cái",
+                Amount = pm.Amount ?? 0,
+                ProductionOutputId = pm.ProductionOutputId
+            }).ToList();
+        }
+
         public async Task<InventorySlipDto> UpdateInventorySlipAsync(int id, CreateInventorySlipDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -831,7 +870,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
             }
         }
 
-        private InventorySlipDto MapToDto(InventorySlip slip)
+        private async Task<InventorySlipDto> MapToDtoAsync(InventorySlip slip)
         {
             // Get all product IDs that are production outputs for this production order
             var productionOutputProductIds = _context.ProductionOutputs
@@ -840,54 +879,108 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 .ToList();
 
             var details = new List<InventorySlipDetailDto>();
-            foreach (var detail in slip.Details.OrderBy(d => d.SortOrder))
-            {                
-                string productType;
-                
-                if (detail.OutputMappings != null && detail.OutputMappings.Any())
-                {
-                    // This detail has output mappings (is an input to an output)
-                    productType = "NVL";
-                }
-                else if (productionOutputProductIds.Contains(detail.ProductId))
-                {
-                    // This detail's product is found in production outputs for this production order
-                    productType = "Bán thành phẩm";
-                }
-                else if (detail.InputMappings != null && detail.InputMappings.Any())
-                {
-                    // This detail has input mappings (is an output from an input) and is not a semi-finished product
-                    productType = "Kính dư";
-                }
-                else
-                {
-                    // Fallback to the product's own type
-                    productType = detail.Product?.ProductType ?? "NVL";
-                }
-
-                var detailDto = new InventorySlipDetailDto
-                {
-                    Id = detail.Id,
-                    ProductId = detail.ProductId,
-                    ProductCode = detail.Product?.ProductCode,
-                    ProductName = detail.Product?.ProductName,
-                    ProductType = productType,
-                    UOM = detail.Product?.UOM,
-                    Quantity = detail.Quantity,
-                    Note = detail.Note,
-                    SortOrder = detail.SortOrder,
-                    ProductionOutputId = detail.ProductionOutputId,
-                    OutputMappings = detail.OutputMappings?.Select(m => new MaterialOutputMappingDto
+            
+            // Xử lý khác nhau cho từng loại phiếu
+            if (slip.ProductionOrder?.Type == "Cắt kính")
+            {
+                // Giữ nguyên logic cũ cho phiếu cắt kính
+                foreach (var detail in slip.Details.OrderBy(d => d.SortOrder))
+                {                
+                    string productType;
+                    
+                    if (detail.OutputMappings != null && detail.OutputMappings.Any())
                     {
-                        Id = m.Id,
-                        OutputDetailId = m.OutputDetailId,
-                        OutputProductName = m.OutputDetail?.Product?.ProductName,
-                        OutputProductCode = m.OutputDetail?.Product?.ProductCode,
-                        Note = m.Note
-                    }).ToList() ?? new List<MaterialOutputMappingDto>()
-                };
-                
-                details.Add(detailDto);
+                        // This detail has output mappings (is an input to an output)
+                        productType = "NVL";
+                    }
+                    else if (productionOutputProductIds.Contains(detail.ProductId))
+                    {
+                        // This detail's product is found in production outputs for this production order
+                        productType = "Bán thành phẩm";
+                    }
+                    else if (detail.InputMappings != null && detail.InputMappings.Any())
+                    {
+                        // This detail has input mappings (is an output from an input) and is not a semi-finished product
+                        productType = "Kính dư";
+                    }
+                    else
+                    {
+                        // Fallback to the product's own type
+                        productType = detail.Product?.ProductType ?? "NVL";
+                    }
+
+                    var detailDto = new InventorySlipDetailDto
+                    {
+                        Id = detail.Id,
+                        ProductId = detail.ProductId,
+                        ProductCode = detail.Product?.ProductCode,
+                        ProductName = detail.Product?.ProductName,
+                        ProductType = productType,
+                        UOM = detail.Product?.UOM,
+                        Quantity = detail.Quantity,
+                        Note = detail.Note,
+                        SortOrder = detail.SortOrder,
+                        ProductionOutputId = detail.ProductionOutputId,
+                        OutputMappings = detail.OutputMappings?.Select(m => new MaterialOutputMappingDto
+                        {
+                            Id = m.Id,
+                            OutputDetailId = m.OutputDetailId,
+                            OutputProductName = m.OutputDetail?.Product?.ProductName,
+                            OutputProductCode = m.OutputDetail?.Product?.ProductCode,
+                            Note = m.Note
+                        }).ToList() ?? new List<MaterialOutputMappingDto>()
+                    };
+                    
+                    details.Add(detailDto);
+                }
+            }
+            else
+            {
+                // Cho phiếu xuất vật liệu (chemical export, glue butyl): gom nhóm theo production_output_id
+                // Sắp xếp theo production_output_id để gom nhóm
+                var sortedDetails = slip.Details
+                    .OrderBy(d => d.ProductionOutputId ?? int.MaxValue) // Những detail không có production_output_id sẽ ở cuối
+                    .ThenBy(d => d.SortOrder)
+                    .ToList();
+
+                foreach (var detail in sortedDetails)
+                {
+                    // Lấy thông tin sản phẩm mục tiêu từ ProductionOutput
+                    string? targetProductName = null;
+                    string? targetProductCode = null;
+                    
+                    if (detail.ProductionOutputId.HasValue)
+                    {
+                        var productionOutput = await _context.ProductionOutputs
+                            .Include(po => po.Product)
+                            .FirstOrDefaultAsync(po => po.Id == detail.ProductionOutputId.Value);
+                        
+                        if (productionOutput?.Product != null)
+                        {
+                            targetProductName = productionOutput.Product.ProductName;
+                            targetProductCode = productionOutput.Product.ProductCode;
+                        }
+                    }
+
+                    var detailDto = new InventorySlipDetailDto
+                    {
+                        Id = detail.Id,
+                        ProductId = detail.ProductId,
+                        ProductCode = detail.Product?.ProductCode,
+                        ProductName = detail.Product?.ProductName,
+                        ProductType = detail.Product?.ProductType ?? "NVL",
+                        UOM = detail.Product?.UOM,
+                        Quantity = detail.Quantity,
+                        Note = detail.Note,
+                        SortOrder = detail.SortOrder,
+                        ProductionOutputId = detail.ProductionOutputId,
+                        TargetProductName = targetProductName,
+                        TargetProductCode = targetProductCode,
+                        OutputMappings = new List<MaterialOutputMappingDto>() // Không có mapping cho phiếu xuất vật liệu
+                    };
+                    
+                    details.Add(detailDto);
+                }
             }
 
             return new InventorySlipDto
@@ -1075,6 +1168,38 @@ namespace SEP490.Modules.InventorySlipModule.Service
             {
                 // Log the error but don't throw to avoid breaking the main transaction
                 Console.WriteLine($"Error updating ProductionOutput finished quantities: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Updates the finished quantities in ProductionOutput for material export slips
+        /// </summary>
+        private async Task UpdateProductionOutputFinishedQuantitiesForMaterialExportAsync(CreateInventorySlipDto dto)
+        {
+            try
+            {
+                // Sử dụng ProductionOutputTargets để cập nhật số lượng finished
+                if (dto.ProductionOutputTargets != null && dto.ProductionOutputTargets.Any())
+                {
+                    foreach (var target in dto.ProductionOutputTargets)
+                    {
+                        var productionOutput = await _context.ProductionOutputs
+                            .FirstOrDefaultAsync(po => po.Id == target.ProductionOutputId);
+                        
+                        if (productionOutput != null)
+                        {
+                            var oldFinished = productionOutput.Finished ?? 0;
+                            productionOutput.Finished = oldFinished + (int)target.TargetQuantity;
+                        }
+                    }
+                    
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the error but don't throw to avoid breaking the main transaction
+                Console.WriteLine($"Error updating ProductionOutput finished quantities for material export: {ex.Message}");
             }
         }
     }

@@ -11,6 +11,7 @@ interface InventorySlipListProps {
 
 const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
     const [expandedSlips, setExpandedSlips] = useState<Set<number>>(new Set());
+    const [expandedMaterials, setExpandedMaterials] = useState<Set<number>>(new Set());
 
     const toggleExpanded = (slipId: number) => {
         const newExpanded = new Set(expandedSlips);
@@ -20,6 +21,16 @@ const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
             newExpanded.add(slipId);
         }
         setExpandedSlips(newExpanded);
+    };
+
+    const toggleMaterialsExpanded = (productionOutputId: number) => {
+        const newExpanded = new Set(expandedMaterials);
+        if (newExpanded.has(productionOutputId)) {
+            newExpanded.delete(productionOutputId);
+        } else {
+            newExpanded.add(productionOutputId);
+        }
+        setExpandedMaterials(newExpanded);
     };
 
 
@@ -87,46 +98,53 @@ const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
                             {/* For Cut Glass Slips - Show hierarchical structure */}
                             {slip.productionOrderType === 'Cắt kính' ? (
                                 <CutGlassSlipDetails slip={slip} />
+                            ) : ['Ghép kính', 'Sản xuất keo', 'Đổ keo'].includes(slip.productionOrderType || '') ? (
+                                /* For material export slips - Show grouped structure */
+                                <MaterialExportSlipDetails 
+                                    slip={slip} 
+                                    expandedMaterials={expandedMaterials}
+                                    toggleMaterialsExpanded={toggleMaterialsExpanded}
+                                />
                             ) : (
                                 /* For other slip types - Show flat structure */
                                 <div className="overflow-x-auto">
                                     <table className="min-w-full divide-y divide-gray-200">
-                                                                                 <thead>
-                                             <tr className="bg-gray-50">
-                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
-                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã SP</th>
-                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên sản phẩm</th>
-                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại</th>
-                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượng</th>
-                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn vị</th>
-                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ghi chú</th>
-                                             </tr>
-                                         </thead>
-                                                                                     <tbody>
-                                                 {slip.details.map((detail, index) => (
-                                                     <tr key={detail.id} className="bg-white hover:bg-gray-50">
-                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
-                                                         <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-900">
-                                                             {detail.productCode}
-                                                         </td>
-                                                         <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                                                             {detail.productName}
-                                                         </td>
-                                                         <td className="px-6 py-4 whitespace-nowrap">
-                                                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-                                                                 {detail.productType}
-                                                             </span>
-                                                         </td>
-                                                         <td className="px-6 py-4 whitespace-nowrap font-semibold text-gray-900">
-                                                             {detail.quantity}
-                                                         </td>
-                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{detail.uom || '-'}</td>
-                                                         <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title={detail.note}>
-                                                             {detail.note || '-'}
-                                                         </td>
-                                                     </tr>
-                                                 ))}
-                                             </tbody>
+                                        <thead>
+                                            <tr className="bg-gray-50">
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã SP</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên sản phẩm</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượng</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn vị</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ghi chú</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {slip.details.map((detail, index) => (
+                                                <tr key={detail.id} className="bg-white hover:bg-gray-50">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-900">
+                                                        {detail.productCode}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
+                                                        {detail.productName}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                                                            {detail.productType}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap font-semibold text-gray-900">
+                                                        {detail.quantity}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{detail.uom || '-'}</td>
+                                                    <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title={detail.note}>
+                                                        {detail.note || '-'}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
                                     </table>
                                 </div>
                             )}
@@ -287,6 +305,120 @@ const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
             <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                 <div className="text-sm text-gray-600">
                     <p><strong>Tổng cộng:</strong> {rawMaterials.length} nguyên vật liệu, {outputProducts.length} sản phẩm đầu ra</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Component for displaying material export slip details (chemical export, glue butyl)
+const MaterialExportSlipDetails = ({ 
+    slip, 
+    expandedMaterials, 
+    toggleMaterialsExpanded 
+}: { 
+    slip: InventorySlip;
+    expandedMaterials: Set<number>;
+    toggleMaterialsExpanded: (id: number) => void;
+}) => {
+    // Group details by production_output_id
+    const groupedDetails = slip.details.reduce((groups, detail) => {
+        const key = detail.productionOutputId || 0;
+        if (!groups[key]) {
+            groups[key] = [];
+        }
+        groups[key].push(detail);
+        return groups;
+    }, {} as Record<number, InventorySlipDetail[]>);
+
+    // Get production output info for each group
+    const productionOutputs = slip.details
+        .filter(d => d.productionOutputId)
+        .map(d => d.productionOutputId!)
+        .filter((value, index, self) => self.indexOf(value) === index);
+
+    return (
+        <div className="space-y-4">
+            {productionOutputs.length > 0 ? (
+                productionOutputs.map((productionOutputId) => {
+                    const materials = groupedDetails[productionOutputId] || [];
+                    const isExpanded = expandedMaterials.has(productionOutputId);
+                    
+                    return (
+                        <div key={productionOutputId} className="border border-green-200 rounded-lg overflow-hidden">
+                            {/* Production Output Header - Clickable */}
+                            <div 
+                                className="bg-green-50 p-3 cursor-pointer hover:bg-green-100 transition-colors"
+                                onClick={() => toggleMaterialsExpanded(productionOutputId)}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                        {isExpanded ? (
+                                            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                            </svg>
+                                        ) : (
+                                            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        )}
+                                        <div className="flex-1">
+                                            <div className="font-medium text-green-900">
+                                                {materials[0]?.targetProductName || `Sản phẩm mục tiêu #${productionOutputId}`}
+                                            </div>
+                                            <div className="text-sm text-green-700">
+                                                {materials[0]?.targetProductCode && `Mã: ${materials[0].targetProductCode} | `}
+                                                {materials.length} nguyên liệu được sử dụng
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Materials List - Expandable */}
+                            {isExpanded && (
+                                <div className="border-t bg-white">
+                                    <div className="p-3">
+                                        <h6 className="font-medium text-gray-700 mb-2">
+                                            Nguyên liệu đã xuất:
+                                        </h6>
+                                        <div className="space-y-2">
+                                            {materials.map((material) => (
+                                                <div key={material.id} className="flex items-center justify-between p-2 bg-gray-50 rounded border-l-4 border-blue-400">
+                                                    <div className="flex-1">
+                                                        <div className="font-medium text-gray-800">
+                                                            {material.productName}
+                                                        </div>
+                                                        <div className="text-sm text-gray-600">
+                                                            Mã: {material.productCode} | 
+                                                            Số lượng: {material.quantity} {material.uom || 'cái'} | 
+                                                            Loại: {material.productType}
+                                                        </div>
+                                                        {material.note && (
+                                                            <div className="text-sm text-gray-500 mt-1">
+                                                                Ghi chú: {material.note}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })
+            ) : (
+                <div className="text-center py-8 text-gray-500">
+                    Không có thông tin sản phẩm mục tiêu nào.
+                </div>
+            )}
+
+            {/* Summary */}
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                <div className="text-sm text-gray-600">
+                    <p><strong>Tổng cộng:</strong> {productionOutputs.length} sản phẩm mục tiêu, {slip.details.length} nguyên liệu</p>
                 </div>
             </div>
         </div>

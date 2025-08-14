@@ -375,6 +375,21 @@ namespace SEP490.Modules.InventorySlipModule.Controller
             }
         }
 
+        // Get materials by production output for material export slips
+        [HttpGet("materials/production-output/{productionOutputId}")]
+        public async Task<IActionResult> GetMaterialsByProductionOutput(int productionOutputId)
+        {
+            try
+            {
+                var result = await _inventorySlipService.GetMaterialsByProductionOutputAsync(productionOutputId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateInventorySlip(int id, [FromBody] CreateInventorySlipDto dto)
         {

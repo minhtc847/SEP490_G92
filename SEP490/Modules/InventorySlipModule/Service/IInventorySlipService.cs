@@ -32,5 +32,8 @@ namespace SEP490.Modules.InventorySlipModule.Service
         
         // Paginated product search for cut glass slips
         Task<PaginatedProductsDto> GetPaginatedProductsAsync(ProductSearchRequestDto request);
+        
+        // Get materials by production output for material export slips
+        Task<List<ProductionMaterialDto>> GetMaterialsByProductionOutputAsync(int productionOutputId);
     }
 }
