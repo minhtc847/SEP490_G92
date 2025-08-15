@@ -13,7 +13,6 @@
         public decimal? UnitPrice { get; set; }
         public int? GlassStructureId { get; set; }
         public double Quantity { get; set; }
-        public bool isupdatemisa { get; set; }
+        public int isupdatemisa { get; set; } // 0 = chưa cập nhật, 1 = đã cập nhật
     }
-
 }

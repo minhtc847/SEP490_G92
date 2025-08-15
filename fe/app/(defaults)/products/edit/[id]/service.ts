@@ -15,7 +15,7 @@ export interface ProductDetail {
     unitPrice?: number;
     glassStructureId?: number;
     quantity?: number;
-    isupdatemisa?: boolean;
+    isupdatemisa?: number; // 0 = chưa cập nhật, 1 = đã cập nhật
 }
 
 export interface GlassStructureOption {

@@ -33,7 +33,8 @@ namespace SEP490.Modules.ProductModule.Service
                     UnitPrice = p.UnitPrice,
                     GlassStructureId = p.GlassStructureId,
                     Quantity = p.quantity,
-                    GlassStructureProductName = p.GlassStructure != null ? p.GlassStructure.ProductName : null
+                    GlassStructureProductName = p.GlassStructure != null ? p.GlassStructure.ProductName : null,
+                    isupdatemisa = p.isupdatemisa ? 1 : 0
                 })
                 .ToList();
         }
@@ -51,7 +52,8 @@ namespace SEP490.Modules.ProductModule.Service
                 Thickness = dto.Thickness,
                 Weight = dto.Weight,
                 UnitPrice = dto.UnitPrice,
-                GlassStructureId = dto.GlassStructureId
+                GlassStructureId = dto.GlassStructureId,
+                isupdatemisa = dto.isupdatemisa == 1
             };
 
             _context.Products.Add(newProduct);
@@ -79,6 +81,33 @@ namespace SEP490.Modules.ProductModule.Service
                 .FirstOrDefault(p => p.Id == id);
         }
 
+        public ProductDetailDto? GetProductDetailById(int id)
+        {
+            var product = _context.Products
+                .Include(p => p.GlassStructure)
+                .FirstOrDefault(p => p.Id == id);
+
+            if (product == null) return null;
+
+            return new ProductDetailDto
+            {
+                Id = product.Id,
+                ProductCode = product.ProductCode,
+                ProductName = product.ProductName,
+                ProductType = product.ProductType,
+                UOM = product.UOM,
+                Height = product.Height,
+                Width = product.Width,
+                Thickness = product.Thickness,
+                Weight = product.Weight,
+                UnitPrice = product.UnitPrice,
+                GlassStructureId = product.GlassStructureId,
+                GlassStructureProductName = product.GlassStructure?.ProductName,
+                Quantity = product.quantity,
+                isupdatemisa = product.isupdatemisa ? 1 : 0
+            };
+        }
+
             public bool UpdateProduct(int id, UpdateProductProductDto dto)
             {
                 var product = _context.Products.FirstOrDefault(p => p.Id == id);
@@ -87,14 +116,14 @@ namespace SEP490.Modules.ProductModule.Service
                 if (id <= 0)
                     throw new ArgumentException("Invalid Product Id");
 
-                if (dto.ProductName == null)
-                    throw new ArgumentException("ProductName is required");
+                //if (dto.ProductName == null)
+                //    throw new ArgumentException("ProductName is required");
 
-                if (dto.ProductCode == null)
-                    throw new ArgumentException("ProductCode is required");
+                //if (dto.ProductCode == null)
+                //    throw new ArgumentException("ProductCode is required");
 
-                if (dto.UnitPrice < 0)
-                    throw new ArgumentException("UnitPrice must be non-negative");
+                //if (dto.UnitPrice < 0)
+                //    throw new ArgumentException("UnitPrice must be non-negative");
 
                 if (dto.GlassStructureId.HasValue)
                 {
@@ -120,7 +149,7 @@ namespace SEP490.Modules.ProductModule.Service
                 product.Weight = dto.Weight;
                 product.UnitPrice = dto.UnitPrice;
                 product.quantity = dto.Quantity;
-
+                product.isupdatemisa = dto.isupdatemisa == 1;
                 product.GlassStructureId = dto.GlassStructureId;
 
                 _context.SaveChanges();

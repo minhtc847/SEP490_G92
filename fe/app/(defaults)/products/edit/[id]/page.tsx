@@ -170,8 +170,8 @@ const ProductEditPage = () => {
                             <input
                                 type="checkbox"
                                 name="isupdatemisa"
-                                checked={formData.isupdatemisa}
-                                onChange={(e) => setFormData(prev => prev ? { ...prev, isupdatemisa: e.target.checked } : null)}
+                                checked={formData.isupdatemisa === 1}
+                                onChange={(e) => setFormData(prev => prev ? { ...prev, isupdatemisa: e.target.checked ? 1 : 0 } : null)}
                                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                             />
                             <span className="font-medium text-gray-700">Cập nhật MISA</span>

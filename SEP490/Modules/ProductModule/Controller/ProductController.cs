@@ -47,7 +47,7 @@ namespace SEP490.Modules.ProductModule.Controller
         [HttpGet("{id}")]
         public IActionResult GetProductById(int id)
         {
-            var product = _productService.GetProductById(id);
+            var product = _productService.GetProductDetailById(id);
 
             if (product == null)
                 return NotFound(new { message = "Không tìm thấy sản phẩm." });
@@ -113,14 +113,29 @@ namespace SEP490.Modules.ProductModule.Controller
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Xoá sản phẩm thất bại!", error = ex.Message });
+                return BadRequest(new { message = "Không thể xoá sản phẩm này.", error = ex.Message });
             }
         }
 
+        [HttpPut("{id}/update-misa-status")]
+        public IActionResult UpdateMisaStatus(int id)
+        {
+            try
+            {
+                var product = _context.Products.FirstOrDefault(p => p.Id == id);
+                if (product == null)
+                    return NotFound(new { message = "Không tìm thấy sản phẩm." });
+
+                product.isupdatemisa = true; // This will be stored as 1 in the database
+                _context.SaveChanges();
+
+                return Ok(new { message = "Cập nhật trạng thái MISA thành công!", isupdatemisa = 1 });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Cập nhật trạng thái MISA thất bại!", error = ex.Message });
+            }
+        }
 
 
     }

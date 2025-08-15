@@ -31,7 +31,7 @@ const ProductCreatePage = () => {
         thickness: 0,
         unitPrice: 0,
         glassStructureId: undefined as number | undefined,
-        isupdatemisa: false,
+        isupdatemisa: 0, // 0 = chưa cập nhật, 1 = đã cập nhật
     });
 
     // Hàm sinh tên tự động từ dữ liệu form
@@ -71,7 +71,7 @@ const ProductCreatePage = () => {
         height: 0,
         thickness: 0,
         uom: '',
-        isupdatemisa: false,
+        isupdatemisa: 0, // 0 = chưa cập nhật, 1 = đã cập nhật
     });
 
     const [form, setForm] = useState({
@@ -129,7 +129,7 @@ const ProductCreatePage = () => {
                 height: null,
                 thickness: null,
                 unitPrice: 0,
-                isupdatemisa: newMaterialProductForm.isupdatemisa,
+                isupdatemisa: newMaterialProductForm.isupdatemisa ? 1 : 0,
             };
 
             const p = await createProductNVL(payload);
@@ -147,7 +147,7 @@ const ProductCreatePage = () => {
 
             setForm((f) => ({ ...f, items: [...f.items, newItem] }));
             setShowAddProductForm(false);
-            setNewMaterialProductForm({ productName: '', width: 0, height: 0, thickness: 0, uom: '', isupdatemisa: false });
+            setNewMaterialProductForm({ productName: '', width: 0, height: 0, thickness: 0, uom: '', isupdatemisa: 0 });
 
             alert(`Đã tạo sản phẩm thành công: ${p.productName}`);
             router.push(`/products/${p.id}`);
@@ -293,7 +293,7 @@ const ProductCreatePage = () => {
                                 type="checkbox"
                                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                                 defaultChecked={false}
-                                onChange={(e) => setNewFinishedProductForm((p) => ({ ...p, isupdatemisa: e.target.checked }))}
+                                onChange={(e) => setNewFinishedProductForm((p) => ({ ...p, isupdatemisa: e.target.checked ? 1 : 0 }))}
                             />
                             <span className="font-medium text-gray-700">Cập nhật MISA</span>
                         </label>
@@ -348,8 +348,8 @@ const ProductCreatePage = () => {
                             <input
                                 type="checkbox"
                                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                                checked={newMaterialProductForm.isupdatemisa}
-                                onChange={(e) => setNewMaterialProductForm((prev) => ({ ...prev, isupdatemisa: e.target.checked }))}
+                                checked={newMaterialProductForm.isupdatemisa === 1}
+                                onChange={(e) => setNewMaterialProductForm((prev) => ({ ...prev, isupdatemisa: e.target.checked ? 1 : 0 }))}
                             />
                             <span className="font-medium text-gray-700">Cập nhật MISA</span>
                         </label>

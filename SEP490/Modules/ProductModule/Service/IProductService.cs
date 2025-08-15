@@ -9,6 +9,7 @@ namespace SEP490.Modules.ProductModule.Service
         void CreateProduct(CreateProductProductDto dto);
         bool DeleteProduct(int id);
         Product? GetProductById(int id);
+        ProductDetailDto? GetProductDetailById(int id);
         bool UpdateProduct(int id, UpdateProductProductDto dto);
     }
 }
