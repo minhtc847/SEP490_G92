@@ -41,18 +41,7 @@ namespace SEP490.Selenium.Product
             IWebElement loginButton = driver.FindElement(By.CssSelector("#box-login-right > div > div > div.login-form-basic-container > div > div.login-form-btn-container.login-class > button"));
             loginButton.Click();
             Thread.Sleep(1000);
-            //IWebElement skipButton = wait.Until(driver => driver.FindElement(By.XPath("/html/body/div[5]/div/i")));
-            //skipButton.Click();
-            //Thread.Sleep(2000);
-            //wait.Until(d => d.FindElement(By.Id("loading-bg")).GetAttribute("style").Contains("display: none"));
-
-            //var continueBtn = wait.Until(d =>
-            //    d.FindElement(By.CssSelector("#app > div.w-full.overflow-auto.h-full > div > div > div.cnl-box-container.flexed > div > div.flexed-row.buttons > div:nth-child(1) > button > div"))
-            //);
-
-            //// Click
-            //IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
-            //js.ExecuteScript("arguments[0].click();", continueBtn);
+            
 
             // Ấn skip nếu có
             ClickIfExists(By.XPath("/html/body/div[5]/div/i"), driver, wait);
@@ -68,7 +57,13 @@ namespace SEP490.Selenium.Product
                 driver,
                 wait
             );
-
+            Thread.Sleep(500);
+            //Add Button Da hieu 
+            ClickIfExists(
+        By.XPath("//div[@class='ms-button-text ms-button--text flex align-center' and normalize-space()='Đã hiểu']"),
+        driver,
+        wait
+    );
             Thread.Sleep(500);
         }
         private void CloseDriver()

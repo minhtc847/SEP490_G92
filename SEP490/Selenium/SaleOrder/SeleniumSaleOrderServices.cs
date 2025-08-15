@@ -17,7 +17,14 @@ namespace SEP490.Selenium.SaleOrder
         private readonly IConfiguration _config;
         public SeleniumSaleOrderServices(IConfiguration configuration)
         {
-            driver = new ChromeDriver();
+            var options = new ChromeOptions();
+            //options.AddArgument("--headless=new");
+            options.AddArgument("--lang=vi-VN");
+            options.AddArgument("--no-sandbox");
+            options.AddArgument("--disable-dev-shm-usage");
+            options.AddArgument("--disable-gpu");
+            options.AddArgument("--window-size=1920,1080");
+            driver = new ChromeDriver(options);
             wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
             _config = configuration;
         }
