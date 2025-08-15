@@ -181,7 +181,6 @@ const ProductionOrderInventorySlipPage = () => {
                                 onClick={() => router.push(`/inventoryslip/${productionOrderId}/cut-glass`)}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                             >
-                                <IconPlus className="w-4 h-4 mr-2" />
                                 Tạo phiếu cắt kính
                             </button>
                         )}
@@ -190,7 +189,6 @@ const ProductionOrderInventorySlipPage = () => {
                                 onClick={() => router.push(`/inventoryslip/${productionOrderId}/material-export`)}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                             >
-                                <IconPlus className="w-4 h-4 mr-2" />
                                 {productionOrderInfo.type === 'Ghép kính' ? 'Tạo phiếu xuất keo butyl' : 'Tạo phiếu xuất hóa chất'}
                             </button>
                         )}

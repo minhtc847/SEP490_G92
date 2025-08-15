@@ -884,40 +884,45 @@ export default function ProductionOrderView({ params }: { params: { id: string }
               Tình trạng sản xuất
             </button>
           </li>
-          <li className="mr-2">
-            <button
-              type="button"
-              className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === "cut-glass" ? "text-primary border-primary" : "text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"}`}
-              onClick={() => toggleTabs("cut-glass")}
-            >
-              Cắt kính
-            </button>
-          </li>
-          <li className="mr-2">
-            <button
-              type="button"
-              className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === "chemical" ? "text-primary border-primary" : "text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"}`}
-              onClick={() => toggleTabs("chemical")}
-            >
-              Xuất hoá chất
-            </button>
-          </li>
-          <li className="mr-2">
-            <button
-              type="button"
-              className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === "glue-butyl" ? "text-primary border-primary" : "text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"}`}
-              onClick={() => toggleTabs("glue-butyl")}
-            >
-              Xuất keo butyl
-            </button>
-          </li>
+            {/* <li className="mr-2">
+              <button
+                type="button"
+                className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === "cut-glass" ? "text-primary border-primary" : "text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"}`}
+                onClick={() => toggleTabs("cut-glass")}
+              >
+                Cắt kính
+              </button>
+            </li>
+            <li className="mr-2">
+              <button
+                type="button"
+                className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === "chemical" ? "text-primary border-primary" : "text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"}`}
+                onClick={() => toggleTabs("chemical")}
+              >
+                Xuất hoá chất
+              </button>
+            </li>
+            <li className="mr-2">
+              <button
+                type="button"
+                className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === "glue-butyl" ? "text-primary border-primary" : "text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"}`}
+                onClick={() => toggleTabs("glue-butyl")}
+              >
+                Xuất keo butyl
+              </button>
+            </li> */}
         </ul>
       </div>
 
       {tabs === "po" && (
         <div>
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-xl font-bold text-[#4361ee]">{orderDescription}</h1>
+          {/* Order Description - Full width */}
+          <div className="mb-4">
+            <h1 className="text-xl font-bold text-[#4361ee] break-words">{orderDescription}</h1>
+          </div>
+          
+          {/* Action Buttons - Full width, right-aligned */}
+          <div className="flex justify-end items-center mb-4">
             <div className="flex items-center gap-4">
               {selectedOperation === "xuat-hoa-chat" && (
                 <ChemicalExportModalComponent
@@ -950,16 +955,14 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   </div>
                 )
               )}
-              <select 
-                className="px-4 py-2 border border-[#4361ee] text-[#4361ee] rounded shadow-sm focus:ring-2 focus:ring-[#4361ee] focus:outline-none text-sm"
-                value={selectedOperation}
-                onChange={handleOperationChange}
-              >
-                <option value="">Chọn thao tác</option>
-                <option value="xuat-hoa-chat">Xuất hóa chất</option>
-                <option value="xuat-keo-bytul">Xuất keo bytul</option>
-                <option value="cat-kinh">Cắt kính</option>
-              </select>
+              <div className="flex gap-2">                
+                <button
+                  onClick={() => router.push(`/inventoryslip/${params.id}`)}
+                  className="px-4 py-2 bg-purple-600 text-white rounded shadow-sm hover:bg-purple-700 transition-colors text-sm"
+                >
+                  Xem Phiếu Kho
+                </button>
+              </div>
               <button
                 onClick={handleGoBack}
                 className="px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white text-sm rounded shadow transition-colors"
