@@ -19,8 +19,10 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
 var mysqlVersionString = builder.Configuration["Database:MySqlVersion"];
 var mysqlVersion = new MySqlServerVersion(Version.Parse(mysqlVersionString));
@@ -178,7 +180,22 @@ app.UseHttpsRedirection();
 app.UseMiddleware<PermissionMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "text/plain";
 
+        var error = context.Features.Get<IExceptionHandlerFeature>();
+        if (error != null)
+        {
+            var ex = error.Error;
+            await context.Response.WriteAsync("Something went wrong: " + ex.Message);
+            Console.WriteLine($"Error: {ex.Message}" + ex.StackTrace);
+        }
+    });
+});
 app.MapControllers();
 app.MapHub<OrderHub>("/orderHub");
 app.MapHub<SaleOrderHub>("/saleOrderHub");
