@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { fetchProductionOrderInfo, ProductionOrderInfo, createInventorySlip } from '../../service';
+import { fetchProductionOrderInfo, ProductionOrderInfo, createMaterialExportSlip } from '../../service';
 import MaterialExportSlipForm from './MaterialExportSlipForm';
 
 const MaterialExportSlipPage = () => {
@@ -48,10 +48,10 @@ const MaterialExportSlipPage = () => {
         }
     };
 
-    const handleSlipCreated = async (slip: any) => {
+    const handleSlipCreated = async (formData: any) => {
         try {
             // Create the slip using the service
-            const createdSlip = await createInventorySlip(slip);
+            const createdSlip = await createMaterialExportSlip(formData);
             
             if (!createdSlip) {
                 throw new Error('Failed to create slip');

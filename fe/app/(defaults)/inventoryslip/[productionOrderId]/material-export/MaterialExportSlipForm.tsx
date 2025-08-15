@@ -205,24 +205,16 @@ export default function MaterialExportSlipForm({
             console.log('Form data:', formData);
             setLoading(true);
             
-            const createdSlip = await createMaterialExportSlip(formData);
+            // Đóng modal trước khi gọi callback để tránh duplicate
+            setShowConfirmModal(false);
             
-            if (createdSlip) {
-                console.log('Tạo phiếu thành công:', createdSlip);
-                // Đóng modal trước khi gọi callback để tránh duplicate
-                setShowConfirmModal(false);
-                // Gọi callback sau khi đã đóng modal
-                setTimeout(() => {
-                    console.log('Gọi callback onSlipCreated với slip:', createdSlip);
-                    onSlipCreated(createdSlip);
-                }, 100);
-            } else {
-                console.error('Tạo phiếu thất bại: không có response');
-                alert('Có lỗi xảy ra khi tạo phiếu');
-            }
+            // Gọi callback để page component xử lý việc tạo phiếu
+            console.log('Gọi callback onSlipCreated với formData:', formData);
+            onSlipCreated(formData);
+            
         } catch (error) {
-            console.error('Error creating slip:', error);
-            alert('Có lỗi xảy ra khi tạo phiếu');
+            console.error('Error in handleConfirmCreate:', error);
+            alert('Có lỗi xảy ra khi xử lý form');
         } finally {
             setLoading(false);
             console.log('=== KẾT THÚC XỬ LÝ TẠO PHIẾU ===');
