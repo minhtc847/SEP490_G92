@@ -19,6 +19,7 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
 using System.Security.Claims;
+using SEP490.Modules.InventorySlipModule.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -82,6 +83,7 @@ builder.Services.AddScoped<ICuttingGlassManagementService, CuttingGlassManagemen
 builder.Services.AddScoped<IDocumentMaterialService, DocumentMaterialService>();
 builder.Services.AddScoped<IZaloOrderService, ZaloOrderService>();
 builder.Services.AddScoped<SEP490.Modules.EmployeeModule.Service.IEmployeeService, SEP490.Modules.EmployeeModule.Service.EmployeeService>();
+builder.Services.AddScoped<IInventorySlipService, InventorySlipService>();
 builder.Services.AddHttpClient<ZaloChatService>();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();

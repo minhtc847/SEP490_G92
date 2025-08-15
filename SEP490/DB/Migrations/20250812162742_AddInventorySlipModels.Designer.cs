@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SEP490.DB;
 
@@ -10,9 +11,10 @@ using SEP490.DB;
 namespace SEP490.DB.Migrations
 {
     [DbContext(typeof(SEP490DbContext))]
-    partial class SEP490DbContextModelSnapshot : ModelSnapshot
+    [Migration("20250812162742_AddInventorySlipModels")]
+    partial class AddInventorySlipModels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -716,6 +718,14 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("slip_code");
 
+                    b.Property<DateTime>("SlipDate")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("slip_date");
+
+                    b.Property<int>("TransactionType")
+                        .HasColumnType("int")
+                        .HasColumnName("transaction_type");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("updated_at");
@@ -1074,10 +1084,6 @@ namespace SEP490.DB.Migrations
                     b.Property<string>("Width")
                         .HasColumnType("longtext")
                         .HasColumnName("width");
-
-                    b.Property<bool>("isupdatemisa")
-                        .HasColumnType("tinyint(1)")
-                        .HasColumnName("isupdatemisa");
 
                     b.Property<double>("quantity")
                         .HasColumnType("double")
