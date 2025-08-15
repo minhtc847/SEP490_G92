@@ -15,6 +15,7 @@ export interface ProductDetail {
     unitPrice?: number;
     glassStructureId?: number;
     quantity?: number;
+    isupdatemisa?: boolean;
 }
 
 export interface GlassStructureOption {
