@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getOrderDetailById, OrderDetailDto } from '@/app/(defaults)/sales-order/[id]/service';
+import { getOrderDetailById, OrderDetailDto, updateMisaOrder, updateOrderMisaStatus } from '@/app/(defaults)/sales-order/[id]/service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import ExcelJS from 'exceljs';
@@ -16,6 +16,8 @@ const SalesOrderDetailPage = () => {
     const [loading, setLoading] = useState(true);
     const [isUpdatingMisa, setIsUpdatingMisa] = useState<boolean>(false);
     const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
+    const [showErrorMessage, setShowErrorMessage] = useState<boolean>(false);
+    const [errorMessage, setErrorMessage] = useState<string>('');
 
     useEffect(() => {
         if (!id || isNaN(Number(id))) return;
@@ -23,6 +25,8 @@ const SalesOrderDetailPage = () => {
         const fetchData = async () => {
             try {
                 const data = await getOrderDetailById(Number(id));
+                console.log('Order data received:', data);
+                console.log('isUpdateMisa from API:', data.isUpdateMisa);
                 setOrder(data);
             } catch (error) {
                 console.error('Lỗi khi gọi API:', error);
@@ -35,19 +39,45 @@ const SalesOrderDetailPage = () => {
     }, [id]);
 
     const handleUpdateMisa = async () => {
+        if (!order) return;
+        
         setIsUpdatingMisa(true);
         setShowSuccessMessage(false);
+        setShowErrorMessage(false);
+        setErrorMessage('');
         
-        // Simulate 10-second delay
-        setTimeout(() => {
-            setIsUpdatingMisa(false);
+        try {
+            // Gọi API cập nhật MISA
+            await updateMisaOrder(Number(id));
+            
+            // Sau khi cập nhật MISA thành công, cập nhật trạng thái isUpdateMisa thành true
+            await updateOrderMisaStatus(Number(id));
+            
+            // Cập nhật trạng thái ngay lập tức trong state để UI phản hồi ngay
+            setOrder(prev => prev ? { ...prev, isUpdateMisa: true } : null);
+            
+            // Refresh lại dữ liệu đơn hàng từ server để đảm bảo đồng bộ
+            const updatedOrder = await getOrderDetailById(Number(id));
+            setOrder(updatedOrder);
+            
+            // Hiển thị thông báo thành công
             setShowSuccessMessage(true);
             
-            // Hide success message after 3 seconds
+            // Ẩn thông báo sau 3 giây
             setTimeout(() => {
                 setShowSuccessMessage(false);
             }, 3000);
-        }, 10000);
+            
+        } catch (error: any) {
+            console.error('Lỗi khi cập nhật MISA:', error);
+            setErrorMessage(error.response?.data?.message || error.message || 'Có lỗi xảy ra khi cập nhật MISA.');
+            setShowErrorMessage(true);
+            setTimeout(() => {
+                setShowErrorMessage(false);
+            }, 5000); // Hiển thị lỗi trong 5 giây
+        } finally {
+            setIsUpdatingMisa(false);
+        }
     };
 
     if (loading) return <div className="p-6">Đang tải dữ liệu...</div>;
@@ -205,6 +235,13 @@ const SalesOrderDetailPage = () => {
             {showSuccessMessage && (
                 <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
                     ✅ Cập nhật MISA thành công!
+                </div>
+            )}
+
+            {/* Error Message */}
+            {showErrorMessage && (
+                <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                    ❌ {errorMessage}
                 </div>
             )}
 

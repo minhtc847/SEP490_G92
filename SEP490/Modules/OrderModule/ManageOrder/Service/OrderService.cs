@@ -67,7 +67,8 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                     DeliveryStatus = _context.SaleOrders.First(o => o.Id == g.Key.Id).DeliveryStatus,
                     Discount = g.Key.Discount ?? 0,
                     OriginalTotalAmount = g.Sum(x => x.UnitPrice * x.Quantity),
-                    TotalAmount = g.Sum(x => x.UnitPrice * x.Quantity) - (g.Sum(x => x.UnitPrice * x.Quantity) * (g.Key.Discount ?? 0))
+                    TotalAmount = g.Sum(x => x.UnitPrice * x.Quantity) - (g.Sum(x => x.UnitPrice * x.Quantity) * (g.Key.Discount ?? 0)),
+                    isUpdateMisa = _context.SaleOrders.First(o => o.Id == g.Key.Id).IsUpdateMisa
                 });
 
             return query.ToList();
@@ -132,6 +133,9 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             var discount = order.Customer?.Discount ?? 1;
             var totalAmount = discount != 0 ? totalAmountRaw / discount : totalAmountRaw;
 
+            // Debug logging
+            Console.WriteLine($"Order {order.Id} - IsUpdateMisa: {order.IsUpdateMisa}");
+
             return new OrderDetailDto
             {
                 OrderCode = order.OrderCode,
@@ -144,7 +148,8 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 Discount = discount,
                 Products = productDtos,
                 TotalQuantity = totalQuantity,
-                TotalAmount = Math.Round(totalAmount, 2)
+                TotalAmount = Math.Round(totalAmount, 2),
+                isUpdateMisa = order.IsUpdateMisa
             };
         }
         public async Task<Product> CreateProductAsync(CreateProductV2Dto dto)
@@ -266,69 +271,51 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 order.Status = parsedStatus;
             }
 
-            if (!string.IsNullOrEmpty(dto.DeliveryStatus))
+            if (!string.IsNullOrWhiteSpace(dto.DeliveryStatus) && Enum.TryParse<DeliveryStatus>(dto.DeliveryStatus, ignoreCase: true, out var parsedDeliveryStatus))
             {
-                order.DeliveryStatus = Enum.Parse<DeliveryStatus>(dto.DeliveryStatus);
-            }
-
-            var orderDetail = order.OrderDetails.FirstOrDefault();
-            if (orderDetail == null)
-            {
-                orderDetail = new OrderDetail
-                {
-                    SaleOrderId = order.Id,
-                    OrderDetailProducts = new List<OrderDetailProduct>()
-                };
-                order.OrderDetails.Add(orderDetail);
-            }
-
-            var updatedProductIds = dto.Products
-                .Where(p => p.ProductId != 0)
-                .Select(p => p.ProductId)
-                .ToList();
-
-            var productsToRemove = orderDetail.OrderDetailProducts
-                .Where(odp => !updatedProductIds.Contains(odp.ProductId))
-                .ToList();
-
-            foreach (var odp in productsToRemove)
-            {
-                _context.OrderDetailProducts.Remove(odp);
-            }
-            foreach (var pDto in dto.Products)
-            {
-                Product product;
-
-
-                product = _context.Products.FirstOrDefault(p => p.Id == pDto.ProductId);
-                if (product == null) continue;
-
-                product.ProductCode = pDto.ProductCode;
-                product.ProductName = pDto.ProductName;
-                product.Height = pDto.Height;
-                product.Width = pDto.Width;
-                product.Thickness = pDto.Thickness;
-                product.UnitPrice = pDto.UnitPrice;
-
-                var existingOrderDetailProduct = orderDetail.OrderDetailProducts
-                    .FirstOrDefault(odp => odp.ProductId == product.Id);
-
-                if (existingOrderDetailProduct != null)
-                {
-                    existingOrderDetailProduct.Quantity = pDto.Quantity;
-                }
-                else
-                {
-                    orderDetail.OrderDetailProducts.Add(new OrderDetailProduct
-                    {
-                        ProductId = product.Id,
-                        Quantity = pDto.Quantity
-                    });
-                }
+                order.DeliveryStatus = parsedDeliveryStatus;
             }
 
             _context.SaveChanges();
             return true;
+        }
+
+        public bool UpdateOrderMisaStatus(int orderId)
+        {
+            var order = _context.SaleOrders.FirstOrDefault(o => o.Id == orderId);
+            if (order == null) return false;
+
+            order.IsUpdateMisa = true;
+            _context.SaveChanges();
+            return true;
+        }
+
+        public object GetOrderDataForMisa(int orderId)
+        {
+            var order = _context.SaleOrders
+                .Include(o => o.Customer)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.OrderDetailProducts)
+                        .ThenInclude(odp => odp.Product)
+                .FirstOrDefault(o => o.Id == orderId);
+
+            if (order == null) return null;
+
+            var productsInput = order.OrderDetails
+                .SelectMany(od => od.OrderDetailProducts)
+                .Select(odp => new
+                {
+                    ProductCode = odp.Product?.ProductCode ?? "",
+                    ProductQuantity = odp.Quantity?.ToString() ?? "0",
+                    Price = odp.Product?.UnitPrice?.ToString() ?? "0"
+                })
+                .ToList();
+
+            return new
+            {
+                CustomerCode = order.Customer?.CustomerCode ?? "",
+                ProductsInput = productsInput
+            };
         }
 
         public void DeleteOrder(int orderId)

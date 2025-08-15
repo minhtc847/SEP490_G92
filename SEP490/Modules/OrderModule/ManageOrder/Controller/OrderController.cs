@@ -340,6 +340,42 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
             }
         }
 
+        [HttpPut("{id}/update-misa-status")]
+        [AuthorizeRoles(Roles.MANAGER, Roles.ACCOUNTANT)]
+        public IActionResult UpdateOrderMisaStatus(int id)
+        {
+            try
+            {
+                var success = _orderService.UpdateOrderMisaStatus(id);
+                if (!success)
+                    return NotFound($"Không tìm thấy đơn hàng với ID {id}.");
+
+                return Ok(new { message = "Cập nhật trạng thái MISA thành công!", isUpdateMisa = true });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Cập nhật trạng thái MISA thất bại!", error = ex.Message });
+            }
+        }
+
+        [HttpGet("{id}/misa-data")]
+        [AuthorizeRoles(Roles.MANAGER, Roles.ACCOUNTANT)]
+        public IActionResult GetOrderMisaData(int id)
+        {
+            try
+            {
+                var orderData = _orderService.GetOrderDataForMisa(id);
+                if (orderData == null)
+                    return NotFound($"Không tìm thấy đơn hàng với ID {id}.");
+
+                return Ok(orderData);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Lỗi khi lấy dữ liệu đơn hàng cho MISA", error = ex.Message });
+            }
+        }
+
         [HttpDelete("{id}")]
         [AuthorizeRoles(Roles.MANAGER)]
         public IActionResult DeleteOrder(int id)

@@ -31,5 +31,21 @@ export interface OrderDetailDto {
 
 export const getOrderDetailById = async (id: number): Promise<OrderDetailDto> => {
   const response = await axios.get(`/api/orders/${id}`);
+  console.log('API Response:', response.data);
+  console.log('isUpdateMisa value:', response.data.isUpdateMisa);
   return response.data;
+};
+
+export const updateMisaOrder = async (orderId: number): Promise<any> => {
+  // Lấy dữ liệu đơn hàng cho MISA
+  const orderData = await axios.get(`/api/orders/${orderId}/misa-data`);
+  
+  // Gọi API Selenium để cập nhật MISA
+  const res = await axios.post('/api/Selenium/sale-order', orderData.data);
+  return res.data;
+};
+
+export const updateOrderMisaStatus = async (orderId: number): Promise<any> => {
+  const res = await axios.put(`/api/orders/${orderId}/update-misa-status`);
+  return res.data;
 };

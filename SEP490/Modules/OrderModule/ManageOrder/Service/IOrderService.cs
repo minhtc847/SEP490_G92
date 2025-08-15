@@ -17,6 +17,8 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
         string GetNextOrderCode();
         Task<Product> CreateProductAsync(CreateProductV2Dto dto);
         bool UpdateOrderStatus(int orderId, int status);
+        bool UpdateOrderMisaStatus(int orderId);
+        object GetOrderDataForMisa(int orderId);
     }
 
 }
