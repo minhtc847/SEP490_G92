@@ -25,7 +25,7 @@ namespace SEP490.Selenium.Controller
             return Ok("Add Product successfully.");
         }
         [HttpPost("sale-order")]
-        public IActionResult addSaleOrder(SaleOrderInput saleOrder)
+        public IActionResult addSaleOrder([FromBody]SaleOrderInput saleOrder)
         {
             _saleOrderServices.OpenSaleOrderPage(saleOrder);
             return Ok("Add Sale Order Successfully");

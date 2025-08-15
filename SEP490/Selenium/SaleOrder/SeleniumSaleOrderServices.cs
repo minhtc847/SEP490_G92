@@ -67,7 +67,7 @@ namespace SEP490.Selenium.SaleOrder
             Thread.Sleep(500);
             //Add Button Da hieu 
             ClickIfExists(
-        By.XPath("//div[@class='ms-button-text ms-button--text flex align-center' and normalize-space()='Đã hiểu']"),
+        By.XPath("//button[.//div[normalize-space()='Đã hiểu']]"),
         driver,
         wait
     );
