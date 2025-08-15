@@ -14,11 +14,10 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
 using SEP490.Modules.InventorySlipModule.Service;
-using SEP490.Modules.InventorySlipModule.Services;
 using Microsoft.AspNetCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
-//builder.WebHost.UseUrls("http://0.0.0.0:5000");
+builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
 var mysqlVersionString = builder.Configuration["Database:MySqlVersion"];
 var mysqlVersion = new MySqlServerVersion(Version.Parse(mysqlVersionString));
