@@ -4,5 +4,6 @@
     {
         public string ProductCode { get; set; }
         public string ProductQuantity { get; set; }
+        public string Price { get; set; }
     }
 }
