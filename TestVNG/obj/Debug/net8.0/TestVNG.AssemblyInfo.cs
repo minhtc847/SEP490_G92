@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TestVNG")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c2e9c3de67b1c9b964fa3592bb594ec74ea3a0ef")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3c97f3668c5843a1a465a735d2afe51b1716e632")]
 [assembly: System.Reflection.AssemblyProductAttribute("TestVNG")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TestVNG")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

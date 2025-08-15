@@ -32,16 +32,16 @@ const ProductCreatePage = () => {
         glassStructureId: undefined as number | undefined,
     });
 
-    function generateProductName(structureName: string, width: number, height: number, thickness: number) {
+    function generateProductName(structureName: string, structureCode: string, width: number, height: number, thickness: number) {
         // Ví dụ: cấu trúc kính: "EI60 phút, VNG-MK cữ kính đứng"
         // Kết quả: "Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng"
-        return `Kính ${structureName.replace(/^Kính\s*/i, '').trim()}, KT: ${width}*${height}*${thickness} mm`;
+        return `Kính ${structureName.replace(/^Kính\s*/i, '').trim()} | KT: ${width}*${height}*${thickness} mm | ${structureCode}`;
     }
 
     useEffect(() => {
         const structure = glassStructures.find((g) => g.id === newFinishedProductForm.glassStructureId);
         if (structure && newFinishedProductForm.width && newFinishedProductForm.height && newFinishedProductForm.thickness) {
-            const newName = generateProductName(structure.productName, newFinishedProductForm.width, newFinishedProductForm.height, newFinishedProductForm.thickness);
+            const newName = generateProductName(structure.productName, structure.productCode, newFinishedProductForm.width, newFinishedProductForm.height, newFinishedProductForm.thickness);
             setNewFinishedProductForm((prev) => ({ ...prev, productName: newName }));
         }
     }, [newFinishedProductForm.glassStructureId, newFinishedProductForm.width, newFinishedProductForm.height, newFinishedProductForm.thickness, glassStructures]);
@@ -191,10 +191,10 @@ const ProductCreatePage = () => {
                     <div>
                         <h4 className="text-lg font-semibold mb-2">Thêm sản phẩm mới</h4>
                         <p className="text-sm text-gray-500 italic mb-2">
-                            ⚠️ Tên sản phẩm phải theo định dạng: <strong>Kính [loại] phút, KT: [rộng]*[cao]*[dày] mm, [mô tả thêm]</strong>
+                            ⚠️ Tên sản phẩm phải theo định dạng: <strong>[Loại kính và đặc điểm] | KT: [Rộng]*[Cao]*[Dày] mm | [Mã cấu trúc kính]</strong>
                             <br />
                             <span>
-                                Ví dụ: <code>Kính chống cháy dùng keo Nano cao cấp EI 15, KT: 100*200*10 mm</code>
+                                Ví dụ: <code>Kính chống cháy dùng keo Nano cao cấp EI 15 | KT: 100*200*3 mm | N-EI 15</code>
                             </span>
                         </p>
 
@@ -209,7 +209,7 @@ const ProductCreatePage = () => {
                             className="input input-bordered w-full"
                             value={newFinishedProductForm.productName}
                             onChange={(e) => handleFinishedProductNameChange(e.target.value)}
-                            placeholder="VD: Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng"
+                            placeholder="VD: Kính chống cháy dùng keo Nano cao cấp EI 15 | KT: 100*200*3 mm | N-EI 15"
                         />
                         {isProductNameDuplicate && <p className="text-red-500 text-sm">Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.</p>}
                     </div>

@@ -293,3 +293,4 @@ D:\Downloads\FU\SEP490_G92\Code\git_dev_5\SEP490_G92\TestVNG\bin\Debug\net8.0\SE
 D:\Downloads\FU\SEP490_G92\Code\git_dev_5\SEP490_G92\TestVNG\obj\Debug\net8.0\TestVNG.csproj.Up2Date
 D:\Downloads\FU\SEP490_G92\Code\git_dev_5\SEP490_G92\TestVNG\obj\Debug\net8.0\TestVNG.genruntimeconfig.cache
 D:\Downloads\FU\SEP490_G92\Code\git_dev_5\SEP490_G92\TestVNG\obj\Debug\net8.0\ref\TestVNG.dll
+D:\Downloads\FU\SEP490_G92\Code\git_dev_5\SEP490_G92\TestVNG\bin\Debug\net8.0\appsettings.json
