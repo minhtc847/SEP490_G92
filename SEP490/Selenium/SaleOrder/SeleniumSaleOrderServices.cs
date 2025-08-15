@@ -40,13 +40,17 @@ namespace SEP490.Selenium.SaleOrder
         }
         private void Login()
         {
-            Thread.Sleep(500); // Wait for the page to load
+            Thread.Sleep(1500); // Wait for the page to load
             IWebElement emailInput = wait.Until(drv => drv.FindElement(By.Name("username")));
             emailInput.SendKeys(_config["Misa:Username"]);
             IWebElement passwordInput = wait.Until(drv => drv.FindElement(By.Name("pass")));
             passwordInput.SendKeys(_config["Misa:Password"]);
             IWebElement loginButton = driver.FindElement(By.CssSelector("#box-login-right > div > div > div.login-form-basic-container > div > div.login-form-btn-container.login-class > button"));
             loginButton.Click();
+            Thread.Sleep(1000);
+
+
+            // Ấn skip nếu có
             ClickIfExists(By.XPath("/html/body/div[5]/div/i"), driver, wait);
 
             Thread.Sleep(1000);
@@ -60,7 +64,14 @@ namespace SEP490.Selenium.SaleOrder
                 driver,
                 wait
             );
-            Thread.Sleep(5000);
+            Thread.Sleep(500);
+            //Add Button Da hieu 
+            ClickIfExists(
+        By.XPath("//div[@class='ms-button-text ms-button--text flex align-center' and normalize-space()='Đã hiểu']"),
+        driver,
+        wait
+    );
+            Thread.Sleep(500);
         }
         private void CloseDriver()
         {
