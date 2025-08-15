@@ -43,14 +43,14 @@ const CreateZaloOrders = () => {
     const updateOrderDetail = (index: number, field: keyof CreateZaloOrderDetail, value: string | number) => {
         const updatedDetails = [...orderDetails];
         updatedDetails[index] = { ...updatedDetails[index], [field]: value };
-        
+
         // Calculate total price for this detail
         if (field === 'quantity' || field === 'unitPrice') {
             const quantity = field === 'quantity' ? Number(value) : updatedDetails[index].quantity;
             const unitPrice = field === 'unitPrice' ? Number(value) : updatedDetails[index].unitPrice;
             updatedDetails[index].totalPrice = quantity * unitPrice;
         }
-        
+
         setOrderDetails(updatedDetails);
         updateTotalAmount(updatedDetails);
     };
@@ -69,7 +69,7 @@ const CreateZaloOrders = () => {
                 ...formData,
                 zaloOrderDetails: orderDetails
             };
-            
+
             await zaloOrderService.createZaloOrder(submitData);
             router.push('/zalo-orders');
         } catch (error) {

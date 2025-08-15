@@ -22,8 +22,8 @@ namespace SEP490.Modules.SalesOrder.ManageSalesOrder.Services
             List<SaleOrderProductsInput> products = new List<SaleOrderProductsInput>
             {
                 //new SaleOrderProductsInput { ProductCode = "VT00372", ProductQuantity = "2" },
-                new SaleOrderProductsInput { ProductCode = "VT00373", ProductQuantity = "2" },
-                new SaleOrderProductsInput { ProductCode = "VT00090", ProductQuantity = "3" }
+                new SaleOrderProductsInput { ProductCode = "VT00001", ProductQuantity = "2" },
+                new SaleOrderProductsInput { ProductCode = "VT00002", ProductQuantity = "3" }
             };
             SaleOrderInput saleOrderInput = new SaleOrderInput
             {

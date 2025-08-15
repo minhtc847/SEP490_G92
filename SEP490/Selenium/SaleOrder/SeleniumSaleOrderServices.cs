@@ -17,7 +17,14 @@ namespace SEP490.Selenium.SaleOrder
         private readonly IConfiguration _config;
         public SeleniumSaleOrderServices(IConfiguration configuration)
         {
-            driver = new ChromeDriver();
+            var options = new ChromeOptions();
+            //options.AddArgument("--headless=new");
+            options.AddArgument("--lang=vi-VN");
+            options.AddArgument("--no-sandbox");
+            options.AddArgument("--disable-dev-shm-usage");
+            options.AddArgument("--disable-gpu");
+            options.AddArgument("--window-size=1920,1080");
+            driver = new ChromeDriver(options);
             wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
             _config = configuration;
         }
@@ -33,14 +40,38 @@ namespace SEP490.Selenium.SaleOrder
         }
         private void Login()
         {
-            Thread.Sleep(500); // Wait for the page to load
+            Thread.Sleep(1500); // Wait for the page to load
             IWebElement emailInput = wait.Until(drv => drv.FindElement(By.Name("username")));
             emailInput.SendKeys(_config["Misa:Username"]);
             IWebElement passwordInput = wait.Until(drv => drv.FindElement(By.Name("pass")));
             passwordInput.SendKeys(_config["Misa:Password"]);
             IWebElement loginButton = driver.FindElement(By.CssSelector("#box-login-right > div > div > div.login-form-basic-container > div > div.login-form-btn-container.login-class > button"));
             loginButton.Click();
-            Thread.Sleep(5000);
+            Thread.Sleep(1000);
+
+
+            // Ấn skip nếu có
+            ClickIfExists(By.XPath("/html/body/div[5]/div/i"), driver, wait);
+
+            Thread.Sleep(1000);
+
+            // Đợi loading biến mất
+            wait.Until(d => d.FindElement(By.Id("loading-bg")).GetAttribute("style").Contains("display: none"));
+
+            // Ấn continue nếu có
+            ClickIfExists(
+                By.CssSelector("#app > div.w-full.overflow-auto.h-full > div > div > div.cnl-box-container.flexed > div > div.flexed-row.buttons > div:nth-child(1) > button > div"),
+                driver,
+                wait
+            );
+            Thread.Sleep(500);
+            //Add Button Da hieu 
+            ClickIfExists(
+        By.XPath("//button[.//div[normalize-space()='Đã hiểu']]"),
+        driver,
+        wait
+    );
+            Thread.Sleep(500);
         }
         private void CloseDriver()
         {
@@ -167,6 +198,30 @@ namespace SEP490.Selenium.SaleOrder
                         ));
             exitButton.Click();
             Thread.Sleep(500);
+        }
+        public static bool ClickIfExists(By by, IWebDriver driver, WebDriverWait wait)
+        {
+            try
+            {
+                var element = wait.Until(d =>
+                {
+                    var elements = d.FindElements(by);
+                    return elements.FirstOrDefault(e => e.Displayed);
+                });
+
+                if (element != null)
+                {
+                    IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+                    js.ExecuteScript("arguments[0].click();", element);
+                    return true;
+                }
+            }
+            catch (WebDriverTimeoutException)
+            {
+                // Timeout after retries
+                return false;
+            }
+            return false;
         }
     }
 }
