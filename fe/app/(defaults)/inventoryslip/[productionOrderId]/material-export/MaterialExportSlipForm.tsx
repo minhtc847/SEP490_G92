@@ -335,8 +335,8 @@ export default function MaterialExportSlipForm({
                                                  Số lượng mục tiêu: {target.amount}
                                              </p>
                                              {target.selected && (
-                                                 <div className="mt-3">
-                                                     <label className="block text-sm font-medium text-blue-700 mb-1">
+                                                 <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+                                                     <label className="block text-sm font-medium text-blue-700 mb-1" onClick={(e) => e.stopPropagation()}>
                                                          Số lượng cần sản xuất <span className="text-red-500">*</span>
                                                      </label>
                                                      <input
@@ -345,6 +345,7 @@ export default function MaterialExportSlipForm({
                                                          min="0.01"
                                                          value={target.targetQuantity}
                                                          onChange={(e) => handleTargetQuantityChange(target.id, parseFloat(e.target.value) || 0)}
+                                                         onClick={(e) => e.stopPropagation()}
                                                          className={`w-full px-3 py-2 border rounded-md text-sm ${
                                                              target.targetQuantity <= 0 ? 'border-red-500 bg-red-50' : 'border-blue-300 bg-white'
                                                          }`}
