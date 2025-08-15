@@ -34,6 +34,37 @@ const ProductCreatePage = () => {
         isupdatemisa: false,
     });
 
+    // Hàm sinh tên tự động từ dữ liệu form
+    function generateProductName(structure: GlassStructure | undefined, width: number, height: number, thickness: number) {
+        if (!structure || !width || !height || !thickness) return '';
+        return `Kính ${structure.productName}, KT: ${width}*${height}*${thickness} mm`;
+    }
+
+    // Auto tính giá & tên khi thay đổi cấu trúc kính hoặc kích thước
+    useEffect(() => {
+        const structure = glassStructures.find((g) => g.id === newFinishedProductForm.glassStructureId);
+        if (!structure) return;
+
+        const area = (newFinishedProductForm.width * newFinishedProductForm.height) / 1_000_000;
+        const unitPrice = +(area * (structure?.unitPrice ?? 0)).toFixed(0);
+
+        setNewFinishedProductForm((prev) => {
+            const updatedForm = { ...prev };
+
+            // Tính giá
+            if (unitPrice !== prev.unitPrice) {
+                updatedForm.unitPrice = unitPrice;
+            }
+
+            // Sinh tên tự động
+            if (prev.width && prev.height && prev.thickness) {
+                updatedForm.productName = generateProductName(structure, prev.width, prev.height, prev.thickness);
+            }
+
+            return updatedForm;
+        });
+    }, [newFinishedProductForm.width, newFinishedProductForm.height, newFinishedProductForm.thickness, newFinishedProductForm.glassStructureId, glassStructures]);
+
     const [newMaterialProductForm, setNewMaterialProductForm] = useState({
         productName: '',
         width: 0,
@@ -56,8 +87,12 @@ const ProductCreatePage = () => {
 
     useEffect(() => {
         (async () => {
-            const data = await getGlassStructures();
-            setGlassStructures(data);
+            try {
+                const data = await getGlassStructures();
+                setGlassStructures(data);
+            } catch (error) {
+                console.error('Error loading glass structures:', error);
+            }
         })();
     }, []);
 
@@ -73,14 +108,9 @@ const ProductCreatePage = () => {
 
         setIsProductNameDuplicate(exists);
 
-        const dims = extractDimensionsFromName(trimmed);
-
         setNewFinishedProductForm((prev) => ({
             ...prev,
             productName: val,
-            width: dims?.width ?? prev.width,
-            height: dims?.height ?? prev.height,
-            thickness: dims?.thickness ?? prev.thickness,
         }));
     };
 
@@ -126,44 +156,41 @@ const ProductCreatePage = () => {
         }
     };
 
-    function extractDimensionsFromName(name: string): { width: number; height: number; thickness: number } | null {
-        const match = name.match(/KT:\s*(\d+)\*(\d+)\*(\d+)\s*mm/i);
-        if (!match) return null;
-
-        const [, width, height, thickness] = match;
-        return {
-            width: parseInt(width),
-            height: parseInt(height),
-            thickness: parseInt(thickness),
-        };
-    }
-
     const handleSave = async () => {
-        if (isProductNameDuplicate) {
-            alert('Tên sản phẩm đã tồn tại.');
-            return;
-        }
-        const regex = /^Kính .+ phút, KT: \d+\*\d+\*\d+ mm, .+$/;
-        if (!regex.test(newFinishedProductForm.productName)) {
-            alert('Tên sản phẩm sai định dạng.\n\nVí dụ đúng: Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng');
-            return;
-        }
-        if (!newFinishedProductForm.glassStructureId) {
-            alert('Vui lòng chọn cấu trúc kính.');
-            return;
-        }
-
-        const payload = {
-            productName: newFinishedProductForm.productName,
-            width: newFinishedProductForm.width.toString(),
-            height: newFinishedProductForm.height.toString(),
-            thickness: newFinishedProductForm.thickness,
-            unitPrice: 0,
-            glassStructureId: newFinishedProductForm.glassStructureId,
-            isupdatemisa: newFinishedProductForm.isupdatemisa,
-        };
-
         try {
+            if (isProductNameDuplicate) {
+                alert('Tên sản phẩm đã tồn tại.');
+                return;
+            }
+
+            if (!newFinishedProductForm.productName.trim()) {
+                alert('Vui lòng nhập tên sản phẩm!');
+                return;
+            }
+
+            const isExisted = await checkProductNameExists(newFinishedProductForm.productName);
+            if (isExisted) {
+                alert('Tên sản phẩm đã tồn tại, vui lòng chọn tên khác!');
+                return;
+            }
+
+            if (!newFinishedProductForm.glassStructureId) {
+                alert('Vui lòng chọn cấu trúc kính!');
+                return;
+            }
+
+            const payload = {
+                productName: newFinishedProductForm.productName,
+                width: newFinishedProductForm.width.toString(),
+                height: newFinishedProductForm.height.toString(),
+                thickness: newFinishedProductForm.thickness,
+                uom: 'Tấm',
+                productType: 'Thành Phẩm',
+                unitPrice: 0,
+                glassStructureId: newFinishedProductForm.glassStructureId,
+                isupdatemisa: newFinishedProductForm.isupdatemisa,
+            };
+
             const res = await createProduct(payload);
             alert('Đã tạo sản phẩm: ' + res.productName);
             router.push(`/products/${res.id}`);
@@ -175,7 +202,6 @@ const ProductCreatePage = () => {
 
     return (
         <ProtectedRoute requiredRole={[1, 2]}>
-
         <div>
             <div>
                 <h1 className="text-xl font-bold">Thêm sản phẩm (Thành Phẩm)</h1>
@@ -184,10 +210,10 @@ const ProductCreatePage = () => {
                     <div>
                         <h4 className="text-lg font-semibold mb-2">Thêm sản phẩm mới</h4>
                         <p className="text-sm text-gray-500 italic mb-2">
-                            ⚠️ Tên sản phẩm phải theo định dạng: <strong>Kính [loại] phút, KT: [rộng]*[cao]*[dày] mm, [mô tả thêm]</strong>
+                            ⚠️ Tên sản phẩm sẽ được tự động tạo từ cấu trúc kính và kích thước
                             <br />
                             <span>
-                                Ví dụ: <code>Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng</code>
+                                Ví dụ: <code>Kính EI60 phút, KT: 300*500*30 mm</code>
                             </span>
                         </p>
 
@@ -196,7 +222,7 @@ const ProductCreatePage = () => {
                             className="input input-bordered w-full"
                             value={newFinishedProductForm.productName}
                             onChange={(e) => handleFinishedProductNameChange(e.target.value)}
-                            placeholder="VD: Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng"
+                            placeholder="Tên sẽ được tự động tạo..."
                         />
                         {isProductNameDuplicate && <p className="text-red-500 text-sm">Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.</p>}
                     </div>
@@ -205,7 +231,6 @@ const ProductCreatePage = () => {
                         <div>
                             <label className="block mb-1 font-medium">Rộng (mm)</label>
                             <input
-                                disabled={true}
                                 type="number"
                                 className="input input-bordered w-full"
                                 value={newFinishedProductForm.width}
@@ -215,7 +240,6 @@ const ProductCreatePage = () => {
                         <div>
                             <label className="block mb-1 font-medium">Cao (mm)</label>
                             <input
-                                disabled={true}
                                 type="number"
                                 className="input input-bordered w-full"
                                 value={newFinishedProductForm.height}
@@ -225,7 +249,6 @@ const ProductCreatePage = () => {
                         <div>
                             <label className="block mb-1 font-medium">Dày (mm)</label>
                             <input
-                                disabled={true}
                                 type="number"
                                 className="input input-bordered w-full"
                                 value={newFinishedProductForm.thickness}
@@ -302,7 +325,7 @@ const ProductCreatePage = () => {
                             <label className="block mb-1 font-medium">Tên sản phẩm</label>
                             <input
                                 className="input input-sm input-bordered w-full"
-                                placeholder="VD: Kính EI60 phút, KT: 300*500*30 mm, ..."
+                                placeholder="VD: Kính cường lực tôi trắng KT: 200*200*5 mm"
                                 value={newMaterialProductForm.productName}
                                 onChange={(e) => handleMaterialProductNameChange(e.target.value)}
                             />
@@ -342,7 +365,6 @@ const ProductCreatePage = () => {
             </div>
         </div>
         </ProtectedRoute>
-
     );
 };
 

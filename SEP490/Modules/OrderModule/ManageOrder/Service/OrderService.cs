@@ -186,6 +186,13 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
 
         public async Task<int> CreateOrderAsync(CreateOrderDto dto)
         {
+            if (string.IsNullOrWhiteSpace(dto.CustomerName))
+                throw new ArgumentException("CustomerName is required");
+            if (string.IsNullOrWhiteSpace(dto.Phone))
+                throw new ArgumentException("Phone is required");
+            if (dto.Products == null || !dto.Products.Any())
+                throw new ArgumentException("Order must have at least one product");
+
             var customer = await _context.Customers
                 .FirstOrDefaultAsync(c => c.CustomerName == dto.CustomerName && c.Phone == dto.Phone);
 
@@ -212,15 +219,16 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             _context.SaleOrders.Add(order);
             await _context.SaveChangesAsync();
 
-            var detail = new OrderDetail
-            {
-                SaleOrderId = order.Id
-            };
+            var detail = new OrderDetail { SaleOrderId = order.Id };
             _context.OrderDetails.Add(detail);
             await _context.SaveChangesAsync();
 
             foreach (var p in dto.Products)
             {
+                var product = await _context.Products.FindAsync(p.ProductId);
+                if (product == null)
+                    throw new InvalidOperationException($"Product with ID {p.ProductId} not found");
+
                 var odp = new OrderDetailProduct
                 {
                     OrderDetailId = detail.Id,
@@ -322,7 +330,6 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             _context.SaveChanges();
             return true;
         }
-
 
         public void DeleteOrder(int orderId)
         {

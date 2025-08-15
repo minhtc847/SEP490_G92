@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getProductById, getGlassStructureById, ProductDetail, GlassStructureOption } from './service';
+import { getProductById, getGlassStructureById, updateMisaProduct, updateProductMisaStatus, ProductDetail, GlassStructureOption } from './service';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const ProductDetailPage = () => {
@@ -12,6 +12,8 @@ const ProductDetailPage = () => {
     const [glassStructureName, setGlassStructureName] = useState<string>('');
     const [isUpdatingMisa, setIsUpdatingMisa] = useState<boolean>(false);
     const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
+    const [showErrorMessage, setShowErrorMessage] = useState<boolean>(false);
+    const [errorMessage, setErrorMessage] = useState<string>('');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -38,26 +40,50 @@ const ProductDetailPage = () => {
     }, [id]);
 
     const handleUpdateMisa = async () => {
+        if (!product) return;
+        
         setIsUpdatingMisa(true);
         setShowSuccessMessage(false);
+        setShowErrorMessage(false);
+        setErrorMessage('');
         
-        // Simulate 10-second delay
-        setTimeout(() => {
-            setIsUpdatingMisa(false);
+        try {
+            // Gọi API cập nhật MISA
+            await updateMisaProduct(product);
+            
+            // Sau khi cập nhật MISA thành công, cập nhật trạng thái isupdatemisa thành true
+            await updateProductMisaStatus(product.id);
+            
+            // Refresh lại dữ liệu sản phẩm để hiển thị trạng thái mới
+            const updatedProduct = await getProductById(String(product.id));
+            setProduct(updatedProduct);
+            
+            // Hiển thị thông báo thành công
             setShowSuccessMessage(true);
             
-            // Hide success message after 3 seconds
+            // Ẩn thông báo sau 3 giây
             setTimeout(() => {
                 setShowSuccessMessage(false);
             }, 3000);
-        }, 10000);
+            
+        } catch (error: any) {
+            console.error('Lỗi khi cập nhật MISA:', error);
+            setErrorMessage(error.response?.data?.message || error.message || 'Có lỗi xảy ra khi cập nhật MISA');
+            setShowErrorMessage(true);
+            
+            // Ẩn thông báo lỗi sau 5 giây
+            setTimeout(() => {
+                setShowErrorMessage(false);
+            }, 5000);
+        } finally {
+            setIsUpdatingMisa(false);
+        }
     };
 
     if (!product) return <div className="p-6 text-red-600">Đang tải dữ liệu...</div>;
 
     return (
         <ProtectedRoute requiredRole={[1, 2]}>
-
         <div className="p-6 bg-white rounded-lg shadow-md">
             <h2 className="text-xl font-bold mb-6">Chi tiết sản phẩm</h2>
             
@@ -65,6 +91,13 @@ const ProductDetailPage = () => {
             {showSuccessMessage && (
                 <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
                     ✅ Cập nhật MISA thành công!
+                </div>
+            )}
+            
+            {/* Error Message */}
+            {showErrorMessage && (
+                <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                    ❌ {errorMessage}
                 </div>
             )}
             
@@ -156,7 +189,6 @@ const ProductDetailPage = () => {
             </div>
         </div>
         </ProtectedRoute>
-
     );
 };
 

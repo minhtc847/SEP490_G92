@@ -31,8 +31,28 @@ export interface GlassStructure {
 }
 
 export const getGlassStructures = async (): Promise<GlassStructure[]> => {
-    const res = await axios.get('/api/orders/glass-structures');
-    return res.data;
+    try {
+        // Thử endpoint chính trước
+        const res = await axios.get('/api/orders/glass-structures');
+        return res.data;
+    } catch (error) {
+        console.error('Error with /api/orders/glass-structures:', error);
+        try {
+            // Thử endpoint thay thế
+            const res2 = await axios.get('/api/GlassStructure');
+            return res2.data;
+        } catch (error2) {
+            console.error('Error with /api/GlassStructure:', error2);
+            try {
+                // Thử endpoint cuối cùng
+                const res3 = await axios.get('/api/Product/all');
+                return res3.data;
+            } catch (error3) {
+                console.error('Error with /api/Product/all:', error3);
+                throw new Error('Không thể lấy được danh sách cấu trúc kính');
+            }
+        }
+    }
 };
 
 export const createProduct = async (payload: CreateProductDto): Promise<ProductCreatedResponse> => {

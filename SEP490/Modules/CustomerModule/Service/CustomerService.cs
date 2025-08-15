@@ -51,6 +51,11 @@ namespace SEP490.Modules.CustomerModule.Service
         }
         public Customer AddCustomer(UpdateCustomerDto dto)
         {
+            if (dto.Discount.HasValue && dto.Discount.Value < 0)
+            {
+                throw new ArgumentException("Discount không được âm");
+            }
+
             var customer = new Customer
             {
                 CustomerCode = dto.CustomerCode,
@@ -74,6 +79,11 @@ namespace SEP490.Modules.CustomerModule.Service
         {
             var customer = _context.Customers.FirstOrDefault(c => c.Id == id);
             if (customer == null) return false;
+
+            if (dto.Discount.HasValue && dto.Discount.Value < 0)
+            {
+                throw new ArgumentException("Discount không được âm");
+            }
 
             customer.CustomerCode = dto.CustomerCode;
             customer.CustomerName = dto.CustomerName;
