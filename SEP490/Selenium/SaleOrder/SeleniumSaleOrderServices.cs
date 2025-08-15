@@ -149,7 +149,19 @@ namespace SEP490.Selenium.SaleOrder
                     });
                     Thread.Sleep(300);
                     inputCount.SendKeys(products[i].ProductQuantity);
-                    Thread.Sleep(1000);
+                    Thread.Sleep(300);
+                    ////*[@id="body-layout"]/div[2]/div/div[3]/div/div/div/div/div/div[2]/div/div/div[1]/table/tbody/tr/td[9]/div/div/div[1]
+                    var inputPrice = driver.FindElement(By.XPath(
+            "//*[@id=\"body-layout\"]/div[2]/div/div[3]/div/div/div/div/div/div[2]/div/div/div[1]/table/tbody/tr[" + (i + 1) + "]/td[9]/div/div/div[1]/div"
+        ));
+                    inputPrice.Click();
+                    var inputPrice2 = wait.Until(d =>
+                    {
+                        var inputc = d.FindElement(By.CssSelector("td.dynamic-column input[isnumeric='true']"));
+                        return (inputc.Displayed && inputc.Enabled) ? inputc : null;
+                    });
+                    Thread.Sleep(300);
+                    inputPrice2.SendKeys(products[i].Price);
                 }
                 else
                 {
@@ -186,7 +198,19 @@ namespace SEP490.Selenium.SaleOrder
                     });
                     Thread.Sleep(300);
                     inputCount.SendKeys(products[i].ProductQuantity);
-                    Thread.Sleep(1000);
+                    Thread.Sleep(300);
+                    var inputPrice = driver.FindElement(By.XPath(
+            "//*[@id=\"body-layout\"]/div[2]/div/div[3]/div/div/div/div/div/div[2]/div/div/div[1]/table/tbody/tr[1]/td[9]/div/div/div[1]/div"
+        ));
+                    inputPrice.Click();
+                    var inputPrice2 = wait.Until(d =>
+                    {
+                        var inputc = d.FindElement(By.CssSelector("td.dynamic-column input[isnumeric='true']"));
+                        return (inputc.Displayed && inputc.Enabled) ? inputc : null;
+                    });
+                    Thread.Sleep(300);
+                    inputPrice2.SendKeys(products[i].Price);
+                    Thread.Sleep(300);
                 }
                 i++;
             }
