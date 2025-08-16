@@ -24,12 +24,12 @@ const toPositiveInt = (v: string | number | null): number | null => {
     const n = typeof v === 'string' ? Number(v) : v;
     return Number.isInteger(n) && n > 0 ? n : null;
 };
+
 const toPositiveNumber = (v: string | number | null): number | null => {
     if (v === null || v === '') return null;
     const n = typeof v === 'string' ? Number(v) : v;
     return Number.isFinite(n) && n > 0 ? n : null;
 };
-const PRODUCT_NAME_REGEX = /^Kính .+ KT: \d+\*\d+\*\d+ mm$/;
 
 export type OrderItem = {
     id: number;
@@ -238,21 +238,21 @@ const PurchaseOrderEditPage = () => {
     return (
         <ProtectedRoute requiredRole={[1,2]}>
 
-        <div className="max-w-6xl mx-auto p-6 space-y-6">
-            <h1 className="text-2xl font-bold">Chỉnh sửa đơn hàng mua</h1>
+        <div className="max-w-6xl mx-auto p-6">
+            <h2 className="text-2xl font-bold mb-4">Chỉnh sửa đơn hàng mua: {orderId}</h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
                     <label className="block mb-1 font-medium">Tên nhà cung cấp</label>
-                    <input disabled={true} className="input input-bordered w-full" value={form.customer} onChange={(e) => handleCustomerNameChange(e.target.value)} />
+                    <div className="p-2 bg-gray-100 rounded">{form.customer}</div>
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Ngày tạo</label>
-                    <input className="input input-bordered w-full bg-gray-100" value={form.createdDate} readOnly />
+                    <div className="p-2 bg-gray-100 rounded">{form.createdDate}</div>
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Mã đơn hàng</label>
-                    <input className="input input-bordered w-full" value={form.orderCode} readOnly />
+                    <div className="p-2 bg-gray-100 rounded">{form.orderCode}</div>
                 </div>
                 <div>
                     <label className="block mb-1 font-medium">Trạng thái</label>
@@ -264,58 +264,37 @@ const PurchaseOrderEditPage = () => {
                         ))}
                     </select>
                 </div>
-                <div className="md:col-span-2">
+                <div className="col-span-2">
                     <label className="block mb-1 font-medium">Mô tả / Ghi chú</label>
                     <textarea className="textarea textarea-bordered w-full" rows={3} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
-                <table className="w-full border-collapse border text-sm mb-6">
-                    <thead className="bg-gray-100">
+            <h3 className="text-xl font-semibold mb-3">Chi tiết đơn hàng</h3>
+
+            <div className="overflow-x-auto mb-4">
+                <table className="table table-zebra min-w-[1000px]">
+                    <thead>
                         <tr>
-                            <th className="border p-2">STT</th>
-                            <th className="border p-2">Tên SP</th>
-                            {/* <th className="border p-2">Rộng (mm)</th>
-                            <th className="border p-2">Cao (mm)</th>
-                            <th className="border p-2">Dày (mm)</th> */}
-                            <th className="border p-2">Số lượng</th>
-                            <th className="border p-2">Đơn vị tính</th>
-                            {/* <th className="border p-2">Diện tích (m²)</th> */}
-                            <th className="border p-2 w-20"></th> {/* cột xoá */}
+                            <th>STT</th>
+                            <th>Tên sản phẩm</th>
+                            <th>Số lượng</th>
+                            <th>Đơn vị tính</th>
+                            <th></th>
                         </tr>
                     </thead>
-
                     <tbody>
                         {form.items.map((it, idx) => {
-                            const width = it.width ?? 0;
-                            const height = it.height ?? 0;
-                            const areaM2 = (width * height) / 1_000_000;
-
                             return (
                                 <tr key={it.id}>
-                                    <td className="border p-2 text-center">{idx + 1}</td>
-
-                                    <td className="border p-2">{it.productName}</td>
-
-                                    {/* <td className="border p-2 text-right">{width.toLocaleString()}</td>
-
-                                    <td className="border p-2 text-right">{height.toLocaleString()}</td>
-
-                                    <td className="border p-2 text-right">{(it.thickness ?? 0).toLocaleString()}</td> */}
-
-                                    {/* cột chỉnh số lượng */}
-                                    <td className="border p-2 text-right">
-                                        <input type="number" className="input input-xs w-20" value={it.quantity} min={1} onChange={(e) => handleItemChange(idx, 'quantity', +e.target.value)} />
+                                    <td>{idx + 1}</td>
+                                    <td>{it.productName}</td>
+                                    <td>
+                                        <input type="number" className="input input-sm" value={it.quantity} min={1} onChange={(e) => handleItemChange(idx, 'quantity', +e.target.value)} />
                                     </td>
-
-                                    <td className="border p-2">{it.uom || 'Tấm'}</td>
-
-                                    {/* <td className="border p-2 text-right">{areaM2.toFixed(2)}</td> */}
-
-                                    {/* nút xoá */}
-                                    <td className="border p-2 text-center">
-                                        <button className="btn btn-xs btn-error" onClick={() => removeItem(idx)}>
+                                    <td>{it.uom || 'Tấm'}</td>
+                                    <td>
+                                        <button className="btn btn-sm btn-error" onClick={() => removeItem(idx)}>
                                             Xoá
                                         </button>
                                     </td>
@@ -326,7 +305,7 @@ const PurchaseOrderEditPage = () => {
                 </table>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-4 mb-4">
                 <div className="w-1/2">
                     <AsyncSelect<ProductOption>
                         cacheOptions
@@ -411,9 +390,21 @@ const PurchaseOrderEditPage = () => {
                 </div>
             </div>
 
-            <div className="flex gap-4">
+            <div className="text-end text-sm space-y-1">
+                <p>
+                    <strong>Tổng số lượng:</strong> {form.items.reduce((sum, item) => sum + item.quantity, 0)}
+                </p>
+            </div>
+
+            <div className="flex items-center gap-4 mt-4">
+                <button onClick={() => router.back()} className="btn btn-status-secondary">
+                    ◀ Quay lại
+                </button>
+                <button onClick={handleSave} disabled={saving} className="btn btn-primary">
+                    {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                </button>
                 <button
-                    className="btn btn-error ml-auto"
+                    className="btn btn-danger"
                     onClick={async () => {
                         const confirmed = confirm(`Bạn có chắc muốn xoá đơn hàng "${form.description}" không?`);
                         if (!confirmed) return;
@@ -428,13 +419,6 @@ const PurchaseOrderEditPage = () => {
                     }}
                 >
                     🗑 Xoá đơn hàng
-                </button>
-
-                <button className="btn btn-secondary" onClick={() => router.back()}>
-                    ◀ Quay lại
-                </button>
-                <button className="btn btn-primary" disabled={saving} onClick={handleSave}>
-                    {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
                 </button>
             </div>
         </div>

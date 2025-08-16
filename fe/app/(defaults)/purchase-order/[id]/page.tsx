@@ -3,24 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getPurchaseOrderById, PurchaseOrderWithDetailsDto, updatePurchaseOrderStatus } from './service';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import ExcelJS from 'exceljs';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
-const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-        case 'Pending':
-            return 'bg-yellow-200 text-yellow-800';
-        case 'Ordered':
-            return 'bg-blue-200 text-blue-800';
-        case 'Imported':
-            return 'bg-green-200 text-green-800';
-        case 'Cancelled':
-            return 'bg-red-200 text-red-800';
-        default:
-            return 'bg-gray-200 text-gray-800';
-    }
-};
-
-const getStatusDisplayName = (status: string) => {
+const getStatusText = (status: string) => {
     switch (status) {
         case 'Pending':
             return 'Chờ đặt hàng';
@@ -32,6 +20,21 @@ const getStatusDisplayName = (status: string) => {
             return 'Đã hủy';
         default:
             return status;
+    }
+};
+
+const getStatusClass = (status: string) => {
+    switch (status) {
+        case 'Pending':
+            return 'badge-outline-warning';
+        case 'Ordered':
+            return 'badge-outline-info';
+        case 'Imported':
+            return 'badge-outline-success';
+        case 'Cancelled':
+            return 'badge-outline-danger';
+        default:
+            return 'badge-outline-default';
     }
 };
 
@@ -60,11 +63,71 @@ const PurchaseOrderDetailPage = () => {
         fetchData();
     }, [id]);
 
+    const handleExportToExcel = async () => {
+        if (!order) return;
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('DonHangMua');
+
+        worksheet.mergeCells('A1', 'H1');
+        worksheet.getCell('A1').value = 'ĐƠN HÀNG MUA';
+        worksheet.getCell('A1').font = { size: 14, bold: true };
+        worksheet.getCell('A1').alignment = { horizontal: 'center' };
+
+        worksheet.addRow([]);
+        worksheet.addRow(['Mã đơn hàng:', order.code, '', '', 'Ngày:', order.date ? new Date(order.date).toLocaleDateString() : '']);
+        worksheet.addRow(['Nhà cung cấp:', order.customerName]);
+        worksheet.addRow(['Mô tả:', order.description]);
+        worksheet.addRow(['Trạng thái:', getStatusText(order.status || '')]);
+        worksheet.addRow([]);
+
+        const headerRow = worksheet.addRow(['STT', 'Tên sản phẩm', 'Số lượng', 'Đơn vị tính', 'Ghi chú']);
+
+        headerRow.eachCell((cell) => {
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: '305496' },
+            };
+            cell.font = { color: { argb: 'FFFFFF' }, bold: true };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' },
+            };
+        });
+
+        order.purchaseOrderDetails.forEach((item, idx) => {
+            const row = worksheet.addRow([idx + 1, item.productName, item.quantity, item.uom || 'Tấm', '']);
+            row.eachCell((cell) => {
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' },
+                };
+            });
+        });
+
+        worksheet.addRow([]);
+        const totalQuantity = order.purchaseOrderDetails.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        worksheet.addRow(['Tổng số lượng:', '', totalQuantity, '', '']);
+
+        worksheet.columns.forEach((column) => {
+            column.width = 15;
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        saveAs(blob, `DonHangMua_${order.code}.xlsx`);
+    };
+
     if (loading) return <div className="p-6">Đang tải dữ liệu...</div>;
     if (!order) return <div className="p-6 text-red-600">Không tìm thấy đơn hàng mua với ID: {id}</div>;
 
-    const handleBack = () => router.push('/purchase-order');
-    const handleEdit = () => router.push(`/purchase-order/edit/${id}`);
+    const totalQuantity = order.purchaseOrderDetails.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
     return (
         <ProtectedRoute requiredRole={[1, 2]}>
@@ -110,27 +173,36 @@ const PurchaseOrderDetailPage = () => {
                             </button>
                         </div>
                     )}
-                    <button onClick={handleEdit} className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
-                        ✏️ Sửa
+                    <button onClick={() => router.push(`/purchase-order/edit/${id}`)} className="px-4 py-1 bg-blue-500 text-white rounded">
+                        📝 Sửa
                     </button>
-                    <button onClick={() => alert('Xuất Excel')} className="px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700">
-                        🧾 Xuất Excel
+                    <button onClick={handleExportToExcel} className="px-4 py-1 bg-gray-600 text-white rounded">
+                        📊 Xuất Excel
                     </button>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-sm">
                 <div>
+                    <strong>Mã đơn hàng:</strong> {order.code || '-'}
+                </div>
+                <div>
+                    <strong>Ngày tạo:</strong> {order.date ? new Date(order.date).toLocaleDateString() : '-'}
+                </div>
+                <div>
+                    <strong>Nhà cung cấp:</strong> {order.customerName || '-'}
+                </div>
+                <div>
                     <strong>Mô tả:</strong> {order.description || '-'}
                 </div>
                 <div>
-                    <strong>Nhà cung cấp:</strong> {order.customerName}
+                    <strong>Trạng thái:</strong> 
+                    <span className={`ml-2 badge ${getStatusClass(order.status || '')}`}>
+                        {getStatusText(order.status || '')}
+                    </span>
                 </div>
                 <div>
-                    <strong>Ngày tạo:</strong> {order.date ? new Date(order.date).toLocaleDateString('vi-VN') : '-'}
-                </div>
-                <div>
-                    <strong>Trạng thái:</strong> <span className={`inline-block px-2 py-1 rounded text-xs ${getStatusBadgeClass(order.status || '')}`}>{getStatusDisplayName(order.status || '')}</span>
+                    <strong>Tổng giá trị:</strong> {order.totalValue ? `${order.totalValue.toLocaleString()}₫` : '0₫'}
                 </div>
             </div>
 
@@ -138,44 +210,35 @@ const PurchaseOrderDetailPage = () => {
                 <thead className="bg-gray-100">
                     <tr>
                         <th className="border p-2">STT</th>
-                        <th className="border p-2">Tên SP</th>
-                        {/* <th className="border p-2">Rộng (mm)</th>
-                        <th className="border p-2">Cao (mm)</th>
-                        <th className="border p-2">Dày (mm)</th> */}
+                        <th className="border p-2">Tên sản phẩm</th>
                         <th className="border p-2">Số lượng</th>
-                        <th className="border p-2">Đơn vị</th>
-                        {/* <th className="border p-2">Diện tích (m²)</th> */}
+                        <th className="border p-2">Đơn vị tính</th>
+                        <th className="border p-2">Ghi chú</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {order.purchaseOrderDetails.map((item, idx) => {
-                        const width = Number(item.width) || 0;
-                        const height = Number(item.height) || 0;
-                        const areaM2 = (width * height) / 1_000_000;
-
-                        return (
-                            <tr key={idx}>
-                                <td className="border p-2 text-center">{idx + 1}</td>
-                                <td className="border p-2">{item.productName}</td>
-                                {/* <td className="border p-2 text-right">{width.toLocaleString()}</td>
-                                <td className="border p-2 text-right">{height.toLocaleString()}</td>
-                                <td className="border p-2 text-right">{(item.thickness ?? 0).toLocaleString()}</td> */}
-                                <td className="border p-2 text-right">{(item.quantity ?? 0).toLocaleString()}</td>
-                                <td className="border p-2">{item.uom || '-'}</td>
-                                {/* <td className="border p-2 text-right">{areaM2.toFixed(2)}</td> */}
-                            </tr>
-                        );
-                    })}
+                    {order.purchaseOrderDetails.map((item, idx) => (
+                        <tr key={idx}>
+                            <td className="border p-2 text-center">{idx + 1}</td>
+                            <td className="border p-2">{item.productName || '-'}</td>
+                            <td className="border p-2 text-right">{(item.quantity || 0).toLocaleString()}</td>
+                            <td className="border p-2">{item.uom || 'Tấm'}</td>
+                            <td className="border p-2">-</td>
+                        </tr>
+                    ))}
                 </tbody>
             </table>
 
-            <div className="text-end text-sm font-semibold">
+            <div className="text-end text-sm space-y-1">
                 <p>
-                    <strong>Tổng số lượng:</strong> {order.purchaseOrderDetails.reduce((sum, item) => sum + (item.quantity ?? 0), 0)}
+                    <strong>Tổng số lượng:</strong> {totalQuantity}
+                </p>
+                <p>
+                    <strong>Tổng giá trị:</strong> {order.totalValue ? `${order.totalValue.toLocaleString()}₫` : '0₫'}
                 </p>
             </div>
 
-            <button onClick={handleBack} className="mt-6 px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">
+            <button onClick={() => router.back()} className="btn btn-status-secondary">
                 ◀ Quay lại
             </button>
         </div>

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { importPurchaseOrder, deletePurchaseOrder, getPurchaseOrders, PurchaseOrderDto, updatePurchaseOrderStatus } from './service';
+import { FiSearch } from 'react-icons/fi';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
@@ -43,6 +44,36 @@ const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: nu
     );
 };
 
+const getStatusClass = (status: string) => {
+    switch (status) {
+        case 'Pending':
+            return 'badge-outline-warning';
+        case 'Ordered':
+            return 'badge-outline-info';
+        case 'Imported':
+            return 'badge-outline-success';
+        case 'Cancelled':
+            return 'badge-outline-danger';
+        default:
+            return 'badge-outline-default';
+    }
+};
+
+const getStatusText = (status: string) => {
+    switch (status) {
+        case 'Pending':
+            return 'Chờ đặt hàng';
+        case 'Ordered':
+            return 'Đã đặt hàng';
+        case 'Imported':
+            return 'Đã nhập hàng';
+        case 'Cancelled':
+            return 'Đã hủy';
+        default:
+            return status;
+    }
+};
+
 const PurchaseOrderPage = () => {
     const [orders, setOrders] = useState<PurchaseOrderDto[]>([]);
     const [loading, setLoading] = useState(true);
@@ -52,7 +83,6 @@ const PurchaseOrderPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const router = useRouter();
-    const [searchDescription, setSearchDescription] = useState('');
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
 
@@ -99,22 +129,23 @@ const PurchaseOrderPage = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
 
-    if (loading) return <div className="p-6">Đang tải đơn hàng mua...</div>;
+    if (loading) {
+        return <div className="p-6">Đang tải đơn hàng mua...</div>;
+    }
 
     return (
         <ProtectedRoute requiredRole={[1, 2]}>
 
         <div className="p-6 bg-white rounded-lg shadow">
-            <div className="flex justify-between items-center mb-4">
+            <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Danh sách đơn hàng mua</h2>
-                <button onClick={() => router.push('/purchase-order/create')} className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800">
+                <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800" onClick={() => router.push('/purchase-order/create')}>
                     + Thêm đơn hàng mua
                 </button>
             </div>
 
-            {/* Bộ lọc */}
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="w-full md:w-2/3">
+                <div className="relative w-full md:w-1/3">
                     <input
                         type="text"
                         placeholder="Tìm theo tên nhà cung cấp hoặc mô tả..."
@@ -123,40 +154,46 @@ const PurchaseOrderPage = () => {
                             setSearchTerm(e.target.value);
                             setCurrentPage(1);
                         }}
-                        className="input input-bordered w-full py-2 px-4 rounded-lg shadow-sm"
+                        className="input input-bordered w-full py-2 px-4 pr-12 rounded-lg shadow-sm"
                     />
-                </div>
-
-                <div className="flex gap-4 items-end">
-                    <div className="flex flex-col">
-                        <label className="text-sm text-gray-600 mb-1">Từ ngày</label>
-                        <input
-                            type="date"
-                            className="input input-bordered py-2 px-3 rounded-lg shadow-sm"
-                            value={fromDate}
-                            onChange={(e) => {
-                                setFromDate(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                        />
-                    </div>
-
-                    <div className="flex flex-col">
-                        <label className="text-sm text-gray-600 mb-1">Đến ngày</label>
-                        <input
-                            type="date"
-                            className="input input-bordered py-2 px-3 rounded-lg shadow-sm"
-                            value={toDate}
-                            onChange={(e) => {
-                                setToDate(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                        />
-                    </div>
+                    <button
+                        type="button"
+                        className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center shadow z-10"
+                        onClick={() => console.log('Tìm kiếm:', searchTerm)}
+                    >
+                        <FiSearch className="text-white w-4 h-4" />
+                    </button>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4">
-                    {/* <select
+                    <div className="flex gap-4">
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium whitespace-nowrap">Từ:</label>
+                            <input
+                                type="date"
+                                value={fromDate}
+                                onChange={(e) => {
+                                    setFromDate(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                                className="input input-bordered py-2 px-4 rounded-lg shadow-sm"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium whitespace-nowrap">Đến:</label>
+                            <input
+                                type="date"
+                                value={toDate}
+                                onChange={(e) => {
+                                    setToDate(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                                className="input input-bordered py-2 px-4 rounded-lg shadow-sm"
+                            />
+                        </div>
+                    </div>
+
+                    <select
                         onChange={(e) => {
                             const val = e.target.value;
                             setSortAmount(val === 'asc' ? 'asc' : val === 'desc' ? 'desc' : null);
@@ -168,7 +205,7 @@ const PurchaseOrderPage = () => {
                         <option value="">Tổng tiền</option>
                         <option value="asc">Thấp → Cao</option>
                         <option value="desc">Cao → Thấp</option>
-                    </select> */}
+                    </select>
 
                     <select
                         className="select select-bordered py-2 px-4 rounded-lg shadow-sm"
@@ -187,6 +224,7 @@ const PurchaseOrderPage = () => {
                 </div>
             </div>
 
+            {/* Thông tin hiển thị */}
             <div className="flex items-center gap-2 mb-3 text-sm text-gray-600">
                 <span>
                     Hiển thị {startIndex + 1} đến {Math.min(startIndex + itemsPerPage, filteredOrders.length)} trong tổng {filteredOrders.length} đơn hàng.
@@ -207,115 +245,101 @@ const PurchaseOrderPage = () => {
             </div>
 
             {/* Bảng đơn hàng */}
-            <div className="overflow-x-auto">
-                <table className="table w-full border text-sm">
-                    <thead className="bg-gray-100">
+            <div className="overflow-x-auto mb-5">
+                <table className="table w-full">
+                    <thead>
                         <tr>
-                            <th className="border px-3 py-2">Mô tả</th>
-                            <th className="border px-3 py-2">Ngày tạo</th>
-                            {/* <th className="border px-3 py-2">Tổng tiền</th> */}
-                            <th className="border px-3 py-2">Trạng thái</th>
-                            <th className="border px-3 py-2">Nhà cung cấp</th>
-                            <th className="border px-3 py-2">Hành động</th>
+                            <th>Mô tả</th>
+                            <th>Ngày tạo</th>
+                            <th>Mã đơn hàng</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th>Nhà cung cấp</th>
+                            <th>Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
                         {paginatedOrders.map((order) => (
                             <tr key={order.id}>
-                                <td className="border px-3 py-2">{order.description || '-'}</td>
-                                <td className="border px-3 py-2">{order.date ? new Date(order.date).toLocaleDateString('vi-VN') : ''}</td>
-                                {/* <td className="border px-3 py-2">{order.totalValue != null ? `${order.totalValue.toLocaleString()}₫` : '0₫'}</td> */}
+                                <td>{order.description || '-'}</td>
+                                <td>{order.date ? new Date(order.date).toLocaleDateString('vi-VN') : '-'}</td>
+                                <td>{order.code || '-'}</td>
+                                <td>{order.totalValue != null ? `${order.totalValue.toLocaleString()}₫` : '0₫'}</td>
                                 <td>
-                                    <span
-                                        className={`badge ${
-                                            order.status === 'Pending'
-                                                ? 'badge-outline-warning'
-                                                : order.status === 'Ordered'
-                                                  ? 'badge-outline-info'
-                                                  : order.status === 'Imported'
-                                                    ? 'badge-outline-success'
-                                                    : order.status === 'Cancelled'
-                                                      ? 'badge-outline-danger'
-                                                      : 'badge-outline-default'
-                                        }`}
-                                    >
-                                        {order.status === 'Pending'
-                                            ? 'Chờ đặt hàng'
-                                            : order.status === 'Ordered'
-                                              ? 'Đã đặt hàng'
-                                              : order.status === 'Imported'
-                                                ? 'Đã nhập hàng'
-                                                : order.status === 'Cancelled'
-                                                  ? 'Đã hủy'
-                                                  : order.status}
+                                    <span className={`badge ${getStatusClass(order.status || '')}`}>
+                                        {getStatusText(order.status || '')}
                                     </span>
                                 </td>
-                                {/* <td className="border px-3 py-2">
-                                    <span className={`bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs`}>{order.status}</span>
-                                </td> */}
-                                <td className="border px-3 py-2">{order.customerName || '-'}</td>
-                                <td className=" px-3 py-2 space-x-2">
-                                    <td className=" px-3 py-2 space-x-2">
-                                        <button onClick={() => router.push(`/purchase-order/${order.id}`)} className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
-                                            Chi tiết
-                                        </button>
-
-                                        {order.status === 'Pending' && (
-                                            <>
-                                                <button
-                                                    onClick={async () => {
-                                                        if (confirm(`Bạn có chắc muốn đặt đơn hàng "${order.description}" không?`)) {
-                                                            try {
-                                                                await updatePurchaseOrderStatus(order.id, 1); // Ordered = 1
-                                                                setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: 'Ordered' } : o)));
-                                                                alert('Đơn hàng đã chuyển sang trạng thái "Đã đặt hàng".');
-                                                            } catch (error) {
-                                                                alert('Lỗi khi cập nhật trạng thái. Vui lòng thử lại.');
-                                                            }
-                                                        }
-                                                    }}
-                                                    className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
-                                                >
-                                                    Đặt hàng
-                                                </button>
-
-                                                <button
-                                                    onClick={async () => {
-                                                        if (confirm(`Bạn có chắc muốn huỷ đơn hàng "${order.description}" không?`)) {
-                                                            try {
-                                                                await updatePurchaseOrderStatus(order.id, 3); // Cancelled = 3
-                                                                setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: 'Cancelled' } : o)));
-                                                                alert('Đơn hàng đã được huỷ.');
-                                                            } catch (error) {
-                                                                alert('Lỗi khi huỷ đơn hàng. Vui lòng thử lại.');
-                                                            }
-                                                        }
-                                                    }}
-                                                    className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                                                >
-                                                    Huỷ đơn
-                                                </button>
-                                            </>
-                                        )}
-                                        {order.status !== 'Imported' && order.status !== 'Cancelled' && (
+                                <td>{order.customerName || '-'}</td>
+                                <td className="flex gap-2">
+                                    <button
+                                        className="px-2 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-800"
+                                        onClick={() => {
+                                            if (order.id) {
+                                                router.push(`/purchase-order/${order.id}`);
+                                            } else {
+                                                alert('Không tìm thấy ID đơn hàng!');
+                                            }
+                                        }}
+                                    >
+                                        Chi tiết
+                                    </button>
+                                    
+                                    {order.status === 'Pending' && (
+                                        <>
                                             <button
                                                 onClick={async () => {
-                                                    if (confirm(`Bạn có chắc muốn kho cho đơn hàng "${order.description}" không?`)) {
+                                                    if (confirm(`Bạn có chắc muốn đặt đơn hàng "${order.description}" không?`)) {
                                                         try {
-                                                            await importPurchaseOrder(order.id);
-                                                            setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: 'Imported' } : o)));
-                                                            alert('Đã nhập hàng thành công.');
-                                                        } catch {
-                                                            alert('Lỗi khi nhập hàng. Vui lòng thử lại.');
+                                                            await updatePurchaseOrderStatus(order.id, 1); // Ordered = 1
+                                                            setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: 'Ordered' } : o)));
+                                                            alert('Đơn hàng đã chuyển sang trạng thái "Đã đặt hàng".');
+                                                        } catch (error) {
+                                                            alert('Lỗi khi cập nhật trạng thái. Vui lòng thử lại.');
                                                         }
                                                     }
                                                 }}
-                                                className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                                                className="px-2 py-1 text-sm text-white bg-yellow-500 rounded hover:bg-yellow-600"
                                             >
-                                                Nhập hàng
+                                                Đặt hàng
                                             </button>
-                                        )}
-                                    </td>
+
+                                            <button
+                                                onClick={async () => {
+                                                    if (confirm(`Bạn có chắc muốn huỷ đơn hàng "${order.description}" không?`)) {
+                                                        try {
+                                                            await updatePurchaseOrderStatus(order.id, 3); // Cancelled = 3
+                                                            setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: 'Cancelled' } : o)));
+                                                            alert('Đơn hàng đã được huỷ.');
+                                                        } catch (error) {
+                                                            alert('Lỗi khi huỷ đơn hàng. Vui lòng thử lại.');
+                                                        }
+                                                    }
+                                                }}
+                                                className="px-2 py-1 text-sm text-white bg-red-500 rounded hover:bg-red-600"
+                                            >
+                                                Huỷ đơn
+                                            </button>
+                                        </>
+                                    )}
+                                    {order.status !== 'Imported' && order.status !== 'Cancelled' && (
+                                        <button
+                                            onClick={async () => {
+                                                if (confirm(`Bạn có chắc muốn nhập hàng cho đơn hàng "${order.description}" không?`)) {
+                                                    try {
+                                                        await importPurchaseOrder(order.id);
+                                                        setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: 'Imported' } : o)));
+                                                        alert('Đã nhập hàng thành công.');
+                                                    } catch {
+                                                        alert('Lỗi khi nhập hàng. Vui lòng thử lại.');
+                                                    }
+                                                }
+                                            }}
+                                            className="px-2 py-1 text-sm text-white bg-green-600 rounded hover:bg-green-700"
+                                        >
+                                            Nhập hàng
+                                        </button>
+                                    )}
                                 </td>
                             </tr>
                         ))}
