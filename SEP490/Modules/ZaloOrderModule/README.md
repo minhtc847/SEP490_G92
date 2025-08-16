@@ -85,7 +85,7 @@ ZaloOrderModule/
 ├── Controllers/
 │   └── ZaloWebhookController.cs     # Controller xử lý webhook
 ├── DTO/
-│   ├── ConversationState.cs         # Trạng thái cuộc hội thoại
+│   ├── ConversationState.cs         # Trạng thái cuộc hội thoại (DTO)
 │   ├── MessageResponse.cs           # Phản hồi tin nhắn
 │   ├── ZaloWebhookRequest.cs        # Request từ Zalo
 │   └── ZaloWebhookResponse.cs       # Response cho Zalo
@@ -94,9 +94,20 @@ ZaloOrderModule/
 │   ├── ZaloWebhookService.cs        # Service xử lý webhook chính
 │   ├── ZaloMessageProcessorService.cs # Xử lý tin nhắn
 │   ├── ZaloResponseService.cs       # Tạo phản hồi
-│   ├── ZaloConversationStateService.cs # Quản lý trạng thái
+│   ├── ZaloConversationStateService.cs # Quản lý trạng thái (Database)
 │   ├── IZaloCustomerService.cs      # Interface customer service
 │   └── ZaloCustomerService.cs       # Service tìm kiếm customer
+```
+
+## Database Models
+
+Module sử dụng các model database sau để lưu trữ dữ liệu:
+
+```
+DB/Models/
+├── ZaloConversationState.cs         # Trạng thái cuộc hội thoại
+├── ZaloConversationMessage.cs       # Lịch sử tin nhắn
+└── ZaloConversationOrderItem.cs     # Sản phẩm trong đơn hàng
 ```
 
 ## Xử lý sự kiện
@@ -162,14 +173,15 @@ GET /api/zalo-order/health
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "server=localhost;port=3307;database=vng_glass3;user=root;password=tuankietnvu00",
-    "Redis": "localhost:6379"
+    "DefaultConnection": "server=localhost;port=3307;database=vng_glass3;user=root;password=tuankietnvu00"
   },
   "Zalo": {
     "AccessToken": "your_access_token_here"
   }
 }
 ```
+
+**Lưu ý**: Module sử dụng Database để lưu trữ dữ liệu conversation. Không cần cấu hình Redis.
 
 ## Testing
 
@@ -237,7 +249,7 @@ Response:
 4. **Nếu gửi hình ảnh/file**, sẽ nhận được hướng dẫn liên hệ hỗ trợ
 
 ### Cho developer
-1. Đảm bảo cấu hình access token và Redis
+1. Đảm bảo cấu hình access token và database connection
 2. Kiểm tra logs để debug
 3. Sử dụng test endpoints trong development
 4. Monitor health check endpoint
@@ -247,7 +259,7 @@ Response:
 
 ### Lỗi thường gặp
 1. **Access token không hợp lệ**: Kiểm tra cấu hình
-2. **Redis không kết nối**: Kiểm tra connection string
+2. **Database không kết nối**: Kiểm tra connection string
 3. **Webhook không nhận được**: Kiểm tra URL và signature
 4. **Customer service lỗi**: Kiểm tra database connection
 
@@ -255,5 +267,5 @@ Response:
 1. Kiểm tra logs
 2. Sử dụng test endpoints
 3. Verify webhook URL trong Zalo Developer Console
-4. Kiểm tra Redis connection
+4. Kiểm tra Database connection
 5. Test customer lookup functionality

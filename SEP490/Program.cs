@@ -13,7 +13,7 @@ using SEP490.Modules.OrderModule.ManageOrder.Services;
 using SEP490.Modules.Zalo.Services;
 using SEP490.Modules.ZaloOrderModule.Services;
 using SEP490.Modules.ProductionOrders.Services;
-using StackExchange.Redis;
+
 using System;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
@@ -31,12 +31,7 @@ builder.Services.AddDbContext<SEP490DbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection"),
         mysqlVersion).UseSnakeCaseNamingConvention());
 
-// Add Redis
-builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-{
-    var configuration = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
-    return ConnectionMultiplexer.Connect(configuration);
-});
+
 
 // Add JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -90,7 +85,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddSignalR();
 
 // Add ZaloOrderModule services
-builder.Services.AddSingleton<ZaloConversationStateService>();
+builder.Services.AddScoped<ZaloConversationStateService>();
 builder.Services.AddTransient<ZaloResponseService>();
 builder.Services.AddTransient<ZaloMessageProcessorService>();
 builder.Services.AddTransient<IZaloMessageHistoryService, ZaloMessageHistoryService>();
@@ -99,7 +94,6 @@ builder.Services.AddTransient<IZaloProductValidationService, ZaloProductValidati
 builder.Services.AddScoped<IZaloTokenService, ZaloTokenService>();
 builder.Services.AddScoped<IZaloWebhookService, ZaloWebhookService>();
 builder.Services.AddSingleton<IZaloWebhookServiceFactory, ZaloWebhookServiceFactory>();
-builder.Services.AddSingleton<IRedisHealthCheckService, RedisHealthCheckService>();
 
 // Add AccountManagement services
 builder.Services.AddScoped<SEP490.Modules.AccountManagement.Services.IAccountManagementService, SEP490.Modules.AccountManagement.Services.AccountManagementService>();

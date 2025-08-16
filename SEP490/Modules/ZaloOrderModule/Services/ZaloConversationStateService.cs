@@ -1,135 +1,43 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SEP490.DB;
+using SEP490.DB.Models;
 using SEP490.Modules.ZaloOrderModule.DTO;
 using SEP490.Modules.ZaloOrderModule.Constants;
-using StackExchange.Redis;
-using System.Text.Json;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
     public class ZaloConversationStateService
     {
         private readonly ILogger<ZaloConversationStateService> _logger;
-        private readonly IDatabase _database;
-        private readonly TimeSpan _conversationExpiry;
-        private readonly bool _redisAvailable;
-        private readonly ConnectionMultiplexer _muxer;
+        private readonly SEP490DbContext _context;
 
-        public ZaloConversationStateService(ILogger<ZaloConversationStateService> logger)
+        public ZaloConversationStateService(ILogger<ZaloConversationStateService> logger, SEP490DbContext context)
         {
             _logger = logger;
-            
-            try
-            {
-                // Sử dụng cấu hình Redis Cloud với retry và timeout
-                _muxer = ConnectionMultiplexer.Connect(
-                    new ConfigurationOptions
-                    {
-                        EndPoints = { { "redis-17281.crce185.ap-seast-1-1.ec2.redns.redis-cloud.com", 17281 } },
-                        User = "default",
-                        Password = "y0HB5DwnkEtmMlnu1k7kGGsQIfJCI9bc",
-                        ConnectTimeout = 10000,        // 10 seconds
-                        SyncTimeout = 10000,           // 10 seconds
-                        ConnectRetry = 3,              // 3 retries
-                        KeepAlive = 180                // 3 minutes
-                    }
-                );
-                
-                _database = _muxer.GetDatabase();
-                
-                // Test connection with retry
-                var maxRetries = 3;
-                var retryCount = 0;
-                var pingResult = default(TimeSpan);
-                
-                while (retryCount < maxRetries)
-                {
-                    try
-                    {
-                        pingResult = _database.Ping();
-                        _redisAvailable = true;
-                        _logger.LogInformation("Redis connection established successfully. Ping: {PingTime}ms", pingResult.TotalMilliseconds);
-                        break;
-                    }
-                    catch (StackExchange.Redis.RedisConnectionException ex)
-                    {
-                        retryCount++;
-                        _logger.LogWarning(ex, "Redis connection attempt {RetryCount}/{MaxRetries} failed (connection error)", retryCount, maxRetries);
-                        
-                        if (retryCount >= maxRetries)
-                        {
-                            _logger.LogError("All Redis connection attempts failed, falling back to in-memory storage");
-                            _redisAvailable = false;
-                        }
-                        else
-                        {
-                            Thread.Sleep(1000 * retryCount); // Exponential backoff
-                        }
-                    }
-                    catch (StackExchange.Redis.RedisTimeoutException ex)
-                    {
-                        retryCount++;
-                        _logger.LogWarning(ex, "Redis connection attempt {RetryCount}/{MaxRetries} failed (timeout)", retryCount, maxRetries);
-                        
-                        if (retryCount >= maxRetries)
-                        {
-                            _logger.LogError("All Redis connection attempts failed due to timeout, falling back to in-memory storage");
-                            _redisAvailable = false;
-                        }
-                        else
-                        {
-                            Thread.Sleep(1000 * retryCount); // Exponential backoff
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Redis connection failed (unknown error), falling back to in-memory storage");
-                _redisAvailable = false;
-            }
-            
-            _conversationExpiry = TimeSpan.FromHours(ZaloWebhookConstants.Timeouts.CONVERSATION_EXPIRY_HOURS);
-        }
-
-        private string GetConversationKey(string zaloUserId)
-        {
-            return $"{ZaloWebhookConstants.CacheKeys.CONVERSATION_PREFIX}{zaloUserId}";
+            _context = context;
         }
 
         public async Task<ConversationState> GetOrCreateConversationAsync(string zaloUserId)
         {
-            if (!_redisAvailable)
-            {
-                _logger.LogWarning("Redis not available, returning default conversation state for user: {UserId}", zaloUserId);
-                return new ConversationState
-                {
-                    ZaloUserId = zaloUserId,
-                    CurrentState = UserStates.NEW,
-                    LastActivity = DateTime.UtcNow,
-                    CreatedAt = DateTime.UtcNow,
-                    IsActive = true
-                };
-            }
-
-            var cacheKey = GetConversationKey(zaloUserId);
-            
             try
             {
-                var existingState = await _database.StringGetAsync(cacheKey);
-                
-                if (existingState.HasValue)
+                var existingConversation = await _context.ZaloConversationStates
+                    .Include(cs => cs.MessageHistory)
+                    .Include(cs => cs.OrderItems)
+                    .FirstOrDefaultAsync(cs => cs.ZaloUserId == zaloUserId && cs.IsActive);
+
+                if (existingConversation != null)
                 {
-                    var conversation = JsonSerializer.Deserialize<ConversationState>(existingState!);
-                    if (conversation != null)
-                    {
-                        conversation.LastActivity = DateTime.UtcNow;
-                        await _database.StringSetAsync(cacheKey, JsonSerializer.Serialize(conversation), _conversationExpiry);
-                        return conversation;
-                    }
+                    // Update last activity
+                    existingConversation.LastActivity = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+
+                    return MapToConversationState(existingConversation);
                 }
 
                 // Create new conversation
-                var newConversation = new ConversationState
+                var newConversation = new ZaloConversationState
                 {
                     ZaloUserId = zaloUserId,
                     CurrentState = UserStates.NEW,
@@ -138,16 +46,18 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     IsActive = true
                 };
 
-                await _database.StringSetAsync(cacheKey, JsonSerializer.Serialize(newConversation), _conversationExpiry);
+                _context.ZaloConversationStates.Add(newConversation);
+                await _context.SaveChangesAsync();
+
                 _logger.LogInformation("Created new conversation for user: {UserId}", zaloUserId);
                 
-                return newConversation;
+                return MapToConversationState(newConversation);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting or creating conversation for user: {UserId}", zaloUserId);
                 
-                // Return default conversation if Redis fails
+                // Return default conversation if database fails
                 return new ConversationState
                 {
                     ZaloUserId = zaloUserId,
@@ -161,29 +71,19 @@ namespace SEP490.Modules.ZaloOrderModule.Services
 
         public async Task<bool> UpdateConversationStateAsync(string zaloUserId, string newState)
         {
-            if (!_redisAvailable)
-            {
-                _logger.LogWarning("Redis not available, cannot update conversation state for user: {UserId}", zaloUserId);
-                return false;
-            }
-
-            var cacheKey = GetConversationKey(zaloUserId);
-            
             try
             {
-                var existingState = await _database.StringGetAsync(cacheKey);
-                
-                if (existingState.HasValue)
+                var conversation = await _context.ZaloConversationStates
+                    .FirstOrDefaultAsync(cs => cs.ZaloUserId == zaloUserId && cs.IsActive);
+
+                if (conversation != null)
                 {
-                    var conversation = JsonSerializer.Deserialize<ConversationState>(existingState!);
-                    if (conversation != null)
-                    {
-                        conversation.CurrentState = newState;
-                        conversation.LastActivity = DateTime.UtcNow;
-                        await _database.StringSetAsync(cacheKey, JsonSerializer.Serialize(conversation), _conversationExpiry);
-                        _logger.LogInformation("Updated conversation state to {NewState} for user: {UserId}", newState, zaloUserId);
-                        return true;
-                    }
+                    conversation.CurrentState = newState;
+                    conversation.LastActivity = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+                    
+                    _logger.LogInformation("Updated conversation state to {NewState} for user: {UserId}", newState, zaloUserId);
+                    return true;
                 }
                 
                 return false;
@@ -197,29 +97,24 @@ namespace SEP490.Modules.ZaloOrderModule.Services
 
         public async Task<bool> UpdateConversationDataAsync(string zaloUserId, Action<ConversationState> updateAction)
         {
-            if (!_redisAvailable)
-            {
-                _logger.LogWarning("Redis not available, cannot update conversation data for user: {UserId}", zaloUserId);
-                return false;
-            }
-
-            var cacheKey = GetConversationKey(zaloUserId);
-            
             try
             {
-                var existingState = await _database.StringGetAsync(cacheKey);
-                
-                if (existingState.HasValue)
-                {
-                    var conversation = JsonSerializer.Deserialize<ConversationState>(existingState!);
-                    if (conversation != null)
-                    {
-                        updateAction(conversation);
-                        conversation.LastActivity = DateTime.UtcNow;
+                var conversation = await _context.ZaloConversationStates
+                    .Include(cs => cs.MessageHistory)
+                    .Include(cs => cs.OrderItems)
+                    .FirstOrDefaultAsync(cs => cs.ZaloUserId == zaloUserId && cs.IsActive);
 
-                        await _database.StringSetAsync(cacheKey, JsonSerializer.Serialize(conversation), _conversationExpiry);
-                        return true;
-                    }
+                if (conversation != null)
+                {
+                    var conversationState = MapToConversationState(conversation);
+                    updateAction(conversationState);
+                    
+                    // Update the database entity
+                    UpdateDatabaseEntity(conversation, conversationState);
+                    conversation.LastActivity = DateTime.UtcNow;
+
+                    await _context.SaveChangesAsync();
+                    return true;
                 }
 
                 return false;
@@ -233,17 +128,21 @@ namespace SEP490.Modules.ZaloOrderModule.Services
 
         public async Task<bool> DeleteConversationAsync(string zaloUserId)
         {
-            if (!_redisAvailable)
-            {
-                _logger.LogWarning("Redis not available, cannot delete conversation for user: {UserId}", zaloUserId);
-                return false;
-            }
-
-            var cacheKey = GetConversationKey(zaloUserId);
-            
             try
             {
-                return await _database.KeyDeleteAsync(cacheKey);
+                var conversation = await _context.ZaloConversationStates
+                    .FirstOrDefaultAsync(cs => cs.ZaloUserId == zaloUserId && cs.IsActive);
+
+                if (conversation != null)
+                {
+                    conversation.IsActive = false;
+                    await _context.SaveChangesAsync();
+                    
+                    _logger.LogInformation("Deleted conversation for user: {UserId}", zaloUserId);
+                    return true;
+                }
+                
+                return false;
             }
             catch (Exception ex)
             {
@@ -254,27 +153,19 @@ namespace SEP490.Modules.ZaloOrderModule.Services
 
         public async Task<ConversationState?> GetConversationAsync(string zaloUserId)
         {
-            if (!_redisAvailable)
-            {
-                _logger.LogWarning("Redis not available, cannot get conversation for user: {UserId}", zaloUserId);
-                return null;
-            }
-
-            var cacheKey = GetConversationKey(zaloUserId);
-            
             try
             {
-                var existingState = await _database.StringGetAsync(cacheKey);
-                
-                if (existingState.HasValue)
+                var conversation = await _context.ZaloConversationStates
+                    .Include(cs => cs.MessageHistory)
+                    .Include(cs => cs.OrderItems)
+                    .FirstOrDefaultAsync(cs => cs.ZaloUserId == zaloUserId && cs.IsActive);
+
+                if (conversation != null)
                 {
-                    var conversation = JsonSerializer.Deserialize<ConversationState>(existingState!);
-                    if (conversation != null)
-                    {
-                        conversation.LastActivity = DateTime.UtcNow;
-                        await _database.StringSetAsync(cacheKey, JsonSerializer.Serialize(conversation), _conversationExpiry);
-                        return conversation;
-                    }
+                    conversation.LastActivity = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+                    
+                    return MapToConversationState(conversation);
                 }
                 
                 return null;
@@ -288,17 +179,10 @@ namespace SEP490.Modules.ZaloOrderModule.Services
 
         public async Task<bool> IsConversationActiveAsync(string zaloUserId)
         {
-            if (!_redisAvailable)
-            {
-                _logger.LogWarning("Redis not available, assuming conversation is active for user: {UserId}", zaloUserId);
-                return true;
-            }
-
-            var cacheKey = GetConversationKey(zaloUserId);
-            
             try
             {
-                return await _database.KeyExistsAsync(cacheKey);
+                return await _context.ZaloConversationStates
+                    .AnyAsync(cs => cs.ZaloUserId == zaloUserId && cs.IsActive);
             }
             catch (Exception ex)
             {
@@ -309,20 +193,15 @@ namespace SEP490.Modules.ZaloOrderModule.Services
 
         public async Task<List<ConversationState>> GetAllActiveConversationsAsync()
         {
-            if (!_redisAvailable)
-            {
-                _logger.LogWarning("Redis not available, cannot get active conversations");
-                return new List<ConversationState>();
-            }
-
             try
             {
-                var conversations = new List<ConversationState>();
-                
-                // Since we don't have _redis reference, we'll return empty list for now
-                // This method requires Redis server to be available
-                _logger.LogWarning("GetAllActiveConversationsAsync requires Redis server to be available");
-                return conversations;
+                var conversations = await _context.ZaloConversationStates
+                    .Include(cs => cs.MessageHistory)
+                    .Include(cs => cs.OrderItems)
+                    .Where(cs => cs.IsActive)
+                    .ToListAsync();
+
+                return conversations.Select(MapToConversationState).ToList();
             }
             catch (Exception ex)
             {
@@ -333,28 +212,138 @@ namespace SEP490.Modules.ZaloOrderModule.Services
 
         public async Task<bool> UpdateUserInfoAsync(string zaloUserId, string? userName = null, string? userAvatar = null)
         {
-            if (!_redisAvailable)
+            try
             {
-                _logger.LogWarning("Redis not available, cannot update user info for user: {UserId}", zaloUserId);
+                var conversation = await _context.ZaloConversationStates
+                    .FirstOrDefaultAsync(cs => cs.ZaloUserId == zaloUserId && cs.IsActive);
+
+                if (conversation != null)
+                {
+                    if (!string.IsNullOrEmpty(userName))
+                        conversation.UserName = userName;
+
+                    
+                    conversation.LastActivity = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+                    return true;
+                }
+                
                 return false;
             }
-
-            return await UpdateConversationDataAsync(zaloUserId, conversation =>
+            catch (Exception ex)
             {
-                if (!string.IsNullOrEmpty(userName))
-                    conversation.UserName = userName;
-                if (!string.IsNullOrEmpty(userAvatar))
-                    conversation.UserAvatar = userAvatar;
-            });
+                _logger.LogError(ex, "Error updating user info for user: {UserId}", zaloUserId);
+                return false;
+            }
         }
 
-        /// <summary>
-        /// Disposes the Redis connection
-        /// </summary>
-        public void Dispose()
+        private ConversationState MapToConversationState(ZaloConversationState dbConversation)
         {
-            _muxer?.Close();
-            _muxer?.Dispose();
+            return new ConversationState
+            {
+                ZaloUserId = dbConversation.ZaloUserId,
+                CurrentState = dbConversation.CurrentState,
+                CurrentOrderId = dbConversation.CurrentOrderId,
+                LastActivity = dbConversation.LastActivity,
+                CreatedAt = dbConversation.CreatedAt,
+                IsActive = dbConversation.IsActive,
+                MessageCount = dbConversation.MessageCount,
+                LastUserMessage = dbConversation.LastUserMessage,
+                LastBotResponse = dbConversation.LastBotResponse,
+                RetryCount = dbConversation.RetryCount,
+                LastError = dbConversation.LastError,
+                UserName = dbConversation.UserName,
+                CustomerPhone = dbConversation.CustomerPhone,
+                CustomerId = dbConversation.CustomerId,
+                OrderItems = dbConversation.OrderItems.Select(MapToOrderItem).ToList(),
+                MessageHistory = dbConversation.MessageHistory.Select(MapToConversationMessage).ToList()
+            };
+        }
+
+        private OrderItem MapToOrderItem(ZaloConversationOrderItem dbOrderItem)
+        {
+            return new OrderItem
+            {
+                ProductCode = dbOrderItem.ProductCode,
+                ProductType = dbOrderItem.ProductType,
+                Height = dbOrderItem.Height,
+                Width = dbOrderItem.Width,
+                Thickness = dbOrderItem.Thickness,
+                Quantity = dbOrderItem.Quantity,
+                UnitPrice = dbOrderItem.UnitPrice,
+                TotalPrice = dbOrderItem.TotalPrice
+            };
+        }
+
+        private ConversationMessage MapToConversationMessage(ZaloConversationMessage dbMessage)
+        {
+            return new ConversationMessage
+            {
+                Content = dbMessage.Content,
+                SenderType = dbMessage.SenderType,
+                MessageType = dbMessage.MessageType,
+                Timestamp = dbMessage.Timestamp
+            };
+        }
+
+        private void UpdateDatabaseEntity(ZaloConversationState dbConversation, ConversationState conversationState)
+        {
+            dbConversation.CurrentState = conversationState.CurrentState;
+            dbConversation.CurrentOrderId = conversationState.CurrentOrderId;
+            dbConversation.MessageCount = conversationState.MessageCount;
+            dbConversation.LastUserMessage = conversationState.LastUserMessage;
+            dbConversation.LastBotResponse = conversationState.LastBotResponse;
+            dbConversation.RetryCount = conversationState.RetryCount;
+            dbConversation.LastError = conversationState.LastError;
+            dbConversation.CustomerPhone = conversationState.CustomerPhone;
+            dbConversation.CustomerId = conversationState.CustomerId;
+
+            // Update message history
+            var newMessages = conversationState.MessageHistory
+                .Where(m => !dbConversation.MessageHistory.Any(dm => 
+                    dm.Content == m.Content && 
+                    dm.SenderType == m.SenderType && 
+                    dm.Timestamp == m.Timestamp))
+                .Select(m => new ZaloConversationMessage
+                {
+                    ZaloConversationStateId = dbConversation.Id,
+                    Content = m.Content,
+                    SenderType = m.SenderType,
+                    MessageType = m.MessageType,
+                    Timestamp = m.Timestamp
+                });
+
+            foreach (var message in newMessages)
+            {
+                dbConversation.MessageHistory.Add(message);
+            }
+
+            // Update order items
+            var newOrderItems = conversationState.OrderItems
+                .Where(oi => !dbConversation.OrderItems.Any(doi => 
+                    doi.ProductCode == oi.ProductCode && 
+                    doi.ProductType == oi.ProductType &&
+                    doi.Height == oi.Height &&
+                    doi.Width == oi.Width &&
+                    doi.Thickness == oi.Thickness &&
+                    doi.Quantity == oi.Quantity))
+                .Select(oi => new ZaloConversationOrderItem
+                {
+                    ZaloConversationStateId = dbConversation.Id,
+                    ProductCode = oi.ProductCode,
+                    ProductType = oi.ProductType,
+                    Height = oi.Height,
+                    Width = oi.Width,
+                    Thickness = oi.Thickness,
+                    Quantity = oi.Quantity,
+                    UnitPrice = oi.UnitPrice,
+                    TotalPrice = oi.TotalPrice
+                });
+
+            foreach (var orderItem in newOrderItems)
+            {
+                dbConversation.OrderItems.Add(orderItem);
+            }
         }
     }
 }

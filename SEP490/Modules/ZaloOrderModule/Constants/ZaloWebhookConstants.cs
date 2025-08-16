@@ -51,19 +51,9 @@ namespace SEP490.Modules.ZaloOrderModule.Constants
             public const string GET_ACCESS_TOKEN = "https://oauth.zaloapp.com/v4/access_token";
         }
 
-        // Cache keys
-        public static class CacheKeys
-        {
-            public const string CONVERSATION_PREFIX = "zalo:conversation:";
-            public const string USER_INFO_PREFIX = "zalo:user:";
-            public const string ACCESS_TOKEN = "zalo:access_token";
-        }
-
         // Timeouts
         public static class Timeouts
         {
-            public const int CONVERSATION_EXPIRY_HOURS = 24;
-            public const int ACCESS_TOKEN_EXPIRY_HOURS = 24;
             public const int REQUEST_TIMEOUT_SECONDS = 30;
         }
 

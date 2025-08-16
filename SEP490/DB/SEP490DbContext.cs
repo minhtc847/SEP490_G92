@@ -38,6 +38,25 @@ namespace SEP490.DB
                 .WithMany(zo => zo.ZaloOrderDetails)
                 .HasForeignKey(zod => zod.ZaloOrderId);
 
+            // Zalo Conversation State relationships
+            modelBuilder.Entity<ZaloConversationState>()
+                .HasOne(cs => cs.Customer)
+                .WithMany()
+                .HasForeignKey(cs => cs.CustomerId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<ZaloConversationMessage>()
+                .HasOne(cm => cm.ZaloConversationState)
+                .WithMany(cs => cs.MessageHistory)
+                .HasForeignKey(cm => cm.ZaloConversationStateId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ZaloConversationOrderItem>()
+                .HasOne(oi => oi.ZaloConversationState)
+                .WithMany(cs => cs.OrderItems)
+                .HasForeignKey(oi => oi.ZaloConversationStateId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<InventorySlip>()
                 .HasOne(s => s.ProductionOrder)
                 .WithMany()
@@ -120,6 +139,9 @@ namespace SEP490.DB
         public DbSet<ProductionDefects> ProductionDefects { get; set; }
         public DbSet<ZaloOrder> ZaloOrders { get; set; }
         public DbSet<ZaloOrderDetail> ZaloOrderDetails { get; set; }
+        public DbSet<ZaloConversationState> ZaloConversationStates { get; set; }
+        public DbSet<ZaloConversationMessage> ZaloConversationMessages { get; set; }
+        public DbSet<ZaloConversationOrderItem> ZaloConversationOrderItems { get; set; }
         public DbSet<InventorySlip> InventorySlips { get; set; }
         public DbSet<InventorySlipDetail> InventorySlipDetails { get; set; }
         public DbSet<MaterialOutputMapping> MaterialOutputMappings { get; set; }

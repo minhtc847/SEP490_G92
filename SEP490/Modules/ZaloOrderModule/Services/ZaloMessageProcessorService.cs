@@ -260,7 +260,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                                     $"📞 Chúng tôi sẽ liên hệ với số điện thoại {conversation.CustomerPhone} để xác nhận và giao hàng.\n" +
                                     $"🙏 Cảm ơn bạn đã tin tưởng chúng tôi!";
 
-                // Delete the current conversation from Redis
+                // Delete the current conversation from database
                 await _conversationStateService.DeleteConversationAsync(zaloUserId);
                 
                 return new MessageResponse
@@ -634,7 +634,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             {
                 _logger.LogInformation("User {UserId} cancelled the conversation", zaloUserId);
                 
-                // Delete the current conversation from Redis
+                // Delete the current conversation from database
                 await _conversationStateService.DeleteConversationAsync(zaloUserId);
                 
                 return new MessageResponse

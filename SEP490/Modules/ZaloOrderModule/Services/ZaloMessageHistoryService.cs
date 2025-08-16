@@ -1,7 +1,9 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SEP490.Common.Services;
+using SEP490.DB;
+using SEP490.DB.Models;
 using SEP490.Modules.Zalo.DTO;
-using SEP490.Modules.ZaloOrderModule.DTO;
 using ZaloMessageResponse = SEP490.Modules.Zalo.DTO.MessageResponse;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
@@ -9,14 +11,14 @@ namespace SEP490.Modules.ZaloOrderModule.Services
     public class ZaloMessageHistoryService : BaseService, IZaloMessageHistoryService
     {
         private readonly ILogger<ZaloMessageHistoryService> _logger;
-        private readonly ZaloConversationStateService _conversationStateService;
+        private readonly SEP490DbContext _context;
 
         public ZaloMessageHistoryService(
             ILogger<ZaloMessageHistoryService> logger,
-            ZaloConversationStateService conversationStateService)
+            SEP490DbContext context)
         {
             _logger = logger;
-            _conversationStateService = conversationStateService;
+            _context = context;
         }
 
         public async Task<List<ZaloMessageResponse>> GetListMessageAsync(string zaloUserId)
@@ -25,8 +27,11 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             {
                 _logger.LogInformation("Retrieving message history for user: {UserId}", zaloUserId);
 
-                // Get the conversation state
-                var conversation = await _conversationStateService.GetConversationAsync(zaloUserId);
+                // Get the conversation state with message history
+                var conversation = await _context.ZaloConversationStates
+                    .Include(cs => cs.MessageHistory.OrderBy(m => m.Timestamp))
+                    .FirstOrDefaultAsync(cs => cs.ZaloUserId == zaloUserId && cs.IsActive);
+
                 if (conversation == null)
                 {
                     _logger.LogWarning("No conversation found for user: {UserId}", zaloUserId);
@@ -38,10 +43,12 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 var orderStartIndex = -1;
                 var orderEndIndex = -1;
 
+                var messageList = conversation.MessageHistory.ToList();
+
                 // Find the start and end indices of the order conversation
-                for (int i = 0; i < conversation.MessageHistory.Count; i++)
+                for (int i = 0; i < messageList.Count; i++)
                 {
-                    var message = conversation.MessageHistory[i];
+                    var message = messageList[i];
                     
                     // Look for "Đặt hàng" message (case-insensitive)
                     if (orderStartIndex == -1 && 
@@ -68,7 +75,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 {
                     for (int i = orderStartIndex; i <= orderEndIndex; i++)
                     {
-                        var message = conversation.MessageHistory[i];
+                        var message = messageList[i];
                         messages.Add(new ZaloMessageResponse
                         {
                             SenderId = zaloUserId,
