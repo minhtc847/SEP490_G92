@@ -87,7 +87,17 @@ const ProductDetailPage = () => {
 
     return (
         <ProtectedRoute requiredRole={[1, 2]}>
-        <div className="p-6 bg-white rounded-lg shadow-md">
+        <div className="relative p-6 bg-white rounded-lg shadow-md">
+            {/* Loading Overlay */}
+            {isUpdatingMisa && (
+                <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 rounded-lg">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+                        <p className="text-lg font-medium text-gray-700">Đang cập nhật MISA...</p>
+                        <p className="text-sm text-gray-500 mt-2">Vui lòng không thao tác trong khi đang xử lý</p>
+                    </div>
+                </div>
+            )}
             <h2 className="text-xl font-bold mb-6">Chi tiết sản phẩm</h2>
             
             {/* Success Message */}
@@ -173,10 +183,12 @@ const ProductDetailPage = () => {
                 </button>
                 <button 
                     onClick={handleUpdateMisa} 
-                    disabled={isUpdatingMisa}
+                    disabled={isUpdatingMisa || product.isupdatemisa === 1}
                     className={`px-4 py-2 rounded-lg transition ${
                         isUpdatingMisa 
                             ? 'bg-orange-400 text-white cursor-not-allowed' 
+                            : product.isupdatemisa === 1
+                            ? 'bg-gray-400 text-white cursor-not-allowed'
                             : 'bg-orange-500 text-white hover:bg-orange-600'
                     }`}
                 >
@@ -185,6 +197,8 @@ const ProductDetailPage = () => {
                             <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
                             Đang cập nhật MISA...
                         </>
+                    ) : product.isupdatemisa === 1 ? (
+                        '✅ Đã cập nhật MISA'
                     ) : (
                         '🔄 Cập nhật MISA'
                     )}

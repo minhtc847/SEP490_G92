@@ -23,6 +23,19 @@ export interface CreateProductDto {
     Weight?: number | null;
 }
 
+export interface CreateOtherProductDto {
+    ProductName: string;
+    ProductType: string;
+    UOM: string;
+    Width?: string | null;
+    Height?: string | null;
+    Thickness?: number | null;
+    UnitPrice?: number | null;
+    GlassStructureId?: number | null;
+    Isupdatemisa?: boolean;
+    Weight?: number | null;
+}
+
 export interface GlassStructure {
     id: number;
     productCode: string;
@@ -47,7 +60,10 @@ export const createProduct = async (payload: CreateProductDto): Promise<ProductC
     return res.data;
 };
 
-
+export const createOtherProduct = async (payload: CreateOtherProductDto): Promise<ProductCreatedResponse> => {
+    const res = await axios.post('/api/PurchaseOrder/product', payload);
+    return res.data;
+};
 
 export const checkProductNameExists = async (name: string): Promise<boolean> => {
     const res = await axios.get('/api/orders/check-product-name', {

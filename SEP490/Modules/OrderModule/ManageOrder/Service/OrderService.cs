@@ -155,8 +155,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
         public async Task<Product> CreateProductAsync(CreateProductV2Dto dto)
         {
             bool isNameExisted = await _context.Products.AnyAsync(p => p.ProductName == dto.ProductName);
-            if (isNameExisted)
-                throw new Exception("Tên sản phẩm đã tồn tại!");
+         
 
             if (!decimal.TryParse(dto.Width, out var widthMm) || !decimal.TryParse(dto.Height, out var heightMm))
                 throw new Exception("Chiều rộng hoặc chiều cao không hợp lệ.");
