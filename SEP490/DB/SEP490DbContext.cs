@@ -128,7 +128,6 @@ namespace SEP490.DB
         public DbSet<CutGlassInvoiceOutput> CutGlassInvoiceOutputs { get; set; }
         public DbSet<GlueButylExportInvoice> GlueButylExportInvoices { get; set; }
         public DbSet<Formular> Formulars { get; set; }
-        public DbSet<DocumentMaterial> DocumentMaterials { get; set; }
         public DbSet<Debts> Debts { get; set; }
         public DbSet<Delivery> Deliveries { get; set; }
         public DbSet<DeliveryDetail> DeliveryDetails { get; set; }
