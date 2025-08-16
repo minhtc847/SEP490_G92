@@ -8,7 +8,7 @@ using SEP490.Common.Services;
 
 namespace SEP490.Modules.InvoiceModule.Service
 {
-    public class InvoiceService : BaseService, IInvoiceService
+    public class InvoiceService : BaseScopedService, IInvoiceService
     {
         private readonly SEP490DbContext _context;
         private readonly IPaymentService _paymentService;

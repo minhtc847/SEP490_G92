@@ -6,7 +6,7 @@ using SEP490.Common.Services;
 
 namespace SEP490.Modules.PaymentsModule.Service
 {
-    public class PaymentService : BaseService, IPaymentService
+    public class PaymentService : BaseScopedService, IPaymentService
     {
         private readonly SEP490DbContext _context;
 

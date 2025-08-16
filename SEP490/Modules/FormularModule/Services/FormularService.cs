@@ -6,7 +6,7 @@ using SEP490.Modules.FormularModule.DTO;
 
 namespace SEP490.Modules.FormularModule.Services
 {
-    public class FormularService : BaseService, IFormularService
+    public class FormularService : BaseScopedService, IFormularService
     {
         private readonly SEP490DbContext _context;
 

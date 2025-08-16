@@ -6,7 +6,7 @@ using SEP490.DB.Models;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
-    public class ZaloPriceCalculationService : BaseService, IZaloPriceCalculationService
+    public class ZaloPriceCalculationService : BaseTransientService, IZaloPriceCalculationService
     {
         private readonly ILogger<ZaloPriceCalculationService> _logger;
         private readonly SEP490DbContext _context;

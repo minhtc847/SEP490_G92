@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.DB.Models;
 using SEP490.Modules.ZaloOrderModule.DTO;
@@ -7,7 +8,7 @@ using SEP490.Modules.ZaloOrderModule.Constants;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
-    public class ZaloConversationStateService
+    public class ZaloConversationStateService : BaseScopedService
     {
         private readonly ILogger<ZaloConversationStateService> _logger;
         private readonly SEP490DbContext _context;

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace SEP490.Modules.ProductionOrders.Services
 {
-    public class CuttingGlassManagementService : BaseService, ICuttingGlassManagementService
+    public class CuttingGlassManagementService : BaseScopedService, ICuttingGlassManagementService
     {
         private readonly SEP490DbContext _context;
         public CuttingGlassManagementService(SEP490DbContext context)

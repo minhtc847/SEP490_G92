@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
-    public class ZaloCustomerService :BaseService, IZaloCustomerService
+    public class ZaloCustomerService : BaseTransientService, IZaloCustomerService
     {
         private readonly ILogger<ZaloCustomerService> _logger;
         private readonly SEP490DbContext _context;

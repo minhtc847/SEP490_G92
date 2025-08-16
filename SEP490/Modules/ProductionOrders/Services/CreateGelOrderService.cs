@@ -6,7 +6,7 @@ using SEP490.Modules.ProductionOrders.DTO;
 
 namespace SEP490.Modules.ProductionOrders.Services
 {
-    public class CreateGelOrderService : BaseService, ICreateGelOrderService
+    public class CreateGelOrderService : BaseTransientService, ICreateGelOrderService
     {
         private readonly SEP490DbContext _context;
 

@@ -18,7 +18,7 @@ namespace SEP490.Modules.Auth.Services
         Task<bool> HasPermissionAsync(int userId, string permission);
     }
 
-    public class AuthService : BaseService, IAuthService
+    public class AuthService : BaseScopedService, IAuthService
     {
         private readonly SEP490DbContext _context;
         private readonly IConfiguration _configuration;

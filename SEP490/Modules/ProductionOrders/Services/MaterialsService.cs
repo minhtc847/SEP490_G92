@@ -5,7 +5,7 @@ using SEP490.DB.Models;
 
 namespace SEP490.Modules.ProductionOrders.Services
 {
-    public class MaterialsService : BaseService, IMaterialsService
+    public class MaterialsService : BaseTransientService, IMaterialsService
     {
         private readonly SEP490DbContext _context;
 

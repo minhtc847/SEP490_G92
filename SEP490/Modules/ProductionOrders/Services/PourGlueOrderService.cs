@@ -6,7 +6,7 @@ using SEP490.Modules.ProductionOrders.DTO;
 
 namespace SEP490.Modules.ProductionOrders.Services
 {
-    public class PourGlueOrderService : BaseService, IPourGlueOrderService
+    public class PourGlueOrderService : BaseTransientService, IPourGlueOrderService
     {
         private readonly SEP490DbContext _context;
 

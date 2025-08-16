@@ -6,7 +6,7 @@ using SEP490.Modules.Production_plans.DTO;
 
 namespace SEP490.Modules.Production_plans.Services
 {
-    public class ProductionPlanService : BaseService, IProductionPlanService
+    public class ProductionPlanService : BaseScopedService, IProductionPlanService
     {
         private readonly SEP490DbContext _context;
         public ProductionPlanService(SEP490DbContext context)

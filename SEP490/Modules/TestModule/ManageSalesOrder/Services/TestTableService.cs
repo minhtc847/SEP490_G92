@@ -8,7 +8,7 @@ using SEP490.Selenium.SaleOrder.DTO;
 
 namespace SEP490.Modules.SalesOrder.ManageSalesOrder.Services
 {
-    public class TestTableService: BaseService, ITestTableService
+    public class TestTableService: BaseTransientService, ITestTableService
     {
         private readonly SEP490DbContext _context;
         //private readonly ISeleniumProductionOrderServices seleniumProductionOrderServices;

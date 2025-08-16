@@ -9,7 +9,7 @@ using SEP490.Selenium.SaleOrder.DTO;
 
 namespace SEP490.Selenium.SaleOrder
 {
-    public class SeleniumSaleOrderServices : BaseService, ISeleniumSaleOrderServices
+    public class SeleniumSaleOrderServices : BaseTransientService, ISeleniumSaleOrderServices
     {
         private readonly IWebDriver driver;
         private string saleOrderUrl = "https://actapp.misa.vn/app/SA/SAOrder";

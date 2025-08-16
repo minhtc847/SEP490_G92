@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.DB.Models;
 using SEP490.Modules.InventorySlipModule.DTO;
@@ -11,7 +12,7 @@ using Newtonsoft.Json.Linq;
 
 namespace SEP490.Modules.InventorySlipModule.Service
 {
-    public class InventorySlipService : IInventorySlipService
+    public class InventorySlipService : BaseScopedService, IInventorySlipService
     {
         private readonly SEP490DbContext _context;
 

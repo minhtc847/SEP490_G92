@@ -5,7 +5,7 @@ using SEP490.Common.Services;
 
 namespace SEP490.Modules.Zalo.Services
 {
-    public class GlassProductLookupService : BaseService,IGlassProductLookupService
+    public class GlassProductLookupService : BaseTransientService, IGlassProductLookupService
     {
         private readonly SEP490DbContext _context;
 

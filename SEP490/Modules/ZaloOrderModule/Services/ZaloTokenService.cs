@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SEP490.Common.Services;
 using SEP490.DB;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
@@ -13,7 +14,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         Task<bool> RefreshTokenAsync();
     }
 
-    public class ZaloTokenService : IZaloTokenService
+    public class ZaloTokenService : BaseScopedService, IZaloTokenService
     {
         private readonly SEP490DbContext _context;
         private readonly ILogger<ZaloTokenService> _logger;

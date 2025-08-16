@@ -8,7 +8,7 @@ using SEP490.Modules.ProductionOrders.Services;
 
 namespace SEP490.Modules.Accountant.Services
 {
-    public class ProductionAccountantService : BaseService, IProductionAccountantService
+    public class ProductionAccountantService : BaseScopedService, IProductionAccountantService
     {
         private readonly SEP490DbContext _context;
 

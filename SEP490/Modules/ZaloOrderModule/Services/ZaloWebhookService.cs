@@ -13,7 +13,7 @@ using System.Text.Json;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
-    public class ZaloWebhookService : BaseService, IZaloWebhookService
+    public class ZaloWebhookService : BaseScopedService, IZaloWebhookService
     {
         private readonly SEP490DbContext _context;
         private readonly ILogger<ZaloWebhookService> _logger;
@@ -164,21 +164,6 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 return false;
             }
         }
-        //private async Task<string?> GetAccessTokenAsync()
-        //{
-        //    var token = await _context.ZaloTokens.FirstOrDefaultAsync();
-        //    if (token == null)
-        //        throw new Exception("loi");
-
-        //    // Refresh access token if expired
-        //    //if (token.AccessTokenExpiresAt <= DateTime.UtcNow)
-        //    //{
-        //    //    var refreshed = await RefreshZaloTokenAsync(token);
-        //    //    if (!refreshed)
-        //    //        throw new Exception("loi");
-        //    //}
-        //    return token;
-        //}
     }
 }
 

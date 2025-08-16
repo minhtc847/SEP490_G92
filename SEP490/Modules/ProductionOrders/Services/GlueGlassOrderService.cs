@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace SEP490.Modules.ProductionOrders.Services
 {
-    public class GlueGlassOrderService : BaseService, IGlueGlassOrderService
+    public class GlueGlassOrderService : BaseTransientService, IGlueGlassOrderService
     {
         private readonly SEP490DbContext _context;
 

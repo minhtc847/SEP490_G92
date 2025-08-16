@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace SEP490.Modules.LLMChat.Services
 {
-    public class ZaloChatService: BaseService
+    public class ZaloChatService: BaseTransientService
     {
         private readonly HttpClient _httpClient;
 

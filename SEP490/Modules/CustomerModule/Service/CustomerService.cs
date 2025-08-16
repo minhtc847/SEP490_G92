@@ -6,7 +6,7 @@ using SEP490.Modules.CustomerModule.DTO;
 
 namespace SEP490.Modules.CustomerModule.Service
 {
-    public class CustomerService : BaseService, ICustomerService
+    public class CustomerService : BaseScopedService, ICustomerService
     {
         private readonly SEP490DbContext _context;
 

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using SEP490.Common.Services;
 using SEP490.Modules.ZaloOrderModule.DTO;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
@@ -12,7 +13,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         Task ProcessWebhookAsync(ZaloWebhookRequest request);
     }
 
-    public class ZaloWebhookServiceFactory : IZaloWebhookServiceFactory
+    public class ZaloWebhookServiceFactory : BaseSingletonService, IZaloWebhookServiceFactory
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ILogger<ZaloWebhookServiceFactory> _logger;

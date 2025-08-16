@@ -6,7 +6,7 @@ using SEP490.Modules.ChemicalExportModule.DTO;
 
 namespace SEP490.Modules.ChemicalExportModule.Service
 {
-    public class ChemicalExportService : BaseService, IChemicalExportService
+    public class ChemicalExportService : BaseTransientService, IChemicalExportService
     {
         private readonly SEP490DbContext _context;
 

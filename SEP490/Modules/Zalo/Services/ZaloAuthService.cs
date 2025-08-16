@@ -12,7 +12,7 @@ using System.Globalization;
 
 namespace SEP490.Modules.Zalo.Services
 {
-    public class ZaloAuthService : BaseService, IZaloAuthService
+    public class ZaloAuthService : BaseTransientService, IZaloAuthService
     {
         private readonly SEP490DbContext _context;
         private readonly IHttpClientFactory _httpClientFactory;

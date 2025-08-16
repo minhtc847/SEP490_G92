@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.Modules.EmployeeModule.DTO;
 
 namespace SEP490.Modules.EmployeeModule.Service
 {
-    public class EmployeeService : IEmployeeService
+    public class EmployeeService : BaseScopedService, IEmployeeService
     {
         private readonly SEP490DbContext _context;
 

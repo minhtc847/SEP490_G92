@@ -8,7 +8,7 @@ using ZaloMessageResponse = SEP490.Modules.Zalo.DTO.MessageResponse;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
-    public class ZaloMessageHistoryService : BaseService, IZaloMessageHistoryService
+    public class ZaloMessageHistoryService : BaseTransientService, IZaloMessageHistoryService
     {
         private readonly ILogger<ZaloMessageHistoryService> _logger;
         private readonly SEP490DbContext _context;

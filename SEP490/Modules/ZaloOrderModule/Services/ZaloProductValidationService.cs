@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
-    public class ZaloProductValidationService : BaseService, IZaloProductValidationService
+    public class ZaloProductValidationService : BaseTransientService, IZaloProductValidationService
     {
         private readonly ILogger<ZaloProductValidationService> _logger;
 

@@ -7,7 +7,7 @@ using SEP490.Common.Services;
 
 namespace SEP490.Modules.Debts.Service
 {
-    public class DebtService : BaseService, IDebtService
+    public class DebtService : BaseScopedService, IDebtService
     {
         private readonly SEP490DbContext _context;
         private readonly IPaymentService _paymentService;

@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 
 namespace SEP490.Modules.PurchaseOrderModule.Service
 {
-    public class PurchaseService : BaseService, IPurchaseOrderService
+    public class PurchaseService : BaseScopedService, IPurchaseOrderService
     {
         private readonly SEP490DbContext _context;
         private readonly IOrderService _orderService;

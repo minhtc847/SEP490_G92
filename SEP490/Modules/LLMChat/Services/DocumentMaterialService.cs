@@ -1,5 +1,6 @@
 using SEP490.DB.Models;
 using Microsoft.EntityFrameworkCore;
+using SEP490.Common.Services;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -19,7 +20,7 @@ namespace SEP490.Modules.LLMChat.Services
         Task<DocumentMaterial> UpdateChunkCountAsync(int id, int chunkCount);
     }
 
-    public class DocumentMaterialService : IDocumentMaterialService
+    public class DocumentMaterialService : BaseScopedService, IDocumentMaterialService
     {
         private readonly SEP490DbContext _context;
 

@@ -8,7 +8,7 @@ using OpenQA.Selenium.DevTools.V135.Autofill;
 
 namespace SEP490.Selenium.Product
 {
-    public class MisaProductService : BaseService, IMisaProductService
+    public class MisaProductService : BaseTransientService, IMisaProductService
     {
         private IWebDriver driver;
         private string URL = "https://actapp.misa.vn/app/IN/INInventoryItems";

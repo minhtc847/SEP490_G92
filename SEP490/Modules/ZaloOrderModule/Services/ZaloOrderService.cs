@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SEP490.Common.Services;
 using SEP490.DB;
 using SEP490.DB.Models;
 using SEP490.Modules.ZaloOrderModule.DTO;
@@ -14,7 +15,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         Task<bool> DeleteZaloOrderAsync(int id);
     }
 
-    public class ZaloOrderService : IZaloOrderService
+    public class ZaloOrderService : BaseScopedService, IZaloOrderService
     {
         private readonly SEP490DbContext _context;
 

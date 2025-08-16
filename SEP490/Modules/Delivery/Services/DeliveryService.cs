@@ -16,7 +16,7 @@ namespace SEP490.Modules.Delivery.Services
         Task<bool> UpdateDeliveryAsync(int deliveryId, UpdateDeliveryDto dto);
     }
 
-    public class DeliveryService : BaseService, IDeliveryService
+    public class DeliveryService : BaseScopedService, IDeliveryService
     {
         private readonly SEP490DbContext _context;
 

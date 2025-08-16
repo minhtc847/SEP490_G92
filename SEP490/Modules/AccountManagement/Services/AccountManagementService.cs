@@ -19,7 +19,7 @@ namespace SEP490.Modules.AccountManagement.Services
         Task<List<RoleResponse>> GetRolesAsync();
     }
 
-    public class AccountManagementService : BaseService, IAccountManagementService
+    public class AccountManagementService : BaseScopedService, IAccountManagementService
     {
         private readonly SEP490DbContext _context;
 

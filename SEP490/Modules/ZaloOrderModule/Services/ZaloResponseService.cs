@@ -5,7 +5,7 @@ using SEP490.Modules.ZaloOrderModule.DTO;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
-    public class ZaloResponseService: BaseService
+    public class ZaloResponseService: BaseTransientService
     {
         private readonly ILogger<ZaloResponseService> _logger;
 

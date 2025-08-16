@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 
 namespace SEP490.Modules.OrderModule.ManageOrder.Services
 {
-    public class OrderService : BaseService, IOrderService
+    public class OrderService : BaseScopedService, IOrderService
     {
         private readonly SEP490DbContext _context;
         private readonly IHubContext<SaleOrderHub> _hubContext;

@@ -6,7 +6,7 @@ using SEP490.Modules.GlassStructureModule.DTO;
 
 namespace SEP490.Modules.GlassStructureModule.Service
 {
-    public class GlassStructureService : BaseService, IGlassStructureService
+    public class GlassStructureService : BaseScopedService, IGlassStructureService
     {
         private readonly SEP490DbContext _context;
 

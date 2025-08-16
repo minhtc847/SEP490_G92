@@ -70,42 +70,21 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole(Roles.ACCOUNTANT, Roles.MANAGER));
 });
 
-// Add services to the container.
-builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddScoped<IZaloChatForwardService, ZaloChatForwardService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<ICuttingGlassManagementService, CuttingGlassManagementService>();
-builder.Services.AddScoped<IDocumentMaterialService, DocumentMaterialService>();
-builder.Services.AddScoped<IZaloOrderService, ZaloOrderService>();
-builder.Services.AddScoped<SEP490.Modules.EmployeeModule.Service.IEmployeeService, SEP490.Modules.EmployeeModule.Service.EmployeeService>();
-builder.Services.AddScoped<IInventorySlipService, InventorySlipService>();
+
+// HTTP client registrations
 builder.Services.AddHttpClient<ZaloChatService>();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddSignalR();
 
-// Add ZaloOrderModule services
-builder.Services.AddScoped<ZaloConversationStateService>();
-builder.Services.AddTransient<ZaloResponseService>();
-builder.Services.AddTransient<ZaloMessageProcessorService>();
-builder.Services.AddTransient<IZaloMessageHistoryService, ZaloMessageHistoryService>();
-builder.Services.AddTransient<IZaloCustomerService, ZaloCustomerService>();
-builder.Services.AddTransient<IZaloProductValidationService, ZaloProductValidationService>();
-builder.Services.AddScoped<IZaloTokenService, ZaloTokenService>();
-builder.Services.AddScoped<IZaloWebhookService, ZaloWebhookService>();
-builder.Services.AddSingleton<IZaloWebhookServiceFactory, ZaloWebhookServiceFactory>();
-
-// Add AccountManagement services
-builder.Services.AddScoped<SEP490.Modules.AccountManagement.Services.IAccountManagementService, SEP490.Modules.AccountManagement.Services.AccountManagementService>();
-
-// Register all services that inherit from BaseService
+// Register all services that inherit from BaseService (legacy)
 var baseType = typeof(BaseService);
 
-var serviceTypes = Assembly.GetExecutingAssembly()
+var legacyServiceTypes = Assembly.GetExecutingAssembly()
     .GetTypes()
     .Where(t => t.IsClass && !t.IsAbstract && baseType.IsAssignableFrom(t) && t != typeof(ZaloWebhookService));
 
-foreach (var implementation in serviceTypes)
+foreach (var implementation in legacyServiceTypes)
 {
     var interfaces = implementation.GetInterfaces();
 
@@ -113,6 +92,57 @@ foreach (var implementation in serviceTypes)
     foreach (var serviceInterface in interfaces)
     {
         builder.Services.AddTransient(serviceInterface, implementation);
+    }
+}
+
+// Register all services that inherit from BaseTransientService
+var transientBaseType = typeof(BaseTransientService);
+var transientServiceTypes = Assembly.GetExecutingAssembly()
+    .GetTypes()
+    .Where(t => t.IsClass && !t.IsAbstract && transientBaseType.IsAssignableFrom(t));
+
+foreach (var implementation in transientServiceTypes)
+{
+    var interfaces = implementation.GetInterfaces();
+
+    // Register with each interface it implements (if any)
+    foreach (var serviceInterface in interfaces)
+    {
+        builder.Services.AddTransient(serviceInterface, implementation);
+    }
+}
+
+// Register all services that inherit from BaseScopedService
+var scopedBaseType = typeof(BaseScopedService);
+var scopedServiceTypes = Assembly.GetExecutingAssembly()
+    .GetTypes()
+    .Where(t => t.IsClass && !t.IsAbstract && scopedBaseType.IsAssignableFrom(t));
+
+foreach (var implementation in scopedServiceTypes)
+{
+    var interfaces = implementation.GetInterfaces();
+
+    // Register with each interface it implements (if any)
+    foreach (var serviceInterface in interfaces)
+    {
+        builder.Services.AddScoped(serviceInterface, implementation);
+    }
+}
+
+// Register all services that inherit from BaseSingletonService
+var singletonBaseType = typeof(BaseSingletonService);
+var singletonServiceTypes = Assembly.GetExecutingAssembly()
+    .GetTypes()
+    .Where(t => t.IsClass && !t.IsAbstract && singletonBaseType.IsAssignableFrom(t));
+
+foreach (var implementation in singletonServiceTypes)
+{
+    var interfaces = implementation.GetInterfaces();
+
+    // Register with each interface it implements (if any)
+    foreach (var serviceInterface in interfaces)
+    {
+        builder.Services.AddSingleton(serviceInterface, implementation);
     }
 }
 

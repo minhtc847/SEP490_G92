@@ -6,7 +6,7 @@ using SEP490.Modules.GlueButylExport.DTO;
 
 namespace SEP490.Modules.GlueButylExport.Services
 {
-    public class GlueButylExportService : BaseService, IGlueButylExportService
+    public class GlueButylExportService : BaseTransientService, IGlueButylExportService
     {
         private readonly SEP490DbContext _context;
 

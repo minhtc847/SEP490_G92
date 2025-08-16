@@ -16,7 +16,7 @@ using ZaloMessageResponse = SEP490.Modules.Zalo.DTO.MessageResponse;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
-    public class ZaloMessageProcessorService: BaseService
+    public class ZaloMessageProcessorService: BaseTransientService
     {
         private readonly ILogger<ZaloMessageProcessorService> _logger;
         private readonly ZaloConversationStateService _conversationStateService;

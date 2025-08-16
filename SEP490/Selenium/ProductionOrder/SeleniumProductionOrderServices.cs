@@ -7,7 +7,7 @@ using OpenQA.Selenium.Interactions;
 
 namespace SEP490.Selenium.ProductionOrder
 {
-    public class SeleniumProductionOrderServices : BaseService, ISeleniumProductionOrderServices
+    public class SeleniumProductionOrderServices : BaseTransientService, ISeleniumProductionOrderServices
     {
         private IWebDriver driver;
         private string URL = "https://actapp.misa.vn/app/IN/INProductionOrder";
