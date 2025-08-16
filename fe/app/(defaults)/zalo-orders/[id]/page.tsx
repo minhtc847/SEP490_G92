@@ -36,7 +36,7 @@ const ZaloOrderDetail = () => {
             Completed: 'bg-green-500 text-white',
             Cancelled: 'bg-red-500 text-white',
         };
-        
+
         return (
             <span className={`badge ${statusClasses[status as keyof typeof statusClasses] || 'bg-gray-500 text-white'}`}>
                 {status}

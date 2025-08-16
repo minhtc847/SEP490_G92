@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import IconPencil from '@/components/icon/icon-pencil';
 import IconEye from '@/components/icon/icon-eye';
 import IconTrash from '@/components/icon/icon-trash';
-import IconPlus from '@/components/icon/icon-plus';
 import zaloOrderService, { ZaloOrder } from '@/services/zaloOrderService';
 
 const ZaloOrders = () => {
@@ -24,6 +23,19 @@ const ZaloOrders = () => {
             console.error('Error fetching Zalo orders:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDeleteOrder = async (id: number) => {
+        if (confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) {
+            try {
+                await zaloOrderService.deleteZaloOrder(id);
+                alert('Xóa đơn hàng thành công!');
+                fetchZaloOrders(); // Refresh the list
+            } catch (error) {
+                console.error('Error deleting Zalo order:', error);
+                alert('Có lỗi xảy ra khi xóa đơn hàng');
+            }
         }
     };
 
@@ -67,14 +79,6 @@ const ZaloOrders = () => {
             <div className="panel mt-6">
                 <div className="flex items-center justify-between mb-5">
                     <h5 className="font-semibold text-lg dark:text-white-light">Danh Sách Đơn Hàng Zalo</h5>
-                    <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={() => router.push('/zalo-orders/create')}
-                    >
-                        <IconPlus className="w-5 h-5 ltr:mr-2 rtl:ml-2" />
-                        Thêm Đơn Hàng
-                    </button>
                 </div>
 
                 <div className="table-responsive">
@@ -125,11 +129,7 @@ const ZaloOrders = () => {
                                             <button
                                                 type="button"
                                                 className="btn btn-sm btn-outline-danger"
-                                                onClick={() => {
-                                                    if (confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) {
-                                                        // Handle delete
-                                                    }
-                                                }}
+                                                onClick={() => handleDeleteOrder(order.id)}
                                             >
                                                 <IconTrash className="w-4 h-4" />
                                             </button>

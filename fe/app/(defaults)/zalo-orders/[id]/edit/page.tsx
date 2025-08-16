@@ -1,17 +1,19 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import IconArrowLeft from '@/components/icon/icon-arrow-left';
 import IconPlus from '@/components/icon/icon-plus';
 import IconTrash from '@/components/icon/icon-trash';
-import zaloOrderService, { CreateZaloOrder, CreateZaloOrderDetail } from '@/services/zaloOrderService';
+import zaloOrderService, { ZaloOrder, UpdateZaloOrder, UpdateZaloOrderDetail } from '@/services/zaloOrderService';
 
-const CreateZaloOrders = () => {
+const EditZaloOrder = () => {
     const router = useRouter();
-    const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState<CreateZaloOrder>({
+    const params = useParams();
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [zaloOrder, setZaloOrder] = useState<ZaloOrder | null>(null);
+    const [formData, setFormData] = useState<UpdateZaloOrder>({
         orderCode: '',
-        zaloUserId: '',
         customerName: '',
         customerPhone: '',
         customerAddress: '',
@@ -22,11 +24,70 @@ const CreateZaloOrders = () => {
         zaloOrderDetails: []
     });
 
-    const [orderDetails, setOrderDetails] = useState<CreateZaloOrderDetail[]>([]);
+    const [orderDetails, setOrderDetails] = useState<UpdateZaloOrderDetail[]>([]);
+
+    useEffect(() => {
+        if (params.id) {
+            fetchZaloOrder(params.id as string);
+        }
+    }, [params.id]);
+
+    const fetchZaloOrder = async (id: string) => {
+        try {
+            const data = await zaloOrderService.getZaloOrderById(parseInt(id));
+            setZaloOrder(data);
+            
+            // Set form data
+            setFormData({
+                orderCode: data.orderCode || '',
+                customerName: data.customerName || '',
+                customerPhone: data.customerPhone || '',
+                customerAddress: data.customerAddress || '',
+                orderDate: data.orderDate.split('T')[0],
+                totalAmount: data.totalAmount,
+                status: data.status,
+                note: data.note || '',
+                zaloOrderDetails: data.zaloOrderDetails.map(detail => ({
+                    id: detail.id,
+                    productName: detail.productName,
+                    productCode: detail.productCode,
+                    height: detail.height,
+                    width: detail.width,
+                    thickness: detail.thickness,
+                    quantity: detail.quantity,
+                    unitPrice: detail.unitPrice,
+                    totalPrice: detail.totalPrice
+                }))
+            });
+
+            // Set order details
+            setOrderDetails(data.zaloOrderDetails.map(detail => ({
+                id: detail.id,
+                productName: detail.productName,
+                productCode: detail.productCode,
+                height: detail.height,
+                width: detail.width,
+                thickness: detail.thickness,
+                quantity: detail.quantity,
+                unitPrice: detail.unitPrice,
+                totalPrice: detail.totalPrice
+            })));
+        } catch (error) {
+            console.error('Error fetching Zalo order:', error);
+            alert('Có lỗi xảy ra khi tải thông tin đơn hàng');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const addOrderDetail = () => {
-        const newDetail: CreateZaloOrderDetail = {
+        const newDetail: UpdateZaloOrderDetail = {
+            id: Date.now(), // Temporary ID for new items
             productName: '',
+            productCode: '',
+            height: '',
+            width: '',
+            thickness: '',
             quantity: 1,
             unitPrice: 0,
             totalPrice: 0
@@ -40,7 +101,7 @@ const CreateZaloOrders = () => {
         updateTotalAmount(updatedDetails);
     };
 
-    const updateOrderDetail = (index: number, field: keyof CreateZaloOrderDetail, value: string | number) => {
+    const updateOrderDetail = (index: number, field: keyof UpdateZaloOrderDetail, value: string | number) => {
         const updatedDetails = [...orderDetails];
         updatedDetails[index] = { ...updatedDetails[index], [field]: value };
 
@@ -48,21 +109,23 @@ const CreateZaloOrders = () => {
         if (field === 'quantity' || field === 'unitPrice') {
             const quantity = field === 'quantity' ? Number(value) : updatedDetails[index].quantity;
             const unitPrice = field === 'unitPrice' ? Number(value) : updatedDetails[index].unitPrice;
-            updatedDetails[index].totalPrice = quantity * unitPrice;
+            // Giữ nguyên độ chính xác của phép nhân
+            updatedDetails[index].totalPrice = Math.round(quantity * unitPrice * 100) / 100;
         }
 
         setOrderDetails(updatedDetails);
         updateTotalAmount(updatedDetails);
     };
 
-    const updateTotalAmount = (details: CreateZaloOrderDetail[]) => {
+    const updateTotalAmount = (details: UpdateZaloOrderDetail[]) => {
         const total = details.reduce((sum, detail) => sum + detail.totalPrice, 0);
-        setFormData(prev => ({ ...prev, totalAmount: total }));
+        // Giữ nguyên độ chính xác của tổng
+        setFormData(prev => ({ ...prev, totalAmount: Math.round(total * 100) / 100 }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
+        setSaving(true);
 
         try {
             const submitData = {
@@ -70,15 +133,42 @@ const CreateZaloOrders = () => {
                 zaloOrderDetails: orderDetails
             };
 
-            await zaloOrderService.createZaloOrder(submitData);
-            router.push('/zalo-orders');
+            await zaloOrderService.updateZaloOrder(parseInt(params.id as string), submitData);
+            alert('Cập nhật đơn hàng thành công!');
+            router.push(`/zalo-orders/${params.id}`);
         } catch (error) {
-            console.error('Error creating Zalo order:', error);
-            alert('Có lỗi xảy ra khi tạo đơn hàng');
+            console.error('Error updating Zalo order:', error);
+            alert('Có lỗi xảy ra khi cập nhật đơn hàng');
         } finally {
-            setLoading(false);
+            setSaving(false);
         }
     };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin border-4 border-primary border-l-transparent rounded-full w-12 h-12"></div>
+            </div>
+        );
+    }
+
+    if (!zaloOrder) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <div className="text-gray-500 text-lg">Không tìm thấy đơn hàng</div>
+                    <button
+                        type="button"
+                        className="btn btn-primary mt-4"
+                        onClick={() => router.push('/zalo-orders')}
+                    >
+                        <IconArrowLeft className="w-4 h-4 ltr:mr-2 rtl:ml-2" />
+                        Quay Lại
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -88,12 +178,12 @@ const CreateZaloOrders = () => {
                         <button
                             type="button"
                             className="btn btn-outline-primary btn-sm"
-                            onClick={() => router.push('/zalo-orders')}
+                            onClick={() => router.push(`/zalo-orders/${params.id}`)}
                         >
                             <IconArrowLeft className="w-4 h-4" />
                         </button>
                         <h5 className="font-semibold text-lg dark:text-white-light">
-                            Tạo Đơn Hàng Zalo Mới
+                            Chỉnh Sửa Đơn Hàng: {zaloOrder.orderCode}
                         </h5>
                     </div>
                 </div>
@@ -119,9 +209,9 @@ const CreateZaloOrders = () => {
                                     <input
                                         type="text"
                                         className="form-input"
-                                        value={formData.zaloUserId}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, zaloUserId: e.target.value }))}
-                                        placeholder="Nhập Zalo User ID"
+                                        value={zaloOrder.zaloUserId}
+                                        disabled
+                                        placeholder="Zalo User ID"
                                     />
                                 </div>
                                 <div>
@@ -183,7 +273,7 @@ const CreateZaloOrders = () => {
                                         onChange={(e) => setFormData(prev => ({ ...prev, customerAddress: e.target.value }))}
                                         placeholder="Nhập địa chỉ"
                                         rows={3}
-                                        required
+                                        
                                     />
                                 </div>
                                 <div>
@@ -224,6 +314,8 @@ const CreateZaloOrders = () => {
                                     <thead>
                                         <tr>
                                             <th>Tên Sản Phẩm</th>
+                                            <th>Mã Sản Phẩm</th>
+                                            <th>Kích Thước</th>
                                             <th>Số Lượng</th>
                                             <th>Đơn Giá</th>
                                             <th>Thành Tiền</th>
@@ -232,7 +324,7 @@ const CreateZaloOrders = () => {
                                     </thead>
                                     <tbody>
                                         {orderDetails.map((detail, index) => (
-                                            <tr key={index}>
+                                            <tr key={detail.id}>
                                                 <td>
                                                     <input
                                                         type="text"
@@ -242,6 +334,42 @@ const CreateZaloOrders = () => {
                                                         placeholder="Tên sản phẩm"
                                                         required
                                                     />
+                                                </td>
+                                                <td>
+                                                    <input
+                                                        type="text"
+                                                        className="form-input"
+                                                        value={detail.productCode}
+                                                        onChange={(e) => updateOrderDetail(index, 'productCode', e.target.value)}
+                                                        placeholder="Mã sản phẩm"
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <div className="flex gap-1">
+                                                        <input
+                                                            type="text"
+                                                            className="form-input w-16"
+                                                            value={detail.height || ''}
+                                                            onChange={(e) => updateOrderDetail(index, 'height', e.target.value)}
+                                                            placeholder="Cao"
+                                                        />
+                                                        <span className="text-gray-500">×</span>
+                                                        <input
+                                                            type="text"
+                                                            className="form-input w-16"
+                                                            value={detail.width || ''}
+                                                            onChange={(e) => updateOrderDetail(index, 'width', e.target.value)}
+                                                            placeholder="Rộng"
+                                                        />
+                                                        <span className="text-gray-500">×</span>
+                                                        <input
+                                                            type="text"
+                                                            className="form-input w-16"
+                                                            value={detail.thickness || ''}
+                                                            onChange={(e) => updateOrderDetail(index, 'thickness', e.target.value)}
+                                                            placeholder="Dày"
+                                                        />
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     <input
@@ -258,9 +386,9 @@ const CreateZaloOrders = () => {
                                                         type="number"
                                                         className="form-input"
                                                         value={detail.unitPrice}
-                                                        onChange={(e) => updateOrderDetail(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                                        onChange={(e) => updateOrderDetail(index, 'unitPrice', Number(e.target.value) || 0)}
                                                         min="0"
-                                                        step="1000"
+                                                        step="0.01"
                                                         required
                                                     />
                                                 </td>
@@ -268,7 +396,9 @@ const CreateZaloOrders = () => {
                                                     <div className="font-semibold">
                                                         {new Intl.NumberFormat('vi-VN', {
                                                             style: 'currency',
-                                                            currency: 'VND'
+                                                            currency: 'VND',
+                                                            minimumFractionDigits: 0,
+                                                            maximumFractionDigits: 0
                                                         }).format(detail.totalPrice)}
                                                     </div>
                                                 </td>
@@ -286,11 +416,13 @@ const CreateZaloOrders = () => {
                                     </tbody>
                                     <tfoot>
                                         <tr className="font-semibold">
-                                            <td colSpan={3} className="text-right">Tổng Cộng:</td>
+                                            <td colSpan={5} className="text-right">Tổng Cộng:</td>
                                             <td>
                                                 {new Intl.NumberFormat('vi-VN', {
                                                     style: 'currency',
-                                                    currency: 'VND'
+                                                    currency: 'VND',
+                                                    minimumFractionDigits: 0,
+                                                    maximumFractionDigits: 0
                                                 }).format(formData.totalAmount)}
                                             </td>
                                             <td></td>
@@ -306,16 +438,16 @@ const CreateZaloOrders = () => {
                         <button
                             type="button"
                             className="btn btn-outline-primary"
-                            onClick={() => router.push('/zalo-orders')}
+                            onClick={() => router.push(`/zalo-orders/${params.id}`)}
                         >
                             Hủy
                         </button>
                         <button
                             type="submit"
                             className="btn btn-primary"
-                            disabled={loading || orderDetails.length === 0}
+                            disabled={saving || orderDetails.length === 0}
                         >
-                            {loading ? 'Đang tạo...' : 'Tạo Đơn Hàng'}
+                            {saving ? 'Đang cập nhật...' : 'Cập Nhật Đơn Hàng'}
                         </button>
                     </div>
                 </form>
@@ -324,4 +456,4 @@ const CreateZaloOrders = () => {
     );
 };
 
-export default CreateZaloOrders;
+export default EditZaloOrder;

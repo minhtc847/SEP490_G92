@@ -4,6 +4,10 @@ export interface ZaloOrderDetail {
     id: number;
     zaloOrderId: number;
     productName: string;
+    productCode: string;
+    height?: string;
+    width?: string;
+    thickness?: string;
     quantity: number;
     unitPrice: number;
     totalPrice: number;
@@ -26,29 +30,15 @@ export interface ZaloOrder {
     zaloOrderDetails: ZaloOrderDetail[];
 }
 
-export interface CreateZaloOrderDetail {
-    productName: string;
-    quantity: number;
-    unitPrice: number;
-    totalPrice: number;
-}
 
-export interface CreateZaloOrder {
-    orderCode?: string;
-    zaloUserId?: string;
-    customerName?: string;
-    customerPhone?: string;
-    customerAddress?: string;
-    orderDate: string;
-    totalAmount: number;
-    status: string;
-    note?: string;
-    zaloOrderDetails: CreateZaloOrderDetail[];
-}
 
 export interface UpdateZaloOrderDetail {
     id: number;
     productName: string;
+    productCode: string;
+    height?: string;
+    width?: string;
+    thickness?: string;
     quantity: number;
     unitPrice: number;
     totalPrice: number;
@@ -89,15 +79,7 @@ class ZaloOrderService {
         }
     }
 
-    async createZaloOrder(zaloOrder: CreateZaloOrder): Promise<ZaloOrder> {
-        try {
-            const response = await axios.post<ZaloOrder>(this.baseUrl, zaloOrder);
-            return response.data;
-        } catch (error) {
-            console.error('Error creating Zalo order:', error);
-            throw error;
-        }
-    }
+
 
     async updateZaloOrder(id: number, zaloOrder: UpdateZaloOrder): Promise<ZaloOrder> {
         try {
