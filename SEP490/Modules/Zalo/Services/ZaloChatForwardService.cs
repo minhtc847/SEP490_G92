@@ -12,16 +12,18 @@ namespace SEP490.Modules.Zalo.Services
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly SEP490DbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public ZaloChatForwardService(IHttpClientFactory httpClientFactory, SEP490DbContext context)
+        public ZaloChatForwardService(IHttpClientFactory httpClientFactory, SEP490DbContext context, IConfiguration configuration)
         {
             _httpClientFactory = httpClientFactory;
             _context = context;
+            _configuration = configuration;
         }
 
         public async Task<LLMResponse> ForwardMessagesAsync(List<MessageResponse> messages)
         {
-           
+
             await _context.SaveChangesAsync();
 
             // 2. Prepare payload
@@ -44,7 +46,12 @@ namespace SEP490.Modules.Zalo.Services
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             //var response = await client.PostAsync("http://localhost:8000/process_zalo_chat", content);
-            var response = await client.PostAsync("https://7de9373d79b2.ngrok-free.app/process_zalo_chat", content);
+            //var response = await client.PostAsync("https://7de9373d79b2.ngrok-free.app/process_zalo_chat", content);
+            var configuredUrl = _configuration["LLM:ApiUrl"];
+            var llmApiUrl = string.IsNullOrWhiteSpace(configuredUrl)
+                ? "http://localhost:8000/process_zalo_chat"
+                : configuredUrl;
+            var response = await client.PostAsync(llmApiUrl, content);
             response.EnsureSuccessStatusCode();
 
             var responseString = await response.Content.ReadAsStringAsync();

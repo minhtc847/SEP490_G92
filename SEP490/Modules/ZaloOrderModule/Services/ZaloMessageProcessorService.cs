@@ -1,4 +1,5 @@
 using SEP490.Common.Services;
+using SEP490.DB.Models;
 using SEP490.Modules.Zalo.Services;
 using SEP490.Modules.ZaloOrderModule.Constants;
 using SEP490.Modules.ZaloOrderModule.DTO;
@@ -227,6 +228,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 // Get customer information by phone number
                 var customer = await _customerService.GetCustomerByPhoneAsync(conversation.CustomerPhone);
                 var customerName = customer?.CustomerName ?? "Chưa có thông tin";
+                var customerAddress = customer?.Address ?? "Chưa có thông tin";
 
                 // Create Zalo order
                 var createOrderDto = new CreateZaloOrderDTO
@@ -235,7 +237,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     ZaloUserId = zaloUserId,
                     CustomerName = customerName,
                     CustomerPhone = conversation.CustomerPhone,
-                    CustomerAddress = "", // Will be updated when customer provides address
+                    CustomerAddress = customerAddress, // Will be updated when customer provides address
                     OrderDate = DateTime.Now,
                     TotalAmount = totalAmount,
                     Status = "Pending",
@@ -249,7 +251,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.COMPLETED);
 
                 // Generate order summary
-                var orderSummary = GenerateOrderSummary(conversation);
+                var orderSummary = await GenerateOrderSummary(conversation);
 
                 var responseMessage = $"✅ Đơn hàng đã được xác nhận thành công!\n\n" +
                                     $"📋 Mã đơn hàng: {orderCode}\n" +
@@ -417,7 +419,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
 
                 // Generate order summary
                 var updatedConversation = await _conversationStateService.GetConversationAsync(zaloUserId);
-                var orderSummary = GenerateOrderSummary(updatedConversation);
+                var orderSummary = await GenerateOrderSummary(updatedConversation);
                 
                 await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.CONFIRMING);
 
@@ -468,12 +470,18 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             {
                 _logger.LogInformation("User {UserId} cancelled the conversation", zaloUserId);
                 
-                // Delete the current conversation from database
-                await _conversationStateService.DeleteConversationAsync(zaloUserId);
+                // Reset conversation state to NEW instead of deleting
+                await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.NEW);
+                
+                // Clear order items and customer data
+                await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
+                {
+                    conv.OrderItems.Clear();
+                });
                 
                 return new MessageResponse
                 {
-                    Content = ZaloWebhookConstants.DefaultMessages.ORDER_CANCELLED_AND_DELETED,
+                    Content = "✅ Đã hủy đơn hàng. Bạn có thể bắt đầu đặt hàng mới bằng cách gõ 'Đặt hàng'.",
                     MessageType = "text",
                     Intent = MessageIntents.CANCEL
                 };
@@ -609,7 +617,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             }
         }
 
-        private string GenerateOrderSummary(ConversationState conversation)
+        private async Task<string> GenerateOrderSummary(ConversationState conversation)
         {
             var summary = "📋 CHI TIẾT ĐƠN HÀNG:\n\n";
             decimal totalOrderAmount = 0;
@@ -626,7 +634,10 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             
             if (conversation.CustomerId.HasValue)
             {
-                summary += $"\n👤 Khách hàng: Khách hàng hiện tại";
+                var cus = await _customerService.GetCustomerByPhoneAsync(conversation.CustomerPhone);
+                var cusName = cus?.CustomerName ?? "Chưa có thông tin";
+
+                summary += $"\n👤 Khách hàng: {cusName}";
             }
 
             return summary;
