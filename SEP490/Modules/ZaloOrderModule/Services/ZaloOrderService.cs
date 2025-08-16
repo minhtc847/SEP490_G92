@@ -69,6 +69,10 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 {
                     ZaloOrderId = zaloOrder.Id,
                     ProductName = detailDto.ProductName,
+                    ProductCode = detailDto.ProductCode,
+                    Height = detailDto.Height,
+                    Width = detailDto.Width,
+                    Thickness = detailDto.Thickness,
                     Quantity = detailDto.Quantity,
                     UnitPrice = detailDto.UnitPrice,
                     TotalPrice = detailDto.TotalPrice,
@@ -119,6 +123,10 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 {
                     // Update existing detail
                     existingDetail.ProductName = detailDto.ProductName;
+                    existingDetail.ProductCode = detailDto.ProductCode;
+                    existingDetail.Height = detailDto.Height;
+                    existingDetail.Width = detailDto.Width;
+                    existingDetail.Thickness = detailDto.Thickness;
                     existingDetail.Quantity = detailDto.Quantity;
                     existingDetail.UnitPrice = detailDto.UnitPrice;
                     existingDetail.TotalPrice = detailDto.TotalPrice;
@@ -130,6 +138,10 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     {
                         ZaloOrderId = zaloOrder.Id,
                         ProductName = detailDto.ProductName,
+                        ProductCode = detailDto.ProductCode,
+                        Height = detailDto.Height,
+                        Width = detailDto.Width,
+                        Thickness = detailDto.Thickness,
                         Quantity = detailDto.Quantity,
                         UnitPrice = detailDto.UnitPrice,
                         TotalPrice = detailDto.TotalPrice,
@@ -191,6 +203,10 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 Id = detail.Id,
                 ZaloOrderId = detail.ZaloOrderId,
                 ProductName = detail.ProductName,
+                ProductCode = detail.ProductCode,
+                Height = detail.Height,
+                Width = detail.Width,
+                Thickness = detail.Thickness,
                 Quantity = detail.Quantity,
                 UnitPrice = detail.UnitPrice,
                 TotalPrice = detail.TotalPrice,
