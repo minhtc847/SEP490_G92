@@ -3,52 +3,55 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AsyncSelect from 'react-select/async';
-import { createProductNVL, createProduct, checkProductNameExists, getGlassStructures, GlassStructure } from './service';
+import { createProduct, checkProductNameExists, getGlassStructures, GlassStructure } from './service';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-
-export type OrderItem = {
-    id: number;
-    productId?: number | null;
-    productName: string;
-    width: number | null;
-    height: number | null;
-    thickness: number | null;
-    quantity: number;
-    uom?: string;
-    isFromDatabase?: boolean;
-};
 
 const ProductCreatePage = () => {
     const router = useRouter();
     const [glassStructures, setGlassStructures] = useState<GlassStructure[]>([]);
     const [isProductNameDuplicate, setIsProductNameDuplicate] = useState(false);
-    const [isProductNameDuplicateNVL, setIsProductNameDuplicateNVL] = useState(false);
+    const [isLoadingStructures, setIsLoadingStructures] = useState(true);
+    const [structureError, setStructureError] = useState<string | null>(null);
 
-    const [newFinishedProductForm, setNewFinishedProductForm] = useState({
+    const [form, setForm] = useState({
         productName: '',
-        width: 0,
-        height: 0,
-        thickness: 0,
+        width: '',
+        height: '',
+        thickness: '',
         unitPrice: 0,
         glassStructureId: undefined as number | undefined,
-        isupdatemisa: 0, // 0 = chưa cập nhật, 1 = đã cập nhật
+        isupdatemisa: 0,
+        isTempered: false,
     });
 
     // Hàm sinh tên tự động từ dữ liệu form
-    function generateProductName(structure: GlassStructure | undefined, width: number, height: number, thickness: number) {
-        if (!structure || !width || !height || !thickness) return '';
-        return `Kính ${structure.productName}, KT: ${width}*${height}*${thickness} mm`;
+    function generateProductName(structure: GlassStructure | undefined, width: string, height: string, thickness: string, isTempered: boolean) {
+        if (!width || !height || !thickness) return '';
+        
+        if (structure) {
+            return `Kính ${structure.productCode} phút, KT: ${width}*${height}*${thickness} mm`;
+        } else {
+            const glassType = isTempered ? 'cường lực trắng' : 'trắng';
+            return `Kính ${glassType}, KT: ${width}*${height}*${thickness} mm`;
+        }
     }
+
+    // Validate chỉ nhập số
+    const validateNumberInput = (value: string): string => {
+        return value.replace(/[^0-9]/g, '');
+    };
 
     // Auto tính giá & tên khi thay đổi cấu trúc kính hoặc kích thước
     useEffect(() => {
-        const structure = glassStructures.find((g) => g.id === newFinishedProductForm.glassStructureId);
+        const structure = glassStructures.find((g) => g.id === form.glassStructureId);
         if (!structure) return;
 
-        const area = (newFinishedProductForm.width * newFinishedProductForm.height) / 1_000_000;
+        const width = parseFloat(form.width) || 0;
+        const height = parseFloat(form.height) || 0;
+        const area = (width * height) / 1_000_000;
         const unitPrice = +(area * (structure?.unitPrice ?? 0)).toFixed(0);
 
-        setNewFinishedProductForm((prev) => {
+        setForm((prev) => {
             const updatedForm = { ...prev };
 
             // Tính giá
@@ -58,102 +61,60 @@ const ProductCreatePage = () => {
 
             // Sinh tên tự động
             if (prev.width && prev.height && prev.thickness) {
-                updatedForm.productName = generateProductName(structure, prev.width, prev.height, prev.thickness);
+                updatedForm.productName = generateProductName(structure, prev.width, prev.height, prev.thickness, prev.isTempered);
             }
 
             return updatedForm;
         });
-    }, [newFinishedProductForm.width, newFinishedProductForm.height, newFinishedProductForm.thickness, newFinishedProductForm.glassStructureId, glassStructures]);
+    }, [form.width, form.height, form.thickness, form.glassStructureId, form.isTempered, glassStructures]);
 
-    const [newMaterialProductForm, setNewMaterialProductForm] = useState({
-        productName: '',
-        width: 0,
-        height: 0,
-        thickness: 0,
-        uom: '',
-        isupdatemisa: 0, // 0 = chưa cập nhật, 1 = đã cập nhật
-    });
-
-    const [form, setForm] = useState({
-        customer: '',
-        description: '',
-        orderCode: '',
-        status: '',
-        createdDate: '',
-        items: [] as OrderItem[],
-    });
-
-    const [showAddProductForm, setShowAddProductForm] = useState(false);
+    // Tạo tên sản phẩm và reset giá khi không có cấu trúc kính
+    useEffect(() => {
+        if (!form.glassStructureId && form.width && form.height && form.thickness) {
+            const productName = generateProductName(undefined, form.width, form.height, form.thickness, form.isTempered);
+            setForm(prev => ({ 
+                ...prev, 
+                productName,
+                unitPrice: 0 // Reset giá về 0 khi không có cấu trúc kính
+            }));
+        }
+    }, [form.width, form.height, form.thickness, form.isTempered, form.glassStructureId]);
 
     useEffect(() => {
         (async () => {
             try {
+                setIsLoadingStructures(true);
+                setStructureError(null);
                 const data = await getGlassStructures();
                 setGlassStructures(data);
             } catch (error) {
-                console.error('Error loading glass structures:', error);
+                setStructureError('Không thể tải danh sách cấu trúc kính. Vui lòng thử lại sau.');
+            } finally {
+                setIsLoadingStructures(false);
             }
         })();
     }, []);
 
-    const handleMaterialProductNameChange = async (val: string) => {
-        const exists = await checkProductNameExists(val.trim());
-        setIsProductNameDuplicateNVL(exists);
-        setNewMaterialProductForm((prev) => ({ ...prev, productName: val }));
-    };
-
-    const handleFinishedProductNameChange = async (val: string) => {
+    const handleProductNameChange = async (val: string) => {
         const trimmed = val.trim();
         const exists = await checkProductNameExists(trimmed);
-
         setIsProductNameDuplicate(exists);
-
-        setNewFinishedProductForm((prev) => ({
-            ...prev,
-            productName: val,
-        }));
+        setForm((prev) => ({ ...prev, productName: val }));
     };
 
-    const handleSaveProduct = async () => {
-        try {
-            if (!newMaterialProductForm.productName.trim()) throw new Error('Vui lòng nhập tên sản phẩm');
-            if (!newMaterialProductForm.uom?.trim()) throw new Error('Vui lòng nhập đơn vị tính');
-            if (isProductNameDuplicateNVL) throw new Error('Tên sản phẩm đã tồn tại');
-            if (await checkProductNameExists(newMaterialProductForm.productName)) throw new Error('Tên sản phẩm đã tồn tại, vui lòng chọn tên khác!');
+    const handleWidthChange = (value: string) => {
+        const validatedValue = validateNumberInput(value);
+        setForm((prev) => ({ ...prev, width: validatedValue }));
+    };
 
-            const payload = {
-                productName: newMaterialProductForm.productName,
-                uom: newMaterialProductForm.uom,
-                productType: 'NVL', // mặc định
-                width: null,
-                height: null,
-                thickness: null,
-                unitPrice: 0,
-                isupdatemisa: newMaterialProductForm.isupdatemisa ? 1 : 0,
-            };
+    const handleHeightChange = (value: string) => {
+        const validatedValue = validateNumberInput(value);
+        setForm((prev) => ({ ...prev, height: validatedValue }));
+    };
 
-            const p = await createProductNVL(payload);
-
-            const newItem: OrderItem = {
-                id: Date.now(),
-                productId: p.id,
-                productName: p.productName,
-                width: null,
-                height: null,
-                thickness: null,
-                quantity: 1,
-                isFromDatabase: true,
-            };
-
-            setForm((f) => ({ ...f, items: [...f.items, newItem] }));
-            setShowAddProductForm(false);
-            setNewMaterialProductForm({ productName: '', width: 0, height: 0, thickness: 0, uom: '', isupdatemisa: 0 });
-
-            alert(`Đã tạo sản phẩm thành công: ${p.productName}`);
-            router.push(`/products/${p.id}`);
-        } catch (err: any) {
-            alert(err.message || 'Lỗi tạo sản phẩm');
-        }
+    const handleThicknessChange = (value: string) => {
+        const validatedValue = validateNumberInput(value);
+        setForm((prev) => ({ ...prev, thickness: validatedValue }));
     };
 
     const handleSave = async () => {
@@ -163,207 +124,278 @@ const ProductCreatePage = () => {
                 return;
             }
 
-            if (!newFinishedProductForm.productName.trim()) {
+            if (!form.productName.trim()) {
                 alert('Vui lòng nhập tên sản phẩm!');
                 return;
             }
 
-            const isExisted = await checkProductNameExists(newFinishedProductForm.productName);
+            const isExisted = await checkProductNameExists(form.productName);
             if (isExisted) {
                 alert('Tên sản phẩm đã tồn tại, vui lòng chọn tên khác!');
                 return;
             }
 
-            if (!newFinishedProductForm.glassStructureId) {
-                alert('Vui lòng chọn cấu trúc kính!');
+            if (!form.width || !form.height || !form.thickness) {
+                alert('Vui lòng nhập đầy đủ kích thước (rộng, cao, dày)!');
                 return;
             }
 
+            // Create payload with automatic product type detection
             const payload = {
-                productName: newFinishedProductForm.productName,
-                width: newFinishedProductForm.width.toString(),
-                height: newFinishedProductForm.height.toString(),
-                thickness: newFinishedProductForm.thickness,
-                uom: 'Tấm',
-                productType: 'Thành Phẩm',
-                unitPrice: 0,
-                glassStructureId: newFinishedProductForm.glassStructureId,
-                isupdatemisa: newFinishedProductForm.isupdatemisa,
+                ProductName: form.productName,
+                Width: form.width,
+                Height: form.height,
+                Thickness: parseFloat(form.thickness),
+                UOM: 'Tấm',
+                ProductType: form.glassStructureId ? 'Thành phẩm' : 'NVL',
+                UnitPrice: form.unitPrice,
+                GlassStructureId: form.glassStructureId || null,
+                Isupdatemisa: form.isupdatemisa === 1,
             };
 
             const res = await createProduct(payload);
             alert('Đã tạo sản phẩm: ' + res.productName);
             router.push(`/products/${res.id}`);
-        } catch (e) {
-            console.error(e);
-            alert('Tạo sản phẩm thất bại');
+        } catch (e: any) {
+            const errorMessage = e.response?.data?.message || e.response?.data?.error || e.message || 'Tạo sản phẩm thất bại';
+            alert(`Tạo sản phẩm thất bại: ${errorMessage}`);
         }
+    };
+
+    const calculateArea = () => {
+        const width = parseFloat(form.width) || 0;
+        const height = parseFloat(form.height) || 0;
+        return ((width * height) / 1_000_000).toFixed(2);
     };
 
     return (
         <ProtectedRoute requiredRole={[1, 2]}>
-        <div>
-            <div>
-                <h1 className="text-xl font-bold">Thêm sản phẩm (Thành Phẩm)</h1>
+            <div className="max-w-4xl mx-auto p-6">
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold text-gray-800 mb-2">Thêm sản phẩm</h1>
+                    <p className="text-gray-600">
+                        {form.glassStructureId ? 'Tạo sản phẩm thành phẩm với cấu trúc kính' : 'Tạo sản phẩm nguyên vật liệu'}
+                    </p>
+                </div>
 
-                <div className="border rounded-lg p-4 mb-6 bg-gray-50">
-                    <div>
-                        <h4 className="text-lg font-semibold mb-2">Thêm sản phẩm mới</h4>
-                        <p className="text-sm text-gray-500 italic mb-2">
-                            ⚠️ Tên sản phẩm sẽ được tự động tạo từ cấu trúc kính và kích thước
-                            <br />
-                            <span>
-                                Ví dụ: <code>Kính EI60 phút, KT: 300*500*30 mm</code>
-                            </span>
-                        </p>
+                <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+                    <div className="mb-6">
+                        <h4 className="text-lg font-semibold mb-3 text-gray-800">Thông tin sản phẩm</h4>
 
-                        <label className="block mb-1 font-medium">Tên sản phẩm</label>
-                        <input
-                            className="input input-bordered w-full"
-                            value={newFinishedProductForm.productName}
-                            onChange={(e) => handleFinishedProductNameChange(e.target.value)}
-                            placeholder="Tên sẽ được tự động tạo..."
-                        />
-                        {isProductNameDuplicate && <p className="text-red-500 text-sm">Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.</p>}
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                        <div>
-                            <label className="block mb-1 font-medium">Rộng (mm)</label>
+                        <div className="mb-4">
+                            <label className="block mb-2 font-medium text-gray-700">Tên sản phẩm</label>
                             <input
-                                type="number"
-                                className="input input-bordered w-full"
-                                value={newFinishedProductForm.width}
-                                onChange={(e) => setNewFinishedProductForm((p) => ({ ...p, width: +e.target.value }))}
+                                className="input input-bordered w-full bg-gray-50 text-gray-700"
+                                value={form.productName}
+                                disabled
+                                placeholder="Tên sẽ được tự động tạo..."
                             />
-                        </div>
-                        <div>
-                            <label className="block mb-1 font-medium">Cao (mm)</label>
-                            <input
-                                type="number"
-                                className="input input-bordered w-full"
-                                value={newFinishedProductForm.height}
-                                onChange={(e) => setNewFinishedProductForm((p) => ({ ...p, height: +e.target.value }))}
-                            />
-                        </div>
-                        <div>
-                            <label className="block mb-1 font-medium">Dày (mm)</label>
-                            <input
-                                type="number"
-                                className="input input-bordered w-full"
-                                value={newFinishedProductForm.thickness}
-                                onChange={(e) => setNewFinishedProductForm((p) => ({ ...p, thickness: +e.target.value }))}
-                            />
+                            {isProductNameDuplicate && (
+                                <p className="text-red-500 text-sm mt-1">Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.</p>
+                            )}
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block mb-1 font-medium">Cấu trúc kính</label>
-                        <AsyncSelect
-                            cacheOptions
-                            defaultOptions
-                            loadOptions={(input, cb) =>
-                                cb(glassStructures.filter((g) => g.productName.toLowerCase().includes(input.toLowerCase())).map((g) => ({ label: g.productName, value: g.id })))
-                            }
-                            onChange={(opt) => setNewFinishedProductForm((p) => ({ ...p, glassStructureId: opt ? opt.value : undefined }))}
-                            value={glassStructures.filter((g) => g.id === newFinishedProductForm.glassStructureId).map((g) => ({ label: g.productName, value: g.id }))[0] || null}
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block mb-1 font-medium">Diện tích (m²)</label>
-                            <div className="input input-bordered bg-gray-100">{((newFinishedProductForm.width * newFinishedProductForm.height) / 1_000_000).toFixed(2)}</div>
-                        </div>
-                        <div>
-                            <label className="block mb-1 font-medium">Đơn giá (₫)</label>
-                            <div className="input input-bordered bg-gray-100">
-                                {(() => {
-                                    const area = (newFinishedProductForm.width * newFinishedProductForm.height) / 1_000_000;
-                                    const s = glassStructures.find((g) => g.id === newFinishedProductForm.glassStructureId);
-                                    return ((s?.unitPrice || 0) * area).toFixed(0);
-                                })()}
+                    <div className="mb-6">
+                        <h4 className="text-lg font-semibold mb-3 text-gray-800">Kích thước</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block mb-2 font-medium text-gray-700">Rộng (mm)</label>
+                                <input
+                                    type="text"
+                                    className="input input-bordered w-full focus:ring-2 focus:ring-blue-500"
+                                    value={form.width}
+                                    onChange={(e) => handleWidthChange(e.target.value)}
+                                    placeholder="Nhập số..."
+                                />
+                            </div>
+                            <div>
+                                <label className="block mb-2 font-medium text-gray-700">Cao (mm)</label>
+                                <input
+                                    type="text"
+                                    className="input input-bordered w-full focus:ring-2 focus:ring-blue-500"
+                                    value={form.height}
+                                    onChange={(e) => handleHeightChange(e.target.value)}
+                                    placeholder="Nhập số..."
+                                />
+                            </div>
+                            <div>
+                                <label className="block mb-2 font-medium text-gray-700">Dày (mm)</label>
+                                <input
+                                    type="text"
+                                    className="input input-bordered w-full focus:ring-2 focus:ring-blue-500"
+                                    value={form.thickness}
+                                    onChange={(e) => handleThicknessChange(e.target.value)}
+                                    placeholder="Nhập số..."
+                                />
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-4">
-                        <label className="flex items-center space-x-2">
-                            <input
-                                type="checkbox"
-                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                                defaultChecked={false}
-                                onChange={(e) => setNewFinishedProductForm((p) => ({ ...p, isupdatemisa: e.target.checked ? 1 : 0 }))}
-                            />
-                            <span className="font-medium text-gray-700">Cập nhật MISA</span>
-                        </label>
-                        <p className="text-sm text-gray-500 mt-1">Đánh dấu nếu sản phẩm đã được cập nhật vào hệ thống MISA</p>
-                    </div>
-
-                    <div className="mt-4 flex gap-4">
-                        <button className="btn btn-sm btn-primary" onClick={handleSave}>
-                            Lưu sản phẩm
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div>
-                <h1 className="text-xl font-bold">Thêm sản phẩm (Nguyên Vật liệu)</h1>
-
-                <div className="border rounded-lg p-4 mb-6 bg-gray-50">
-                    <h4 className="text-lg font-semibold mb-2">Thêm sản phẩm mới</h4>
-                    <p className="text-sm text-gray-500 italic mb-2">
-                        ⚠️ Tên sản phẩm không cần theo định dạng đặc biệt, chỉ cần mô tả rõ ràng là được.
-                        <br />
-                        <span>
-                            Ví dụ: <code>Kính cường lực tôi trắng KT: 200*200*5 mm</code>
-                        </span>
-                    </p>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="col-span-full">
-                            <label className="block mb-1 font-medium">Tên sản phẩm</label>
-                            <input
-                                className="input input-sm input-bordered w-full"
-                                placeholder="VD: Kính cường lực tôi trắng KT: 200*200*5 mm"
-                                value={newMaterialProductForm.productName}
-                                onChange={(e) => handleMaterialProductNameChange(e.target.value)}
-                            />
-                            {isProductNameDuplicateNVL && <p className="text-red-500 text-sm mt-1">Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.</p>}
-                        </div>
-
+                    <div className="mb-6">
+                        <h4 className="text-lg font-semibold mb-3 text-gray-800">Cấu trúc kính</h4>
                         <div>
-                            <label className="block mb-1 font-medium">Đơn vị tính (UOM)</label>
-                            <input
-                                className="input input-sm input-bordered w-full"
-                                placeholder="VD: Tấm, m², kg, ..."
-                                value={newMaterialProductForm.uom ?? ''}
-                                onChange={(e) => setNewMaterialProductForm((prev) => ({ ...prev, uom: e.target.value }))}
-                            />
+                            {!form.glassStructureId && (
+                                <div className="mb-4">
+                                    <label className="flex items-center space-x-3 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                                            checked={form.isTempered}
+                                            onChange={(e) => setForm((p) => ({ ...p, isTempered: e.target.checked }))}
+                                        />
+                                        <div>
+                                            <span className="font-medium text-gray-700">Kính cường lực</span>
+                                            
+                                        </div>
+                                    </label>
+                                </div>
+                            )}
+                            
+                            {isLoadingStructures && (
+                                <div className="flex items-center space-x-2 text-gray-600">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                    <span>Đang tải danh sách cấu trúc kính...</span>
+                                </div>
+                            )}
+                            
+                            {structureError && (
+                                <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-3">
+                                    <p className="text-red-600 text-sm">{structureError}</p>
+                                    <div className="flex gap-2 mt-2">
+                                        <button 
+                                            className="text-blue-600 text-sm underline"
+                                            onClick={() => window.location.reload()}
+                                        >
+                                            Thử lại
+                                        </button>
+                                        <button 
+                                            className="text-green-600 text-sm underline"
+                                            onClick={async () => {
+                                                try {
+                                                    setIsLoadingStructures(true);
+                                                    setStructureError(null);
+                                                    const data = await getGlassStructures();
+                                                    setGlassStructures(data);
+                                                } catch (error) {
+                                                    setStructureError('Thử lại thất bại. Vui lòng thử lại sau.');
+                                                } finally {
+                                                    setIsLoadingStructures(false);
+                                                }
+                                            }}
+                                        >
+                                            Test API
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            
+                            
+                            {!isLoadingStructures && !structureError && glassStructures.length > 0 && (
+                                <div className="flex gap-2">
+                                    <div className="flex-1">
+                                        <AsyncSelect
+                                            cacheOptions
+                                            defaultOptions
+                                            className="w-full"
+                                            classNamePrefix="select"
+                                            loadOptions={(input, cb) => {
+                                                const filteredOptions = glassStructures
+                                                    .filter((g) => 
+                                                        g.productCode?.toLowerCase().includes(input.toLowerCase())
+                                                    )
+                                                    .map((g) => ({ 
+                                                        label: g.productCode, 
+                                                        value: g.id 
+                                                    }));
+                                                
+                                                cb(filteredOptions);
+                                            }}
+                                            onChange={(opt) => setForm((p) => ({ ...p, glassStructureId: opt && opt.value !== null ? opt.value : undefined }))}
+                                            value={
+                                                form.glassStructureId 
+                                                    ? glassStructures
+                                                        .filter((g) => g.id === form.glassStructureId)
+                                                        .map((g) => ({ 
+                                                            label: g.productCode, 
+                                                            value: g.id 
+                                                        }))[0] || null
+                                                    : null
+                                            }
+                                            placeholder="Chọn cấu trúc kính..."
+                                            noOptionsMessage={() => "Không tìm thấy cấu trúc kính"}
+                                        />
+                                    </div>
+                                    {form.glassStructureId && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setForm((p) => ({ ...p, glassStructureId: undefined }))}
+                                            className="btn btn-outline btn-error px-3 py-2"
+                                            title="Xóa cấu trúc kính"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                            
+                            
                         </div>
                     </div>
 
-                    <div className="mt-4">
-                        <label className="flex items-center space-x-2">
-                            <input
-                                type="checkbox"
-                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                                checked={newMaterialProductForm.isupdatemisa === 1}
-                                onChange={(e) => setNewMaterialProductForm((prev) => ({ ...prev, isupdatemisa: e.target.checked ? 1 : 0 }))}
-                            />
-                            <span className="font-medium text-gray-700">Cập nhật MISA</span>
-                        </label>
-                        <p className="text-sm text-gray-500 mt-1">Đánh dấu nếu sản phẩm đã được cập nhật vào hệ thống MISA</p>
+                    <div className="mb-6">
+                        <h4 className="text-lg font-semibold mb-3 text-gray-800">Thông tin tính toán</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block mb-2 font-medium text-gray-700">Diện tích (m²)</label>
+                                <div className="input input-bordered bg-gray-50 text-gray-700 font-medium">
+                                    {calculateArea()}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block mb-2 font-medium text-gray-700">Đơn giá (₫)</label>
+                                <div className="input input-bordered bg-gray-50 text-gray-700 font-medium">
+                                    {form.unitPrice.toLocaleString('vi-VN')}
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="mt-4 flex gap-4">
-                        <button className="btn btn-sm btn-primary" onClick={handleSaveProduct}>
-                            Lưu sản phẩm
+                    <div className="mb-6">
+                        <label className="flex items-center space-x-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                                checked={form.isupdatemisa === 1}
+                                onChange={(e) => setForm((p) => ({ ...p, isupdatemisa: e.target.checked ? 1 : 0 }))}
+                            />
+                            <div>
+                                <span className="font-medium text-gray-700">Cập nhật MISA</span>
+                               
+                            </div>
+                        </label>
+                    </div>
+
+                    <div className="flex gap-4">
+                        <button 
+                            className="btn btn-primary px-6 py-2" 
+                            onClick={handleSave}
+                            disabled={!form.width || !form.height || !form.thickness || isLoadingStructures || !!structureError}
+                        >
+                            {isLoadingStructures ? 'Đang tải...' : 'Lưu sản phẩm'}
+                        </button>
+                        <button 
+                            className="btn btn-outline px-6 py-2" 
+                            onClick={() => router.push('/products')}
+                        >
+                            Hủy
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
         </ProtectedRoute>
     );
 };

@@ -11,13 +11,16 @@ export interface ProductCreatedResponse {
 }
 
 export interface CreateProductDto {
-    productName: string;
-    height?: string | null;
-    width?: string | null;
-    thickness?: number | null;
-    unitPrice: number;
-    glassStructureId?: number | null;
-    isupdatemisa?: number; // 0 = chưa cập nhật, 1 = đã cập nhật
+    ProductName: string;
+    Height?: string | null;
+    Width?: string | null;
+    Thickness?: number | null;
+    UnitPrice: number;
+    GlassStructureId?: number | null;
+    Isupdatemisa?: boolean; // true = đã cập nhật, false = chưa cập nhật
+    UOM?: string;
+    ProductType?: string;
+    Weight?: number | null;
 }
 
 export interface GlassStructure {
@@ -32,26 +35,10 @@ export interface GlassStructure {
 
 export const getGlassStructures = async (): Promise<GlassStructure[]> => {
     try {
-        // Thử endpoint chính trước
-        const res = await axios.get('/api/orders/glass-structures');
+        const res = await axios.get('/api/GlassStructure');
         return res.data;
-    } catch (error) {
-        console.error('Error with /api/orders/glass-structures:', error);
-        try {
-            // Thử endpoint thay thế
-            const res2 = await axios.get('/api/GlassStructure');
-            return res2.data;
-        } catch (error2) {
-            console.error('Error with /api/GlassStructure:', error2);
-            try {
-                // Thử endpoint cuối cùng
-                const res3 = await axios.get('/api/Product/all');
-                return res3.data;
-            } catch (error3) {
-                console.error('Error with /api/Product/all:', error3);
-                throw new Error('Không thể lấy được danh sách cấu trúc kính');
-            }
-        }
+    } catch (error: any) {
+        throw new Error('Không thể lấy được danh sách cấu trúc kính từ /api/GlassStructure');
     }
 };
 
@@ -60,10 +47,7 @@ export const createProduct = async (payload: CreateProductDto): Promise<ProductC
     return res.data;
 };
 
-export const createProductNVL = async (payload: CreateProductDto): Promise<ProductCreatedResponse> => {
-    const res = await axios.post('/api/PurchaseOrder/product', payload);
-    return res.data;
-};
+
 
 export const checkProductNameExists = async (name: string): Promise<boolean> => {
     const res = await axios.get('/api/orders/check-product-name', {

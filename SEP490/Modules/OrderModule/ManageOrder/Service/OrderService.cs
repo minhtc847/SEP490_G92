@@ -164,16 +164,24 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             var area = (widthMm * heightMm) / 1_000_000m;
 
             var structure = await _context.GlassStructures.FirstOrDefaultAsync(x => x.Id == dto.GlassStructureId);
-            if (structure == null || structure.UnitPrice == null)
-                throw new Exception("Cấu trúc kính không tồn tại hoặc chưa có đơn giá.");
-
-            var calculatedUnitPrice = area * structure.UnitPrice.Value;
+            
+            decimal? calculatedUnitPrice;
+            if (structure != null && structure.UnitPrice.HasValue)
+            {
+                // Có cấu trúc kính - tính giá theo cấu trúc
+                calculatedUnitPrice = area * structure.UnitPrice.Value;
+            }
+            else
+            {
+                // Không có cấu trúc kính - unitPrice = null
+                calculatedUnitPrice = null;
+            }
 
             var product = new Product
             {
                 ProductCode = null,
                 ProductName = dto.ProductName,
-                ProductType = dto.ProductType ?? "Thành Phẩm",
+                ProductType = dto.ProductType ?? "Thành phẩm",
                 UOM = dto.UOM ?? "Tấm",
                 Width = dto.Width,
                 Height = dto.Height,
@@ -181,7 +189,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 Weight = dto.Weight,
                 UnitPrice = calculatedUnitPrice,
                 GlassStructureId = dto.GlassStructureId,
-                isupdatemisa = dto.isupdatemisa
+                isupdatemisa = dto.Isupdatemisa
             };
 
             _context.Products.Add(product);
