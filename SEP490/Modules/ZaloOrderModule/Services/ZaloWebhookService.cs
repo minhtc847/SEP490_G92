@@ -19,9 +19,9 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         private readonly ILogger<ZaloWebhookService> _logger;
         private readonly IConfiguration _configuration;
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ZaloMessageProcessorService _messageProcessor;
-        private readonly ZaloConversationStateService _conversationStateService;
-        private readonly ZaloResponseService _responseService;
+        private readonly IZaloMessageProcessorService _messageProcessor;
+        private readonly IZaloConversationStateService _conversationStateService;
+        private readonly IZaloResponseService _responseService;
         private readonly IZaloTokenService _zaloTokenService;
 
         public ZaloWebhookService(
@@ -29,9 +29,9 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             ILogger<ZaloWebhookService> logger,
             IConfiguration configuration,
             IHttpClientFactory httpClientFactory,
-            ZaloMessageProcessorService messageProcessor,
-            ZaloConversationStateService conversationStateService,
-            ZaloResponseService responseService,
+            IZaloMessageProcessorService messageProcessor,
+            IZaloConversationStateService conversationStateService,
+            IZaloResponseService responseService,
             IZaloTokenService zaloTokenService)
         {
             _context = sEP490DbContext;

@@ -7,19 +7,11 @@ using SEP490.Common.Constants;
 using SEP490.DB;
 using SEP490.Hubs;
 using SEP490.Modules.Auth.Middleware;
-using SEP490.Modules.Auth.Services;
-using SEP490.Modules.LLMChat.Services;
-using SEP490.Modules.OrderModule.ManageOrder.Services;
-using SEP490.Modules.Zalo.Services;
-using SEP490.Modules.ZaloOrderModule.Services;
-using SEP490.Modules.ProductionOrders.Services;
 
-using System;
+using SEP490.Modules.ZaloOrderModule.Services;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
-using System.Security.Claims;
-using SEP490.Modules.InventorySlipModule.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -72,7 +64,6 @@ builder.Services.AddAuthorization(options =>
 
 
 // HTTP client registrations
-builder.Services.AddHttpClient<ZaloChatService>();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddSignalR();

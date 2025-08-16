@@ -5,7 +5,19 @@ using SEP490.Modules.ZaloOrderModule.DTO;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
-    public class ZaloResponseService: BaseTransientService
+    public interface IZaloResponseService
+    {
+        Task<MessageResponse> GetDefaultResponseAsync(string currentState);
+        Task<MessageResponse> GetGreetingResponseAsync();
+        Task<MessageResponse> GetOrderConfirmationResponseAsync();
+        Task<MessageResponse> GetOrderCancellationResponseAsync();
+        Task<MessageResponse> GetContactInfoResponseAsync();
+        Task<MessageResponse> GetErrorResponseAsync(string errorMessage = null);
+        Task<MessageResponse> GetHelpResponseAsync();
+        Task<MessageResponse> GetUnsupportedEventResponseAsync();
+    }
+
+    public class ZaloResponseService: BaseTransientService, IZaloResponseService
     {
         private readonly ILogger<ZaloResponseService> _logger;
 

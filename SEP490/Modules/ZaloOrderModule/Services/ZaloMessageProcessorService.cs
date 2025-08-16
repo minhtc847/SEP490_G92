@@ -1,26 +1,22 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic;
-using Microsoft.EntityFrameworkCore;
 using SEP490.Common.Services;
-using SEP490.DB;
-using SEP490.DB.Models;
-using SEP490.Modules.LLMChat.Services;
 using SEP490.Modules.Zalo.Services;
 using SEP490.Modules.ZaloOrderModule.Constants;
 using SEP490.Modules.ZaloOrderModule.DTO;
-using SEP490.Modules.ZaloOrderModule.Services;
-using System.Linq;
 using ZaloLLMResponse = SEP490.Modules.Zalo.DTO.LLMResponse;
 using ZaloMessageResponse = SEP490.Modules.Zalo.DTO.MessageResponse;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
-    public class ZaloMessageProcessorService: BaseTransientService
+    public interface IZaloMessageProcessorService
+    {
+        Task<MessageResponse> ProcessMessageAsync(string zaloUserId, string message);
+    }
+
+    public class ZaloMessageProcessorService: BaseTransientService, IZaloMessageProcessorService
     {
         private readonly ILogger<ZaloMessageProcessorService> _logger;
-        private readonly ZaloConversationStateService _conversationStateService;
-        private readonly ZaloResponseService _responseService;
+        private readonly IZaloConversationStateService _conversationStateService;
+        private readonly IZaloResponseService _responseService;
         private readonly IZaloCustomerService _customerService;
         private readonly IZaloMessageHistoryService _messageHistoryService;
         private readonly IZaloChatForwardService _zaloChatForwardService;
@@ -30,8 +26,8 @@ namespace SEP490.Modules.ZaloOrderModule.Services
 
         public ZaloMessageProcessorService(
             ILogger<ZaloMessageProcessorService> logger,
-            ZaloConversationStateService conversationStateService,
-            ZaloResponseService responseService,
+            IZaloConversationStateService conversationStateService,
+            IZaloResponseService responseService,
             IZaloCustomerService customerService,
             IZaloMessageHistoryService messageHistoryService,
             IZaloChatForwardService zaloChatForwardService,

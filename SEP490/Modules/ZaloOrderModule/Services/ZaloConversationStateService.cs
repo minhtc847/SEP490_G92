@@ -8,7 +8,19 @@ using SEP490.Modules.ZaloOrderModule.Constants;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
-    public class ZaloConversationStateService : BaseScopedService
+    public interface IZaloConversationStateService
+    {
+        Task<ConversationState> GetOrCreateConversationAsync(string zaloUserId);
+        Task<bool> UpdateConversationStateAsync(string zaloUserId, string newState);
+        Task<bool> UpdateConversationDataAsync(string zaloUserId, Action<ConversationState> updateAction);
+        Task<bool> DeleteConversationAsync(string zaloUserId);
+        Task<ConversationState?> GetConversationAsync(string zaloUserId);
+        Task<bool> IsConversationActiveAsync(string zaloUserId);
+        Task<List<ConversationState>> GetAllActiveConversationsAsync();
+        Task<bool> UpdateUserInfoAsync(string zaloUserId, string? userName = null, string? userAvatar = null);
+    }
+
+    public class ZaloConversationStateService : BaseScopedService, IZaloConversationStateService
     {
         private readonly ILogger<ZaloConversationStateService> _logger;
         private readonly SEP490DbContext _context;
