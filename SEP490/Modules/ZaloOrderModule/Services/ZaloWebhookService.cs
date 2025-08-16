@@ -51,9 +51,6 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 _logger.LogInformation("Processing webhook event: {EventName} from user: {UserId}", 
                     request.EventName, request.Sender.Id);
 
-                // Update user info in conversation state - only ID is available now
-                // await _conversationStateService.UpdateUserInfoAsync(request.Sender.Id, request.Sender.Name, request.Sender.Avatar);
-
                 switch (request.EventName.ToLower())
                 {
                     case ZaloWebhookConstants.Events.USER_SEND_TEXT:

@@ -43,7 +43,6 @@
     <Folder Include="Modules\InvoiceModule\" />
     <Folder Include="Modules\ZaloOrderModule\Controllers\" />
     <Folder Include="Modules\ZaloOrderModule\DTO\" />
-    <Folder Include="Modules\ZaloOrderModule\Services\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 

@@ -16,8 +16,6 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         Task<bool> DeleteConversationAsync(string zaloUserId);
         Task<ConversationState?> GetConversationAsync(string zaloUserId);
         Task<bool> IsConversationActiveAsync(string zaloUserId);
-        Task<List<ConversationState>> GetAllActiveConversationsAsync();
-        Task<bool> UpdateUserInfoAsync(string zaloUserId, string? userName = null, string? userAvatar = null);
     }
 
     public class ZaloConversationStateService : BaseScopedService, IZaloConversationStateService
@@ -200,52 +198,6 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking conversation existence for user: {UserId}", zaloUserId);
-                return false;
-            }
-        }
-
-        public async Task<List<ConversationState>> GetAllActiveConversationsAsync()
-        {
-            try
-            {
-                var conversations = await _context.ZaloConversationStates
-                    .Include(cs => cs.MessageHistory)
-                    .Include(cs => cs.OrderItems)
-                    .Where(cs => cs.IsActive)
-                    .ToListAsync();
-
-                return conversations.Select(MapToConversationState).ToList();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting all active conversations");
-                return new List<ConversationState>();
-            }
-        }
-
-        public async Task<bool> UpdateUserInfoAsync(string zaloUserId, string? userName = null, string? userAvatar = null)
-        {
-            try
-            {
-                var conversation = await _context.ZaloConversationStates
-                    .FirstOrDefaultAsync(cs => cs.ZaloUserId == zaloUserId && cs.IsActive);
-
-                if (conversation != null)
-                {
-                    if (!string.IsNullOrEmpty(userName))
-                        conversation.UserName = userName;
-
-                    
-                    conversation.LastActivity = DateTime.UtcNow;
-                    await _context.SaveChangesAsync();
-                    return true;
-                }
-                
-                return false;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating user info for user: {UserId}", zaloUserId);
                 return false;
             }
         }

@@ -20,7 +20,6 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         private readonly IZaloCustomerService _customerService;
         private readonly IZaloMessageHistoryService _messageHistoryService;
         private readonly IZaloChatForwardService _zaloChatForwardService;
-        private readonly IZaloProductValidationService _productValidationService;
         private readonly IZaloPriceCalculationService _priceCalculationService;
         private readonly IZaloOrderService _zaloOrderService;
 
@@ -31,7 +30,6 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             IZaloCustomerService customerService,
             IZaloMessageHistoryService messageHistoryService,
             IZaloChatForwardService zaloChatForwardService,
-            IZaloProductValidationService productValidationService,
             IZaloPriceCalculationService priceCalculationService,
             IZaloOrderService zaloOrderService)
         {
@@ -41,7 +39,6 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             _customerService = customerService;
             _messageHistoryService = messageHistoryService;
             _zaloChatForwardService = zaloChatForwardService;
-            _productValidationService = productValidationService;
             _priceCalculationService = priceCalculationService;
             _zaloOrderService = zaloOrderService;
         }
@@ -161,7 +158,12 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     return await HandlePhoneNumberIntentAsync(zaloUserId, message, conversation);
                   
                 case MessageIntents.ADD_ORDER_DETAIL:
-                    return await HandleAddOrderDetailIntentAsync(zaloUserId, message, conversation);
+                    return new MessageResponse
+                    {
+                        Content = ZaloWebhookConstants.DefaultMessages.ASK_CONFIRM_ORDER,
+                        MessageType = "text",
+                        Intent = MessageIntents.ADD_ORDER_DETAIL
+                    };
 
                 case MessageIntents.FINISH_ORDER:
                     return await HandleFinishOrderIntentAsync(zaloUserId, message, conversation);
@@ -279,170 +281,6 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             }
         }
 
-        private async Task<MessageResponse> HandleAddOrderDetailIntentAsync(string zaloUserId, string message, ConversationState conversation)
-        {
-            return new MessageResponse
-            {
-                Content = ZaloWebhookConstants.DefaultMessages.ASK_CONFIRM_ORDER,
-                MessageType = "text",
-                Intent = MessageIntents.ADD_ORDER_DETAIL
-            };
-        }
-
-        private async Task<MessageResponse> HandleSingleProductInputAsync(string zaloUserId, string message, ConversationState conversation)
-        {
-            // Validate the single product input
-            var validationResult = await _productValidationService.ValidateProductInputAsync(message);
-
-            if (!validationResult.IsValid)
-            {
-                return new MessageResponse
-                {
-                    Content = validationResult.ErrorMessage,
-                    MessageType = "text",
-                    Intent = MessageIntents.ADD_ORDER_DETAIL
-                };
-            }
-
-            // Parse dimensions to extract width, height, and thickness
-            var dimensionParts = validationResult.Dimensions.Split('*');
-            var width = float.Parse(dimensionParts[0]);
-            var height = float.Parse(dimensionParts[1]);
-            var thickness = float.Parse(dimensionParts[2].Replace("mm", ""));
-
-            // Calculate unit price for this product
-            var unitPrice = await _priceCalculationService.CalculateUnitPriceAsync(
-                validationResult.ProductCode,
-                validationResult.ProductType,
-                width,
-                height
-            );
-
-            // Add the validated product to the conversation state
-            await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
-            {
-                var orderItem = new OrderItem
-                {
-                    ProductCode = validationResult.ProductCode,
-                    ProductType = validationResult.ProductType,
-                    Width = width,
-                    Height = height,
-                    Thickness = thickness,
-                    Quantity = validationResult.Quantity,
-                    UnitPrice = unitPrice,
-                    TotalPrice = unitPrice * validationResult.Quantity
-                };
-                conv.OrderItems.Add(orderItem);
-            });
-
-            // Generate success message with product details
-            var successMessage = string.Format(
-                ZaloWebhookConstants.DefaultMessages.PRODUCT_ADDED_SUCCESS,
-                validationResult.ProductCode,
-                validationResult.ProductType,
-                validationResult.Dimensions,
-                validationResult.Quantity
-            );
-
-            return new MessageResponse
-            {
-                Content = successMessage,
-                MessageType = "text",
-                Intent = MessageIntents.ADD_ORDER_DETAIL
-            };
-        }
-
-        private async Task<MessageResponse> HandleMultipleProductsInputAsync(string zaloUserId, string message, ConversationState conversation)
-        {
-            // Validate multiple products input
-            var validationResult = await _productValidationService.ValidateMultipleProductsInputAsync(message);
-
-            if (!validationResult.IsValid)
-            {
-                return new MessageResponse
-                {
-                    Content = validationResult.ErrorMessage,
-                    MessageType = "text",
-                    Intent = MessageIntents.ADD_ORDER_DETAIL
-                };
-            }
-
-            // Calculate unit prices for all valid products first
-            var productsWithPrices = new List<(ProductValidationResult Product, decimal UnitPrice)>();
-            
-            foreach (var validProduct in validationResult.ValidProducts)
-            {
-                // Parse dimensions to extract width, height, and thickness
-                var dimensionParts = validProduct.Dimensions.Split('*');
-                var width = float.Parse(dimensionParts[0]);
-                var height = float.Parse(dimensionParts[1]);
-                var thickness = float.Parse(dimensionParts[2].Replace("mm", ""));
-
-                // Calculate unit price for this product
-                var unitPrice = await _priceCalculationService.CalculateUnitPriceAsync(
-                    validProduct.ProductCode,
-                    validProduct.ProductType,
-                    width,
-                    height
-                );
-
-                productsWithPrices.Add((validProduct, unitPrice));
-            }
-
-            // Add all valid products to the conversation state
-            await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
-            {
-                foreach (var (validProduct, unitPrice) in productsWithPrices)
-                {
-                    // Parse dimensions to extract width, height, and thickness
-                    var dimensionParts = validProduct.Dimensions.Split('*');
-                    var width = float.Parse(dimensionParts[0]);
-                    var height = float.Parse(dimensionParts[1]);
-                    var thickness = float.Parse(dimensionParts[2].Replace("mm", ""));
-
-                    var orderItem = new OrderItem
-                    {
-                        ProductCode = validProduct.ProductCode,
-                        ProductType = validProduct.ProductType,
-                        Width = width,
-                        Height = height,
-                        Thickness = thickness,
-                        Quantity = validProduct.Quantity,
-                        UnitPrice = unitPrice,
-                        TotalPrice = unitPrice * validProduct.Quantity
-                    };
-                    conv.OrderItems.Add(orderItem);
-                }
-            });
-
-            // Generate success message
-            string responseMessage;
-            if (validationResult.InvalidCount == 0)
-            {
-                // All products are valid
-                responseMessage = $"✅ Đã thêm thành công {validationResult.ValidCount} sản phẩm vào đơn hàng!\n\n";
-                responseMessage += "📝 Danh sách sản phẩm đã thêm:\n";
-                for (int i = 0; i < validationResult.ValidProducts.Count; i++)
-                {
-                    var product = validationResult.ValidProducts[i];
-                    responseMessage += $"{i + 1}. {product.ProductCode} - {product.ProductType} - {product.Dimensions} - SL: {product.Quantity}\n";
-                }
-            }
-            else
-            {
-                // Partial success - some products valid, some invalid
-                responseMessage = validationResult.ErrorMessage; // This contains the partial success message
-            }
-
-            responseMessage += "\n🎯 Nếu đã xác nhận hãy nhắn \"Kết thúc\" tôi sẽ gửi bạn bản xác nhận đơn hàng";
-
-            return new MessageResponse
-            {
-                Content = responseMessage,
-                MessageType = "text",
-                Intent = MessageIntents.ADD_ORDER_DETAIL
-            };
-        }
 
         private async Task<MessageResponse> HandlePlaceOrderIntentAsync(string zaloUserId, string message, ConversationState conversation)
         {
