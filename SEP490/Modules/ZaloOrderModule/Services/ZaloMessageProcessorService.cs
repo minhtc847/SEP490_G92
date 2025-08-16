@@ -219,7 +219,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 // Create order details
                 var orderDetails = conversation.OrderItems.Select(item => new CreateZaloOrderDetailDTO
                 {
-                    ProductName = $"{item.ProductCode} - {item.ProductType} - {item.Width}x{item.Height}x{item.Thickness}mm",
+                    ProductName = $"Kính {item.ProductType}-{item.ProductCode} phút, KT: {item.Width}x{item.Height}x{item.Thickness} mm",
                     ProductCode = item.ProductCode,
                     Height = item.Height.ToString(),
                     Width = item.Width.ToString(),
@@ -628,7 +628,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             
             foreach (var item in conversation.OrderItems)
             {
-                summary += $"• {item.ProductCode} - {item.ProductType} - {item.Width}*{item.Height}*{item.Thickness} mm - SL: {item.Quantity}\n";
+                summary += $"• Kính {item.ProductType}-{item.ProductCode} phút, KT:{item.Width}*{item.Height}*{item.Thickness} mm - SL: {item.Quantity}\n";
                 summary += $"  💰 Đơn giá: {item.UnitPrice:N0} VNĐ - Thành tiền: {item.TotalPrice:N0} VNĐ\n\n";
                 totalOrderAmount += item.TotalPrice;
             }
