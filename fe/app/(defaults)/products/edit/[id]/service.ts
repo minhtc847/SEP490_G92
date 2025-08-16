@@ -14,7 +14,6 @@ export interface ProductDetail {
     weight?: number;
     unitPrice?: number;
     glassStructureId?: number;
-    quantity?: number;
     isupdatemisa?: number; // 0 = chưa cập nhật, 1 = đã cập nhật
 }
 

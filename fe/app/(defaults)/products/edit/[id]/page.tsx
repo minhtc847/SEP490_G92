@@ -57,7 +57,7 @@ const ProductEditPage = () => {
             prev
                 ? {
                       ...prev,
-                      [name]: ['thickness', 'weight', 'unitPrice', 'quantity'].includes(name) ? Number(value) : value
+                      [name]: ['thickness', 'weight', 'unitPrice'].includes(name) ? Number(value) : value
                   }
                 : null,
         );
@@ -112,11 +112,6 @@ const ProductEditPage = () => {
                     <div>
                         <label className="block font-medium text-gray-700 mb-1">Loại SP</label>
                         <input disabled type="text" name="productType" value={formData.productType ?? ''} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
-                    </div>
-
-                    <div>
-                        <label className="block font-medium text-gray-700 mb-1">Số lượng</label>
-                        <input type="number" name="quantity" value={formData.quantity ?? ''} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
                     </div>
 
                     <div>

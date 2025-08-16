@@ -5,7 +5,6 @@ export interface Product {
     productName: string;
     productType: string;
     uom: string;
-    quantity: number;
     isupdatemisa: number; // 0 = chưa cập nhật, 1 = đã cập nhật
 }
 

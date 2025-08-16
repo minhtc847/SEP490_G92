@@ -160,7 +160,6 @@ const ProductListPage = () => {
                             <tr>
                                 <th>Tên sản phẩm</th>
                                 <th>Loại SP</th>
-                                <th>Số lượng</th>
                                 <th>Đơn vị tính</th>
                                 <th>Cập nhật MISA</th>
                                 <th>Hành động</th>
@@ -171,7 +170,6 @@ const ProductListPage = () => {
                                 <tr key={product.id}>
                                     <td>{product.productName}</td>
                                     <td>{product.productType}</td>
-                                    <td>{product.quantity}</td> 
                                     <td>{product.uom}</td>
                                     <td>
                                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
