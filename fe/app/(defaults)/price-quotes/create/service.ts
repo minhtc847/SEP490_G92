@@ -4,7 +4,6 @@ export interface PriceQuoteDetail {
     id: number;
     productCode: string;
     productName: string;
-    category: string;
     edgeType: string;
     adhesiveType: string;
     glassLayers: number;

@@ -11,7 +11,6 @@ const PriceQuoteCreatePage = () => {
         id: 0,
         productCode: '',
         productName: '',
-        category: '',
         edgeType: '',
         adhesiveType: '',
         composition: '',
@@ -79,10 +78,7 @@ const PriceQuoteCreatePage = () => {
                         <label className="block font-medium text-gray-700 mb-1">Tên sản phẩm</label>
                         <input type="text" name="productName" value={formData.productName} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" required />
                     </div>
-                    <div>
-                        <label className="block font-medium text-gray-700 mb-1">Loại sản phẩm</label>
-                        <input type="text" name="category" value={formData.category} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" required />
-                    </div>
+
                     <div>
                         <label className="block font-medium text-gray-700 mb-1">Mã sản phẩm</label>
                         <input type="text" name="productCode" value={formData.productCode} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" required />

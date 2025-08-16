@@ -78,10 +78,7 @@ const PriceQuoteEditPage = () => {
                         <label className="block font-medium text-gray-700 mb-1">Tên sản phẩm</label>
                         <input type="text" name="productName" value={formData.productName} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
                     </div>
-                    <div>
-                        <label className="block font-medium text-gray-700 mb-1">Phân loại</label>
-                        <input type="text" name="category" value={formData.category} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
-                    </div>
+
                     <div>
                         <label className="block font-medium text-gray-700 mb-1">Loại cạnh</label>
                         <input type="text" name="edgeType" value={formData.edgeType} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />

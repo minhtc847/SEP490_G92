@@ -50,7 +50,7 @@ const PriceQuotePage = () => {
     const [quotes, setQuotes] = useState<PriceQuote[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState('');
+
     const [priceSort, setPriceSort] = useState<'asc' | 'desc' | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -93,7 +93,6 @@ const PriceQuotePage = () => {
 
     const filteredQuotes = quotes
         .filter((item) => item.productName.toLowerCase().includes(searchTerm.toLowerCase()) || item.productCode.toLowerCase().includes(searchTerm.toLowerCase()))
-        .filter((item) => (categoryFilter ? item.category === categoryFilter : true))
         .filter((item) => (typeFilter ? item.productCode === typeFilter : true))
         .sort((a, b) => {
             if (priceSort === 'asc') return a.unitPrice - b.unitPrice;
@@ -133,21 +132,7 @@ const PriceQuotePage = () => {
                         className="input input-bordered w-full md:w-1/3 pl-4 pr-4 py-2 rounded-lg shadow-sm"
                     />
                     <div className="flex flex-wrap items-center gap-4">
-                        <select
-                            className="select select-bordered pl-4 pr-4 py-2 rounded-lg shadow-sm"
-                            value={categoryFilter}
-                            onChange={(e) => {
-                                setCategoryFilter(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                        >
-                            <option value="">Tất cả loại hàng</option>
-                            {Array.from(new Set(quotes.map((q) => q.category))).map((category) => (
-                                <option key={category} value={category}>
-                                    {category}
-                                </option>
-                            ))}
-                        </select>
+
 
                         <select
                             onChange={(e) => {
@@ -189,7 +174,6 @@ const PriceQuotePage = () => {
                         <thead>
                             <tr>
                                 <th>Tên</th>
-                                <th>Loại</th>
                                 <th>Mã SP</th>
                                 <th>Đơn giá</th>
                                 <th>Hành động</th>
@@ -199,7 +183,6 @@ const PriceQuotePage = () => {
                             {paginatedQuotes.map((item, index) => (
                                 <tr key={index}>
                                     <td>{item.productName}</td>
-                                    <td>{item.category}</td>
                                     <td>{item.productCode}</td>
                                     <td>{item.unitPrice.toLocaleString()}₫</td>
                                     <td className="flex gap-2">

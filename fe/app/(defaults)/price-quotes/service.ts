@@ -3,7 +3,6 @@ import axios from '@/setup/axios';
 export interface PriceQuote {
     id: string;
     productName: string;
-    category: string;
     productCode: string;
     unitPrice: number;
 }
@@ -12,7 +11,6 @@ export interface PriceQuoteDetail {
     id: number;
     productCode: string;
     productName: string;
-    category: string;
     edgeType: string;
     adhesiveType: string;
     glassLayers: number;
