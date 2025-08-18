@@ -109,6 +109,16 @@ class ZaloOrderService {
             throw error;
         }
     }
+
+    async convertToOrder(id: number): Promise<{ message: string; orderCode: string }> {
+        try {
+            const response = await axios.post<{ message: string; orderCode: string }>(`${this.baseUrl}/${id}/convert-to-order`);
+            return response.data;
+        } catch (error) {
+            console.error('Error converting Zalo order to sale order:', error);
+            throw error;
+        }
+    }
 }
 
 export default new ZaloOrderService();

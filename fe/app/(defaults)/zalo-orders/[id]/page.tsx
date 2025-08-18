@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import IconArrowLeft from '@/components/icon/icon-arrow-left';
 import IconPencil from '@/components/icon/icon-pencil';
+import IconSquareCheck from '@/components/icon/icon-square-check';
 import zaloOrderService, { ZaloOrder } from '@/app/(defaults)/zalo-orders/zaloOrderService';
 
 const ZaloOrderDetail = () => {
@@ -10,6 +11,7 @@ const ZaloOrderDetail = () => {
     const params = useParams();
     const [zaloOrder, setZaloOrder] = useState<ZaloOrder | null>(null);
     const [loading, setLoading] = useState(true);
+    const [converting, setConverting] = useState(false);
     const [productCodes, setProductCodes] = useState<string[]>([]);
     const [invalidProductCodes, setInvalidProductCodes] = useState<Set<number>>(new Set());
 
@@ -55,6 +57,38 @@ const ZaloOrderDetail = () => {
             console.error('Error fetching Zalo order:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleConvertToOrder = async () => {
+        if (!zaloOrder) return;
+        
+        if (zaloOrder.status !== 'Pending') {
+            alert('Chỉ có thể lên đơn hàng từ trạng thái Pending');
+            return;
+        }
+
+        if (invalidProductCodes.size > 0) {
+            alert('Vui lòng kiểm tra lại mã sản phẩm trước khi lên đơn hàng');
+            return;
+        }
+
+        if (!confirm('Bạn có chắc chắn muốn lên đơn hàng này?')) {
+            return;
+        }
+
+        setConverting(true);
+        try {
+            const result = await zaloOrderService.convertToOrder(zaloOrder.id);
+            alert(`Lên đơn hàng thành công! Mã đơn hàng mới: ${result.orderCode}`);
+            
+            // Refresh the order data
+            await fetchZaloOrder(params.id as string);
+        } catch (error: any) {
+            console.error('Error converting to order:', error);
+            alert(`Lỗi khi lên đơn hàng: ${error.response?.data?.message || error.message}`);
+        } finally {
+            setConverting(false);
         }
     };
 
@@ -127,14 +161,27 @@ const ZaloOrderDetail = () => {
                             Chi Tiết Đơn Hàng: {zaloOrder.orderCode}
                         </h5>
                     </div>
-                    <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={() => router.push(`/zalo-orders/${zaloOrder.id}/edit`)}
-                    >
-                        <IconPencil className="w-4 h-4 ltr:mr-2 rtl:ml-2" />
-                        Chỉnh Sửa
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {zaloOrder.status === 'Pending' && (
+                            <button
+                                type="button"
+                                className={`btn btn-success ${converting ? 'loading' : ''}`}
+                                onClick={handleConvertToOrder}
+                                disabled={converting || invalidProductCodes.size > 0}
+                            >
+                                <IconSquareCheck className="w-4 h-4 ltr:mr-2 rtl:ml-2" />
+                                {converting ? 'Đang xử lý...' : 'Lên Đơn Hàng'}
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={() => router.push(`/zalo-orders/${zaloOrder.id}/edit`)}
+                        >
+                            <IconPencil className="w-4 h-4 ltr:mr-2 rtl:ml-2" />
+                            Chỉnh Sửa
+                        </button>
+                    </div>
                 </div>
 
                 {/* Order Information */}

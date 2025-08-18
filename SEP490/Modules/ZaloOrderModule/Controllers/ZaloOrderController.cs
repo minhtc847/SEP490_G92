@@ -109,5 +109,30 @@ namespace SEP490.Modules.ZaloOrderModule.Controllers
                 return StatusCode(500, new { message = "Internal server error", error = ex.Message });
             }
         }
+
+        [HttpPost("{id}/convert-to-order")]
+        public async Task<ActionResult> ConvertToOrder(int id)
+        {
+            try
+            {
+                var orderCode = await _zaloOrderService.ConvertToOrderAsync(id);
+                return Ok(new { 
+                    message = "Zalo order converted to sale order successfully",
+                    orderCode = orderCode
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+            }
+        }
     }
 }
