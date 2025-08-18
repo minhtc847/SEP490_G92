@@ -22,7 +22,6 @@ namespace SEP490.Modules.InventorySlipModule.Controller
         {
             try
             {
-                // Validate input
                 if (!await _inventorySlipService.ValidateSlipCreationAsync(dto))
                 {
                     return BadRequest(new { message = "Dữ liệu không hợp lệ!" });
@@ -163,23 +162,16 @@ namespace SEP490.Modules.InventorySlipModule.Controller
             }
         }
 
-        // Special endpoints for different slip types
         [HttpPost("cut-glass")]
         public async Task<IActionResult> CreateCutGlassSlip([FromBody] object requestData)
         {
             try
-            {
-                Console.WriteLine($"CreateCutGlassSlip called with requestData type: {requestData?.GetType().Name}");
-                Console.WriteLine($"RequestData: {System.Text.Json.JsonSerializer.Serialize(requestData)}");
-                
-                // Parse the request data to extract both dto and mappingInfo
+            {                
                 var jsonElement = (System.Text.Json.JsonElement)requestData;
                 
                 CreateInventorySlipDto dto;
                 if (jsonElement.TryGetProperty("formData", out var formDataElement))
                 {
-                    Console.WriteLine("Found formData property");
-                    // Use proper deserialization options for case-insensitive property matching
                     var options = new System.Text.Json.JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true,
@@ -211,13 +203,9 @@ namespace SEP490.Modules.InventorySlipModule.Controller
                 }
                 else
                 {
-                    Console.WriteLine("No formData property found, using fallback approach");
-                    // Always use the fallback approach since direct deserialization seems to have issues
-                    // Deserialize as a generic object first
                     var rawData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(jsonElement.GetRawText());
                     if (rawData != null)
                     {
-                        // Try direct deserialization with explicit options
                         var fullJson = jsonElement.GetRawText();
                         
                         var options = new System.Text.Json.JsonSerializerOptions
@@ -255,45 +243,46 @@ namespace SEP490.Modules.InventorySlipModule.Controller
                     return BadRequest(new { message = "Dữ liệu không hợp lệ - DTO null!" });
                 }
 
-                Console.WriteLine($"DTO created successfully. ProductionOrderId: {dto.ProductionOrderId}, Details count: {dto.Details?.Count ?? 0}");
-
                 if (!await _inventorySlipService.ValidateSlipCreationAsync(dto))
                 {
                     return BadRequest(new { message = "Dữ liệu không hợp lệ!" });
                 }
 
-                // Extract mappingInfo if present
+                // Extract mappingInfo from productClassifications and tempMappings
                 MappingInfoDto mappingInfo = null;
-                if (jsonElement.TryGetProperty("mappingInfo", out var mappingInfoElement))
+                
+                // Check if productClassifications exists directly in request body
+                if (jsonElement.TryGetProperty("productClassifications", out var productClassificationsElement))
                 {
-                    Console.WriteLine("Found mappingInfo property");
+                    Console.WriteLine("Found productClassifications property directly in request");
                     
-                    // Use proper deserialization options for case-insensitive property matching
                     var mappingOptions = new System.Text.Json.JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true,
                         PropertyNamingPolicy = null
                     };
                     
-                    mappingInfo = System.Text.Json.JsonSerializer.Deserialize<MappingInfoDto>(mappingInfoElement.GetRawText(), mappingOptions);
-                    Console.WriteLine($"mappingInfo deserialized: {System.Text.Json.JsonSerializer.Serialize(mappingInfo)}");
+                    var productClassifications = System.Text.Json.JsonSerializer.Deserialize<List<ProductClassificationDto>>(
+                        productClassificationsElement.GetRawText(), mappingOptions);
                     
-                    // Debug: Check if properties are correctly mapped
-                    if (mappingInfo != null)
+                    // Check if tempMappings exists
+                    List<CreateMaterialOutputMappingDto> tempMappings = null;
+                    if (jsonElement.TryGetProperty("tempMappings", out var tempMappingsElement))
                     {
-                        Console.WriteLine($"mappingInfo.ProductClassifications count: {mappingInfo.ProductClassifications?.Count ?? 0}");
-                        if (mappingInfo.ProductClassifications != null)
-                        {
-                            foreach (var pc in mappingInfo.ProductClassifications)
-                            {
-                                Console.WriteLine($"ProductClassification: Index={pc.Index}, ProductId={pc.ProductId}, ProductType={pc.ProductType}, ProductionOutputId={pc.ProductionOutputId}");
-                            }
-                        }
+                        tempMappings = System.Text.Json.JsonSerializer.Deserialize<List<CreateMaterialOutputMappingDto>>(
+                            tempMappingsElement.GetRawText(), mappingOptions);
                     }
+                    
+                    // Create mappingInfo from the extracted data
+                    mappingInfo = new MappingInfoDto
+                    {
+                        ProductClassifications = productClassifications,
+                        TempMappings = tempMappings ?? new List<CreateMaterialOutputMappingDto>()
+                    };                   
                 }
                 else
                 {
-                    Console.WriteLine("No mappingInfo property found in request");
+                    Console.WriteLine("No productClassifications property found in request");
                 }
 
                 var result = await _inventorySlipService.CreateCutGlassSlipAsync(dto, mappingInfo);
@@ -360,7 +349,6 @@ namespace SEP490.Modules.InventorySlipModule.Controller
             }
         }
         
-        // Paginated product search for cut glass slips
         [HttpPost("products/search")]
         public async Task<IActionResult> SearchProducts([FromBody] ProductSearchRequestDto request)
         {
@@ -375,7 +363,6 @@ namespace SEP490.Modules.InventorySlipModule.Controller
             }
         }
 
-        // Get materials by production output for material export slips
         [HttpGet("materials/production-output/{productionOutputId}")]
         public async Task<IActionResult> GetMaterialsByProductionOutput(int productionOutputId)
         {
@@ -390,18 +377,7 @@ namespace SEP490.Modules.InventorySlipModule.Controller
             }
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateInventorySlip(int id, [FromBody] CreateInventorySlipDto dto)
-        {
-            try
-            {
-                var result = await _inventorySlipService.UpdateInventorySlipAsync(id, dto);
-                return Ok(new { message = "Cập nhật phiếu kho thành công!", data = result });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = "Cập nhật phiếu kho thất bại!", error = ex.Message });
-            }
-        }
+
+
     }
 }

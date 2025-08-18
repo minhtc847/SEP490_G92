@@ -46,6 +46,8 @@ namespace SEP490.Modules.GlueButylExport.Services
             }
             _context.GlueButylExportInvoices.Add(invoice);
             await _context.SaveChangesAsync();
+
+            await CheckAndUpdateProductionOrderStatusAsync(createNewDTO.ProductionOrderId);
         }
 
         public async Task<List<GlueButylExportResponseDTO>> getAllExportByProductionOrderId(int productionOrderId)
@@ -84,6 +86,58 @@ namespace SEP490.Modules.GlueButylExport.Services
                 Products = export.Products,
                 ProductionOrderId = export.ProductionOrderId ?? 0
             };
+        }
+
+        public async Task<bool> CheckAndUpdateProductionOrderStatusAsync(int productionOrderId)
+        {
+            try
+            {
+                var productionOutputs = await _context.ProductionOutputs
+                    .Where(po => po.ProductionOrderId == productionOrderId)
+                    .ToListAsync();
+
+                if (!productionOutputs.Any())
+                {
+                    return false; 
+                }
+                
+                // Check if all outputs have finished >= amount
+                bool allCompleted = true;
+                foreach (var po in productionOutputs)
+                {
+                    var finished = po.Finished ?? 0;
+                    var amount = po.Amount ?? 0;
+                    
+                    var finishedDecimal = (decimal)finished;
+                    var amountDecimal = amount;
+                    var isCompleted = finishedDecimal >= amountDecimal;
+                    
+                    if (!isCompleted)
+                    {
+                        allCompleted = false;
+                    }
+                }
+
+                if (allCompleted)
+                {
+                    var productionOrder = await _context.ProductionOrders
+                        .FirstOrDefaultAsync(po => po.Id == productionOrderId);
+
+                    if (productionOrder != null)
+                    {
+                        productionOrder.Status = ProductionStatus.Completed;
+                        _context.ProductionOrders.Update(productionOrder);
+                        await _context.SaveChangesAsync();
+                        return true; 
+                    }
+                }
+
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
     }
 }

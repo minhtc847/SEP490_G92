@@ -17,7 +17,7 @@ interface TargetProduct {
     uom: string;
     amount: number;
     selected: boolean;
-    targetQuantity: number; // Thêm trường số lượng mục tiêu
+    targetQuantity: number;
 }
 
 interface MaterialForTarget {
@@ -31,10 +31,10 @@ interface MaterialForTarget {
     note: string;
 }
 
-export default function MaterialExportSlipForm({ 
-    productionOrderInfo, 
-    onSlipCreated, 
-    onCancel 
+export default function MaterialExportSlipForm({
+    productionOrderInfo,
+    onSlipCreated,
+    onCancel
 }: MaterialExportSlipFormProps) {
     const [formData, setFormData] = useState<CreateInventorySlipDto>({
         productionOrderId: productionOrderInfo.id,
@@ -55,8 +55,7 @@ export default function MaterialExportSlipForm({
         if (productionOrderInfo) {
             loadTargetProducts();
         }
-        
-        // Cleanup function để reset state khi component unmount
+
         return () => {
             setLoading(false);
             setShowConfirmModal(false);
@@ -68,58 +67,53 @@ export default function MaterialExportSlipForm({
             return;
         }
 
-        // Tạo danh sách sản phẩm mục tiêu từ production_outputs
         const targets: TargetProduct[] = productionOrderInfo.productionOutputs.map(output => ({
             id: output.id,
             productId: output.productId,
             productName: output.productName || `Sản phẩm ${output.productId}`,
             productCode: productionOrderInfo.availableProducts?.find(p => p.id === output.productId)?.productCode || '',
-            uom: output.uom || 'cái',
+            uom: output.uom || 'tấm',
             amount: output.amount || 0,
             selected: false,
-            targetQuantity: 0 // Khởi tạo số lượng mục tiêu = 0
+            targetQuantity: 0
         }));
 
         setTargetProducts(targets);
     };
 
     const handleTargetProductToggle = (targetId: number) => {
-        setTargetProducts(prev => prev.map(target => 
+        setTargetProducts(prev => prev.map(target =>
             target.id === targetId ? { ...target, selected: !target.selected } : target
         ));
     };
 
     const handleTargetQuantityChange = (targetId: number, quantity: number) => {
-        setTargetProducts(prev => prev.map(target => 
+        setTargetProducts(prev => prev.map(target =>
             target.id === targetId ? { ...target, targetQuantity: quantity } : target
         ));
     };
 
     const handleLoadMaterialsForTarget = async (targetId: number) => {
-        // Tìm sản phẩm mục tiêu
         const target = targetProducts.find(t => t.id === targetId);
         if (!target) return;
 
         try {
-            // Lấy nguyên liệu từ production_materials dựa trên production_output_id
             const materials = await fetchMaterialsByProductionOutput(target.id);
-            
-            if (materials && materials.length > 0) {
-                                 // Chuyển đổi ProductionMaterial thành MaterialForTarget
-                 const targetMaterials: MaterialForTarget[] = materials.map(material => ({
-                     productionOutputId: material.productionOutputId,
-                     productId: material.productId,
-                     productName: material.productName,
-                     productCode: material.productCode,
-                     uom: material.uom,
-                     amount: material.amount,
-                     quantity: 0, // Khởi tạo = 0, người dùng có thể để nguyên hoặc nhập số lượng > 0
-                     note: ''
-                 }));
 
-                // Thêm vào danh sách materials đã chọn
+            if (materials && materials.length > 0) {
+                // Chuyển đổi ProductionMaterial thành MaterialForTarget
+                const targetMaterials: MaterialForTarget[] = materials.map(material => ({
+                    productionOutputId: material.productionOutputId,
+                    productId: material.productId,
+                    productName: material.productName,
+                    productCode: material.productCode,
+                    uom: material.uom,
+                    amount: material.amount,
+                    quantity: 0,
+                    note: ''
+                }));
+
                 setSelectedMaterials(prev => {
-                    // Loại bỏ materials cũ của target này
                     const filtered = prev.filter(m => m.productionOutputId !== target.id);
                     return [...filtered, ...targetMaterials];
                 });
@@ -133,7 +127,7 @@ export default function MaterialExportSlipForm({
     };
 
     const handleUpdateMaterial = (productionOutputId: number, productId: number, field: 'quantity' | 'note', value: any) => {
-        setSelectedMaterials(prev => prev.map(material => 
+        setSelectedMaterials(prev => prev.map(material =>
             material.productionOutputId === productionOutputId && material.productId === productId
                 ? { ...material, [field]: value }
                 : material
@@ -142,28 +136,25 @@ export default function MaterialExportSlipForm({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         // Ngăn chặn double submit
         if (loading || showConfirmModal) {
             console.log('Form đang được xử lý hoặc modal đang mở, bỏ qua submit');
             return;
         }
-        
-        // Kiểm tra có sản phẩm mục tiêu nào được chọn không
+
         const selectedTargets = targetProducts.filter(t => t.selected);
         if (selectedTargets.length === 0) {
             alert('Vui lòng chọn ít nhất một sản phẩm mục tiêu');
             return;
         }
 
-        // Kiểm tra số lượng mục tiêu > 0 cho các sản phẩm đã chọn
         const invalidTargets = selectedTargets.filter(t => t.targetQuantity <= 0);
         if (invalidTargets.length > 0) {
             alert('Vui lòng nhập số lượng mục tiêu > 0 cho tất cả sản phẩm đã chọn');
             return;
         }
 
-        // Chỉ lấy những nguyên liệu có số lượng > 0 (nguyên liệu không có số lượng hoặc = 0 sẽ không được sử dụng)
         const validMaterials = selectedMaterials.filter(m => m.quantity > 0);
         if (validMaterials.length === 0) {
             alert('Vui lòng nhập số lượng > 0 cho ít nhất một nguyên liệu');
@@ -185,8 +176,8 @@ export default function MaterialExportSlipForm({
             targetQuantity: target.targetQuantity
         }));
 
-        setFormData(prev => ({ 
-            ...prev, 
+        setFormData(prev => ({
+            ...prev,
             details,
             productionOutputTargets
         }));
@@ -196,28 +187,20 @@ export default function MaterialExportSlipForm({
     const handleConfirmCreate = async () => {
         // Ngăn chặn double click
         if (loading) {
-            console.log('Đang tạo phiếu, bỏ qua click');
             return;
         }
 
         try {
-            console.log('=== BẮT ĐẦU TẠO PHIẾU ===');
-            console.log('Form data:', formData);
             setLoading(true);
-            
-            // Đóng modal trước khi gọi callback để tránh duplicate
+
             setShowConfirmModal(false);
-            
-            // Gọi callback để page component xử lý việc tạo phiếu
-            console.log('Gọi callback onSlipCreated với formData:', formData);
+
             onSlipCreated(formData);
-            
+
         } catch (error) {
-            console.error('Error in handleConfirmCreate:', error);
             alert('Có lỗi xảy ra khi xử lý form');
         } finally {
             setLoading(false);
-            console.log('=== KẾT THÚC XỬ LÝ TẠO PHIẾU ===');
         }
     };
 
@@ -240,7 +223,6 @@ export default function MaterialExportSlipForm({
             </h2>
 
             <form onSubmit={handleSubmit}>
-                {/* Production Order Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -295,65 +277,58 @@ export default function MaterialExportSlipForm({
                     {targetProducts.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                             {targetProducts.map((target) => (
-                                <div 
-                                    key={target.id} 
-                                    className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                                        target.selected 
-                                            ? 'border-blue-500 bg-blue-50' 
-                                            : 'border-gray-300 bg-white hover:bg-gray-50'
-                                    }`}
+                                <div
+                                    key={target.id}
+                                    className={`border rounded-lg p-4 cursor-pointer transition-colors ${target.selected
+                                        ? 'border-blue-500 bg-blue-50'
+                                        : 'border-gray-300 bg-white hover:bg-gray-50'
+                                        }`}
                                     onClick={() => handleTargetProductToggle(target.id)}
                                 >
                                     <div className="flex items-start justify-between mb-3">
                                         <div className="flex-1">
-                                            <h4 className={`font-medium ${
-                                                target.selected ? 'text-blue-900' : 'text-gray-900'
-                                            }`}>
+                                            <h4 className={`font-medium ${target.selected ? 'text-blue-900' : 'text-gray-900'
+                                                }`}>
                                                 {target.productName}
                                             </h4>
-                                            <p className={`text-sm ${
-                                                target.selected ? 'text-blue-700' : 'text-gray-700'
-                                            }`}>
+                                            <p className={`text-sm ${target.selected ? 'text-blue-700' : 'text-gray-700'
+                                                }`}>
                                                 Mã: {target.productCode}
                                             </p>
-                                            <p className={`text-sm ${
-                                                target.selected ? 'text-blue-600' : 'text-gray-600'
-                                            }`}>
+                                            <p className={`text-sm ${target.selected ? 'text-blue-600' : 'text-gray-600'
+                                                }`}>
                                                 Đơn vị: {target.uom}
                                             </p>
-                                                                                         <p className={`text-sm ${
-                                                 target.selected ? 'text-blue-600' : 'text-gray-600'
-                                             }`}>
-                                                 Số lượng mục tiêu: {target.amount}
-                                             </p>
-                                             {target.selected && (
-                                                 <div className="mt-3" onClick={(e) => e.stopPropagation()}>
-                                                     <label className="block text-sm font-medium text-blue-700 mb-1" onClick={(e) => e.stopPropagation()}>
-                                                         Số lượng cần sản xuất <span className="text-red-500">*</span>
-                                                     </label>
-                                                     <input
-                                                         type="number"
-                                                         step="0.01"
-                                                         min="0.01"
-                                                         value={target.targetQuantity}
-                                                         onChange={(e) => handleTargetQuantityChange(target.id, parseFloat(e.target.value) || 0)}
-                                                         onClick={(e) => e.stopPropagation()}
-                                                         className={`w-full px-3 py-2 border rounded-md text-sm ${
-                                                             target.targetQuantity <= 0 ? 'border-red-500 bg-red-50' : 'border-blue-300 bg-white'
-                                                         }`}
-                                                         placeholder="0.00"
-                                                     />
-                                                     {target.targetQuantity <= 0 && (
-                                                         <p className="text-red-500 text-xs mt-1">Số lượng phải lớn hơn 0</p>
-                                                     )}
-                                                 </div>
-                                             )}
+                                            <p className={`text-sm ${target.selected ? 'text-blue-600' : 'text-gray-600'
+                                                }`}>
+                                                Số lượng mục tiêu: {target.amount}
+                                            </p>
+                                            {target.selected && (
+                                                <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+                                                    <label className="block text-sm font-medium text-blue-700 mb-1" onClick={(e) => e.stopPropagation()}>
+                                                        Số lượng cần sản xuất <span className="text-red-500">*</span>
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0.01"
+                                                        value={target.targetQuantity}
+                                                        onChange={(e) => handleTargetQuantityChange(target.id, parseFloat(e.target.value) || 0)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className={`w-full px-3 py-2 border rounded-md text-sm ${target.targetQuantity <= 0 ? 'border-red-500 bg-red-50' : 'border-blue-300 bg-white'
+                                                            }`}
+                                                        placeholder="0.00"
+                                                    />
+                                                    {target.targetQuantity <= 0 && (
+                                                        <p className="text-red-500 text-xs mt-1">Số lượng phải lớn hơn 0</p>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                                            target.selected 
-                                                ? 'border-blue-500 bg-blue-500' 
-                                                : 'border-gray-300'
-                                        }`}>
+                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${target.selected
+                                            ? 'border-blue-500 bg-blue-500'
+                                            : 'border-gray-300'
+                                            }`}>
                                             {target.selected && (
                                                 <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -361,7 +336,7 @@ export default function MaterialExportSlipForm({
                                             )}
                                         </div>
                                     </div>
-                                    
+
                                     {target.selected && (
                                         <button
                                             type="button"
@@ -387,14 +362,15 @@ export default function MaterialExportSlipForm({
                 {/* Step 2: Materials for Selected Targets */}
                 {selectedMaterials.length > 0 && (
                     <div className="border-t pt-6 mb-6">
-                                                 <div className="mb-4">
-                             <h3 className="text-lg font-semibold text-green-800 mb-2">
-                                 Bước 2: Nguyên liệu cho sản phẩm mục tiêu
-                             </h3>
-                             <p className="text-sm text-gray-600">
-                                 Nhập số lượng nguyên liệu cần xuất. Nguyên liệu có số lượng = 0 sẽ không được thêm vào phiếu.
-                             </p>
-                         </div>
+                        <div className="mb-4">
+                            <h3 className="text-lg font-semibold text-green-800 mb-2">
+                                Bước 2: Nguyên liệu và thành phẩm mục tiêu
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                                Nhập số lượng nguyên liệu cần xuất. Nguyên liệu có số lượng = 0 sẽ không được thêm vào phiếu.
+                                Thành phẩm mục tiêu sẽ được tự động thêm vào phiếu.
+                            </p>
+                        </div>
 
                         {/* Group materials by production output */}
                         {targetProducts
@@ -406,82 +382,97 @@ export default function MaterialExportSlipForm({
                                 return (
                                     <div key={target.id} className="mb-6 border border-green-200 rounded-lg p-4 bg-green-50">
                                         <h4 className="text-lg font-medium text-green-800 mb-4 border-b border-green-300 pb-2">
-                                            📦 {target.productName} ({target.productCode})
+                                            {target.productName} ({target.productCode})
                                         </h4>
-                                        
-                                                                                 <div className="space-y-4">
-                                             {/* Hướng dẫn sử dụng */}
-                                             <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
-                                                 💡 <strong>Hướng dẫn:</strong> Nhập số lượng {'>'} 0 cho nguyên liệu cần sử dụng. Để trống hoặc nhập 0 cho nguyên liệu không sử dụng.
-                                             </div>
-                                             
-                                             {targetMaterials.map((material, index) => (
-                                                <div key={`${target.id}-${material.productId}`} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-3 bg-white rounded border border-green-200">
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-green-700 mb-2">
-                                                            Nguyên liệu
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            value={material.productName}
-                                                            disabled
-                                                            className="w-full px-3 py-2 border border-green-300 rounded-md bg-gray-50"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-green-700 mb-2">
-                                                            Mã
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            value={material.productCode}
-                                                            disabled
-                                                            className="w-full px-3 py-2 border border-green-300 rounded-md bg-gray-50"
-                                                        />
-                                                    </div>
-                                                                                                 <div>
-                                                 <label className="block text-sm font-medium text-green-700 mb-2">
-                                                     Số lượng
-                                                 </label>
-                                                 <input
-                                                     type="number"
-                                                     step="0.01"
-                                                     min="0"
-                                                     value={material.quantity}
-                                                     onChange={(e) => handleUpdateMaterial(
-                                                         material.productionOutputId, 
-                                                         material.productId, 
-                                                         'quantity', 
-                                                         parseFloat(e.target.value) || 0
-                                                     )}
-                                                     className={`w-full px-3 py-2 border rounded-md ${
-                                                         material.quantity > 0 ? 'border-green-300 bg-white' : 'border-gray-300 bg-gray-50'
-                                                     }`}
-                                                     placeholder="0.00"
-                                                 />
-                                                 <p className="text-gray-500 text-xs mt-1">
-                                                     {material.quantity > 0 ? 'Sẽ được thêm vào phiếu' : 'Để trống nếu không sử dụng'}
-                                                 </p>
-                                             </div>
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-green-700 mb-2">
-                                                            Ghi chú
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            value={material.note}
-                                                            onChange={(e) => handleUpdateMaterial(
-                                                                material.productionOutputId, 
-                                                                material.productId, 
-                                                                'note', 
-                                                                e.target.value
-                                                            )}
-                                                            className="w-full px-3 py-2 border border-green-300 rounded-md bg-white"
-                                                            placeholder="Ghi chú..."
-                                                        />
-                                                    </div>
+
+                                        <div className="space-y-4">
+                                            <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                                                <strong> Hướng dẫn:</strong> Nhập số lượng {'>'} 0 cho nguyên liệu cần sử dụng. Để trống hoặc nhập 0 cho nguyên liệu không sử dụng.
+                                            </div>
+
+                                            {/* semi product */}
+                                            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                                                <h5 className="text-sm font-medium text-yellow-800 mb-2">
+                                                    Thành phẩm mục tiêu sẽ được nhập kho:
+                                                </h5>
+                                                <div className="text-sm text-yellow-700">
+                                                    <p><strong>Sản phẩm:</strong> {target.productName} ({target.productCode})</p>
+                                                    <p><strong>Số lượng:</strong> {target.targetQuantity} {target.uom}</p>
                                                 </div>
-                                            ))}
+                                            </div>
+
+                                            {/* mat */}
+                                            <div className="space-y-3">
+                                                <h5 className="text-sm font-medium text-green-700 mb-2">
+                                                    Nguyên liệu cần xuất:
+                                                </h5>
+                                                {targetMaterials.map((material, index) => (
+                                                    <div key={`${target.id}-${material.productId}`} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-3 bg-white rounded border border-green-200">
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-green-700 mb-2">
+                                                                Nguyên liệu
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={material.productName}
+                                                                disabled
+                                                                className="w-full px-3 py-2 border border-green-300 rounded-md bg-gray-50"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-green-700 mb-2">
+                                                                Mã
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={material.productCode}
+                                                                disabled
+                                                                className="w-full px-3 py-2 border border-green-300 rounded-md bg-gray-50"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-green-700 mb-2">
+                                                                Số lượng
+                                                            </label>
+                                                            <input
+                                                                type="number"
+                                                                step="0.01"
+                                                                min="0"
+                                                                value={material.quantity}
+                                                                onChange={(e) => handleUpdateMaterial(
+                                                                    material.productionOutputId,
+                                                                    material.productId,
+                                                                    'quantity',
+                                                                    parseFloat(e.target.value) || 0
+                                                                )}
+                                                                className={`w-full px-3 py-2 border rounded-md ${material.quantity > 0 ? 'border-green-300 bg-white' : 'border-gray-300 bg-gray-50'
+                                                                    }`}
+                                                                placeholder="0.00"
+                                                            />
+                                                            <p className="text-gray-500 text-xs mt-1">
+                                                                {material.quantity > 0 ? 'Sẽ được thêm vào phiếu' : 'Để trống nếu không sử dụng'}
+                                                            </p>
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-green-700 mb-2">
+                                                                Ghi chú
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={material.note}
+                                                                onChange={(e) => handleUpdateMaterial(
+                                                                    material.productionOutputId,
+                                                                    material.productId,
+                                                                    'note',
+                                                                    e.target.value
+                                                                )}
+                                                                className="w-full px-3 py-2 border border-green-300 rounded-md bg-white"
+                                                                placeholder="Ghi chú..."
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
                                 );
@@ -518,18 +509,17 @@ export default function MaterialExportSlipForm({
                                 >
                                     Hủy
                                 </button>
-                                                                 <button
-                                     type="button"
-                                     onClick={handleConfirmCreate}
-                                     disabled={loading}
-                                     className={`px-4 py-2 rounded-md transition-colors ${
-                                         loading
-                                             ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
-                                             : 'bg-blue-500 text-white hover:bg-blue-600'
-                                     }`}
-                                 >
-                                     {loading ? 'Đang tạo...' : 'Xác nhận'}
-                                 </button>
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmCreate}
+                                    disabled={loading}
+                                    className={`px-4 py-2 rounded-md transition-colors ${loading
+                                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                                        }`}
+                                >
+                                    {loading ? 'Đang tạo...' : 'Xác nhận'}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -544,23 +534,22 @@ export default function MaterialExportSlipForm({
                     >
                         Hủy
                     </button>
-                                         <button
-                         type="submit"
-                         disabled={
-                             targetProducts.filter(t => t.selected).length === 0 || 
-                             targetProducts.filter(t => t.selected && t.targetQuantity <= 0).length > 0 ||
-                             loading
-                         }
-                         className={`px-6 py-2 rounded-md transition-colors ${
-                             targetProducts.filter(t => t.selected).length === 0 || 
-                             targetProducts.filter(t => t.selected && t.targetQuantity <= 0).length > 0 ||
-                             loading
-                                 ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                                 : 'bg-blue-500 text-white hover:bg-blue-600'
-                         }`}
-                     >
-                         {loading ? 'Đang xử lý...' : 'Tạo phiếu'}
-                     </button>
+                    <button
+                        type="submit"
+                        disabled={
+                            targetProducts.filter(t => t.selected).length === 0 ||
+                            targetProducts.filter(t => t.selected && t.targetQuantity <= 0).length > 0 ||
+                            loading
+                        }
+                        className={`px-6 py-2 rounded-md transition-colors ${targetProducts.filter(t => t.selected).length === 0 ||
+                            targetProducts.filter(t => t.selected && t.targetQuantity <= 0).length > 0 ||
+                            loading
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                            }`}
+                    >
+                        {loading ? 'Đang xử lý...' : 'Tạo phiếu'}
+                    </button>
                 </div>
             </form>
         </div>

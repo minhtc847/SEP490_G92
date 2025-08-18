@@ -21,19 +21,12 @@ namespace SEP490.Modules.InventorySlipModule.Service
         Task<bool> ValidateSlipCreationAsync(CreateInventorySlipDto dto);
         Task<string> GenerateSlipCodeAsync(int productionOrderId);
 
-        // Accept create-mapping DTO for adding mappings
-        Task<bool> AddMappingsAsync(int slipId, List<CreateMaterialOutputMappingDto> mappings);
-		
-		        // Create new product for raw materials
-        Task<ProductInfoDto> CreateProductAsync(CreateInventoryProductDto dto);
+        Task<bool> AddMappingsAsync(int slipId, List<CreateMaterialOutputMappingDto> mappings);		
+		// Create new product for raw materials
+        Task<ProductInfoDto> CreateProductAsync(CreateInventoryProductDto dto);        
         
-        // Update existing inventory slip
-        Task<InventorySlipDto> UpdateInventorySlipAsync(int id, CreateInventorySlipDto dto);
-        
-        // Paginated product search for cut glass slips
         Task<PaginatedProductsDto> GetPaginatedProductsAsync(ProductSearchRequestDto request);
         
-        // Get materials by production output for material export slips
         Task<List<ProductionMaterialDto>> GetMaterialsByProductionOutputAsync(int productionOutputId);
     }
 }

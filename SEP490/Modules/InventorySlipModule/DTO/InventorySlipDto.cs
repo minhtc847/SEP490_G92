@@ -22,7 +22,7 @@ namespace SEP490.Modules.InventorySlipModule.DTO
     public class InventorySlipDetailDto
     {
         public int Id { get; set; }
-        public int ProductId { get; set; }
+        public int? ProductId { get; set; } // Nullable để hỗ trợ thành phẩm mục tiêu
         public string? ProductCode { get; set; }
         public string? ProductName { get; set; }
         public string? ProductType { get; set; }
@@ -68,7 +68,7 @@ namespace SEP490.Modules.InventorySlipModule.DTO
 
     public class CreateInventorySlipDetailDto
     {
-        public int ProductId { get; set; }
+        public int? ProductId { get; set; } // Nullable để hỗ trợ thành phẩm mục tiêu
         public decimal Quantity { get; set; }
         public string? Note { get; set; }
         public int SortOrder { get; set; }

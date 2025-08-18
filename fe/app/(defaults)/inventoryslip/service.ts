@@ -1,4 +1,3 @@
-// Types for Inventory Slip
 export interface InventorySlipListItem {
     id: number;
     slipCode: string;
@@ -14,7 +13,7 @@ export interface InventorySlipListItem {
 
 export interface InventorySlipDetail {
     id: number;
-    productId: number;
+    productId?: number; 
     productCode?: string;
     productName?: string;
     productType?: string;
@@ -55,8 +54,6 @@ export interface CreateInventorySlipDto {
     description?: string;
     details: CreateInventorySlipDetailDto[];
     mappings: CreateMaterialOutputMappingDto[];
-    
-    // Thêm trường để lưu số lượng sản phẩm mục tiêu cho phiếu xuất vật liệu
     productionOutputTargets?: ProductionOutputTargetDto[];
 }
 
@@ -66,7 +63,7 @@ export interface ProductionOutputTargetDto {
 }
 
 export interface CreateInventorySlipDetailDto {
-    productId: number;
+    productId?: number; 
     quantity: number;
     note?: string;
     sortOrder: number;
@@ -79,15 +76,20 @@ export interface CreateMaterialOutputMappingDto {
     note?: string;
 }
 
+export interface ProductClassification {
+    index: number;
+    productId: number;
+    productType: 'NVL' | 'Bán thành phẩm' | 'Kính dư';
+    productionOutputId?: number;
+}
+
 export interface ProductionOrderInfo {
     id: number;
     productionOrderCode: string;
     type: string;
     description?: string;
     productionOutputs: ProductionOutput[];
-    availableProducts: ProductInfo[];
-    
-    // Separate lists for cut glass slips
+    availableProducts: ProductInfo[];    
     rawMaterials: ProductInfo[];
     semiFinishedProducts: ProductInfo[];
     glassProducts: ProductInfo[];
@@ -129,7 +131,6 @@ export interface CreateInventoryProductDto {
     unitPrice?: number;
 }
 
-// New interfaces for pagination
 export interface PaginatedProductsDto {
     products: ProductInfo[];
     totalCount: number;
@@ -146,12 +147,10 @@ export interface ProductSearchRequestDto {
     searchTerm?: string;
     pageNumber: number;
     pageSize: number;
-    sortBy?: string; // "ProductName", "ProductCode", "Id"
+    sortBy?: string; 
     sortDescending: boolean;
 }
 
-// API calls
-// Prefer absolute backend base to avoid Next.js API route conflicts
 const API_ROOT = (process.env.NEXT_PUBLIC_API_BASE || 'https://localhost:7075/api').replace(/\/$/, '');
 const API_BASE = `${API_ROOT}/InventorySlip`;
 
@@ -223,8 +222,6 @@ export const createInventorySlip = async (dto: CreateInventorySlipDto): Promise<
 
 export const createMaterialExportSlip = async (dto: CreateInventorySlipDto): Promise<InventorySlip | null> => {
     try {
-        // Determine which endpoint to use based on production order type
-        // This will be handled by the backend based on the production order type
         const response = await fetch(`${API_BASE}/create`, {
             method: 'POST',
             headers: {
@@ -246,8 +243,14 @@ export const createMaterialExportSlip = async (dto: CreateInventorySlipDto): Pro
 
 export const createCutGlassSlip = async (dto: CreateInventorySlipDto, mappingInfo?: any): Promise<InventorySlip | null> => {
     try {
-        // Prepare request body with both dto and mappingInfo
-        const requestBody = mappingInfo ? { formData: dto, mappingInfo } : dto;
+        // Prepare request body - flatten the structure so productionOrderId is at root level
+        const requestBody = mappingInfo ? { 
+            ...dto,  // This spreads all dto properties to root level
+            ...mappingInfo  // This spreads all mappingInfo properties to root level
+        } : dto;
+        
+        console.log('createCutGlassSlip request body:', requestBody);
+        console.log('createCutGlassSlip JSON stringified:', JSON.stringify(requestBody));
         
         const response = await fetch(`${API_BASE}/cut-glass`, {
             method: 'POST',
@@ -258,12 +261,31 @@ export const createCutGlassSlip = async (dto: CreateInventorySlipDto, mappingInf
             body: JSON.stringify(requestBody),
         });
         if (!response.ok) {
+            const errorText = await response.text();
+            console.error('createCutGlassSlip error response:', errorText);
             throw new Error('Failed to create cut glass slip');
         }
         const json = await response.json();
         console.log('createCutGlassSlip response:', json);
         console.log('createCutGlassSlip response.data:', json?.data);
-        return json?.data ?? json;
+        
+        const result = json?.data ?? json;
+        
+        // Sau khi tạo phiếu thành công, cập nhật ProductionOutput và kiểm tra hoàn thành
+        if (result && mappingInfo?.productClassifications) {
+            try {
+                await processCutGlassSlipCompletion(
+                    dto.productionOrderId,
+                    mappingInfo.productClassifications,
+                    dto.details
+                );
+            } catch (updateError) {
+                console.error('Error updating production outputs or checking completion:', updateError);
+                // Không throw error vì phiếu đã được tạo thành công
+            }
+        }
+        
+        return result;
     } catch (error) {
         console.error('Error creating cut glass slip:', error);
         return null;
@@ -284,6 +306,76 @@ export const addMappings = async (slipId: number, mappings: CreateMaterialOutput
     } catch (error) {
         console.error('Error adding mappings:', error);
         return false;
+    }
+};
+
+export const updateProductionOutputFinished = async (productionOutputId: number, finishedQuantity: number): Promise<boolean> => {
+    try {
+        const response = await fetch(`${API_BASE}/production-output/${productionOutputId}/finished`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                ...authHeaders(),
+            },
+            body: JSON.stringify({ finishedQuantity }),
+        });
+        return response.ok;
+    } catch (error) {
+        console.error('Error updating production output finished:', error);
+        return false;
+    }
+};
+
+// Kiểm tra và cập nhật trạng thái lệnh sản xuất
+export const checkAndUpdateProductionOrderStatus = async (productionOrderId: number): Promise<boolean> => {
+    try {
+        const response = await fetch(`${API_BASE}/production-order/${productionOrderId}/check-completion`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                ...authHeaders(),
+            },
+        });
+        return response.ok;
+    } catch (error) {
+        console.error('Error checking and updating production order status:', error);
+        return false;
+    }
+};
+
+// Helper function để cập nhật ProductionOutput và kiểm tra hoàn thành
+export const processCutGlassSlipCompletion = async (
+    productionOrderId: number, 
+    productClassifications: ProductClassification[], 
+    details: CreateInventorySlipDetailDto[]
+): Promise<void> => {
+    try {
+        // Cập nhật số lượng hoàn thành cho từng bán thành phẩm
+        const updatePromises = productClassifications
+            .filter(classification => 
+                classification.productType === 'Bán thành phẩm'
+            )
+            .map(async (classification) => {
+                if (typeof classification.productionOutputId !== 'number') {
+                    return false;
+                }
+                const detail = details.find(d => d.productId === classification.productId);
+                if (detail) {
+                    return updateProductionOutputFinished(classification.productionOutputId, detail.quantity);
+                }
+                return false;
+            });
+
+        // Chờ tất cả cập nhật hoàn thành
+        await Promise.all(updatePromises);
+        
+        // Kiểm tra và cập nhật trạng thái lệnh sản xuất
+        await checkAndUpdateProductionOrderStatus(productionOrderId);
+        
+        console.log('Successfully processed cut glass slip completion');
+    } catch (error) {
+        console.error('Error processing cut glass slip completion:', error);
+        throw error;
     }
 };
 
@@ -322,6 +414,20 @@ export const fetchProductionOrderInfo = async (productionOrderId: number): Promi
     } catch (error) {
         console.error('Error fetching production order info:', error);
         return null;
+    }
+};
+
+// Lấy thông tin ProductionOutput để kiểm tra tiến độ
+export const fetchProductionOutputs = async (productionOrderId: number): Promise<ProductionOutput[]> => {
+    try {
+        const response = await fetch(`${API_BASE}/production-order/${productionOrderId}/outputs`, { headers: { ...authHeaders() } });
+        if (!response.ok) {
+            throw new Error('Failed to fetch production outputs');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching production outputs:', error);
+        return [];
     }
 };
 
@@ -393,7 +499,6 @@ export const updateInventorySlip = async (id: number, dto: CreateInventorySlipDt
     }
 };
 
-// Paginated product search for cut glass slips
 export const searchProducts = async (request: ProductSearchRequestDto): Promise<PaginatedProductsDto | null> => {
     try {
         const response = await fetch(`${API_BASE}/products/search`, {
@@ -414,7 +519,6 @@ export const searchProducts = async (request: ProductSearchRequestDto): Promise<
     }
 };
 
-// Production Material interface and functions
 export interface ProductionMaterial {
     id: number;
     productId: number;

@@ -52,7 +52,6 @@ namespace SEP490.Modules.ChemicalExportModule.Service
                         _context.ChemicalExportDetails.Add(detail);
                     }
 
-                    // Update finished quantity in ProductionOutput
                     var productionOutput = await _context.ProductionOutputs
                         .FirstOrDefaultAsync(po => po.ProductId == product.ProductId && po.ProductionOrderId == dto.ProductionOrderId);
 
@@ -62,14 +61,12 @@ namespace SEP490.Modules.ChemicalExportModule.Service
                         _context.ProductionOutputs.Update(productionOutput);
                     }
 
-                    // Check if this is a glue pouring order and update ProductionPlanDetail.Done
                     var productionOrder = await _context.ProductionOrders
                         .Include(po => po.ProductionPlan)
                         .FirstOrDefaultAsync(po => po.Id == dto.ProductionOrderId);
 
                     if (productionOrder != null && productionOrder.Type == "Đổ keo")
                     {
-                        // Update ProductionPlanDetail.Done for the corresponding product
                         var productionPlanDetail = await _context.ProductionPlanDetails
                             .FirstOrDefaultAsync(ppd => ppd.ProductionPlanId == productionOrder.ProductionPlanId && ppd.ProductId == product.ProductId);
 
@@ -84,12 +81,9 @@ namespace SEP490.Modules.ChemicalExportModule.Service
                 }
 
                 await _context.SaveChangesAsync();
-
-                // Check if production order should be completed
                 await CheckAndUpdateProductionOrderStatusAsync(dto.ProductionOrderId);
 
                 await transaction.CommitAsync();
-
                 // Return the first chemical export with details
                 var result = await GetChemicalExportByIdAsync(chemicalExports.First().Id);
                 return result;
@@ -239,125 +233,81 @@ namespace SEP490.Modules.ChemicalExportModule.Service
                 Outputs = outputDtos,
                 Materials = materialDtos
             };
-        }
-
-        public async Task<bool> DeleteChemicalExportAsync(int id)
-        {
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                var chemicalExport = await _context.ChemicalExports
-                    .Include(ce => ce.ChemicalExportDetails)
-                    .FirstOrDefaultAsync(ce => ce.Id == id);
-
-                if (chemicalExport == null)
-                    return false;
-
-                // Decrease finished quantity in ProductionOutput
-                var productionOutput = await _context.ProductionOutputs
-                    .FirstOrDefaultAsync(po => po.ProductId == chemicalExport.ProductId && po.ProductionOrderId == chemicalExport.ProductionOrderId);
-
-                if (productionOutput != null)
-                {
-                    productionOutput.Finished = Math.Max(0, (productionOutput.Finished ?? 0) - (int)chemicalExport.Quantity);
-                    _context.ProductionOutputs.Update(productionOutput);
-                }
-
-                // Check if this is a glue pouring order and decrease ProductionPlanDetail.Done
-                var productionOrder = await _context.ProductionOrders
-                    .Include(po => po.ProductionPlan)
-                    .FirstOrDefaultAsync(po => po.Id == chemicalExport.ProductionOrderId);
-
-                if (productionOrder != null && productionOrder.Type == "Đổ keo")
-                {
-                    // Decrease ProductionPlanDetail.Done for the corresponding product
-                    var productionPlanDetail = await _context.ProductionPlanDetails
-                        .FirstOrDefaultAsync(ppd => ppd.ProductionPlanId == productionOrder.ProductionPlanId && ppd.ProductId == chemicalExport.ProductId);
-
-                    if (productionPlanDetail != null)
-                    {
-                        productionPlanDetail.Done = Math.Max(0, productionPlanDetail.Done - (int)chemicalExport.Quantity);
-                        _context.ProductionPlanDetails.Update(productionPlanDetail);
-                    }
-                }
-
-                // Remove details first
-                _context.ChemicalExportDetails.RemoveRange(chemicalExport.ChemicalExportDetails);
-                
-                // Remove main record
-                _context.ChemicalExports.Remove(chemicalExport);
-                
-                await _context.SaveChangesAsync();
-
-                // Check if production order status needs to be updated
-                if (chemicalExport.ProductionOrderId.HasValue)
-                {
-                    await CheckAndUpdateProductionOrderStatusAsync(chemicalExport.ProductionOrderId.Value);
-                }
-
-                await transaction.CommitAsync();
-                return true;
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-        }
+        }        
 
         public async Task<bool> CheckAndUpdateProductionOrderStatusAsync(int productionOrderId)
         {
-            // Get all production outputs for this production order
-            var productionOutputs = await _context.ProductionOutputs
-                .Where(po => po.ProductionOrderId == productionOrderId)
-                .ToListAsync();
-
-            // Check if all outputs have finished >= amount
-            bool allCompleted = productionOutputs.All(po => 
-                (po.Finished ?? 0) >= (po.Amount ?? 0));
-
-            if (allCompleted)
+            try
             {
-                // Update production order status to Completed
-                var productionOrder = await _context.ProductionOrders
-                    .FirstOrDefaultAsync(po => po.Id == productionOrderId);
+                var productionOutputs = await _context.ProductionOutputs
+                    .Where(po => po.ProductionOrderId == productionOrderId)
+                    .ToListAsync();
 
-                if (productionOrder != null)
+                if (!productionOutputs.Any())
                 {
-                    productionOrder.Status = ProductionStatus.Completed;
-                    _context.ProductionOrders.Update(productionOrder);
-                    await _context.SaveChangesAsync();
-                    return true; // Status was updated
+                    return false; 
                 }
-            }
+                
+                // Check if all outputs have finished >= amount
+                bool allCompleted = true;
+                foreach (var po in productionOutputs)
+                {
+                    var finished = po.Finished ?? 0;
+                    var amount = po.Amount ?? 0;
+                    
+                    var finishedDecimal = (decimal)finished;
+                    var amountDecimal = amount;
+                    var isCompleted = finishedDecimal >= amountDecimal;
+                    
+                    if (!isCompleted)
+                    {
+                        allCompleted = false;
+                    }
+                }
 
-            return false; // Status was not updated
+                if (allCompleted)
+                {
+                    var productionOrder = await _context.ProductionOrders
+                        .FirstOrDefaultAsync(po => po.Id == productionOrderId);
+
+                    if (productionOrder != null)
+                    {
+                        productionOrder.Status = ProductionStatus.Completed;
+                        _context.ProductionOrders.Update(productionOrder);
+                        await _context.SaveChangesAsync();
+                        return true; 
+                    }
+                }
+
+                return false; 
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         public async Task<bool> UpdateProductionPlanDetailDoneAsync(int productionOrderId, int productId, int quantity, bool isIncrease)
         {
             try
             {
-                // Get the production order to check if it's a glue pouring order
                 var productionOrder = await _context.ProductionOrders
                     .Include(po => po.ProductionPlan)
                     .FirstOrDefaultAsync(po => po.Id == productionOrderId);
 
                 if (productionOrder == null || productionOrder.Type != "Đổ keo")
                 {
-                    return false; // Not a glue pouring order or order not found
+                    return false; 
                 }
 
-                // Find the corresponding ProductionPlanDetail
                 var productionPlanDetail = await _context.ProductionPlanDetails
                     .FirstOrDefaultAsync(ppd => ppd.ProductionPlanId == productionOrder.ProductionPlanId && ppd.ProductId == productId);
 
                 if (productionPlanDetail == null)
                 {
-                    return false; // ProductionPlanDetail not found
+                    return false;
                 }
 
-                // Update the Done quantity
                 if (isIncrease)
                 {
                     productionPlanDetail.Done = productionPlanDetail.Done + quantity;

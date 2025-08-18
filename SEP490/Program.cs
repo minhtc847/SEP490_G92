@@ -16,6 +16,7 @@ using System;
 using System.Reflection;
 using System.Text;
 using SEP490.Modules.InventorySlipModule.Service;
+using SEP490.Modules.InventorySlipModule.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +60,8 @@ builder.Services.AddScoped<ICuttingGlassManagementService, CuttingGlassManagemen
 builder.Services.AddScoped<IDocumentMaterialService, DocumentMaterialService>();
 builder.Services.AddScoped<IZaloOrderService, ZaloOrderService>();
 builder.Services.AddScoped<IInventorySlipService, InventorySlipService>();
+builder.Services.AddScoped<IInventoryProductionOutputService, ProductionOutputService>();
+builder.Services.AddScoped<IProductionOrderService, ProductionOrderService>();
 builder.Services.AddHttpClient<ZaloChatService>();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();

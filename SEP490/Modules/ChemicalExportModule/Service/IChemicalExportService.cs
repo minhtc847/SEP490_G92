@@ -9,7 +9,6 @@ namespace SEP490.Modules.ChemicalExportModule.Service
         Task<List<ChemicalExportDto>> GetChemicalExportsByProductionOrderAsync(int productionOrderId);
         Task<List<ChemicalExportDto>> GetAllChemicalExportsAsync();
         Task<ProductionOrderProductsDto> GetProductionOrderProductsAsync(int productionOrderId);
-        Task<bool> DeleteChemicalExportAsync(int id);
         Task<bool> CheckAndUpdateProductionOrderStatusAsync(int productionOrderId);
         Task<bool> UpdateProductionPlanDetailDoneAsync(int productionOrderId, int productId, int quantity, bool isIncrease);
     }
