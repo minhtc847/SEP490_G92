@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import IconArrowLeft from '@/components/icon/icon-arrow-left';
 import IconPlus from '@/components/icon/icon-plus';
 import IconTrash from '@/components/icon/icon-trash';
-import zaloOrderService, { ZaloOrder, UpdateZaloOrder, UpdateZaloOrderDetail } from '@/services/zaloOrderService';
+import zaloOrderService, { ZaloOrder, UpdateZaloOrder, UpdateZaloOrderDetail } from '@/app/(defaults)/zalo-orders/zaloOrderService';
 
 const EditZaloOrder = () => {
     const router = useRouter();

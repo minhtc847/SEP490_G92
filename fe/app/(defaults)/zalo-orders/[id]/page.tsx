@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import IconArrowLeft from '@/components/icon/icon-arrow-left';
 import IconPencil from '@/components/icon/icon-pencil';
-import zaloOrderService, { ZaloOrder } from '@/services/zaloOrderService';
+import zaloOrderService, { ZaloOrder } from '@/app/(defaults)/zalo-orders/zaloOrderService';
 
 const ZaloOrderDetail = () => {
     const router = useRouter();

@@ -199,17 +199,6 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     };
                 }
 
-                // Check if customer phone is available
-                if (string.IsNullOrEmpty(conversation.CustomerPhone))
-                {
-                    return new MessageResponse
-                    {
-                        Content = "Vui lòng cung cấp số điện thoại để chúng tôi có thể liên hệ xác nhận đơn hàng.",
-                        MessageType = "text",
-                        Intent = MessageIntents.PHONE_NUMBER
-                    };
-                }
-
                 // Generate order code
                 var orderCode = $"ZO{DateTime.Now:yyyyMMddHHmmss}";
 
@@ -245,7 +234,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     OrderDate = DateTime.Now,
                     TotalAmount = totalAmount,
                     Status = "Pending",
-                    Note = $"Đơn hàng từ Zalo - User ID: {zaloUserId}",
+                    Note = null,
                     ZaloOrderDetails = orderDetails
                 };
 
@@ -257,12 +246,12 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 // Generate order summary
                 var orderSummary = await GenerateOrderSummary(conversation);
 
-                var responseMessage = $"✅ Đơn hàng đã được xác nhận thành công!\n\n" +
+                var responseMessage = $"✅ Đã xác nhận đặt hàng thành công!\n\n" +
                                     $"📋 Mã đơn hàng: {orderCode}\n" +
-                                    $"💰 Tổng tiền: {totalAmount:N0} VNĐ\n\n" +
+                                    // $"💰 Tổng tiền: {totalAmount:N0} VNĐ\n\n" +
                                     $"📦 Chi tiết đơn hàng:\n{orderSummary}\n\n" +
-                                    $"📞 Chúng tôi sẽ liên hệ với số điện thoại {conversation.CustomerPhone} để xác nhận và giao hàng.\n" +
-                                    $"🙏 Cảm ơn bạn đã tin tưởng chúng tôi!";
+                                    // $"📞 Chúng tôi sẽ liên hệ với số điện thoại {conversation.CustomerPhone} để xác nhận và giao hàng.\n" +
+                                    $"🙏 Kế toán sẽ gửi lại xác nhận đơn hàng!";
 
                 // Delete the current conversation from database
                 await _conversationStateService.DeleteConversationAsync(zaloUserId);
@@ -369,16 +358,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         {
             try
             {
-                // if (conversation.OrderItems.Count == 0)
-                // {
-                //     await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.NEW);
-                //     return new MessageResponse
-                //     {
-                //         Content = ZaloWebhookConstants.DefaultMessages.NO_PRODUCTS_IN_ORDER,
-                //         MessageType = "text",
-                //     };
-                // }
-                // Get messages from "Đặt hàng" to "Kết thúc"
+                
 
                 var orderMessages = await _messageHistoryService.GetListMessageAsync(zaloUserId);
                 
@@ -474,14 +454,16 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             {
                 _logger.LogInformation("User {UserId} cancelled the conversation", zaloUserId);
                 
-                // Reset conversation state to NEW instead of deleting
-                await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.NEW);
+                await _conversationStateService.DeleteConversationAsync(zaloUserId);
+
+                // // Reset conversation state to NEW instead of deleting
+                // await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.NEW);
                 
-                // Clear order items and customer data
-                await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
-                {
-                    conv.OrderItems.Clear();
-                });
+                // // Clear order items and customer data
+                // await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
+                // {
+                //     conv.OrderItems.Clear();
+                // });
                 
                 return new MessageResponse
                 {
