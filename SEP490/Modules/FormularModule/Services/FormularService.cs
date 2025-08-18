@@ -60,5 +60,78 @@ namespace SEP490.Modules.FormularModule.Services
             return formulars;
         }
 
+        public FormularDto CreateFormular(CreateFormularRequest request)
+        {
+            var product = _context.Products.FirstOrDefault(p => p.Id == request.ProductId);
+            if (product == null)
+            {
+                throw new ArgumentException("Invalid ProductId");
+            }
+
+            var entity = new Formular
+            {
+                Type = request.Type,
+                Ratio = request.Ratio,
+                Description = request.Description,
+                ProductId = request.ProductId
+            };
+
+            _context.Formulars.Add(entity);
+            _context.SaveChanges();
+
+            return new FormularDto
+            {
+                Id = entity.Id,
+                Type = entity.Type,
+                ChemicalName = product.ProductName ?? string.Empty,
+                Ratio = entity.Ratio,
+                Description = entity.Description,
+                ProductId = entity.ProductId
+            };
+        }
+
+        public FormularDto UpdateFormular(int id, UpdateFormularRequest request)
+        {
+            var entity = _context.Formulars.Include(f => f.Product).FirstOrDefault(f => f.Id == id);
+            if (entity == null)
+            {
+                throw new ArgumentException("Formular not found");
+            }
+
+            var product = _context.Products.FirstOrDefault(p => p.Id == request.ProductId);
+            if (product == null)
+            {
+                throw new ArgumentException("Invalid ProductId");
+            }
+
+            entity.ProductId = request.ProductId;
+            entity.Ratio = request.Ratio;
+            entity.Description = request.Description;
+
+            _context.SaveChanges();
+
+            return new FormularDto
+            {
+                Id = entity.Id,
+                Type = entity.Type,
+                ChemicalName = product.ProductName ?? string.Empty,
+                Ratio = entity.Ratio,
+                Description = entity.Description,
+                ProductId = entity.ProductId
+            };
+        }
+
+        public void DeleteFormular(int id)
+        {
+            var entity = _context.Formulars.FirstOrDefault(f => f.Id == id);
+            if (entity == null)
+            {
+                throw new ArgumentException("Formular not found");
+            }
+
+            _context.Formulars.Remove(entity);
+            _context.SaveChanges();
+        }
+
     }
 } 

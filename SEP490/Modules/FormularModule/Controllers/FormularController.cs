@@ -28,5 +28,47 @@ namespace SEP490.Modules.FormularModule.Controllers
             var formulars = _formularService.GetFormularsByType(type);
             return Ok(formulars);
         }
+
+        [HttpPost]
+        public ActionResult<FormularDto> Create([FromBody] CreateFormularRequest request)
+        {
+            try
+            {
+                var created = _formularService.CreateFormular(request);
+                return Ok(created);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut("{id}")]
+        public ActionResult<FormularDto> Update(int id, [FromBody] UpdateFormularRequest request)
+        {
+            try
+            {
+                var updated = _formularService.UpdateFormular(id, request);
+                return Ok(updated);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public IActionResult Delete(int id)
+        {
+            try
+            {
+                _formularService.DeleteFormular(id);
+                return Ok(new { message = "Deleted" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 } 

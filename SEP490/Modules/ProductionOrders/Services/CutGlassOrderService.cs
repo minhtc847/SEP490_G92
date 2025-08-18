@@ -159,7 +159,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                 ProductCode = null,
                 ProductName = productName,
                 ProductType = "NVL",
-                UOM = "tấm",
+                UOM = "Tấm",
                 Width = width,
                 Height = height,
                 Thickness = thickness,
