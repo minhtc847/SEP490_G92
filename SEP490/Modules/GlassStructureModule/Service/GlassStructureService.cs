@@ -162,5 +162,15 @@ namespace SEP490.Modules.GlassStructureModule.Service
             return true;
         }
 
+        public List<string> GetAllProductCodes()
+        {
+            return _context.GlassStructures
+                .Where(g => !string.IsNullOrEmpty(g.ProductCode))
+                .Select(g => g.ProductCode!)
+                .Distinct()
+                .OrderBy(code => code)
+                .ToList();
+        }
+
     }
 }

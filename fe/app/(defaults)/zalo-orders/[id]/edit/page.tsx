@@ -25,11 +25,23 @@ const EditZaloOrder = () => {
     });
 
     const [orderDetails, setOrderDetails] = useState<UpdateZaloOrderDetail[]>([]);
+    const [productCodes, setProductCodes] = useState<string[]>([]);
+    const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+
+    const fetchProductCodes = async () => {
+        try {
+            const codes = await zaloOrderService.getProductCodes();
+            setProductCodes(codes);
+        } catch (error) {
+            console.error('Error fetching product codes:', error);
+        }
+    };
 
     useEffect(() => {
         if (params.id) {
             fetchZaloOrder(params.id as string);
         }
+        fetchProductCodes();
     }, [params.id]);
 
     const fetchZaloOrder = async (id: string) => {
@@ -336,13 +348,43 @@ const EditZaloOrder = () => {
                                                     />
                                                 </td>
                                                 <td>
-                                                    <input
-                                                        type="text"
-                                                        className="form-input"
-                                                        value={detail.productCode}
-                                                        onChange={(e) => updateOrderDetail(index, 'productCode', e.target.value)}
-                                                        placeholder="Mã sản phẩm"
-                                                    />
+                                                    <div className="relative">
+                                                        <input
+                                                            type="text"
+                                                            className="form-input pr-8"
+                                                            value={detail.productCode}
+                                                            onChange={(e) => updateOrderDetail(index, 'productCode', e.target.value)}
+                                                            onFocus={() => setOpenDropdown(index)}
+                                                            onBlur={() => setTimeout(() => setOpenDropdown(null), 200)}
+                                                            placeholder="Mã sản phẩm"
+                                                            autoComplete="off"
+                                                        />
+                                                        {openDropdown === index && productCodes.length > 0 && (
+                                                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                                                                {productCodes
+                                                                    .filter(code => 
+                                                                        code.toLowerCase().includes(detail.productCode.toLowerCase())
+                                                                    )
+                                                                    .map((code) => (
+                                                                        <div
+                                                                            key={code}
+                                                                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                                                            onClick={() => {
+                                                                                updateOrderDetail(index, 'productCode', code);
+                                                                                setOpenDropdown(null);
+                                                                            }}
+                                                                        >
+                                                                            {code}
+                                                                        </div>
+                                                                    ))}
+                                                            </div>
+                                                        )}
+                                                        <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     <div className="flex gap-1">

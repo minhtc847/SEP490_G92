@@ -118,6 +118,13 @@ namespace SEP490.Modules.GlassStructureModule.Controller
             return Ok(categories);
         }
 
+        [HttpGet("product-codes")]
+        public IActionResult GetProductCodes()
+        {
+            var productCodes = _service.GetAllProductCodes();
+            return Ok(productCodes);
+        }
+
 
     }
 }

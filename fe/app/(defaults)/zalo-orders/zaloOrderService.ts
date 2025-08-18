@@ -99,6 +99,16 @@ class ZaloOrderService {
             throw error;
         }
     }
+
+    async getProductCodes(): Promise<string[]> {
+        try {
+            const response = await axios.get<string[]>('/api/GlassStructure/product-codes');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching product codes:', error);
+            throw error;
+        }
+    }
 }
 
 export default new ZaloOrderService();
