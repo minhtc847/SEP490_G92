@@ -27,6 +27,7 @@ const EditZaloOrder = () => {
     const [orderDetails, setOrderDetails] = useState<UpdateZaloOrderDetail[]>([]);
     const [productCodes, setProductCodes] = useState<string[]>([]);
     const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+    const [invalidProductCodes, setInvalidProductCodes] = useState<Set<number>>(new Set());
 
     const fetchProductCodes = async () => {
         try {
@@ -37,12 +38,28 @@ const EditZaloOrder = () => {
         }
     };
 
+    const validateAllProductCodes = () => {
+        const newInvalidCodes = new Set<number>();
+        orderDetails.forEach((detail, index) => {
+            if (detail.productCode.trim() && !productCodes.includes(detail.productCode.trim())) {
+                newInvalidCodes.add(index);
+            }
+        });
+        setInvalidProductCodes(newInvalidCodes);
+    };
+
     useEffect(() => {
         if (params.id) {
             fetchZaloOrder(params.id as string);
         }
         fetchProductCodes();
     }, [params.id]);
+
+    useEffect(() => {
+        if (productCodes.length > 0 && orderDetails.length > 0) {
+            validateAllProductCodes();
+        }
+    }, [productCodes, orderDetails]);
 
     const fetchZaloOrder = async (id: string) => {
         try {
@@ -111,6 +128,45 @@ const EditZaloOrder = () => {
         const updatedDetails = orderDetails.filter((_, i) => i !== index);
         setOrderDetails(updatedDetails);
         updateTotalAmount(updatedDetails);
+        
+        // Remove from invalid product codes set
+        setInvalidProductCodes(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(index);
+            // Shift down all indices after the removed item
+            const shiftedSet = new Set<number>();
+            newSet.forEach(invalidIndex => {
+                if (invalidIndex > index) {
+                    shiftedSet.add(invalidIndex - 1);
+                } else {
+                    shiftedSet.add(invalidIndex);
+                }
+            });
+            return shiftedSet;
+        });
+    };
+
+    const validateProductCode = (productCode: string, index: number) => {
+        if (!productCode.trim()) {
+            // If product code is empty, remove from invalid list
+            setInvalidProductCodes(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(index);
+                return newSet;
+            });
+            return;
+        }
+
+        const isValid = productCodes.includes(productCode.trim());
+        setInvalidProductCodes(prev => {
+            const newSet = new Set(prev);
+            if (!isValid) {
+                newSet.add(index);
+            } else {
+                newSet.delete(index);
+            }
+            return newSet;
+        });
     };
 
     const updateOrderDetail = (index: number, field: keyof UpdateZaloOrderDetail, value: string | number) => {
@@ -125,6 +181,11 @@ const EditZaloOrder = () => {
             updatedDetails[index].totalPrice = Math.round(quantity * unitPrice * 100) / 100;
         }
 
+        // Validate product code if it's being updated
+        if (field === 'productCode') {
+            validateProductCode(value as string, index);
+        }
+
         setOrderDetails(updatedDetails);
         updateTotalAmount(updatedDetails);
     };
@@ -137,6 +198,13 @@ const EditZaloOrder = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Check if there are any invalid product codes
+        if (invalidProductCodes.size > 0) {
+            alert('Vui lòng kiểm tra lại các mã sản phẩm không hợp lệ trước khi cập nhật.');
+            return;
+        }
+        
         setSaving(true);
 
         try {
@@ -326,7 +394,14 @@ const EditZaloOrder = () => {
                                     <thead>
                                         <tr>
                                             <th>Tên Sản Phẩm</th>
-                                            <th>Mã Sản Phẩm</th>
+                                            <th>
+                                                Mã Sản Phẩm
+                                                {invalidProductCodes.size > 0 && (
+                                                    <span className="ml-2 text-red-500 text-xs">
+                                                        ({invalidProductCodes.size} lỗi)
+                                                    </span>
+                                                )}
+                                            </th>
                                             <th>Kích Thước</th>
                                             <th>Số Lượng</th>
                                             <th>Đơn Giá</th>
@@ -351,7 +426,7 @@ const EditZaloOrder = () => {
                                                     <div className="relative">
                                                         <input
                                                             type="text"
-                                                            className="form-input pr-8"
+                                                            className={`form-input pr-8 ${invalidProductCodes.has(index) ? 'border-red-500' : ''}`}
                                                             value={detail.productCode}
                                                             onChange={(e) => updateOrderDetail(index, 'productCode', e.target.value)}
                                                             onFocus={() => setOpenDropdown(index)}
@@ -384,6 +459,11 @@ const EditZaloOrder = () => {
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                                             </svg>
                                                         </div>
+                                                        {invalidProductCodes.has(index) && detail.productCode.trim() && (
+                                                            <div className="text-red-500 text-xs mt-1">
+                                                                Mã sản phẩm không tồn tại
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </td>
                                                 <td>
@@ -487,7 +567,7 @@ const EditZaloOrder = () => {
                         <button
                             type="submit"
                             className="btn btn-primary"
-                            disabled={saving || orderDetails.length === 0}
+                            disabled={saving || orderDetails.length === 0 || invalidProductCodes.size > 0}
                         >
                             {saving ? 'Đang cập nhật...' : 'Cập Nhật Đơn Hàng'}
                         </button>

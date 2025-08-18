@@ -10,12 +10,42 @@ const ZaloOrderDetail = () => {
     const params = useParams();
     const [zaloOrder, setZaloOrder] = useState<ZaloOrder | null>(null);
     const [loading, setLoading] = useState(true);
+    const [productCodes, setProductCodes] = useState<string[]>([]);
+    const [invalidProductCodes, setInvalidProductCodes] = useState<Set<number>>(new Set());
 
     useEffect(() => {
         if (params.id) {
             fetchZaloOrder(params.id as string);
         }
+        fetchProductCodes();
     }, [params.id]);
+
+    useEffect(() => {
+        if (productCodes.length > 0 && zaloOrder) {
+            validateProductCodes();
+        }
+    }, [productCodes, zaloOrder]);
+
+    const fetchProductCodes = async () => {
+        try {
+            const codes = await zaloOrderService.getProductCodes();
+            setProductCodes(codes);
+        } catch (error) {
+            console.error('Error fetching product codes:', error);
+        }
+    };
+
+    const validateProductCodes = () => {
+        if (!zaloOrder) return;
+        
+        const newInvalidCodes = new Set<number>();
+        zaloOrder.zaloOrderDetails.forEach((detail, index) => {
+            if (detail.productCode.trim() && !productCodes.includes(detail.productCode.trim())) {
+                newInvalidCodes.add(index);
+            }
+        });
+        setInvalidProductCodes(newInvalidCodes);
+    };
 
     const fetchZaloOrder = async (id: string) => {
         try {
@@ -169,6 +199,14 @@ const ZaloOrderDetail = () => {
                                 <tr>
                                     <th>STT</th>
                                     <th>Tên Sản Phẩm</th>
+                                    <th>
+                                        Mã Sản Phẩm
+                                        {invalidProductCodes.size > 0 && (
+                                            <span className="ml-2 text-red-500 text-xs">
+                                                ({invalidProductCodes.size} lỗi)
+                                            </span>
+                                        )}
+                                    </th>
                                     <th>Số Lượng</th>
                                     <th>Đơn Giá</th>
                                     <th>Thành Tiền</th>
@@ -181,6 +219,18 @@ const ZaloOrderDetail = () => {
                                         <td>
                                             <div className="font-semibold">{detail.productName}</div>
                                         </td>
+                                        <td>
+                                            <div className="relative">
+                                                <div className={`font-semibold ${invalidProductCodes.has(index) ? 'text-red-500' : ''}`}>
+                                                    {detail.productCode || 'N/A'}
+                                                </div>
+                                                {invalidProductCodes.has(index) && detail.productCode && (
+                                                    <div className="text-red-500 text-xs mt-1">
+                                                        Mã sản phẩm không tồn tại
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </td>
                                         <td>{detail.quantity}</td>
                                         <td>{formatCurrency(detail.unitPrice)}</td>
                                         <td className="font-semibold">{formatCurrency(detail.totalPrice)}</td>
@@ -189,7 +239,7 @@ const ZaloOrderDetail = () => {
                             </tbody>
                             <tfoot>
                                 <tr className="font-semibold">
-                                    <td colSpan={4} className="text-right">Tổng Cộng:</td>
+                                    <td colSpan={5} className="text-right">Tổng Cộng:</td>
                                     <td>{formatCurrency(zaloOrder.totalAmount)}</td>
                                 </tr>
                             </tfoot>
