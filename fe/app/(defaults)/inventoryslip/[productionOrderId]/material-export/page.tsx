@@ -1,10 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 import { useRouter, useParams } from 'next/navigation';
 import { fetchProductionOrderInfo, ProductionOrderInfo, createMaterialExportSlip } from '../../service';
 import MaterialExportSlipForm from './MaterialExportSlipForm';
 
 const MaterialExportSlipPage = () => {
+    const MySwal = withReactContent(Swal);
     const router = useRouter();
     const params = useParams();
     const [productionOrderInfo, setProductionOrderInfo] = useState<ProductionOrderInfo | null>(null);
@@ -14,7 +17,14 @@ const MaterialExportSlipPage = () => {
 
     useEffect(() => {
         if (!productionOrderId || isNaN(productionOrderId)) {
-            alert('ID lệnh sản xuất không hợp lệ');
+            MySwal.fire({
+                title: 'ID lệnh sản xuất không hợp lệ',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             router.push('/inventoryslip');
             return;
         }
@@ -30,18 +40,39 @@ const MaterialExportSlipPage = () => {
             if (info) {
                 // Kiểm tra loại lệnh sản xuất có phải là "Ghép kính", "Sản xuất keo" hoặc "Đổ keo" không
                 if (!['Ghép kính', 'Sản xuất keo', 'Đổ keo'].includes(info.type)) {
-                    alert('Lệnh sản xuất này không phải là loại "Ghép kính", "Sản xuất keo" hoặc "Đổ keo"');
+                    MySwal.fire({
+                        title: 'Lệnh sản xuất này không phải là loại "Ghép kính", "Sản xuất keo" hoặc "Đổ keo"',
+                        toast: true,
+                        position: 'bottom-start',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        showCloseButton: true,
+                    });
                     router.push(`/inventoryslip/${productionOrderId}`);
                     return;
                 }
                 setProductionOrderInfo(info);
             } else {
-                alert('Không tìm thấy thông tin lệnh sản xuất');
+                MySwal.fire({
+                    title: 'Không tìm thấy thông tin lệnh sản xuất',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
                 router.push('/inventoryslip');
             }
         } catch (error) {
             console.error('Error loading production order info:', error);
-            alert('Có lỗi xảy ra khi tải thông tin lệnh sản xuất');
+            MySwal.fire({
+                title: 'Có lỗi xảy ra khi tải thông tin lệnh sản xuất',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             router.push('/inventoryslip');
         } finally {
             setLoading(false);
@@ -61,14 +92,35 @@ const MaterialExportSlipPage = () => {
                 ? 'phiếu xuất keo butyl' 
                 : 'phiếu xuất hóa chất';
             
-            alert(`Tạo ${slipTypeText} thành công!`);
+            MySwal.fire({
+                title: `Tạo ${slipTypeText} thành công!`,
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             router.push(`/inventoryslip/${productionOrderId}`);
         } catch (error) {
             console.error('Error creating slip:', error);
             if (error instanceof Error) {
-                alert(`Có lỗi xảy ra khi tạo phiếu: ${error.message}`);
+                MySwal.fire({
+                    title: `Có lỗi xảy ra khi tạo phiếu: ${error.message}`,
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
             } else {
-                alert('Có lỗi xảy ra khi tạo phiếu');
+                MySwal.fire({
+                    title: 'Có lỗi xảy ra khi tạo phiếu',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
             }
         }
     };

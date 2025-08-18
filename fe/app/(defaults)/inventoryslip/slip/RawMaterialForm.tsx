@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 import { ProductInfo } from '../service';
 
 interface RawMaterialFormProps {
@@ -14,6 +16,7 @@ export default function RawMaterialForm({
     onRawMaterialAdded, 
     onCancel 
 }: RawMaterialFormProps) {
+    const MySwal = withReactContent(Swal);
     const [formData, setFormData] = useState({
         productId: 0,
         quantity: '',
@@ -61,7 +64,14 @@ export default function RawMaterialForm({
         const selectedProduct = availableRawMaterials.find((p: ProductInfo) => p.id === formData.productId);
         
         if (!selectedProduct) {
-            alert('Không tìm thấy nguyên vật liệu đã chọn');
+            MySwal.fire({
+                title: 'Không tìm thấy nguyên vật liệu đã chọn',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             return;
         }
 
@@ -205,10 +215,7 @@ export default function RawMaterialForm({
                             />
                             {errors.quantity && (
                                 <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>
-                            )}
-                            <p className="text-xs text-gray-600 mt-1">
-                                Giới hạn: 1 - 999,999 tấm (số nguyên)
-                            </p>
+                            )}                            
                         </div>
                     </div>
 

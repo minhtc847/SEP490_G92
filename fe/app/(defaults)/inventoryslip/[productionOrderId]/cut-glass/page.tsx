@@ -1,10 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 import { useRouter, useParams } from 'next/navigation';
 import { fetchProductionOrderInfo, ProductionOrderInfo, createCutGlassSlip, addMappings } from '../../service';
 import InventorySlipForm from '../../slip/InventorySlipForm';
 
 const CutGlassSlipPage = () => {
+    const MySwal = withReactContent(Swal);
     const router = useRouter();
     const params = useParams();
     const [productionOrderInfo, setProductionOrderInfo] = useState<ProductionOrderInfo | null>(null);
@@ -14,7 +17,14 @@ const CutGlassSlipPage = () => {
 
     useEffect(() => {
         if (!productionOrderId || isNaN(productionOrderId)) {
-            alert('ID lệnh sản xuất không hợp lệ');
+            MySwal.fire({
+                title: 'ID lệnh sản xuất không hợp lệ',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             router.push('/inventoryslip');
             return;
         }
@@ -30,18 +40,39 @@ const CutGlassSlipPage = () => {
             if (info) {
                 // Kiểm tra loại lệnh sản xuất có phải là "Cắt kính" không
                 if (info.type !== 'Cắt kính') {
-                    alert('Lệnh sản xuất này không phải là loại "Cắt kính"');
+                    MySwal.fire({
+                        title: 'Lệnh sản xuất này không phải là loại "Cắt kính"',
+                        toast: true,
+                        position: 'bottom-start',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        showCloseButton: true,
+                    });
                     router.push(`/inventoryslip/${productionOrderId}`);
                     return;
                 }
                 setProductionOrderInfo(info);
             } else {
-                alert('Không tìm thấy thông tin lệnh sản xuất');
+                MySwal.fire({
+                    title: 'Không tìm thấy thông tin lệnh sản xuất',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
                 router.push('/inventoryslip');
             }
         } catch (error) {
             console.error('Error loading production order info:', error);
-            alert('Có lỗi xảy ra khi tải thông tin lệnh sản xuất');
+            MySwal.fire({
+                title: 'Có lỗi xảy ra khi tải thông tin lệnh sản xuất',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             router.push('/inventoryslip');
         } finally {
             setLoading(false);
@@ -89,14 +120,35 @@ const CutGlassSlipPage = () => {
                 }
             }
 
-            alert('Tạo phiếu cắt kính thành công!');
+            MySwal.fire({
+                title: 'Tạo phiếu cắt kính thành công!',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             router.push(`/inventoryslip/${productionOrderId}`);
         } catch (error) {
             console.error('Error creating slip:', error);
             if (error instanceof Error) {
-                alert(`Có lỗi xảy ra khi tạo phiếu: ${error.message}`);
+                MySwal.fire({
+                    title: `Có lỗi xảy ra khi tạo phiếu: ${error.message}`,
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
             } else {
-                alert('Có lỗi xảy ra khi tạo phiếu');
+                MySwal.fire({
+                    title: 'Có lỗi xảy ra khi tạo phiếu',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
             }
         }
     };
@@ -145,6 +197,7 @@ const CutGlassSlipPage = () => {
                     productionOrderInfo={productionOrderInfo}
                     onSlipCreated={handleSlipCreated}
                     onCancel={handleCancel}
+                    onRefreshProductionOrderInfo={loadProductionOrderInfo}
                 />
             </div>
         </div>

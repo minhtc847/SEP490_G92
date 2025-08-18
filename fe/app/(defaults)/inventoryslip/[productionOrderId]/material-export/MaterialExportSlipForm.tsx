@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 import { CreateInventorySlipDto, CreateInventorySlipDetailDto, ProductionOrderInfo, ProductInfo, ProductionMaterial, fetchMaterialsByProductionOutput, createMaterialExportSlip } from '../../service';
 
 interface MaterialExportSlipFormProps {
@@ -36,6 +38,7 @@ export default function MaterialExportSlipForm({
     onSlipCreated,
     onCancel
 }: MaterialExportSlipFormProps) {
+    const MySwal = withReactContent(Swal);
     const [formData, setFormData] = useState<CreateInventorySlipDto>({
         productionOrderId: productionOrderInfo.id,
         description: '',
@@ -46,7 +49,6 @@ export default function MaterialExportSlipForm({
     const [targetProducts, setTargetProducts] = useState<TargetProduct[]>([]);
     const [selectedMaterials, setSelectedMaterials] = useState<MaterialForTarget[]>([]);
     const [loading, setLoading] = useState(false);
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     const isButylGlueSlip = productionOrderInfo.type === 'Ghép kính';
     const isChemicalExportSlip = ['Sản xuất keo', 'Đổ keo'].includes(productionOrderInfo.type);
@@ -58,7 +60,6 @@ export default function MaterialExportSlipForm({
 
         return () => {
             setLoading(false);
-            setShowConfirmModal(false);
         };
     }, [productionOrderInfo]);
 
@@ -118,11 +119,25 @@ export default function MaterialExportSlipForm({
                     return [...filtered, ...targetMaterials];
                 });
             } else {
-                alert('Không có nguyên liệu nào được định nghĩa cho sản phẩm mục tiêu này');
+                MySwal.fire({
+                    title: 'Không có nguyên liệu nào được định nghĩa cho sản phẩm mục tiêu này',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
             }
         } catch (error) {
             console.error('Error loading materials:', error);
-            alert('Có lỗi xảy ra khi tải danh sách nguyên liệu');
+            MySwal.fire({
+                title: 'Có lỗi xảy ra khi tải danh sách nguyên liệu',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
         }
     };
 
@@ -138,26 +153,47 @@ export default function MaterialExportSlipForm({
         e.preventDefault();
 
         // Ngăn chặn double submit
-        if (loading || showConfirmModal) {
+        if (loading) {
             console.log('Form đang được xử lý hoặc modal đang mở, bỏ qua submit');
             return;
         }
 
         const selectedTargets = targetProducts.filter(t => t.selected);
         if (selectedTargets.length === 0) {
-            alert('Vui lòng chọn ít nhất một sản phẩm mục tiêu');
+            MySwal.fire({
+                title: 'Vui lòng chọn ít nhất một sản phẩm mục tiêu',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             return;
         }
 
         const invalidTargets = selectedTargets.filter(t => t.targetQuantity <= 0);
         if (invalidTargets.length > 0) {
-            alert('Vui lòng nhập số lượng mục tiêu > 0 cho tất cả sản phẩm đã chọn');
+            MySwal.fire({
+                title: 'Vui lòng nhập số lượng mục tiêu > 0 cho tất cả sản phẩm đã chọn',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             return;
         }
 
         const validMaterials = selectedMaterials.filter(m => m.quantity > 0);
         if (validMaterials.length === 0) {
-            alert('Vui lòng nhập số lượng > 0 cho ít nhất một nguyên liệu');
+            MySwal.fire({
+                title: 'Vui lòng nhập số lượng > 0 cho ít nhất một nguyên liệu',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             return;
         }
 
@@ -181,7 +217,21 @@ export default function MaterialExportSlipForm({
             details,
             productionOutputTargets
         }));
-        setShowConfirmModal(true);
+
+        // SweetAlert confirm
+        MySwal.fire({
+            title: 'Xác nhận tạo phiếu',
+            text: 'Bạn có chắc chắn muốn tạo phiếu xuất này?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Xác nhận',
+            cancelButtonText: 'Hủy',
+            customClass: { popup: 'sweet-alerts' },
+        }).then((result) => {
+            if (result.isConfirmed) {
+                handleConfirmCreate();
+            }
+        });
     };
 
     const handleConfirmCreate = async () => {
@@ -193,12 +243,18 @@ export default function MaterialExportSlipForm({
         try {
             setLoading(true);
 
-            setShowConfirmModal(false);
-
+            onSlipCreated(formData);
             onSlipCreated(formData);
 
         } catch (error) {
-            alert('Có lỗi xảy ra khi xử lý form');
+            MySwal.fire({
+                title: 'Có lỗi xảy ra khi xử lý form',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
         } finally {
             setLoading(false);
         }
@@ -310,14 +366,21 @@ export default function MaterialExportSlipForm({
                                                     </label>
                                                     <input
                                                         type="number"
-                                                        step="0.01"
-                                                        min="0.01"
+                                                        step="1"
+                                                        min="1"
+                                                        max="999999"
                                                         value={target.targetQuantity}
-                                                        onChange={(e) => handleTargetQuantityChange(target.id, parseFloat(e.target.value) || 0)}
+                                                        onChange={(e) => {
+                                                            e.stopPropagation();
+                                                            const raw = e.target.value;
+                                                            const parsed = parseInt(raw || '0', 10);
+                                                            const clamped = isNaN(parsed) ? 1 : Math.max(1, Math.min(999999, parsed));
+                                                            handleTargetQuantityChange(target.id, clamped);
+                                                        }}
                                                         onClick={(e) => e.stopPropagation()}
                                                         className={`w-full px-3 py-2 border rounded-md text-sm ${target.targetQuantity <= 0 ? 'border-red-500 bg-red-50' : 'border-blue-300 bg-white'
                                                             }`}
-                                                        placeholder="0.00"
+                                                        placeholder="1"
                                                     />
                                                     {target.targetQuantity <= 0 && (
                                                         <p className="text-red-500 text-xs mt-1">Số lượng phải lớn hơn 0</p>
@@ -436,18 +499,23 @@ export default function MaterialExportSlipForm({
                                                             </label>
                                                             <input
                                                                 type="number"
-                                                                step="0.01"
+                                                                step="1"
                                                                 min="0"
-                                                                value={material.quantity}
-                                                                onChange={(e) => handleUpdateMaterial(
-                                                                    material.productionOutputId,
-                                                                    material.productId,
-                                                                    'quantity',
-                                                                    parseFloat(e.target.value) || 0
-                                                                )}
+                                                                max="999999"
+                                                                value={Number.isFinite(material.quantity) ? Math.max(0, Math.min(999999, Math.trunc(material.quantity))) : 0}
+                                                                onChange={(e) => {
+                                                                    const parsed = parseInt(e.target.value || '0', 10);
+                                                                    const clamped = isNaN(parsed) ? 0 : Math.max(0, Math.min(999999, parsed));
+                                                                    handleUpdateMaterial(
+                                                                        material.productionOutputId,
+                                                                        material.productId,
+                                                                        'quantity',
+                                                                        clamped
+                                                                    );
+                                                                }}
                                                                 className={`w-full px-3 py-2 border rounded-md ${material.quantity > 0 ? 'border-green-300 bg-white' : 'border-gray-300 bg-gray-50'
                                                                     }`}
-                                                                placeholder="0.00"
+                                                                placeholder="0"
                                                             />
                                                             <p className="text-gray-500 text-xs mt-1">
                                                                 {material.quantity > 0 ? 'Sẽ được thêm vào phiếu' : 'Để trống nếu không sử dụng'}
@@ -480,50 +548,7 @@ export default function MaterialExportSlipForm({
                     </div>
                 )}
 
-                {/* Confirmation Modal */}
-                {showConfirmModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                            <div className="flex items-center mb-4">
-                                <div className="flex-shrink-0">
-                                    <svg className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div className="ml-3">
-                                    <h3 className="text-lg font-medium text-gray-900">
-                                        Xác nhận tạo phiếu
-                                    </h3>
-                                </div>
-                            </div>
-                            <div className="mt-2">
-                                <p className="text-sm text-gray-500">
-                                    Bạn có chắc chắn muốn tạo {getSlipTypeText()} này không?
-                                </p>
-                            </div>
-                            <div className="mt-4 flex justify-end space-x-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowConfirmModal(false)}
-                                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                                >
-                                    Hủy
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleConfirmCreate}
-                                    disabled={loading}
-                                    className={`px-4 py-2 rounded-md transition-colors ${loading
-                                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                                        : 'bg-blue-500 text-white hover:bg-blue-600'
-                                        }`}
-                                >
-                                    {loading ? 'Đang tạo...' : 'Xác nhận'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                {/* Confirmation handled by SweetAlert2 */}
 
                 {/* Form Actions */}
                 <div className="flex justify-end space-x-4 pt-6 border-t">

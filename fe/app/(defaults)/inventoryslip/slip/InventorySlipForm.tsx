@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, Fragment } from 'react';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 import { CreateInventorySlipDto, CreateInventorySlipDetailDto, CreateMaterialOutputMappingDto, ProductionOrderInfo, ProductInfo, createInventoryProduct } from '../service';
 import RawMaterialForm from './RawMaterialForm';
 import SemiFinishedProductForm from './SemiFinishedProductForm';
@@ -19,6 +21,7 @@ export default function InventorySlipForm({
     onCancel, 
     onRefreshProductionOrderInfo
 }: InventorySlipFormProps) {
+    const MySwal = withReactContent(Swal);
     const [formData, setFormData] = useState<CreateInventorySlipDto>({
         productionOrderId: productionOrderInfo.id,
         description: '',
@@ -34,11 +37,12 @@ export default function InventorySlipForm({
     const [showGlassProductForm, setShowGlassProductForm] = useState(false);
 
     const [mappingDisplay, setMappingDisplay] = useState<{[key: number]: number[]}>({});
+    // Cache các sản phẩm mới tạo cục bộ để hiển thị tên/mã mà không cần refresh toàn trang
+    const [localNewProducts, setLocalNewProducts] = useState<ProductInfo[]>([]);
     const [selectedRawMaterial, setSelectedRawMaterial] = useState<CreateInventorySlipDetailDto | null>(null);
 
 
     const [rawMaterialDetailIndices, setRawMaterialDetailIndices] = useState<Set<number>>(new Set());
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     const isCutGlassSlip = productionOrderInfo.type === 'Cắt kính';
 
@@ -111,10 +115,11 @@ export default function InventorySlipForm({
         // Backend đã lọc sẵn, chỉ cần kiểm tra thêm để đảm bảo an toàn
         const semiFinishedProductIds = productionOrderInfo.productionOutputs?.map(po => po.productId) || [];
         
-        // Lọc ra các kính dư từ backend
-        let filteredGlassProducts = productionOrderInfo.glassProducts.filter(product => 
-            !semiFinishedProductIds.includes(product.id)
-        );
+        // Lọc ra các kính dư từ backend + cộng thêm cache local
+        let filteredGlassProducts = [
+            ...productionOrderInfo.glassProducts,
+            ...localNewProducts,
+        ].filter(product => !semiFinishedProductIds.includes(product.id));
         
         // Thêm vào các sản phẩm mới được tạo trong form (nếu có)
         const newProductsInForm = formData.details
@@ -122,7 +127,8 @@ export default function InventorySlipForm({
             .filter(detail => detail.productId && detail.quantity > 0) // Có productId và số lượng
             .map(detail => {
                 // Tìm thông tin sản phẩm từ availableProducts
-                const productInfo = productionOrderInfo.availableProducts?.find(p => p.id === detail.productId);
+                const productInfo = productionOrderInfo.availableProducts?.find(p => p.id === detail.productId)
+                    || localNewProducts.find(p => p.id === detail.productId);
                 if (productInfo) {
                     return {
                         ...productInfo,
@@ -164,7 +170,14 @@ export default function InventorySlipForm({
             // Validation khi thay đổi productId
             const validation = validateProductUniqueness(value, index);
             if (!validation.isValid) {
-                alert(validation.message);
+                MySwal.fire({
+                    title: validation.message,
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
                 return;
             }
             
@@ -277,7 +290,14 @@ export default function InventorySlipForm({
         e.preventDefault();
         
         if (formData.details.length === 0) {
-            alert('Vui lòng thêm ít nhất một sản phẩm vào phiếu');
+            MySwal.fire({
+                title: 'Vui lòng thêm ít nhất một sản phẩm vào phiếu',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             return;
         }
 
@@ -287,7 +307,14 @@ export default function InventorySlipForm({
         );
 
         if (invalidDetails.length > 0) {
-            alert('Vui lòng chọn sản phẩm và nhập số lượng hợp lệ (lớn hơn 0) cho tất cả các dòng');
+            MySwal.fire({
+                title: 'Vui lòng chọn sản phẩm và nhập số lượng hợp lệ (lớn hơn 0) cho tất cả các dòng',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             return;
         }
 
@@ -303,12 +330,26 @@ export default function InventorySlipForm({
             ).length;
             
             if (rawMaterialCount === 0) {
-                alert('Phiếu cắt kính phải có ít nhất 1 nguyên vật liệu (kính lớn)');
+                MySwal.fire({
+                    title: 'Phiếu cắt kính phải có ít nhất 1 nguyên vật liệu (kính lớn)',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
                 return;
             }
             
             if (outputProductCount === 0) {
-                alert('Phiếu cắt kính phải có ít nhất 1 sản phẩm đầu ra (bán thành phẩm hoặc kính dư)');
+                MySwal.fire({
+                    title: 'Phiếu cắt kính phải có ít nhất 1 sản phẩm đầu ra (bán thành phẩm hoặc kính dư)',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
                 return;
             }
             
@@ -319,11 +360,29 @@ export default function InventorySlipForm({
             );
             
             if (unmappedRawMaterials.length > 0) {
-                alert(`Vui lòng tạo mapping cho tất cả nguyên vật liệu. Còn ${unmappedRawMaterials.length} nguyên vật liệu chưa được mapping.`);
+                MySwal.fire({
+                    title: `Vui lòng tạo mapping cho tất cả nguyên vật liệu. Còn ${unmappedRawMaterials.length} nguyên vật liệu chưa được mapping.`,
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3500,
+                    showCloseButton: true,
+                });
                 return;
             }
-            
-            setShowConfirmModal(true);
+            MySwal.fire({
+                title: 'Xác nhận tạo phiếu cắt kính',
+                text: 'Bạn có chắc chắn muốn tạo phiếu này?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Xác nhận',
+                cancelButtonText: 'Hủy',
+                customClass: { popup: 'sweet-alerts' },
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    handleConfirmCreate();
+                }
+            });
         } else {
             // For non-cut glass slips, use simple mapping
             const finalMappings = tempMappings.map(mapping => ({
@@ -366,18 +425,20 @@ export default function InventorySlipForm({
         });
 
         setShowRawMaterialForm(false);
-        
-        // Refresh productionOrderInfo để cập nhật danh sách sản phẩm
-        if (onRefreshProductionOrderInfo) {
-            onRefreshProductionOrderInfo();
-        }
     };
 
     const handleSemiFinishedProductAdded = (semiFinishedProduct: any) => {
         // Kiểm tra xem sản phẩm đã tồn tại trong form chưa
         const existingDetail = formData.details.find(d => d.productId === semiFinishedProduct.productId);
         if (existingDetail) {
-            alert(`Sản phẩm ${semiFinishedProduct.productName} đã được thêm vào form. Không thể thêm trùng lặp.`);
+            MySwal.fire({
+                title: `Sản phẩm ${semiFinishedProduct.productName} đã được thêm vào form. Không thể thêm trùng lặp.`,
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             return;
         }
 
@@ -415,18 +476,20 @@ export default function InventorySlipForm({
         }
 
         setShowSemiFinishedForm(false);
-        
-        // Refresh productionOrderInfo để cập nhật danh sách sản phẩm
-        if (onRefreshProductionOrderInfo) {
-            onRefreshProductionOrderInfo();
-        }
     };
 
     const handleGlassProductAdded = (glassProduct: any) => {
         // Kiểm tra xem sản phẩm đã tồn tại trong form chưa
         const existingDetail = formData.details.find(d => d.productId === glassProduct.productId);
         if (existingDetail) {
-            alert(`Sản phẩm ${glassProduct.productName} đã được thêm vào form. Không thể thêm trùng lặp.`);
+            MySwal.fire({
+                title: `Sản phẩm ${glassProduct.productName} đã được thêm vào form. Không thể thêm trùng lặp.`,
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             return;
         }
 
@@ -464,10 +527,29 @@ export default function InventorySlipForm({
         }
         setShowGlassProductForm(false);
         
-        // Refresh productionOrderInfo để cập nhật danh sách sản phẩm
-        if (onRefreshProductionOrderInfo) {
-            onRefreshProductionOrderInfo();
-        }
+        // Thêm sản phẩm mới vào cache local để hiển thị tức thì
+        setLocalNewProducts(prev => {
+            const exists = prev.some(p => p.id === glassProduct.productId);
+            if (exists) return prev;
+            return [
+                ...prev,
+                {
+                    id: glassProduct.productId,
+                    productCode: glassProduct.productCode,
+                    productName: glassProduct.productName,
+                    productType: 'Kính dư',
+                    uom: glassProduct.uom || 'tấm',
+                    height: glassProduct.height,
+                    width: glassProduct.width,
+                    thickness: glassProduct.thickness,
+                    weight: glassProduct.weight,
+                    unitPrice: glassProduct.unitPrice,
+                } as ProductInfo,
+            ];
+        });
+
+        // Optional: nếu muốn sync backend ngay lập tức (có thể gây reload hơi chậm)
+        // if (onRefreshProductionOrderInfo) onRefreshProductionOrderInfo();
     };
 
     const handleConfirmCreate = () => {
@@ -563,7 +645,7 @@ export default function InventorySlipForm({
             onSlipCreated(formData);
         }
     
-        setShowConfirmModal(false);
+        // no-op: confirm handled by SweetAlert2
     };
 
 
@@ -1004,7 +1086,14 @@ export default function InventorySlipForm({
                                           type="button"
                                           onClick={() => {
                                               if (!selectedRawMaterial) {
-                                                  alert('Vui lòng chọn nguyên vật liệu trước khi thêm bán thành phẩm');
+                                                  MySwal.fire({
+                                                      title: 'Vui lòng chọn nguyên vật liệu trước khi thêm bán thành phẩm',
+                                                      toast: true,
+                                                      position: 'bottom-start',
+                                                      showConfirmButton: false,
+                                                      timer: 3000,
+                                                      showCloseButton: true,
+                                                  });
                                                   return;
                                               }
                                               
@@ -1169,7 +1258,14 @@ export default function InventorySlipForm({
                                          type="button"
                                          onClick={() => {
                                              if (!selectedRawMaterial) {
-                                                 alert('Vui lòng chọn nguyên vật liệu trước khi tạo kính dư');
+                                                 MySwal.fire({
+                                                     title: 'Vui lòng chọn nguyên vật liệu trước khi tạo kính dư',
+                                                     toast: true,
+                                                     position: 'bottom-start',
+                                                     showConfirmButton: false,
+                                                     timer: 3000,
+                                                     showCloseButton: true,
+                                                 });
                                                  return;
                                              }
                                              setShowGlassProductForm(true);
@@ -1353,46 +1449,7 @@ export default function InventorySlipForm({
                     </div>
                 )}
 
-                {/* Confirmation Modal */}
-                {showConfirmModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                            <div className="flex items-center mb-4">
-                                <div className="flex-shrink-0">
-                                    <svg className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div className="ml-3">
-                                    <h3 className="text-lg font-medium text-gray-900">
-                                        Xác nhận tạo phiếu
-                                    </h3>
-                                </div>
-                            </div>
-                            <div className="mt-2">
-                                <p className="text-sm text-gray-500">
-                                    Bạn có chắc chắn muốn tạo phiếu kho này không? Hành động này sẽ cập nhật số lượng hoàn thành trong kế hoạch sản xuất.
-                                </p>
-                            </div>
-                            <div className="mt-4 flex justify-end space-x-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowConfirmModal(false)}
-                                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                                >
-                                    Hủy
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleConfirmCreate}
-                                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                                >
-                                    Xác nhận
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                {/* Confirmation handled by SweetAlert2 */}
 
                 {/* Form Actions */}
                 <div className="flex justify-end space-x-4 pt-6 border-t">

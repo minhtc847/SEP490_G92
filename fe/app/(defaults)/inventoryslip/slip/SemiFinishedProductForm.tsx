@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 import { ProductInfo } from '../service';
 
 interface SemiFinishedProductFormProps {
@@ -16,6 +18,7 @@ export default function SemiFinishedProductForm({
     onCancel,
     selectedRawMaterial
 }: SemiFinishedProductFormProps) {
+    const MySwal = withReactContent(Swal);
     const [formData, setFormData] = useState({
         productId: 0,
         quantity: '',
@@ -64,7 +67,14 @@ export default function SemiFinishedProductForm({
         const selectedProduct = availableSemiFinishedProducts.find((p: ProductInfo) => p.id === formData.productId);
         
         if (!selectedProduct) {
-            alert('Không tìm thấy bán thành phẩm đã chọn');
+            MySwal.fire({
+                title: 'Không tìm thấy bán thành phẩm đã chọn',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             return;
         }
 
@@ -230,9 +240,6 @@ export default function SemiFinishedProductForm({
                             {errors.quantity && (
                                 <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>
                             )}
-                            <p className="text-xs text-gray-600 mt-1">
-                                Giới hạn: 1 - 999,999 tấm (số nguyên)
-                            </p>
                         </div>
                     </div>
 

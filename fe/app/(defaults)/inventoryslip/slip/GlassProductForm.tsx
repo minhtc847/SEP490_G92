@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 import { ProductInfo, createInventoryProduct } from '../service';
 
 interface GlassProductFormProps {
@@ -16,6 +18,7 @@ export default function GlassProductForm({
     onCancel,
     selectedRawMaterial
 }: GlassProductFormProps) {
+    const MySwal = withReactContent(Swal);
     const [formData, setFormData] = useState({
         productCode: '',
         productName: '',
@@ -81,12 +84,23 @@ export default function GlassProductForm({
         if (!formData.width) {
             newErrors.width = 'Chiều rộng là bắt buộc';
         }
+        if (!formData.thickness) {
+            newErrors.thickness = 'Chiều dày là bắt buộc';
+        }
         if (!formData.quantity || parseInt(formData.quantity) <= 0) {
             newErrors.quantity = 'Số lượng phải lớn hơn 0';
         }
         if (!selectedRawMaterial) {
             newErrors.rawMaterial = 'Vui lòng chọn nguyên vật liệu để mapping';
         }
+
+        // Validate upper bounds 0..99999
+        const h = parseFloat(formData.height || '0');
+        const w = parseFloat(formData.width || '0');
+        const t = parseFloat(formData.thickness || '0');
+        if (!isNaN(h) && h > 99999) newErrors.height = 'Chiều dài tối đa 99999';
+        if (!isNaN(w) && w > 99999) newErrors.width = 'Chiều rộng tối đa 99999';
+        if (!isNaN(t) && t > 99999) newErrors.thickness = 'Chiều dày tối đa 99999';
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -113,13 +127,27 @@ export default function GlassProductForm({
 
     const handleUseExistingProduct = (product: ProductInfo) => {
         if (!selectedRawMaterial) {
-            alert('Vui lòng chọn nguyên vật liệu để mapping trước');
+            MySwal.fire({
+                title: 'Vui lòng chọn nguyên vật liệu để mapping trước',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             return;
         }
 
         const quantity = parseInt(formData.quantity);
         if (isNaN(quantity) || quantity <= 0) {
-            alert('Vui lòng nhập số lượng hợp lệ (lớn hơn 0)');
+            MySwal.fire({
+                title: 'Vui lòng nhập số lượng hợp lệ (lớn hơn 0)',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             return;
         }
 
@@ -195,7 +223,14 @@ export default function GlassProductForm({
             onGlassProductAdded(glassProduct);
         } catch (error) {
             console.error('Error creating product:', error);
-            alert('Có lỗi xảy ra khi tạo kính dư mới');
+            MySwal.fire({
+                title: 'Có lỗi xảy ra khi tạo kính dư mới',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
         } finally {
             setIsCreatingNewProduct(false);
         }
@@ -439,10 +474,7 @@ export default function GlassProductForm({
                             />
                             {errors.quantity && (
                                 <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>
-                            )}
-                            <p className="text-xs text-yellow-600 mt-1">
-                                Giới hạn: 1 - 999,999 tấm (số nguyên)
-                            </p>
+                            )}                            
                         </div>
 
                         <div>
@@ -453,13 +485,23 @@ export default function GlassProductForm({
                                 type="number"
                                 step="0.1"
                                 min="0"
+                                max="99999"
                                 value={formData.height}
-                                onChange={(e) => handleInputChange('height', e.target.value)}
+                                onChange={(e) => {
+                                    const raw = e.target.value;
+                                    let val = parseFloat(raw);
+                                    if (isNaN(val) || val < 0) val = 0;
+                                    if (val > 99999) val = 99999;
+                                    handleInputChange('height', val.toString());
+                                }}
                                 className={`w-full px-3 py-2 border rounded-md ${
                                     !formData.height ? 'border-red-500 bg-red-50' : 'border-gray-300'
                                 }`}
                                 placeholder="0.0"
                             />
+                            {errors.height && (
+                                <p className="text-red-500 text-xs mt-1">{errors.height}</p>
+                            )}
                         </div>
 
                         <div>
@@ -470,28 +512,50 @@ export default function GlassProductForm({
                                 type="number"
                                 step="0.1"
                                 min="0"
+                                max="99999"
                                 value={formData.width}
-                                onChange={(e) => handleInputChange('width', e.target.value)}
+                                onChange={(e) => {
+                                    const raw = e.target.value;
+                                    let val = parseFloat(raw);
+                                    if (isNaN(val) || val < 0) val = 0;
+                                    if (val > 99999) val = 99999;
+                                    handleInputChange('width', val.toString());
+                                }}
                                 className={`w-full px-3 py-2 border rounded-md ${
                                     !formData.width ? 'border-red-500 bg-red-50' : 'border-gray-300'
                                 }`}
                                 placeholder="0.0"
                             />
+                            {errors.width && (
+                                <p className="text-red-500 text-xs mt-1">{errors.width}</p>
+                            )}
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Dày (mm)
+                                Dày (mm) <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="number"
                                 step="0.1"
                                 min="0"
+                                max="99999"
                                 value={formData.thickness}
-                                onChange={(e) => handleInputChange('thickness', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                onChange={(e) => {
+                                    const raw = e.target.value;
+                                    let val = parseFloat(raw);
+                                    if (isNaN(val) || val < 0) val = 0;
+                                    if (val > 99999) val = 99999;
+                                    handleInputChange('thickness', val.toString());
+                                }}
+                                className={`w-full px-3 py-2 border rounded-md ${
+                                    !formData.thickness ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                                }`}
                                 placeholder="0.0"
                             />
+                            {errors.thickness && (
+                                <p className="text-red-500 text-xs mt-1">{errors.thickness}</p>
+                            )}
                         </div>
 
                         <div>
