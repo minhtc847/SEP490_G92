@@ -212,11 +212,14 @@ export default function MaterialExportSlipForm({
             targetQuantity: target.targetQuantity
         }));
 
-        setFormData(prev => ({
-            ...prev,
+        // Xây dựng DTO ngay lập tức để không phụ thuộc vào setState bất đồng bộ
+        const builtDto: CreateInventorySlipDto = {
+            productionOrderId: productionOrderInfo.id,
+            description: formData.description,
             details,
+            mappings: [],
             productionOutputTargets
-        }));
+        };
 
         // SweetAlert confirm
         MySwal.fire({
@@ -229,12 +232,12 @@ export default function MaterialExportSlipForm({
             customClass: { popup: 'sweet-alerts' },
         }).then((result) => {
             if (result.isConfirmed) {
-                handleConfirmCreate();
+                handleConfirmCreate(builtDto);
             }
         });
     };
 
-    const handleConfirmCreate = async () => {
+    const handleConfirmCreate = async (dto: CreateInventorySlipDto) => {
         // Ngăn chặn double click
         if (loading) {
             return;
@@ -243,8 +246,8 @@ export default function MaterialExportSlipForm({
         try {
             setLoading(true);
 
-            onSlipCreated(formData);
-            onSlipCreated(formData);
+            // Gửi một lần với DTO đã xây dựng
+            onSlipCreated(dto);
 
         } catch (error) {
             MySwal.fire({
