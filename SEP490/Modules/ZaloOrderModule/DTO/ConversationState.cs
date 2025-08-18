@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using ZaloLLMResponse = SEP490.Modules.Zalo.DTO.LLMResponse;
 
 namespace SEP490.Modules.ZaloOrderModule.DTO
 {
@@ -56,6 +57,10 @@ namespace SEP490.Modules.ZaloOrderModule.DTO
         // New field for message history
         [JsonPropertyName("messageHistory")]
         public List<ConversationMessage> MessageHistory { get; set; } = new();
+
+        // New field for storing LLM response
+        [JsonPropertyName("lastLLMResponse")]
+        public ZaloLLMResponse? LastLLMResponse { get; set; }
 
         public void IncrementMessageCount()
         {

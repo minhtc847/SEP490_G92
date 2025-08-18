@@ -5,6 +5,7 @@ using SEP490.DB;
 using SEP490.DB.Models;
 using SEP490.Modules.ZaloOrderModule.DTO;
 using SEP490.Modules.ZaloOrderModule.Constants;
+using ZaloLLMResponse = SEP490.Modules.Zalo.DTO.LLMResponse;
 
 namespace SEP490.Modules.ZaloOrderModule.Services
 {
@@ -221,7 +222,10 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 CustomerPhone = dbConversation.CustomerPhone,
                 CustomerId = dbConversation.CustomerId,
                 OrderItems = dbConversation.OrderItems.Select(MapToOrderItem).ToList(),
-                MessageHistory = dbConversation.MessageHistory.Select(MapToConversationMessage).ToList()
+                MessageHistory = dbConversation.MessageHistory.Select(MapToConversationMessage).ToList(),
+                LastLLMResponse = !string.IsNullOrEmpty(dbConversation.LastLLMResponseJson) 
+                    ? System.Text.Json.JsonSerializer.Deserialize<ZaloLLMResponse>(dbConversation.LastLLMResponseJson) 
+                    : null
             };
         }
 
@@ -262,6 +266,9 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             dbConversation.LastError = conversationState.LastError;
             dbConversation.CustomerPhone = conversationState.CustomerPhone;
             dbConversation.CustomerId = conversationState.CustomerId;
+            dbConversation.LastLLMResponseJson = conversationState.LastLLMResponse != null 
+                ? System.Text.Json.JsonSerializer.Serialize(conversationState.LastLLMResponse) 
+                : null;
 
             // Update message history
             var newMessages = conversationState.MessageHistory

@@ -59,14 +59,14 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                         _logger.LogInformation("Found order start at index {Index} for user: {UserId}", i, zaloUserId);
                     }
                     
-                    // Look for "Kết thúc" message (case-insensitive)
+                    // Look for "Kết thúc" message (case-insensitive) - update to the last occurrence
                     if (orderStartIndex != -1 && 
                         message.SenderType == "user" && 
                         message.Content.Trim().Equals("Kết thúc", StringComparison.OrdinalIgnoreCase))
                     {
                         orderEndIndex = i;
                         _logger.LogInformation("Found order end at index {Index} for user: {UserId}", i, zaloUserId);
-                        break;
+                        // Don't break here - continue to find the last occurrence
                     }
                 }
 

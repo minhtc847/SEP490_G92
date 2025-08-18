@@ -47,5 +47,9 @@ namespace SEP490.DB.Models
         
         // Foreign key relationship
         public Customer? Customer { get; set; }
+        
+        // LLM Response storage
+        [StringLength(4000)]
+        public string? LastLLMResponseJson { get; set; }
     }
 }

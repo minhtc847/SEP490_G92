@@ -136,6 +136,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 {
                     return MessageIntents.CONFIRM_ORDER;
                 }
+                return MessageIntents.ADD_ORDER_DETAIL;
             }
         
             
@@ -159,12 +160,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     return await HandlePhoneNumberIntentAsync(zaloUserId, message, conversation);
                   
                 case MessageIntents.ADD_ORDER_DETAIL:
-                    return new MessageResponse
-                    {
-                        Content = ZaloWebhookConstants.DefaultMessages.ASK_CONFIRM_ORDER,
-                        MessageType = "text",
-                        Intent = MessageIntents.ADD_ORDER_DETAIL
-                    };
+                    return await HandleADdOrderDetailIntentAsync(zaloUserId, message, conversation);
 
                 case MessageIntents.FINISH_ORDER:
                     return await HandleFinishOrderIntentAsync(zaloUserId, message, conversation);
@@ -182,18 +178,58 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     return await HandleUnknownIntentAsync(zaloUserId, message, conversation);
             }
         }
+
+        private async Task<MessageResponse> HandleADdOrderDetailIntentAsync(string zaloUserId, string message, ConversationState conversation)
+        {
+            // Start the order process by asking for phone number
+            await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.WAITING_FOR_PRODUCT_INFO);
+
+            return new MessageResponse
+            {
+                Content = ZaloWebhookConstants.DefaultMessages.ASK_CONFIRM_ORDER,
+                MessageType = "text",
+                Intent = MessageIntents.ADD_ORDER_DETAIL
+            };
+        }
         private async Task<MessageResponse> HandleConFirmOrderIntentAsync(string zaloUserId, string message, ConversationState conversation)
         {
             try
             {
                 _logger.LogInformation("Handling confirm order intent for user: {UserId}", zaloUserId);
 
-                // Check if conversation has order items
-                if (!conversation.OrderItems.Any())
+                // Check if conversation has LLM response with valid items
+                if (conversation.LastLLMResponse?.Items == null || !conversation.LastLLMResponse.Items.Any())
                 {
                     return new MessageResponse
                     {
-                        Content = "Bạn chưa có sản phẩm nào trong đơn hàng. Vui lòng thêm sản phẩm trước khi xác nhận.",
+                        Content = "❌ Không có thông tin đơn hàng để xác nhận. Vui lòng thử lại.",
+                        MessageType = "text",
+                        Intent = MessageIntents.CONFIRM_ORDER
+                    };
+                }
+
+                // Create order items from LLM response
+                var orderCreated = await CreateOrderFromResponseAsync(zaloUserId, conversation.LastLLMResponse, conversation);
+                
+                if (!orderCreated)
+                {
+                    _logger.LogError("Failed to create order from LLM response for user: {UserId}", zaloUserId);
+                    return new MessageResponse
+                    {
+                        Content = "❌ Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại sau.",
+                        MessageType = "text",
+                        Intent = MessageIntents.CONFIRM_ORDER
+                    };
+                }
+
+                // Get updated conversation with order items
+                var updatedConversation = await _conversationStateService.GetConversationAsync(zaloUserId);
+                if (updatedConversation == null)
+                {
+                    _logger.LogError("Failed to retrieve updated conversation for user: {UserId}", zaloUserId);
+                    return new MessageResponse
+                    {
+                        Content = "❌ Có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại sau.",
                         MessageType = "text",
                         Intent = MessageIntents.CONFIRM_ORDER
                     };
@@ -203,10 +239,10 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 var orderCode = $"ZO{DateTime.Now:yyyyMMddHHmmss}";
 
                 // Calculate total amount
-                var totalAmount = conversation.OrderItems.Sum(item => item.TotalPrice);
+                var totalAmount = updatedConversation.OrderItems.Sum(item => item.TotalPrice);
 
                 // Create order details
-                var orderDetails = conversation.OrderItems.Select(item => new CreateZaloOrderDetailDTO
+                var orderDetails = updatedConversation.OrderItems.Select(item => new CreateZaloOrderDetailDTO
                 {
                     ProductName = $"Kính {item.ProductType}-{item.ProductCode} phút, KT: {item.Width}x{item.Height}x{item.Thickness} mm",
                     ProductCode = $"{item.ProductType}-{item.ProductCode}",
@@ -244,7 +280,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.COMPLETED);
 
                 // Generate order summary
-                var orderSummary = await GenerateOrderSummary(conversation);
+                var orderSummary = await GenerateOrderSummary(updatedConversation);
 
                 var responseMessage = $"✅ Đã xác nhận đặt hàng thành công!\n\n" +
                                     $"📋 Mã đơn hàng: {orderCode}\n" +
@@ -387,23 +423,26 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     };
                 }
 
-                // Create order based on the response
-                var orderCreated = await CreateOrderFromResponseAsync(zaloUserId, forwardResponse, conversation);
-                
-                if (!orderCreated)
+                // Check if the response has valid items
+                if (forwardResponse.Items == null || forwardResponse.Items.Count == 0)
                 {
-                    _logger.LogError("Failed to create order for user: {UserId}", zaloUserId);
+                    _logger.LogWarning("No valid items found in LLM response for user: {UserId}", zaloUserId);
                     return new MessageResponse
                     {
-                        Content = "❌ Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại sau.",
+                        Content = "❌ Không thể tổng hợp được đơn hàng. Vui lòng đặt hàng lại.",
                         MessageType = "text",
                         Intent = MessageIntents.FINISH_ORDER
                     };
                 }
 
-                // Generate order summary
-                var updatedConversation = await _conversationStateService.GetConversationAsync(zaloUserId);
-                var orderSummary = await GenerateOrderSummary(updatedConversation);
+                // Store the forward response in conversation for later use in confirm order
+                await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
+                {
+                    conv.LastLLMResponse = forwardResponse;
+                });
+
+                // Generate order summary from forward response
+                var orderSummary = await GenerateOrderSummaryFromLLMResponse(forwardResponse, conversation);
                 
                 await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.CONFIRMING);
 
@@ -618,6 +657,47 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             summary += $"💰 TỔNG TIỀN: {totalOrderAmount:N0} VNĐ\n\n";
             summary += $"📞 Số điện thoại: {conversation.CustomerPhone}";
             
+            if (conversation.CustomerId.HasValue)
+            {
+                var cus = await _customerService.GetCustomerByPhoneAsync(conversation.CustomerPhone);
+                var cusName = cus?.CustomerName ?? "Chưa có thông tin";
+
+                summary += $"\n👤 Khách hàng: {cusName}";
+            }
+
+            return summary;
+        }
+
+        private async Task<string> GenerateOrderSummary2(ConversationState conversation)
+        {
+            var summary = "📋 SẢN PHẢM ĐÃ ĐẶT:\n\n";
+
+            foreach (var item in conversation.OrderItems)
+            {
+                summary += $"• Kính {item.ProductType}-{item.ProductCode} phút, KT:{item.Width}*{item.Height}*{item.Thickness} mm - SL: {item.Quantity}\n";
+
+            }
+
+            if (conversation.CustomerId.HasValue)
+            {
+                var cus = await _customerService.GetCustomerByPhoneAsync(conversation.CustomerPhone);
+                var cusName = cus?.CustomerName ?? "Chưa có thông tin";
+
+                summary += $"\n👤 Khách hàng: {cusName}";
+            }
+
+            return summary;
+        }
+
+        private async Task<string> GenerateOrderSummaryFromLLMResponse(ZaloLLMResponse forwardResponse, ConversationState conversation)
+        {
+            var summary = "📋 SẢN PHẢM ĐÃ ĐẶT:\n\n";
+
+            foreach (var item in forwardResponse.Items)
+            {
+                summary += $"• Kính {item.ItemType}-{item.ItemCode} phút, KT:{item.Width}*{item.Height}*{item.Thickness} mm - SL: {item.Quantity}\n";
+            }
+
             if (conversation.CustomerId.HasValue)
             {
                 var cus = await _customerService.GetCustomerByPhoneAsync(conversation.CustomerPhone);
