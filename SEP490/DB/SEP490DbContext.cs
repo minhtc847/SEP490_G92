@@ -114,7 +114,6 @@ namespace SEP490.DB
         public DbSet<DeliveryHistory> DeliveryHistories { get; set; }
         public DbSet<ProductionPlan> ProductionPlans { get; set; }
         public DbSet<ProductionOrder> ProductionOrders { get; set; }
-
         public DbSet<ProductionPlanDetail> ProductionPlanDetails { get; set; }
         public DbSet<Employee> Employees { get; set; }
         public DbSet<ProductionOutput> ProductionOutputs { get; set; }

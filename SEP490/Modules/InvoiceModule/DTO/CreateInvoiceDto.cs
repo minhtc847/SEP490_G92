@@ -9,9 +9,9 @@ namespace SEP490.Modules.InvoiceModule.DTO
         public DateTime? DueDate { get; set; }
         public InvoiceType InvoiceType { get; set; }
         public InvoiceStatus Status { get; set; }
-        public decimal Subtotal { get; set; }
+        public int Subtotal { get; set; }
         public decimal Tax { get; set; }
-        public decimal TotalAmount { get; set; }
+        public int TotalAmount { get; set; }
         public int? SalesOrderId { get; set; }
         public int? PurchaseOrderId { get; set; }
         public int CustomerId { get; set; }
@@ -24,7 +24,7 @@ namespace SEP490.Modules.InvoiceModule.DTO
         public int ProductId { get; set; }
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
-        public decimal Total { get; set; }
+        public int Total { get; set; }
         public string? Description { get; set; }
     }
 } 

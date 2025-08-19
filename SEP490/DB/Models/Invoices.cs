@@ -11,9 +11,9 @@ namespace SEP490.DB.Models
         
         public DateTime InvoiceDate { get; set; }
         public DateTime? DueDate { get; set; }
-        public decimal? Subtotal { get; set; }
+        public int? Subtotal { get; set; }
         public decimal? Tax { get; set; }
-        public decimal? TotalAmount { get; set; } 
+        public int? TotalAmount { get; set; } 
         public InvoiceStatus Status { get; set; } = InvoiceStatus.Unpaid;
         public Customer Customer { get; set; }
 
