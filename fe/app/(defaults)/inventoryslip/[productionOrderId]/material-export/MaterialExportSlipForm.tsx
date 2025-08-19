@@ -73,7 +73,7 @@ export default function MaterialExportSlipForm({
             productId: output.productId,
             productName: output.productName || `Sản phẩm ${output.productId}`,
             productCode: productionOrderInfo.availableProducts?.find(p => p.id === output.productId)?.productCode || '',
-            uom: output.uom || 'tấm',
+            uom: output.uom || '',
             amount: output.amount || 0,
             selected: false,
             targetQuantity: 0
@@ -282,18 +282,7 @@ export default function MaterialExportSlipForm({
             </h2>
 
             <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Mã lệnh sản xuất
-                        </label>
-                        <input
-                            type="text"
-                            value={productionOrderInfo.productionOrderCode}
-                            disabled
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
-                        />
-                    </div>
+                <div className="grid grid-cols-1 gap-4 mb-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Loại lệnh sản xuất
@@ -302,7 +291,7 @@ export default function MaterialExportSlipForm({
                             type="text"
                             value={productionOrderInfo.type}
                             disabled
-                            className="w-full px-3 py-3 border border-gray-300 rounded-md bg-gray-50"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
                         />
                     </div>
                 </div>
@@ -350,10 +339,6 @@ export default function MaterialExportSlipForm({
                                                 }`}>
                                                 {target.productName}
                                             </h4>
-                                            <p className={`text-sm ${target.selected ? 'text-blue-700' : 'text-gray-700'
-                                                }`}>
-                                                Mã: {target.productCode}
-                                            </p>
                                             <p className={`text-sm ${target.selected ? 'text-blue-600' : 'text-gray-600'
                                                 }`}>
                                                 Đơn vị: {target.uom}
@@ -369,21 +354,23 @@ export default function MaterialExportSlipForm({
                                                     </label>
                                                     <input
                                                         type="number"
-                                                        step="1"
-                                                        min="1"
-                                                        max="999999"
+                                                        step={(target.uom || '').toLowerCase() === 'tấm' ? 1 : 0.01}
+                                                        min={(target.uom || '').toLowerCase() === 'tấm' ? 1 : 0.01}
+                                                        max={999999}
                                                         value={target.targetQuantity}
                                                         onChange={(e) => {
                                                             e.stopPropagation();
+                                                            const isSheet = (target.uom || '').toLowerCase() === 'tấm';
                                                             const raw = e.target.value;
-                                                            const parsed = parseInt(raw || '0', 10);
-                                                            const clamped = isNaN(parsed) ? 1 : Math.max(1, Math.min(999999, parsed));
-                                                            handleTargetQuantityChange(target.id, clamped);
+                                                            const parsed = isSheet ? parseInt(raw || '0', 10) : parseFloat(raw || '0');
+                                                            const minVal = isSheet ? 1 : 0.01;
+                                                            const clamped = isNaN(parsed) ? minVal : Math.max(minVal, Math.min(999999, parsed));
+                                                            handleTargetQuantityChange(target.id, isSheet ? Math.trunc(clamped) : clamped);
                                                         }}
                                                         onClick={(e) => e.stopPropagation()}
                                                         className={`w-full px-3 py-2 border rounded-md text-sm ${target.targetQuantity <= 0 ? 'border-red-500 bg-red-50' : 'border-blue-300 bg-white'
                                                             }`}
-                                                        placeholder="1"
+                                                        placeholder={(target.uom || '').toLowerCase() === 'tấm' ? '1' : '0.01'}
                                                     />
                                                     {target.targetQuantity <= 0 && (
                                                         <p className="text-red-500 text-xs mt-1">Số lượng phải lớn hơn 0</p>
@@ -430,7 +417,7 @@ export default function MaterialExportSlipForm({
                     <div className="border-t pt-6 mb-6">
                         <div className="mb-4">
                             <h3 className="text-lg font-semibold text-green-800 mb-2">
-                                Bước 2: Nguyên liệu và thành phẩm mục tiêu
+                                Bước 2: Thêm nguyên liệu ứng với sản phẩm mục tiêu  
                             </h3>
                             <p className="text-sm text-gray-600">
                                 Nhập số lượng nguyên liệu cần xuất. Nguyên liệu có số lượng = 0 sẽ không được thêm vào phiếu.
@@ -502,23 +489,32 @@ export default function MaterialExportSlipForm({
                                                             </label>
                                                             <input
                                                                 type="number"
-                                                                step="1"
-                                                                min="0"
-                                                                max="999999"
-                                                                value={Number.isFinite(material.quantity) ? Math.max(0, Math.min(999999, Math.trunc(material.quantity))) : 0}
+                                                                step={(material.uom || '').toLowerCase() === 'tấm' ? 1 : 0.01}
+                                                                min={0}
+                                                                max={999999}
+                                                                value={(() => {
+                                                                    const isSheet = (material.uom || '').toLowerCase() === 'tấm';
+                                                                    const q = Number(material.quantity) || 0;
+                                                                    if (isSheet) {
+                                                                        return Math.max(0, Math.min(999999, Math.trunc(q)));
+                                                                    }
+                                                                    return Math.max(0, Math.min(999999, Number(q.toFixed(2))));
+                                                                })()}
                                                                 onChange={(e) => {
-                                                                    const parsed = parseInt(e.target.value || '0', 10);
+                                                                    const isSheet = (material.uom || '').toLowerCase() === 'tấm';
+                                                                    const raw = e.target.value;
+                                                                    const parsed = isSheet ? parseInt(raw || '0', 10) : parseFloat(raw || '0');
                                                                     const clamped = isNaN(parsed) ? 0 : Math.max(0, Math.min(999999, parsed));
                                                                     handleUpdateMaterial(
                                                                         material.productionOutputId,
                                                                         material.productId,
                                                                         'quantity',
-                                                                        clamped
+                                                                        isSheet ? Math.trunc(clamped) : clamped
                                                                     );
                                                                 }}
                                                                 className={`w-full px-3 py-2 border rounded-md ${material.quantity > 0 ? 'border-green-300 bg-white' : 'border-gray-300 bg-gray-50'
                                                                     }`}
-                                                                placeholder="0"
+                                                                placeholder={(material.uom || '').toLowerCase() === 'tấm' ? '0' : '0.00'}
                                                             />
                                                             <p className="text-gray-500 text-xs mt-1">
                                                                 {material.quantity > 0 ? 'Sẽ được thêm vào phiếu' : 'Để trống nếu không sử dụng'}

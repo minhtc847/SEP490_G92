@@ -5,10 +5,9 @@
         public int Id { get; set; }
         public int ProductId { get; set; }
         public string? ProductName { get; set; }
-        public UOM? UOM { get; set; }
         public decimal? Amount { get; set; }
-        public int? Finished { get; set; } = 0;
-        public int? Defected { get; set; } = 0;
+        public decimal? Finished { get; set; } = 0;
+        public decimal? Defected { get; set; } = 0;
         public int? ProductionOrderId { get; set; }
         public int? OutputFor { get; set; }
         public ProductionOrder ProductionOrder { get; set; } = null!;

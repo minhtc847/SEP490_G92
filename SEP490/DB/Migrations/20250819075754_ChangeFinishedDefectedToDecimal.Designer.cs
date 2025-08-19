@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SEP490.DB;
 
@@ -10,9 +11,10 @@ using SEP490.DB;
 namespace SEP490.DB.Migrations
 {
     [DbContext(typeof(SEP490DbContext))]
-    partial class SEP490DbContextModelSnapshot : ModelSnapshot
+    [Migration("20250819075754_ChangeFinishedDefectedToDecimal")]
+    partial class ChangeFinishedDefectedToDecimal
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1283,6 +1285,10 @@ namespace SEP490.DB.Migrations
                     b.Property<int?>("ProductionOrderId")
                         .HasColumnType("int")
                         .HasColumnName("production_order_id");
+
+                    b.Property<int?>("UOM")
+                        .HasColumnType("int")
+                        .HasColumnName("uom");
 
                     b.HasKey("Id")
                         .HasName("pk_production_outputs");

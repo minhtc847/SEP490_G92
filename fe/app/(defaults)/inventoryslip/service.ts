@@ -145,7 +145,7 @@ export interface PaginatedProductsDto {
 
 export interface ProductSearchRequestDto {
     productionOrderId: number;
-    productType?: string; // "NVL", "Bán thành phẩm", "Kính dư"
+    productType?: string;
     searchTerm?: string;
     pageNumber: number;
     pageSize: number;
@@ -209,21 +209,12 @@ export const createCutGlassSlip = async (dto: CreateInventorySlipDto, mappingInf
         const requestBody = mappingInfo ? { 
             ...dto,  // This spreads all dto properties to root level
             ...mappingInfo  // This spreads all mappingInfo properties to root level
-        } : dto;
-        
-        console.log('createCutGlassSlip request body:', requestBody);
-        console.log('createCutGlassSlip JSON stringified:', JSON.stringify(requestBody));
-        
-
-        
+        } : dto;     
         const response = await axios.post<any>("/api/InventorySlip/cut-glass", requestBody);
         const result = response.data;
-        console.log('createCutGlassSlip response:', result);
         
-        // Lấy data thực tế từ response
         const slipData = result?.data ?? result;
         
-        // Sau khi tạo phiếu thành công, cập nhật ProductionOutput và kiểm tra hoàn thành
         if (slipData && mappingInfo?.productClassifications) {
             try {
                 await processCutGlassSlipCompletion(
@@ -233,7 +224,6 @@ export const createCutGlassSlip = async (dto: CreateInventorySlipDto, mappingInf
                 );
             } catch (updateError) {
                 console.error('Error updating production outputs or checking completion:', updateError);
-                // Không throw error vì phiếu đã được tạo thành công
             }
         }
         
@@ -288,7 +278,7 @@ export const processCutGlassSlipCompletion = async (
         // Chỉ cần kiểm tra và cập nhật trạng thái lệnh sản xuất
         await checkAndUpdateProductionOrderStatus(productionOrderId);
         
-        console.log('Successfully processed cut glass slip completion');
+
     } catch (error) {
         console.error('Error processing cut glass slip completion:', error);
         throw error;

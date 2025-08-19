@@ -94,14 +94,14 @@ const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
                     {expandedSlips.has(slip.id) && (
                         <div className="p-4">
                             <h5 className="font-medium mb-3">Chi tiết phiếu:</h5>
-                            
+
                             {/* For Cut Glass Slips - Show hierarchical structure */}
                             {slip.productionOrderType === 'Cắt kính' ? (
                                 <CutGlassSlipDetails slip={slip} />
                             ) : ['Ghép kính', 'Sản xuất keo', 'Đổ keo'].includes(slip.productionOrderType || '') ? (
                                 /* For material export slips - Show grouped structure */
-                                <MaterialExportSlipDetails 
-                                    slip={slip} 
+                                <MaterialExportSlipDetails
+                                    slip={slip}
                                     expandedMaterials={expandedMaterials}
                                     toggleMaterialsExpanded={toggleMaterialsExpanded}
                                 />
@@ -112,7 +112,6 @@ const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
                                         <thead>
                                             <tr className="bg-gray-50">
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã SP</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên sản phẩm</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượng</th>
@@ -171,43 +170,57 @@ const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
         setExpandedMaterials(newExpanded);
     };
 
-    const rawMaterials = slip.details.filter(detail => 
-        detail.productId !== null && detail.productType === 'NVL' 
+    const rawMaterials = slip.details.filter(detail =>
+        detail.productId !== null && detail.productType === 'NVL'
     );
-    
+
     // get semi finished products from production outputs
-    const semiFinishedProducts = slip.details.filter(detail => 
-        detail.productId !== null && 
+    const semiFinishedProducts = slip.details.filter(detail =>
+        detail.productId !== null &&
         (detail.productType === 'Bán thành phẩm' || detail.productType === 'BTP' || detail.productType === 'semi_finished')
     );
-    
+
     // get waste glass from material_output_mappings
-    const wasteGlass = slip.details.filter(detail => 
-        detail.productId !== null && 
+    const wasteGlass = slip.details.filter(detail =>
+        detail.productId !== null &&
         (detail.productType === 'Kính dư' || detail.productType === 'Kính')
     );
-    
-    const targetProducts = slip.details.filter(detail => 
+
+    const targetProducts = slip.details.filter(detail =>
         detail.productId === null // Thành phẩm mục tiêu
     );
 
     // Create a mapping from raw material to its output products
     const materialOutputMap = new Map<number, InventorySlipDetail[]>();
-    
+
+    // Debug logging
+    console.log('Raw materials:', rawMaterials);
+    console.log('Semi-finished products:', semiFinishedProducts);
+    console.log('Waste glass:', wasteGlass);
+
     // Use the actual mappings from the backend
     rawMaterials.forEach(material => {
+        console.log(`Processing material ${material.id} (${material.productName}):`);
+        console.log('  OutputMappings:', material.outputMappings);
+        
         if (material.outputMappings && material.outputMappings.length > 0) {
             // Use actual mappings if available
             const outputs = material.outputMappings.map(mapping => {
+                console.log(`  Mapping: ${mapping.inputDetailId} -> ${mapping.outputDetailId}`);
                 const outputDetail = [...semiFinishedProducts, ...wasteGlass].find(d => d.id === mapping.outputDetailId);
+                console.log(`  Found output detail:`, outputDetail);
                 return outputDetail;
             }).filter(Boolean) as InventorySlipDetail[];
-            
+
+            console.log(`  Final outputs for material ${material.id}:`, outputs);
             materialOutputMap.set(material.id, outputs);
         } else {
+            console.log(`  No output mappings for material ${material.id}`);
             materialOutputMap.set(material.id, []);
         }
     });
+
+    console.log('Final materialOutputMap:', materialOutputMap);
 
     return (
         <div className="space-y-4">
@@ -217,10 +230,10 @@ const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
                     {rawMaterials.map((material) => {
                         const outputs = materialOutputMap.get(material.id) || [];
                         const isExpanded = expandedMaterials.has(material.id);
-                        
+
                         return (
                             <div key={material.id} className="border rounded-lg overflow-hidden">
-                                <div 
+                                <div
                                     className="bg-blue-50 p-3 cursor-pointer hover:bg-blue-100 transition-colors"
                                     onClick={() => toggleExpanded(material.id)}
                                 >
@@ -235,22 +248,21 @@ const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
                                                 <div className="font-medium text-blue-900">
                                                     {material.productName}
                                                 </div>
-                                                                                             <div className="text-sm text-blue-700">
-                                                 Mã: {material.productCode} | 
-                                                 Số lượng: {material.quantity} {material.uom || 'cái'} | 
-                                                 {outputs.length > 0 ? (
-                                                     <>
-                                                         Tạo ra {outputs.length} sản phẩm
-                                                         {targetProducts.length > 0 && (
-                                                             <span className="ml-2 text-green-600">
-                                                                 Thành phẩm mục tiêu: {
-                                                                     targetProducts.reduce((total, target) => total + (target.quantity || 0), 0)
-                                                                 } cái
-                                                             </span>
-                                                         )}
-                                                     </>
-                                                 ) : ' Chưa có sản phẩm đầu ra'}
-                                             </div>
+                                                <div className="text-sm text-blue-700">
+                                                    Số lượng: {material.quantity} {material.uom || 'cái'} |
+                                                    {outputs.length > 0 ? (
+                                                        <>
+                                                            Tạo ra {outputs.length} sản phẩm
+                                                            {targetProducts.length > 0 && (
+                                                                <span className="ml-2 text-green-600">
+                                                                    Thành phẩm mục tiêu: {
+                                                                        targetProducts.reduce((total, target) => total + (target.quantity || 0), 0)
+                                                                    } cái
+                                                                </span>
+                                                            )}
+                                                        </>
+                                                    ) : ' Chưa có sản phẩm đầu ra'}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -260,43 +272,40 @@ const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
                                 {isExpanded && outputs.length > 0 && (
                                     <div className="border-t bg-white">
                                         <div className="p-3">
-                                                                                         <h6 className="font-medium text-gray-700 mb-2 block">
-                                                 Sản phẩm đầu ra:
-                                             </h6>
-                                                                                         <div className="space-y-2">
-                                                 {outputs.map((output) => {
-                                                     const isSemiFinished = semiFinishedProducts.some(p => p.id === output.id);
-                                                     const isWasteGlass = wasteGlass.some(p => p.id === output.id);
-                                                     
-                                                     return (
-                                                         <div key={output.id} className={`flex items-center justify-between p-2 rounded border-l-4 ${
-                                                             isSemiFinished 
-                                                                 ? 'bg-green-50 border-green-400' 
-                                                                 : 'bg-yellow-50 border-yellow-400'
-                                                         }`}>
-                                                             <div className="flex-1">
-                                                                 <div className="font-medium text-gray-800">
-                                                                     {output.productName}
-                                                                 </div>
-                                                                 <div className="text-sm text-gray-600">
-                                                                     Mã: {output.productCode} | 
-                                                                     Số lượng: {output.quantity} {output.uom || 'cái'} | 
-                                                                     Loại: {output.productType}
-                                                                 </div>
-                                                             </div>
-                                                             <div className="flex items-center space-x-2">
-                                                                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                                                     isSemiFinished
-                                                                         ? 'bg-green-100 text-green-800 border border-green-200' 
-                                                                         : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                                                                 }`}>
-                                                                     {isSemiFinished ? 'Bán thành phẩm' : 'Kính dư'}
-                                                                 </span>
-                                                             </div>
-                                                         </div>
-                                                     );
-                                                 })}
-                                             </div>
+                                            <h6 className="font-medium text-gray-700 mb-2 block">
+                                                Sản phẩm đầu ra:
+                                            </h6>
+                                            <div className="space-y-2">
+                                                {outputs.map((output) => {
+                                                    const isSemiFinished = semiFinishedProducts.some(p => p.id === output.id);
+                                                    const isWasteGlass = wasteGlass.some(p => p.id === output.id);
+
+                                                    return (
+                                                        <div key={output.id} className={`flex items-center justify-between p-2 rounded border-l-4 ${isSemiFinished
+                                                                ? 'bg-green-50 border-green-400'
+                                                                : 'bg-yellow-50 border-yellow-400'
+                                                            }`}>
+                                                            <div className="flex-1">
+                                                                <div className="font-medium text-gray-800">
+                                                                    {output.productName}
+                                                                </div>
+                                                                <div className="text-sm text-gray-600">
+                                                                    Số lượng: {output.quantity} {output.uom || 'cái'} |
+                                                                    Loại: {output.productType}
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center space-x-2">
+                                                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${isSemiFinished
+                                                                        ? 'bg-green-100 text-green-800 border border-green-200'
+                                                                        : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                                                                    }`}>
+                                                                    {isSemiFinished ? 'Bán thành phẩm' : 'Kính dư'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -351,23 +360,23 @@ const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
     );
 };
 
-const MaterialExportSlipDetails = ({ 
-    slip, 
-    expandedMaterials, 
-    toggleMaterialsExpanded 
-}: { 
+const MaterialExportSlipDetails = ({
+    slip,
+    expandedMaterials,
+    toggleMaterialsExpanded
+}: {
     slip: InventorySlip;
     expandedMaterials: Set<number>;
     toggleMaterialsExpanded: (id: number) => void;
 }) => {
-    const targetProducts = slip.details.filter(detail => 
+    const targetProducts = slip.details.filter(detail =>
         detail.productId === null // Thành phẩm mục tiêu
     );
-    
-    const rawMaterials = slip.details.filter(detail => 
+
+    const rawMaterials = slip.details.filter(detail =>
         detail.productId !== null // Nguyên liệu thực
     );
-    
+
     // Group nguyên liệu by production_output_id (loại bỏ thành phẩm mục tiêu)
     const groupedDetails = rawMaterials.reduce((groups, detail) => {
         const key = detail.productionOutputId || 0;
@@ -385,8 +394,8 @@ const MaterialExportSlipDetails = ({
 
     // Helper function to get target product info 
     const getTargetProductInfo = (productionOutputId: number) => {
-        const targetProduct = slip.details.find(d => 
-            d.productionOutputId === productionOutputId && 
+        const targetProduct = slip.details.find(d =>
+            d.productionOutputId === productionOutputId &&
             d.productId === null // Thành phẩm mục tiêu
         );
         return targetProduct;
@@ -399,13 +408,13 @@ const MaterialExportSlipDetails = ({
                     const materials = groupedDetails[productionOutputId] || [];
                     const isExpanded = expandedMaterials.has(productionOutputId);
                     const targetProduct = getTargetProductInfo(productionOutputId);
-                    
+
                     // Chỉ hiển thị nếu có nguyên liệu thực
                     if (materials.length === 0) return null;
-                    
+
                     return (
                         <div key={productionOutputId} className="border border-green-200 rounded-lg overflow-hidden">
-                            <div 
+                            <div
                                 className="bg-green-50 p-3 cursor-pointer hover:bg-green-100 transition-colors"
                                 onClick={() => toggleMaterialsExpanded(productionOutputId)}
                             >
@@ -428,13 +437,13 @@ const MaterialExportSlipDetails = ({
                                                 {targetProduct ? (
                                                     <>
                                                         <span className="font-semibold text-green-800 bg-green-100 px-2 py-1 rounded">
-                                                            🎯 Số lượng: {targetProduct.quantity} {targetProduct.uom || 'cái'}
+                                                            Số lượng: {targetProduct.quantity} {targetProduct.uom || 'cái'}
                                                         </span>
                                                         {' | '}
                                                     </>
                                                 ) : null}
                                                 <span className="text-blue-600">
-                                                    📦 {materials.length} nguyên liệu được sử dụng
+                                                    {materials.length} nguyên liệu được sử dụng
                                                 </span>
                                             </div>
                                         </div>
@@ -457,8 +466,7 @@ const MaterialExportSlipDetails = ({
                                                             {material.productName}
                                                         </div>
                                                         <div className="text-sm text-gray-600">
-                                                            Mã: {material.productCode} | 
-                                                            Số lượng: {material.quantity} {material.uom || 'cái'} | 
+                                                            Số lượng: {material.quantity} {material.uom || 'cái'} |
                                                             Loại: {material.productType}
                                                         </div>
                                                         {material.note && (

@@ -30,14 +30,9 @@ namespace SEP490.Modules.InventorySlipModule.Services
                 bool allCompleted = true;
                 foreach (var po in productionOutputs)
                 {
-                    var finished = po.Finished ?? 0;
-                    var amount = po.Amount ?? 0;
-                    
-                    // Convert both to decimal for accurate comparison
-                    var finishedDecimal = (decimal)finished;
-                    var amountDecimal = amount;
-                    var isCompleted = finishedDecimal >= amountDecimal;
-                    
+                    var finished = po.Finished ?? 0m;
+                    var amount = po.Amount ?? 0m;
+                    var isCompleted = finished >= amount;
                     if (!isCompleted)
                     {
                         allCompleted = false;
@@ -95,7 +90,7 @@ namespace SEP490.Modules.InventorySlipModule.Services
                         Id = po.Id,
                         ProductId = po.ProductId,
                         ProductName = po.Product.ProductName,
-                        Uom = po.UOM?.ToString(),
+                        Uom = po.Product?.UOM,
                         Amount = po.Amount ?? 0,
                         Finished = po.Finished ?? 0,
                         Defected = po.Defected ?? 0

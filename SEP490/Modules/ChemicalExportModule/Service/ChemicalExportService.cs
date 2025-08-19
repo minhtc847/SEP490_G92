@@ -57,7 +57,7 @@ namespace SEP490.Modules.ChemicalExportModule.Service
 
                     if (productionOutput != null)
                     {
-                        productionOutput.Finished = (productionOutput.Finished ?? 0) + (int)product.Quantity;
+                        productionOutput.Finished = (productionOutput.Finished ?? 0m) + product.Quantity;
                         _context.ProductionOutputs.Update(productionOutput);
                     }
 
@@ -205,7 +205,7 @@ namespace SEP490.Modules.ChemicalExportModule.Service
                 Id = po.Id,
                 ProductId = po.ProductId,
                 ProductName = po.ProductName ?? po.Product.ProductName,
-                UOM = po.UOM.ToString(),
+                UOM = po.Product != null ? po.Product.UOM : null,
                 Amount = po.Amount,
                 Finished = po.Finished,
                 Defected = po.Defected
@@ -252,13 +252,9 @@ namespace SEP490.Modules.ChemicalExportModule.Service
                 bool allCompleted = true;
                 foreach (var po in productionOutputs)
                 {
-                    var finished = po.Finished ?? 0;
-                    var amount = po.Amount ?? 0;
-                    
-                    var finishedDecimal = (decimal)finished;
-                    var amountDecimal = amount;
-                    var isCompleted = finishedDecimal >= amountDecimal;
-                    
+                    var finished = po.Finished ?? 0m;
+                    var amount = po.Amount ?? 0m;
+                    var isCompleted = finished >= amount;
                     if (!isCompleted)
                     {
                         allCompleted = false;

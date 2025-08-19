@@ -254,7 +254,6 @@ const ProductionOrderInventorySlipPage = () => {
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                                 >
                                     <option value="ProductName">Tên sản phẩm</option>
-                                    <option value="ProductCode">Mã sản phẩm</option>
                                     <option value="Id">ID</option>
                                 </select>
                             </div>
@@ -277,7 +276,9 @@ const ProductionOrderInventorySlipPage = () => {
                     {paginatedProducts ? (
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {paginatedProducts.products.map((product) => (
+                                {paginatedProducts.products
+                                    .filter((product) => (product.uom || '').toLowerCase() === 'tấm')
+                                    .map((product) => (
                                     <div key={product.id} className={`border rounded p-3 ${product.productType === 'NVL' || product.productType === 'Nguyên vật liệu'
                                         ? 'bg-blue-50 border-blue-200'
                                         : product.productType === 'Bán thành phẩm' || product.productType === 'BTP'
@@ -285,7 +286,6 @@ const ProductionOrderInventorySlipPage = () => {
                                             : 'bg-yellow-50 border-yellow-200'
                                         }`}>
                                         <div className="font-medium text-sm">{product.productName}</div>
-                                        <div className="text-xs text-gray-600">Mã: {product.productCode}</div>
                                         <div className="text-xs text-gray-600">Đơn vị: {product.uom || 'N/A'}</div>
                                         <div className="text-xs text-gray-600">Loại: {product.productType}</div>
                                     </div>

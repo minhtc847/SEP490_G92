@@ -104,8 +104,8 @@ namespace SEP490.Modules.InventorySlipModule.DTO
         public string? ProductName { get; set; }
         public string? UOM { get; set; }
         public decimal? Amount { get; set; }
-        public int? Finished { get; set; }
-        public int? Defected { get; set; }
+        public decimal? Finished { get; set; }
+        public decimal? Defected { get; set; }
     }
 
     public class ProductInfoDto

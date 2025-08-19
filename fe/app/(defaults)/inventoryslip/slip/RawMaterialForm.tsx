@@ -11,10 +11,10 @@ interface RawMaterialFormProps {
     onCancel: () => void;
 }
 
-export default function RawMaterialForm({ 
-    productionOrderInfo, 
-    onRawMaterialAdded, 
-    onCancel 
+export default function RawMaterialForm({
+    productionOrderInfo,
+    onRawMaterialAdded,
+    onCancel
 }: RawMaterialFormProps) {
     const MySwal = withReactContent(Swal);
     const [formData, setFormData] = useState({
@@ -23,18 +23,18 @@ export default function RawMaterialForm({
         note: ''
     });
 
-    const [errors, setErrors] = useState<{[key: string]: string}>({});
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
     const getFilteredRawMaterials = () => {
-        if (!productionOrderInfo.rawMaterials) return [];        
+        if (!productionOrderInfo.rawMaterials) return [];
         const semiFinishedProductIds = productionOrderInfo.productionOutputs?.map((po: any) => po.productId) || [];
-        return productionOrderInfo.rawMaterials.filter((rawMaterial: any) => 
-            !semiFinishedProductIds.includes(rawMaterial.id)
-        );
+        return productionOrderInfo.rawMaterials
+            .filter((rawMaterial: any) => !semiFinishedProductIds.includes(rawMaterial.id))
+            .filter((rawMaterial: any) => (rawMaterial.uom || '').toLowerCase() === 'tấm');
     };
 
     const availableRawMaterials = getFilteredRawMaterials();
-    
+
     const handleInputChange = (field: string, value: string | number) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         if (errors[field]) {
@@ -43,8 +43,8 @@ export default function RawMaterialForm({
     };
 
     const validateForm = () => {
-        const newErrors: {[key: string]: string} = {};
-        
+        const newErrors: { [key: string]: string } = {};
+
         if (!formData.productId) {
             newErrors.productId = 'Vui lòng chọn nguyên vật liệu';
         }
@@ -62,7 +62,7 @@ export default function RawMaterialForm({
         }
 
         const selectedProduct = availableRawMaterials.find((p: ProductInfo) => p.id === formData.productId);
-        
+
         if (!selectedProduct) {
             MySwal.fire({
                 title: 'Không tìm thấy nguyên vật liệu đã chọn',
@@ -132,104 +132,99 @@ export default function RawMaterialForm({
                     </ul>
                 </div>
 
-                {/* Chọn nguyên vật liệu */}
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-                    <h4 className="text-md font-medium text-blue-800 mb-3">
-                        Bước 1: Chọn nguyên vật liệu
-                    </h4>
-                    <div className="space-y-3">
-                        <select
-                            value={formData.productId}
-                            onChange={(e) => handleInputChange('productId', parseInt(e.target.value))}
-                            className={`w-full px-3 py-2 border rounded-md ${
-                                errors.productId ? 'border-red-500 bg-red-50' : 'border-blue-300'
-                            }`}
-                        >
-                            <option value={0}>Chọn nguyên vật liệu...</option>
-                            {availableRawMaterials.map((product: ProductInfo) => (
-                                <option key={product.id} value={product.id}>
-                                    {product.productName} ({product.productCode})
-                                </option>
-                            ))}
-                        </select>
-                        {errors.productId && (
-                            <p className="text-red-500 text-xs mt-1">{errors.productId}</p>
-                        )}
-
-                        {formData.productId > 0 && (
-                            <div className="p-3 bg-blue-100 border border-blue-300 rounded-md">
-                                {(() => {
-                                    const selectedProduct = availableRawMaterials.find((p: ProductInfo) => p.id === formData.productId);
-                                    return selectedProduct ? (
-                                        <div>
-                                            <p className="text-sm text-blue-800">
-                                                ✓ Đã chọn: <strong>{selectedProduct.productName}</strong>
-                                            </p>
-                                            <p className="text-xs text-blue-600 mt-1">
-                                                Mã: {selectedProduct.productCode} | Đơn vị: {selectedProduct.uom}
-                                            </p>
-                                            {selectedProduct.height && selectedProduct.width && (
-                                                <p className="text-xs text-blue-600">
-                                                    Kích thước: {selectedProduct.height} x {selectedProduct.width} mm
-                                                </p>
-                                            )}
-                                        </div>
-                                    ) : null;
-                                })()}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
-                    <h4 className="text-md font-medium text-gray-800 mb-3">
-                        Bước 2: Thông tin bổ sung
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-white border border-gray-200 rounded-md">
+                    <h4 className="text-md font-medium text-gray-800 mb-4">Thông tin nguyên vật liệu</h4>
+                    <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Số lượng (tấm) <span className="text-red-500">*</span>
+                                Chọn nguyên vật liệu <span className="text-red-500">*</span>
                             </label>
-                            <input
-                                type="number"
-                                step="1"
-                                min="1"
-                                max="999999"
-                                value={formData.quantity}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    // Giới hạn số lượng để tránh scientific notation và chỉ nhận số nguyên
-                                    const intValue = parseInt(value);
-                                    if (intValue > 999999) {
-                                        handleInputChange('quantity', '999999');
-                                    } else if (intValue < 1) {
-                                        handleInputChange('quantity', '1');
-                                    } else {
-                                        handleInputChange('quantity', intValue.toString());
-                                    }
-                                }}
-                                className={`w-full px-3 py-2 border rounded-md ${
-                                    errors.quantity ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                                }`}
-                                placeholder="1"
-                            />
-                            {errors.quantity && (
-                                <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>
-                            )}                            
-                        </div>
-                    </div>
+                            <select
+                                value={formData.productId}
+                                onChange={(e) => handleInputChange('productId', parseInt(e.target.value))}
+                                className={`w-full px-3 py-2 border rounded-md ${errors.productId ? 'border-red-500 bg-red-50' : 'border-blue-300'
+                                    }`}
+                            >
+                                <option value={0}>Chọn nguyên vật liệu...</option>
+                                {availableRawMaterials.map((product: ProductInfo) => (
+                                    <option key={product.id} value={product.id}>
+                                        {product.productName} ({product.productCode})
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.productId && (
+                                <p className="text-red-500 text-xs mt-1">{errors.productId}</p>
+                            )}
 
-                    <div className="mt-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Ghi chú
-                        </label>
-                        <textarea
-                            value={formData.note}
-                            onChange={(e) => handleInputChange('note', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                            rows={3}
-                            placeholder="Ghi chú về nguyên vật liệu..."
-                        />
+                            {formData.productId > 0 && (
+                                <div className="mt-3 p-3 bg-blue-100 border border-blue-300 rounded-md">
+                                    {(() => {
+                                        const selectedProduct = availableRawMaterials.find((p: ProductInfo) => p.id === formData.productId);
+                                        return selectedProduct ? (
+                                            <div>
+                                                <p className="text-sm text-blue-800">
+                                                    ✓ Đã chọn: <strong>{selectedProduct.productName}</strong>
+                                                </p>
+                                                <p className="text-xs text-blue-600 mt-1">
+                                                    Đơn vị: {selectedProduct.uom}
+                                                </p>
+                                                {selectedProduct.height && selectedProduct.width && (
+                                                    <p className="text-xs text-blue-600">
+                                                        Kích thước: {selectedProduct.height} x {selectedProduct.width} x {selectedProduct.thickness} mm
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ) : null;
+                                    })()}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Số lượng (tấm) <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    step="1"
+                                    min="1"
+                                    max="999999"
+                                    value={formData.quantity}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        // Giới hạn số lượng để tránh scientific notation và chỉ nhận số nguyên
+                                        const intValue = parseInt(value);
+                                        if (intValue > 999999) {
+                                            handleInputChange('quantity', '999999');
+                                        } else if (intValue < 1) {
+                                            handleInputChange('quantity', '1');
+                                        } else {
+                                            handleInputChange('quantity', intValue.toString());
+                                        }
+                                    }}
+                                    className={`w-full px-3 py-2 border rounded-md ${errors.quantity ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                                        }`}
+                                    placeholder="0"
+                                />
+                                {errors.quantity && (
+                                    <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Ghi chú
+                                </label>
+                                <textarea
+                                    value={formData.note}
+                                    onChange={(e) => handleInputChange('note', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                    rows={3}
+                                    placeholder="Ghi chú về nguyên vật liệu..."
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -245,11 +240,10 @@ export default function RawMaterialForm({
                         type="button"
                         onClick={handleSubmit}
                         disabled={!formData.productId || !formData.quantity}
-                        className={`px-4 py-2 rounded-md transition-colors ${
-                            !formData.productId || !formData.quantity
-                                ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+                        className={`px-4 py-2 rounded-md transition-colors ${!formData.productId || !formData.quantity
+                                ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
                                 : 'bg-blue-500 text-white hover:bg-blue-600'
-                        }`}
+                            }`}
                     >
                         Thêm nguyên vật liệu
                     </button>

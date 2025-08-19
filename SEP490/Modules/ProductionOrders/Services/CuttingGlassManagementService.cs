@@ -78,7 +78,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                     x.Id,
                     x.ProductId,
                     ProductName = x.Product?.ProductName,
-                    x.UOM,
+                    UOM = x.Product?.UOM,
                     x.Amount
                 }),
                 materials = materials.Select(x => new {

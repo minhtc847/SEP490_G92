@@ -34,9 +34,9 @@ namespace SEP490.Modules.InventorySlipModule.Services
                     return false;
                 }
 
-                // Cập nhật số lượng hoàn thành - cast về int vì trường Finished có kiểu int?
-                var oldFinished = productionOutput.Finished ?? 0;
-                var newFinished = oldFinished + (int)finishedQuantity;
+                // Cập nhật số lượng hoàn thành dùng decimal
+                var oldFinished = productionOutput.Finished ?? 0m;
+                var newFinished = oldFinished + finishedQuantity;
                 productionOutput.Finished = newFinished;                
 
                 if (productionOutput.Amount.HasValue && productionOutput.Amount > 0)
@@ -67,7 +67,7 @@ namespace SEP490.Modules.InventorySlipModule.Services
                         Id = po.Id,
                         ProductId = po.ProductId,
                         ProductName = po.Product.ProductName,
-                        Uom = po.UOM != null ? po.UOM.ToString() : null,
+                        Uom = po.Product != null ? po.Product.UOM : null,
                         Amount = po.Amount ?? 0,
                         Finished = po.Finished ?? 0,
                         Defected = po.Defected ?? 0

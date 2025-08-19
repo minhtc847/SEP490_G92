@@ -20,7 +20,6 @@ export default function GlassProductForm({
 }: GlassProductFormProps) {
     const MySwal = withReactContent(Swal);
     const [formData, setFormData] = useState({
-        productCode: '',
         productName: '',
         uom: 'tấm', 
         height: '',
@@ -40,14 +39,12 @@ export default function GlassProductForm({
     const [isCreatingNewProduct, setIsCreatingNewProduct] = useState(false);
     const [errors, setErrors] = useState<{[key: string]: string}>({});
 
-    // Lọc danh sách kính dư để loại bỏ bán thành phẩm đã định nghĩa
     const getFilteredGlassProducts = () => {
-        // Sử dụng glassProducts từ backend đã được lọc sẵn
-        if (!productionOrderInfo.glassProducts) return [];        
-        const semiFinishedProductIds = productionOrderInfo.productionOutputs?.map((po: any) => po.productId) || [];        
-        return productionOrderInfo.glassProducts.filter((glassProduct: any) => 
-            !semiFinishedProductIds.includes(glassProduct.id)
-        );
+        if (!productionOrderInfo.glassProducts) return [];
+        const semiFinishedProductIds = productionOrderInfo.productionOutputs?.map((po: any) => po.productId) || [];
+        return productionOrderInfo.glassProducts
+            .filter((glassProduct: any) => !semiFinishedProductIds.includes(glassProduct.id))
+            .filter((glassProduct: any) => (glassProduct.uom || '').toLowerCase() === 'tấm');
     };
 
     const availableGlassProducts = getFilteredGlassProducts();
@@ -75,9 +72,6 @@ export default function GlassProductForm({
     const validateForm = () => {
         const newErrors: {[key: string]: string} = {};
         
-        if (!formData.productCode.trim()) {
-            newErrors.productCode = 'Mã sản phẩm là bắt buộc';
-        }
         if (!formData.height) {
             newErrors.height = 'Chiều dài là bắt buộc';
         }
@@ -186,8 +180,25 @@ export default function GlassProductForm({
                 autoProductName = `Kính trắng KT: ${formData.height}*${formData.width} mm`;
             }
             
+            // Pre-check if a glass with same dimensions exists in availableGlassProducts
+            const exists = availableGlassProducts.some((p: any) => {
+                const h = (p.height ?? '').toString();
+                const w = (p.width ?? '').toString();
+                const t = p.thickness != null ? p.thickness.toString() : '';
+                return h === (formData.height || '') && w === (formData.width || '') && t === (formData.thickness || '');
+            });
+            if (exists) {
+                await MySwal.fire({
+                    title: 'Kính đã tồn tại',
+                    text: 'Đã có kính dư với kích thước dài*rộng*dày giống nhau. Vui lòng sử dụng kính sẵn có.',
+                    icon: 'warning',
+                    confirmButtonText: 'Đã hiểu'
+                });
+                return;
+            }
+
             const newProductInfo = await createInventoryProduct({
-                productCode: formData.productCode,
+                productCode: '',
                 productName: autoProductName, 
                 productType: 'Kính dư',
                 uom: 'tấm', 
@@ -293,11 +304,9 @@ export default function GlassProductForm({
                     ) : null;
                 })()}
 
-                <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-                    <h4 className="text-md font-medium text-green-800 mb-3">
-                        Lựa chọn 1: Tìm kiếm kính dư có sẵn
-                    </h4>
-                    <div className="space-y-3">
+                <div className="p-4 bg-white border border-gray-200 rounded-md">
+                    <h4 className="text-md font-medium text-gray-800 mb-4">Tìm kiếm kính dư có sẵn</h4>
+                    <div className="space-y-4">
                         <div className="relative">
                             <input
                                 type="text"
@@ -326,13 +335,10 @@ export default function GlassProductForm({
                                         >
                                             <div className="text-sm text-gray-600">
                                                 {product.productName}
-                                            </div>
-                                            <div className="text-xs text-gray-500">
-                                                Mã: {product.productCode} | Đơn vị: {product.uom || 'N/A'}
-                                            </div>
+                                            </div>                                            
                                             {product.height && product.width && (
                                                 <div className="text-xs text-gray-500">
-                                                    Kích thước: {product.height} x {product.width} mm
+                                                    Kích thước: {product.height} x {product.width} x {product.thickness} mm
                                                 </div>
                                             )}
                                         </div>
@@ -358,12 +364,25 @@ export default function GlassProductForm({
                                             </label>
                                             <input
                                                 type="number"
-                                                step="0.01"
-                                                min="0.01"
+                                                step="1"
+                                                min="1"
+                                                max="999999"
                                                 value={formData.quantity}
-                                                onChange={(e) => handleInputChange('quantity', e.target.value)}
+                                                // onChange={(e) => handleInputChange('quantity', e.target.value)}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    // Giới hạn số lượng để tránh scientific notation và chỉ nhận số nguyên
+                                                    const intValue = parseInt(value);
+                                                    if (intValue > 999999) {
+                                                        handleInputChange('quantity', '999999');
+                                                    } else if (intValue < 1) {
+                                                        handleInputChange('quantity', '1');
+                                                    } else {
+                                                        handleInputChange('quantity', intValue.toString());
+                                                    }
+                                                }}
                                                 className="w-full px-3 py-2 border border-green-300 rounded-md"
-                                                placeholder="0.00"
+                                                placeholder="0"
                                             />
                                         </div>
                                         <div>
@@ -422,29 +441,11 @@ export default function GlassProductForm({
                 </div>
 
                 {/* Form tạo kính dư mới */}
-                <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
-                    <h4 className="text-md font-medium text-gray-800 mb-3">
-                        Lựa chọn 2: Hoặc tạo kính dư mới
-                    </h4>
+                <div className="p-4 bg-white border border-gray-200 rounded-md">
+                    <h4 className="text-md font-medium text-gray-800 mb-4">Tạo kính dư mới</h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Mã sản phẩm <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={formData.productCode}
-                                onChange={(e) => handleInputChange('productCode', e.target.value)}
-                                className={`w-full px-3 py-2 border rounded-md ${
-                                    errors.productCode ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                                }`}
-                                placeholder="Nhập mã kính dư"
-                            />
-                            {errors.productCode && (
-                                <p className="text-red-500 text-xs mt-1">{errors.productCode}</p>
-                            )}
-                        </div>
+                        {/* Removed product code input per requirement */}
 
                         <div>
                             <label className="block text-sm font-medium text-yellow-700 mb-2">
@@ -468,9 +469,9 @@ export default function GlassProductForm({
                                     }
                                 }}
                                 className={`w-full px-3 py-2 border rounded-md ${
-                                    errors.quantity ? 'border-red-500 bg-red-50' : 'border-yellow-300'
+                                    errors.quantity ? 'border-red-500 bg-red-50' : 'border-gray-300'
                                 }`}
-                                placeholder="1"
+                                placeholder="0"
                             />
                             {errors.quantity && (
                                 <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>

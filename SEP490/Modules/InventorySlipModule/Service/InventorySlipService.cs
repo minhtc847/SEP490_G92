@@ -125,19 +125,46 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 await _context.SaveChangesAsync();
 
                 // Create mappings if provided
-                if (dto.Mappings != null && dto.Mappings.Any())
+                if (mappingInfo?.TempMappings != null && mappingInfo.TempMappings.Any())
                 {
                     var mappings = new List<MaterialOutputMapping>();
                     
-                    // Convert indices to actual detail IDs
-                    foreach (var mappingDto in dto.Mappings)
+                                    // Process mappings
+                    
+                    // Convert indices to actual detail IDs and check for duplicates
+                    var processedMappings = new HashSet<string>(); // Track processed mappings to avoid duplicates
+                    
+                    foreach (var mappingDto in mappingInfo.TempMappings)
                     {
+                        Console.WriteLine($"Processing mapping: InputDetailId={mappingDto.InputDetailId}, OutputDetailId={mappingDto.OutputDetailId}");
+                        
                         // Find the actual detail IDs using indices
                         var inputDetail = details.ElementAtOrDefault(mappingDto.InputDetailId);
                         var outputDetail = details.ElementAtOrDefault(mappingDto.OutputDetailId);
                         
+
+                        
                         if (inputDetail != null && outputDetail != null)
                         {
+                            // Check for duplicate mappings using more robust key
+                            var mappingKey = $"{inputDetail.Id}_{outputDetail.Id}";
+                            if (processedMappings.Contains(mappingKey))
+                            {
+        
+                                continue;
+                            }
+                            
+                            // Also check if this mapping already exists in database
+                            var existingMapping = await _context.MaterialOutputMappings
+                                .FirstOrDefaultAsync(m => m.InputDetailId == inputDetail.Id && m.OutputDetailId == outputDetail.Id);
+                            
+                            if (existingMapping != null)
+                            {
+        
+                                processedMappings.Add(mappingKey);
+                                continue;
+                            }
+                            
                             var mapping = new MaterialOutputMapping
                             {
                                 InputDetailId = inputDetail.Id,
@@ -147,16 +174,40 @@ namespace SEP490.Modules.InventorySlipModule.Service
                                 UpdatedAt = DateTime.Now
                             };
                             mappings.Add(mapping);
+                            processedMappings.Add(mappingKey);
+    
+                        }
+                        else
+                        {
+    
                         }
                     }
 
                     if (mappings.Any())
                     {
+                                        // Save unique mappings to database
+                        
+                        // Double-check for any remaining duplicates before saving
+                        var uniqueMappings = mappings
+                            .GroupBy(m => new { m.InputDetailId, m.OutputDetailId })
+                            .Select(g => g.First())
+                            .ToList();
+                        
+                        if (uniqueMappings.Count != mappings.Count)
+                        {
+            
+                            mappings = uniqueMappings;
+                        }
+                        
                         _context.MaterialOutputMappings.AddRange(mappings);
                         await _context.SaveChangesAsync();
+        
                     }
                 }
-                await UpdateProductionOutputFinishedQuantitiesAsync(details, mappingInfo);
+                if (mappingInfo != null)
+                {
+                    await UpdateProductionOutputFinishedQuantitiesAsync(details, mappingInfo);
+                }
 
                 await transaction.CommitAsync();
                 var result = await GetInventorySlipByIdAsync(slip.Id);
@@ -346,13 +397,29 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     {
                         foreach (var detail in slip.Details)
                         {                            
+                            // Debug: Kiểm tra xem có bao nhiêu mappings trong database cho detail này
+                            var allMappingsForDetail = await _context.MaterialOutputMappings
+                                .Where(m => m.InputDetailId == detail.Id)
+                                .ToListAsync();
+                            
+                                            // Load all mappings for this detail
+                            
                             var outputMappings = await _context.MaterialOutputMappings
                                 .Include(m => m.OutputDetail)
                                     .ThenInclude(od => od.Product)
                                 .Where(m => m.InputDetailId == detail.Id)
                                 .ToListAsync();
                             
-                            detail.OutputMappings = outputMappings;                            
+                            // Additional check: ensure no duplicate mappings by InputDetailId + OutputDetailId combination
+                            var uniqueMappings = outputMappings
+                                .GroupBy(m => new { m.InputDetailId, m.OutputDetailId })
+                                .Select(g => g.First())
+                                .ToList();
+                            
+                            detail.OutputMappings = uniqueMappings;
+                            
+                            // Debug logging
+                                            // Process unique mappings
                             
                             var inputMappings = await _context.MaterialOutputMappings
                                 .Include(m => m.InputDetail)
@@ -360,7 +427,13 @@ namespace SEP490.Modules.InventorySlipModule.Service
                                 .Where(m => m.OutputDetailId == detail.Id)
                                 .ToListAsync();
                             
-                            detail.InputMappings = inputMappings;
+                            // Additional check: ensure no duplicate mappings by InputDetailId + OutputDetailId combination
+                            var uniqueInputMappings = inputMappings
+                                .GroupBy(m => new { m.InputDetailId, m.OutputDetailId })
+                                .Select(g => g.First())
+                                .ToList();
+                            
+                            detail.InputMappings = uniqueInputMappings;
                         }
                     }
                 }
@@ -461,7 +534,8 @@ namespace SEP490.Modules.InventorySlipModule.Service
             if (productionOrder.Type == "Cắt kính")
             {
                 var nvlProducts = await _context.Products
-                    .Where(p => p.ProductType == "NVL" || p.ProductType == "Nguyên vật liệu")
+                    .Where(p => (p.ProductType == "NVL" || p.ProductType == "Nguyên vật liệu")
+                                 && p.UOM != null && p.UOM.ToLower() == "tấm")
                     .ToListAsync();
                 
                 //filter NVL not semi finished product
@@ -489,7 +563,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     ProductCode = po.Product?.ProductCode,
                     ProductName = po.ProductName,
                     ProductType = "Bán thành phẩm",
-                    UOM = po.UOM?.ToString(),
+                    UOM = po.Product?.UOM,
                     Height = po.Product?.Height,
                     Width = po.Product?.Width,
                     Thickness = po.Product?.Thickness,
@@ -500,7 +574,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
 
 
                 var allNvlProducts = await _context.Products
-                    .Where(p => p.ProductType == "NVL")
+                    .Where(p => p.ProductType == "NVL" && p.UOM != null && p.UOM.ToLower() == "tấm")
                     .ToListAsync();
                 
                 var glassProductIds = allNvlProducts
@@ -536,12 +610,12 @@ namespace SEP490.Modules.InventorySlipModule.Service
 
                 var materialProducts = productionMaterials
                     .Select(pm => pm.Product)
-                    .Where(p => p != null)
+                    .Where(p => p != null && p.UOM != null && p.UOM.ToLower() == "tấm")
                     .Distinct()
                     .ToList();
 
                 var additionalRawMaterials = await _context.Products
-                    .Where(p => p.ProductType == "NVL")
+                    .Where(p => p.ProductType == "NVL" && p.UOM != null && p.UOM.ToLower() == "tấm")
                     .ToListAsync();
 
                 // Combine and remove duplicates
@@ -583,7 +657,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     Id = po.Id,
                     ProductId = po.ProductId,
                     ProductName = po.ProductName,
-                    UOM = po.UOM?.ToString(),
+                    UOM = po.Product?.UOM,
                     Amount = po.Amount,
                     Finished = po.Finished,
                     Defected = po.Defected
@@ -776,36 +850,22 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     
                     if (detail.OutputMappings != null && detail.OutputMappings.Any())
                     {
+                        // Có OutputMappings => đây là nguyên vật liệu (input)
                         productType = "NVL";
-                    }
-                    else if (detail.ProductId.HasValue && productionOutputProductIds.Contains(detail.ProductId.Value))
-                    {
-                        productType = "Bán thành phẩm";
                     }
                     else if (detail.InputMappings != null && detail.InputMappings.Any())
                     {
-
-                        if (detail.ProductId.HasValue && productionOutputProductIds.Contains(detail.ProductId.Value))
-                        {
-                            productType = "Bán thành phẩm";
-                        }
-                        else
-                        {
-                            productType = "Kính dư";
-                        }
+                        // Có InputMappings => đây là sản phẩm đầu ra của 1 NVL
+                        productType = (detail.ProductId.HasValue && productionOutputProductIds.Contains(detail.ProductId.Value))
+                            ? "Bán thành phẩm"
+                            : "Kính dư";
                     }
                     else
                     {
-                        if (detail.ProductId.HasValue && productionOutputProductIds.Contains(detail.ProductId.Value))
-                        {
-                            productType = "Bán thành phẩm";
-                        }
-                        else
-                        {
-                            // Nếu không có mapping nào và không phải bán thành phẩm
-                            // thì có thể là nguyên vật liệu chưa được sử dụng
-                            productType = "NVL";
-                        }
+                        // Không có mapping: fallback theo ProductionOutputs
+                        productType = (detail.ProductId.HasValue && productionOutputProductIds.Contains(detail.ProductId.Value))
+                            ? "Bán thành phẩm"
+                            : "NVL";
                     }
 
                     var detailDto = new InventorySlipDetailDto
@@ -1033,7 +1093,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 
                 foreach (var detail in details)
                 {
-                    Console.WriteLine($"Processing detail: ProductId={detail.ProductId}, ProductionOutputId={detail.ProductionOutputId}, Quantity={detail.Quantity}");
+    
                     
                     if (detail.ProductionOutputId.HasValue)
                     {
@@ -1051,24 +1111,24 @@ namespace SEP490.Modules.InventorySlipModule.Service
                                 }
                                 else
                                 {
-                                    Console.WriteLine($"✗ Skipped: ProductType is {classification.ProductType}, not 'Bán thành phẩm'");
+            
                                 }
                             }
                             else
                             {
-                                Console.WriteLine($"✗ No classification found for ProductId={detail.ProductId}");
+        
                             }
                         }
                         else
                         {
                             // For non-cut glass slips, if ProductionOutputId is set, it's a semi-finished product
                             semiFinishedDetails.Add((detail.ProductionOutputId.Value, detail.Quantity));
-                            Console.WriteLine($"✓ Added semi-finished product (no mapping): ProductionOutputId={detail.ProductionOutputId.Value}, Quantity={detail.Quantity}");
+    
                         }
                     }
                     else
                     {
-                        Console.WriteLine($"✗ Skipped: No ProductionOutputId for ProductId={detail.ProductId}");
+
                     }
                 }
                 
@@ -1113,8 +1173,8 @@ namespace SEP490.Modules.InventorySlipModule.Service
                         
                         if (productionOutput != null)
                         {
-                            var oldFinished = productionOutput.Finished ?? 0;
-                            productionOutput.Finished = oldFinished + (int)target.TargetQuantity;
+                            var oldFinished = productionOutput.Finished ?? 0m;
+                            productionOutput.Finished = oldFinished + target.TargetQuantity;
                         }
                     }
                     
