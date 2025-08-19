@@ -70,7 +70,7 @@ const ProductionPlanDetailPage = () => {
 
             const result = await createCutGlassOrder(orderData);
             
-            if (result) {
+            if (result.success) {
                 // Refresh production orders list
                 const ordersData = await fetchProductionOrdersByPlanId(id as string);
                 setProductionOrders(ordersData);
@@ -78,10 +78,10 @@ const ProductionPlanDetailPage = () => {
                 // Close modal
                 setCutGlassModalOpen(false);
                 
-                // Show success message (you can use a toast notification here)
-                alert('Lệnh cắt kính đã được tạo thành công!');
+                // Show success message
+                alert(result.message || 'Lệnh cắt kính đã được tạo thành công!');
             } else {
-                alert('Có lỗi xảy ra khi tạo lệnh cắt kính!');
+                alert(result.message || 'Có lỗi xảy ra khi tạo lệnh cắt kính!');
             }
         } catch (error) {
             console.error('Error creating cut glass order:', error);

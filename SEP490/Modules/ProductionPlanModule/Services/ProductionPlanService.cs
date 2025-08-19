@@ -260,9 +260,7 @@ namespace SEP490.Modules.Production_plans.Services
                 // Delete all outputs
                 _context.ProductionOutputs.RemoveRange(outputs);
 
-                // Delete all production order details
-                var orderDetails = await _context.ProductionOrderDetails.Where(d => productionOrderIds.Contains(d.productionOrderId)).ToListAsync();
-                _context.ProductionOrderDetails.RemoveRange(orderDetails);
+
 
                 // Delete all production orders
                 _context.ProductionOrders.RemoveRange(productionOrders);

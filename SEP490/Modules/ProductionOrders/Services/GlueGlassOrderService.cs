@@ -30,8 +30,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                 // 2. Process Finished Products and Create Production Outputs first
                 var productIdMapping = await ProcessFinishedProductsAsync(request, productionOrder.Id);
 
-                // 3. Create Production Order Details using finished product IDs
-                await CreateProductionOrderDetailsAsync(request, productionOrder.Id, productIdMapping);
+                
 
                 // 4. Create Materials for each Production Output
                 await CreateMaterialsForOutputsAsync(request, productionOrder.Id);
@@ -110,36 +109,7 @@ namespace SEP490.Modules.ProductionOrders.Services
             return productIdMapping;
         }
 
-        private async Task CreateProductionOrderDetailsAsync(GlueGlassOrderDto request, int productionOrderId, Dictionary<string, int> productIdMapping)
-        {
-            var orderDetails = new List<ProductionOrderDetail>();
 
-            // Tạo ProductionOrderDetails cho các sản phẩm gốc cần ghép (từ ProductQuantities)
-            foreach (var kvp in request.ProductQuantities)
-            {
-                // Chỉ tạo ProductionOrderDetail nếu quantity > 0
-                if (kvp.Value > 0)
-                {
-                    // Lấy ProductId thực từ ProductionPlanDetail
-                    var planDetail = await _context.ProductionPlanDetails
-                        .FirstOrDefaultAsync(pd => pd.Id == kvp.Key);
-                    
-                    if (planDetail != null)
-                    {
-                        orderDetails.Add(new ProductionOrderDetail
-                        {
-                            ProductId = planDetail.ProductId, // Sử dụng ProductId thực từ bảng Product
-                            Quantity = kvp.Value, // Số lượng sản phẩm gốc cần ghép
-                            //TrangThai = null,
-                            productionOrderId = productionOrderId
-                        });
-                    }
-                }
-            }
-
-            await _context.ProductionOrderDetails.AddRangeAsync(orderDetails);
-            await _context.SaveChangesAsync();
-        }
 
         private async Task<Product> CreateNewProductAsync(string productName)
         {

@@ -29,8 +29,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                 // 2. Create Production Outputs (Keo Nano and Keo Mem)
                 await CreateProductionOutputsAsync(request, productionOrder.Id);
 
-                // 3. Create Production Order Details
-                await CreateProductionOrderDetailsAsync(request, productionOrder.Id);
+                
 
                 await transaction.CommitAsync();
                 return true;
@@ -153,33 +152,6 @@ namespace SEP490.Modules.ProductionOrders.Services
             }
         }
 
-        private async Task CreateProductionOrderDetailsAsync(CreateGelOrderDto request, int productionOrderId)
-        {
-            var orderDetails = new List<ProductionOrderDetail>();
 
-            // Create ProductionOrderDetails for the products that need glue manufacturing
-            foreach (var kvp in request.ProductQuantities)
-            {
-                if (kvp.Value <= 0) continue;
-
-                // Get ProductId from ProductionPlanDetail
-                var planDetail = await _context.ProductionPlanDetails
-                    .FirstOrDefaultAsync(pd => pd.Id == kvp.Key);
-                
-                if (planDetail != null)
-                {
-                    orderDetails.Add(new ProductionOrderDetail
-                    {
-                        ProductId = planDetail.ProductId,
-                        Quantity = kvp.Value,
-                        //TrangThai = null,
-                        productionOrderId = productionOrderId
-                    });
-                }
-            }
-
-            await _context.ProductionOrderDetails.AddRangeAsync(orderDetails);
-            await _context.SaveChangesAsync();
-        }
     }
 } 

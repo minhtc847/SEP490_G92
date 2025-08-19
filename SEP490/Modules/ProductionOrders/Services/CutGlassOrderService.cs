@@ -20,26 +20,94 @@ namespace SEP490.Modules.ProductionOrders.Services
         {
             try
             {
+                // Validate input data
+                await ValidateCutGlassOrderRequestAsync(request);
+
                 using var transaction = await _context.Database.BeginTransactionAsync();
 
-                // 1. Create Production Order
-                var productionOrder = await CreateProductionOrderAsync(request);
-                await _context.ProductionOrders.AddAsync(productionOrder);
-                await _context.SaveChangesAsync();
+                try
+                {
+                    // 1. Create Production Order
+                    var productionOrder = await CreateProductionOrderAsync(request);
+                    await _context.ProductionOrders.AddAsync(productionOrder);
+                    await _context.SaveChangesAsync();
 
-                // 2. Process Finished Products and Create Production Outputs first
-                var productIdMapping = await ProcessFinishedProductsAsync(request, productionOrder.Id);
+                    // 2. Process Finished Products and Create Production Outputs first
+                    var productIdMapping = await ProcessFinishedProductsAsync(request, productionOrder.Id);
 
-                // 3. Create Production Order Details using finished product IDs
-                await CreateProductionOrderDetailsAsync(request, productionOrder.Id, productIdMapping);
 
-                await transaction.CommitAsync();
-                return true;
+
+                    await transaction.CommitAsync();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
             }
             catch (Exception ex)
             {
-                // Log exception here
-                return false;
+                throw;
+            }
+        }
+
+        private async Task ValidateCutGlassOrderRequestAsync(CutGlassOrderDto request)
+        {
+            // Validate ProductionPlanId
+            if (request.ProductionPlanId <= 0)
+            {
+                throw new ArgumentException("ID kế hoạch sản xuất không hợp lệ");
+            }
+
+            // Check if production plan exists
+            var productionPlan = await _context.ProductionPlans
+                .FirstOrDefaultAsync(pp => pp.Id == request.ProductionPlanId);
+            if (productionPlan == null)
+            {
+                throw new ArgumentException("Kế hoạch sản xuất không tồn tại");
+            }
+
+            // Validate ProductQuantities
+            if (request.ProductQuantities == null || !request.ProductQuantities.Any())
+            {
+                throw new ArgumentException("Vui lòng chọn ít nhất một sản phẩm cần cắt");
+            }
+
+            // Validate each product quantity
+            foreach (var kvp in request.ProductQuantities)
+            {
+                if (kvp.Value <= 0)
+                {
+                    throw new ArgumentException("Số lượng sản phẩm phải lớn hơn 0");
+                }
+
+                // Check if production plan detail exists
+                var planDetail = await _context.ProductionPlanDetails
+                    .FirstOrDefaultAsync(pd => pd.Id == kvp.Key);
+                if (planDetail == null)
+                {
+                    throw new ArgumentException($"Chi tiết kế hoạch sản xuất ID {kvp.Key} không tồn tại");
+                }
+            }
+
+            // Validate FinishedProducts
+            if (request.FinishedProducts == null || !request.FinishedProducts.Any())
+            {
+                throw new ArgumentException("Vui lòng thêm ít nhất một thành phẩm");
+            }
+
+            foreach (var finishedProduct in request.FinishedProducts)
+            {
+                if (string.IsNullOrWhiteSpace(finishedProduct.ProductName))
+                {
+                    throw new ArgumentException("Tên thành phẩm không được để trống");
+                }
+
+                if (finishedProduct.Quantity <= 0)
+                {
+                    throw new ArgumentException($"Số lượng thành phẩm '{finishedProduct.ProductName}' phải lớn hơn 0");
+                }
             }
         }
 
@@ -55,7 +123,6 @@ namespace SEP490.Modules.ProductionOrders.Services
                 Type = "Cắt kính",
                 Description = description,
                 StatusDaNhapMisa = false,
-
                 ProductionPlanId = request.ProductionPlanId
             };
         }
@@ -75,7 +142,7 @@ namespace SEP490.Modules.ProductionOrders.Services
 
                 if (existingProduct == null)
                 {
-                    // Create new product
+                    // Create new product with more flexible logic
                     var newProduct = await CreateNewProductAsync(finishedProduct.ProductName);
                     await _context.Products.AddAsync(newProduct);
                     await _context.SaveChangesAsync();
@@ -94,10 +161,8 @@ namespace SEP490.Modules.ProductionOrders.Services
                 {
                     ProductId = productId,
                     ProductName = finishedProduct.ProductName,
-                    //UOM = "tấm",
                     Amount = finishedProduct.Quantity,
-                    ProductionOrderId = productionOrderId,
-
+                    ProductionOrderId = productionOrderId
                 });
             }
 
@@ -107,58 +172,48 @@ namespace SEP490.Modules.ProductionOrders.Services
             return productIdMapping;
         }
 
-        private async Task CreateProductionOrderDetailsAsync(CutGlassOrderDto request, int productionOrderId, Dictionary<string, int> productIdMapping)
-        {
-            var orderDetails = new List<ProductionOrderDetail>();
 
-            // Tạo ProductionOrderDetails cho các sản phẩm gốc cần cắt (từ ProductQuantities)
-            foreach (var kvp in request.ProductQuantities)
-            {
-                // Chỉ tạo ProductionOrderDetail nếu quantity > 0
-                if (kvp.Value > 0)
-                {
-                    // Lấy ProductId thực từ ProductionPlanDetail
-                    var planDetail = await _context.ProductionPlanDetails
-                        .FirstOrDefaultAsync(pd => pd.Id == kvp.Key);
-                    
-                    if (planDetail != null)
-                    {
-                        orderDetails.Add(new ProductionOrderDetail
-                        {
-                            ProductId = planDetail.ProductId, // Sử dụng ProductId thực từ bảng Product
-                            Quantity = kvp.Value, // Số lượng sản phẩm gốc cần cắt
-                            //TrangThai = null,
-                            productionOrderId = productionOrderId
-                        });
-                    }
-                }
-            }
-
-            await _context.ProductionOrderDetails.AddRangeAsync(orderDetails);
-            await _context.SaveChangesAsync();
-        }
 
         private async Task<Product> CreateNewProductAsync(string productName)
         {
-            // Extract dimensions from product name (format: "Kính trắng KT: 700*400*5 mm")
-            var dimensionMatch = Regex.Match(productName, @"KT:\s*(\d+)\*(\d+)\*(\d+)");
-            
+            // More flexible dimension extraction
+            var dimensionPatterns = new[]
+            {
+                @"KT:\s*(\d+)\*(\d+)\*(\d+)", // KT: 700*400*5
+                @"(\d+)\*(\d+)\*(\d+)",       // 700*400*5
+                @"(\d+)\s*x\s*(\d+)\s*x\s*(\d+)", // 700 x 400 x 5
+                @"(\d+)\s*×\s*(\d+)\s*×\s*(\d+)"  // 700 × 400 × 5
+            };
+
             string? width = null;
             string? height = null;
             decimal? thickness = null;
 
-            if (dimensionMatch.Success)
+            foreach (var pattern in dimensionPatterns)
             {
-                width = dimensionMatch.Groups[1].Value;
-                height = dimensionMatch.Groups[2].Value;
-                thickness = decimal.Parse(dimensionMatch.Groups[3].Value);
+                var match = Regex.Match(productName, pattern);
+                if (match.Success)
+                {
+                    width = match.Groups[1].Value;
+                    height = match.Groups[2].Value;
+                    thickness = decimal.Parse(match.Groups[3].Value);
+                    break;
+                }
+            }
+
+            // Determine product type based on name
+            string productType = "NVL"; // Default
+            if (productName.Contains("kính", StringComparison.OrdinalIgnoreCase) || 
+                productName.Contains("glass", StringComparison.OrdinalIgnoreCase))
+            {
+                productType = "NVL";
             }
 
             return new Product
             {
-                ProductCode = null,
+                ProductCode = GenerateProductCode(productName),
                 ProductName = productName,
-                ProductType = "NVL",
+                ProductType = productType,
                 UOM = "Tấm",
                 Width = width,
                 Height = height,
@@ -168,6 +223,14 @@ namespace SEP490.Modules.ProductionOrders.Services
                 GlassStructureId = null,
                 isupdatemisa = false
             };
+        }
+
+        private string GenerateProductCode(string productName)
+        {
+            // Generate a simple product code based on name and timestamp
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var namePart = productName.Replace(" ", "").Replace("*", "").Replace(":", "");
+            return $"KT_{namePart}_{timestamp}";
         }
     }
 } 

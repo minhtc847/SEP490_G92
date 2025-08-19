@@ -32,11 +32,16 @@ export async function fetchProductionPlanProductDetails(id: number | string) {
 /**
  * Tạo lệnh sản xuất cắt kính
  * @param data dữ liệu lệnh cắt kính
- * @returns Promise<boolean>
+ * @returns Promise<{success: boolean, message?: string}>
  */
-export async function createCutGlassOrder(data: CutGlassOrderData) {
-  const response = await axios.post("/api/CutGlassOrder/create", data);
-  return response.data;
+export async function createCutGlassOrder(data: CutGlassOrderData): Promise<{success: boolean, message?: string}> {
+  try {
+    const response = await axios.post("/api/CutGlassOrder/create", data);
+    return { success: true, message: 'Lệnh cắt kính đã được tạo thành công!' };
+  } catch (error: any) {
+    const message = error.response?.data?.message || 'Có lỗi xảy ra khi tạo lệnh cắt kính';
+    return { success: false, message };
+  }
 }
 
 /**
