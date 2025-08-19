@@ -63,7 +63,9 @@ namespace SEP490.Modules.Accountant.Services
                 .Select(po => new ProductionOrderInfoDTO
                 {
                     Id = po.Id,
-                    Description = po.Description
+                    Description = po.Description,
+                    Type = po.Type,
+                    Status = po.Status.HasValue ? po.Status.Value.ToString() : null
                 })
                 .FirstOrDefaultAsync();
 
