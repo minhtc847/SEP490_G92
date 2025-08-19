@@ -9,6 +9,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace SEP490.Modules.InventorySlipModule.Service
 {
@@ -17,15 +19,27 @@ namespace SEP490.Modules.InventorySlipModule.Service
         private readonly SEP490DbContext _context;
         private readonly IInventoryProductionOutputService _productionOutputService;
         private readonly IProductionOrderService _productionOrderService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public InventorySlipService(
             SEP490DbContext context,
             IInventoryProductionOutputService productionOutputService,
-            IProductionOrderService productionOrderService)
+            IProductionOrderService productionOrderService,
+            IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _productionOutputService = productionOutputService;
             _productionOrderService = productionOrderService;
+            _httpContextAccessor = httpContextAccessor;
+        }
+        private int? GetCurrentEmployeeId()
+        {
+            var employeeIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("employeeId");
+            if (employeeIdClaim != null && int.TryParse(employeeIdClaim.Value, out int employeeId))
+            {
+                return employeeId;
+            }
+            return null;
         }
 
         public async Task<InventorySlipDto> CreateInventorySlipAsync(CreateInventorySlipDto dto)
@@ -59,7 +73,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     SlipCode = await GenerateSlipCodeAsync(dto.ProductionOrderId),
                     Description = dto.Description,
                     ProductionOrderId = dto.ProductionOrderId,
-                    CreatedBy = 1, // TODO: Get from current user context
+                    CreatedBy = GetCurrentEmployeeId() ?? 1,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
                 };
@@ -67,7 +81,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 _context.InventorySlips.Add(slip);
                 await _context.SaveChangesAsync();
 
-                var details = new List<InventorySlipDetail>();
+                var details = new List<InventorySlipDetail>(); 
                 
                 foreach (var detailDto in dto.Details)
                 {
@@ -166,7 +180,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     SlipCode = await GenerateSlipCodeAsync(dto.ProductionOrderId),
                     Description = dto.Description,
                     ProductionOrderId = dto.ProductionOrderId,
-                    CreatedBy = 1, // TODO: Get from current user context
+                    CreatedBy = GetCurrentEmployeeId() ?? 1, 
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
                 };

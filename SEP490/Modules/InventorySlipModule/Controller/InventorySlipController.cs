@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using SEP490.Modules.InventorySlipModule.DTO;
 using SEP490.Modules.InventorySlipModule.Service;
 using System;
@@ -8,6 +9,7 @@ namespace SEP490.Modules.InventorySlipModule.Controller
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class InventorySlipController : ControllerBase
     {
         private readonly IInventorySlipService _inventorySlipService;

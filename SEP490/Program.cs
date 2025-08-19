@@ -53,6 +53,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 // Add services to the container.
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IZaloChatForwardService, ZaloChatForwardService>();
 builder.Services.AddScoped<IAuthService, AuthService>();

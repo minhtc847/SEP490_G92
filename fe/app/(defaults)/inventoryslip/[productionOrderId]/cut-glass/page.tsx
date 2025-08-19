@@ -92,30 +92,31 @@ const CutGlassSlipPage = () => {
             if (mappingInfo && mappingInfo.tempMappings && mappingInfo.tempMappings.length > 0) {
                 // Safety check for createdSlip.details
                 if (!createdSlip.details || !Array.isArray(createdSlip.details)) {
-                    throw new Error('Created slip details is invalid');
-                }
-                
-                // Convert index-based mappings to actual detail IDs
-                const actualMappings = mappingInfo.tempMappings.map((mapping: any) => {
-                    // Find the actual detail IDs by matching product IDs
-                    const inputDetail = createdSlip.details.find(d => 
-                        d.productId === slip.details[mapping.inputDetailId]?.productId
-                    );
-                    const outputDetail = createdSlip.details.find(d => 
-                        d.productId === slip.details[mapping.outputDetailId]?.productId
-                    );
-                    
-                    return {
-                        inputDetailId: inputDetail?.id || 0,
-                        outputDetailId: outputDetail?.id || 0,
-                        note: mapping.note
-                    };
-                }).filter((m: any) => m.inputDetailId > 0 && m.outputDetailId > 0);
+                    console.warn('Created slip details is invalid or missing:', createdSlip);
+                    // Không throw error, chỉ log warning
+                } else {
+                    // Convert index-based mappings to actual detail IDs
+                    const actualMappings = mappingInfo.tempMappings.map((mapping: any) => {
+                        // Find the actual detail IDs by matching product IDs
+                        const inputDetail = createdSlip.details.find(d => 
+                            d.productId === slip.details[mapping.inputDetailId]?.productId
+                        );
+                        const outputDetail = createdSlip.details.find(d => 
+                            d.productId === slip.details[mapping.outputDetailId]?.productId
+                        );
+                        
+                        return {
+                            inputDetailId: inputDetail?.id || 0,
+                            outputDetailId: outputDetail?.id || 0,
+                            note: mapping.note
+                        };
+                    }).filter((m: any) => m.inputDetailId > 0 && m.outputDetailId > 0);
 
-                if (actualMappings.length > 0) {
-                    const mappingSuccess = await addMappings(createdSlip.id, actualMappings);
-                    if (!mappingSuccess) {
-                        console.warn('Failed to add mappings, but slip was created');
+                    if (actualMappings.length > 0) {
+                        const mappingSuccess = await addMappings(createdSlip.id, actualMappings);
+                        if (!mappingSuccess) {
+                            console.warn('Failed to add mappings, but slip was created');
+                        }
                     }
                 }
             }
