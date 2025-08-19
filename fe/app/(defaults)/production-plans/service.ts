@@ -66,6 +66,7 @@ export interface ProductionPlan {
   id: number;
   planDate: string;
   orderCode: string;
+  orderId: number;
   customerName: string;
   quantity: number;
   status: string;

@@ -24,7 +24,8 @@ namespace SEP490.Modules.Production_plans.Services
                 {
                     Id = p.Id,
                     PlanDate = p.PlanDate.ToString("yyyy-MM-dd"),
-                    OrderCode = "DH" + p.SaleOrder.Id,
+                    OrderCode = p.SaleOrder.OrderCode,
+                    OrderId = p.SaleOrder.Id,
                     CustomerName = p.Customer.CustomerName ?? string.Empty,
                     Quantity = p.SaleOrder.OrderDetails
                         .SelectMany(od => od.OrderDetailProducts)
@@ -49,11 +50,11 @@ namespace SEP490.Modules.Production_plans.Services
                 CustomerName = plan.Customer.CustomerName ?? "",
                 Address = plan.Customer.Address,
                 Phone = plan.Customer.Phone,
-                OrderCode = "DH" + plan.SaleOrder.Id,
+                OrderCode = plan.SaleOrder.OrderCode,
                 OrderDate = plan.SaleOrder.OrderDate,
                 PlanDate = plan.PlanDate,
                 Status = plan.Status,
-                //Quantity = plan.SaleOrder.,
+                Quantity = plan.ProductionPlanDetails.Sum(x => x.Quantity),
                 Done = plan.ProductionPlanDetails.Sum(x => x.Done)
             };
         }

@@ -202,6 +202,7 @@ const CreateProductionPlanManager = () => {
             </div>
             <div className="mt-6 flex gap-4">
                 <button className="btn btn-primary" onClick={handleCreate} disabled={loading}>Tạo</button>
+                <button className="btn btn-secondary" onClick={() => router.back()} disabled={loading}>Hủy</button>
                 {success && <span className="text-green-600">{success}</span>}
                 {error && <span className="text-red-600">{error}</span>}
             </div>

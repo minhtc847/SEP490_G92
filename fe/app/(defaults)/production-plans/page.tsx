@@ -41,6 +41,7 @@ const ProductionPlansPage = () => {
                 const data: ProductionPlan[] = await fetchProductionPlanList();
                 const mapped = data.map((plan, idx) => ({
                     id: plan.id,
+                    orderId: plan.orderId,
                     orderCode: plan.orderCode,
                     customerName: plan.customerName,
                     totalProducts: plan.quantity,
@@ -159,8 +160,8 @@ const ProductionPlansPage = () => {
                                         accessor: 'orderCode',
                                         title: 'Mã đơn hàng',
                                         sortable: true,
-                                        render: ({ orderCode }) => {
-                                            const orderId = orderCode.replace(/^DH/, '');
+                                        render: (row) => {
+                                            const { orderCode, orderId } = row;
                                             return (
                                                 <Link href={`/sales-order/${orderId}`}>
                                                     <div className="font-semibold text-primary underline hover:no-underline">{orderCode}</div>
