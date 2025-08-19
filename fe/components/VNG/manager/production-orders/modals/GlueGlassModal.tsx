@@ -25,23 +25,57 @@ interface FinishedProduct {
     outputFor?: number; // ID của ProductionPlanDetail mà output này phục vụ
 }
 
+interface ValidationErrors {
+    productQuantities?: string;
+    finishedProducts?: string;
+    general?: string;
+}
+
 const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productionPlanId, onSave }: GlueGlassModalProps) => {
     const [productQuantities, setProductQuantities] = useState<{ [productId: number]: number }>({});
     const [finishedProducts, setFinishedProducts] = useState<FinishedProduct[]>([]);
+    const [errors, setErrors] = useState<ValidationErrors>({});
 
     // Initialize quantities when modal opens
     useEffect(() => {
         if (isOpen) {
             const initialQuantities: { [productId: number]: number } = {};
-            // products.forEach((product) => {
-            //     // Default to remaining quantity
-            //     //const remainingQuantity = product.totalQuantity - product.daGhepKinh;
-            //     //initialQuantities[product.id] = remainingQuantity;
-            // });
             setProductQuantities(initialQuantities);
             updateFinishedProducts(initialQuantities);
+            setErrors({});
         }
     }, [isOpen, products]);
+
+    // Validation
+    const validateProductQuantities = (): boolean => {
+        const hasValidQuantity = Object.values(productQuantities).some((qty) => qty > 0);
+        if (!hasValidQuantity) {
+            setErrors((prev) => ({ ...prev, productQuantities: 'Vui lòng nhập ít nhất một sản phẩm cần ghép' }));
+            return false;
+        }
+        setErrors((prev) => ({ ...prev, productQuantities: undefined }));
+        return true;
+    };
+
+    const validateFinishedProducts = (): boolean => {
+        if (finishedProducts.length === 0) {
+            setErrors((prev) => ({ ...prev, finishedProducts: 'Vui lòng thêm ít nhất một thành phẩm' }));
+            return false;
+        }
+        for (let i = 0; i < finishedProducts.length; i++) {
+            const product = finishedProducts[i];
+            if (!product.productName.trim()) {
+                setErrors((prev) => ({ ...prev, finishedProducts: `Thành phẩm ${i + 1}: Tên sản phẩm không được để trống` }));
+                return false;
+            }
+            if (product.quantity <= 0) {
+                setErrors((prev) => ({ ...prev, finishedProducts: `Thành phẩm ${i + 1}: Số lượng phải lớn hơn 0` }));
+                return false;
+            }
+        }
+        setErrors((prev) => ({ ...prev, finishedProducts: undefined }));
+        return true;
+    };
 
     // Update finished products when quantities change
     const updateFinishedProducts = (quantities: { [productId: number]: number }) => {
@@ -73,6 +107,9 @@ const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productio
         };
         setProductQuantities(newQuantities);
         updateFinishedProducts(newQuantities);
+        if (errors.productQuantities) {
+            setErrors((prev) => ({ ...prev, productQuantities: undefined }));
+        }
     };
 
     // Handler for changing finished product data
@@ -83,6 +120,9 @@ const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productio
             [field]: field === 'quantity' ? Number(value) : value
         };
         setFinishedProducts(newFinishedProducts);
+        if (errors.finishedProducts) {
+            setErrors((prev) => ({ ...prev, finishedProducts: undefined }));
+        }
     };
 
     // Add new finished product row
@@ -104,10 +144,17 @@ const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productio
 
     // Handle save
     const handleSave = () => {
+        const isProductQuantitiesValid = validateProductQuantities();
+        const isFinishedProductsValid = validateFinishedProducts();
+
+        if (!isProductQuantitiesValid || !isFinishedProductsValid) {
+            return;
+        }
+
         const orderData: GlueGlassOrderData = {
             productionPlanId: productionPlanId,
             productQuantities,
-            finishedProducts
+            finishedProducts,
         };
         onSave(orderData);
         onClose();
@@ -154,6 +201,11 @@ const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productio
                                     {/* Product Selection Table */}
                                     <div className="mb-6">
                                         <h6 className="text-lg font-semibold mb-4">Chọn sản phẩm cần ghép</h6>
+                                        {errors.productQuantities && (
+                                            <div className="mb-3 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                                                {errors.productQuantities}
+                                            </div>
+                                        )}
                                         <div className="table-responsive">
                                             <table className="table-striped w-full">
                                                 <thead>
@@ -161,14 +213,10 @@ const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productio
                                                         <th>STT</th>
                                                         <th>Tên sản phẩm</th>
                                                         <th>Số lượng cần ghép</th>
-                                                        {/* <th>Số lượng đã ghép</th>
-                                                        <th>Số lượng còn lại</th>
-                                                        <th>Số lượng đã cắt kính</th> */}
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {products.map((product, idx) => {
-                                                        // const remainingQuantity = product.totalQuantity - product.daGhepKinh;
                                                         const selectedQuantity = productQuantities[product.id] || 0;
                                                         
                                                         return (
@@ -179,15 +227,11 @@ const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productio
                                                                     <input
                                                                         type="number"
                                                                         min={0}
-                                                                        //max={remainingQuantity}
                                                                         className="form-input w-24"
                                                                         value={productQuantities[product.id] ?? 0}
                                                                         onChange={e => handleProductQuantityChange(product.id, e.target.value)}
                                                                     />
                                                                 </td>
-                                                                {/* <td className="text-center">{product.daGhepKinh}</td> */}
-                                                                {/* <td className="text-center">{remainingQuantity}</td> */}
-                                                                {/* <td className="text-center">{product.daCatKinh}</td> */}
                                                             </tr>
                                                         );
                                                     })}
@@ -211,6 +255,11 @@ const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productio
                                                 Thêm hàng
                                             </button>
                                         </div>
+                                        {errors.finishedProducts && (
+                                            <div className="mb-3 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                                                {errors.finishedProducts}
+                                            </div>
+                                        )}
                                         <div className="table-responsive">
                                             <table className="table-striped w-full">
                                                 <thead>

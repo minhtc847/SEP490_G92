@@ -24,6 +24,11 @@ interface FinishedProduct {
     sourceProductId?: number;
 }
 
+interface ValidationErrors {
+    productQuantities?: string;
+    general?: string;
+}
+
 // Công thức tính tổng keo
 function calculateTotalGlue(width: number, height: number, thickness: number, glass4mm: number, glass5mm: number) {
     // Diện tích keo (m2)
@@ -38,6 +43,7 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
     const [productQuantities, setProductQuantities] = useState<{ [productId: number]: number }>({});
     const [loading, setLoading] = useState(false);
     const [materialProducts, setMaterialProducts] = useState<ProductionPlanMaterialProduct[]>([]);
+    const [errors, setErrors] = useState<ValidationErrors>({});
 
     // Fetch material details when modal opens
     useEffect(() => {
@@ -46,8 +52,8 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
                 .then((materialDetail) => {
                     setMaterialProducts(materialDetail.products || []);
                 })
-                .catch((error) => {
-                    console.error('Error fetching material details:', error);
+                .catch(() => {
+                    setErrors((prev) => ({ ...prev, general: 'Không tải được dữ liệu vật tư' }));
                 });
         }
     }, [isOpen, productionPlanId]);
@@ -56,12 +62,8 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
     useEffect(() => {
         if (isOpen) {
             const initialQuantities: { [productId: number]: number } = {};
-            // products.forEach((product) => {
-            //     // Default to remaining quantity
-            //     // const remainingQuantity = product.totalQuantity - product.daDoKeo;
-            //     // initialQuantities[product.id] = remainingQuantity;
-            // });
             setProductQuantities(initialQuantities);
+            setErrors({});
         }
     }, [isOpen, products]);
 
@@ -72,6 +74,9 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
             [productId]: Number(value),
         };
         setProductQuantities(newQuantities);
+        if (errors.productQuantities) {
+            setErrors((prev) => ({ ...prev, productQuantities: undefined }));
+        }
     };
 
     // Calculate total glue needed based on selected products
@@ -110,6 +115,12 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
 
     // Handle save - Create both gel order and pour glue order
     const handleSave = async () => {
+        const hasValidQuantity = Object.values(productQuantities).some((qty) => qty > 0);
+        if (!hasValidQuantity) {
+            setErrors((prev) => ({ ...prev, productQuantities: 'Vui lòng nhập ít nhất một sản phẩm cần đổ' }));
+            return;
+        }
+
         setLoading(true);
         try {
             const { totalKeoNano, totalKeoMem } = calculateTotalGlueNeeded();
@@ -133,11 +144,9 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
                 finishedProducts: []
             };
             onSave(orderData);
-
             onClose();
         } catch (error) {
-            console.error('Error creating orders:', error);
-            alert('Có lỗi xảy ra khi tạo lệnh sản xuất!');
+            setErrors((prev) => ({ ...prev, general: 'Có lỗi xảy ra khi tạo lệnh sản xuất!' }));
         } finally {
             setLoading(false);
         }
@@ -186,6 +195,11 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
                                     {/* Product Selection Table */}
                                     <div className="mb-6">
                                         <h6 className="text-lg font-semibold mb-4">Thành phẩm cần đổ keo</h6>
+                                        {errors.productQuantities && (
+                                            <div className="mb-3 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                                                {errors.productQuantities}
+                                            </div>
+                                        )}
                                         <div className="table-responsive">
                                             <table className="table-striped w-full">
                                                 <thead>
@@ -195,8 +209,6 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
                                                         <th>Loại keo</th>
                                                         <th>Tổng keo (kg)</th>
                                                         <th>Số lượng cần đổ</th>
-                                                        {/* <th>Số lượng đã đổ</th>
-                                                        <th>Số lượng còn lại</th> */}
                                                     </tr>
                                                 </thead>
                                                 <tbody>
