@@ -287,5 +287,13 @@ namespace SEP490.Modules.Production_plans.Services
                 return false;
             }
         }
+
+        public async Task<bool> HasProductionPlanAsync(int saleOrderId)
+        {
+            var productionPlan = await _context.ProductionPlans
+                .FirstOrDefaultAsync(p => p.SaleOrderId == saleOrderId);
+            
+            return productionPlan != null;
+        }
     }
 }

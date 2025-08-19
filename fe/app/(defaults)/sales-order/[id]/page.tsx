@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getOrderDetailById, OrderDetailDto, updateMisaOrder, updateOrderMisaStatus } from '@/app/(defaults)/sales-order/[id]/service';
+import { getOrderDetailById, OrderDetailDto, updateMisaOrder, updateOrderMisaStatus, checkHasProductionPlan } from '@/app/(defaults)/sales-order/[id]/service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import ExcelJS from 'exceljs';
@@ -18,6 +18,7 @@ const SalesOrderDetailPage = () => {
     const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
     const [showErrorMessage, setShowErrorMessage] = useState<boolean>(false);
     const [errorMessage, setErrorMessage] = useState<string>('');
+    const [hasProductionPlan, setHasProductionPlan] = useState<boolean>(false);
 
     useEffect(() => {
         if (!id || isNaN(Number(id))) return;
@@ -28,6 +29,10 @@ const SalesOrderDetailPage = () => {
                 console.log('Order data received:', data);
                 console.log('isUpdateMisa from API:', data.isUpdateMisa);
                 setOrder(data);
+                
+                // Check if this sales order has a production plan
+                const hasPlan = await checkHasProductionPlan(Number(id));
+                setHasProductionPlan(hasPlan);
             } catch (error) {
                 console.error('Lỗi khi gọi API:', error);
             } finally {
@@ -225,8 +230,17 @@ const SalesOrderDetailPage = () => {
                     <button onClick={handleExportToExcel} className="px-4 py-1 bg-gray-600 text-white rounded">
                         📊 Xuất Excel
                     </button>
-                    <button onClick={() => router.push(`/production-plans/create?orderId=${id}`)} className="px-4 py-1 bg-yellow-500 text-black rounded">
-                        🏭 Tạo lệnh sản xuất
+                    <button 
+                        onClick={() => router.push(`/production-plans/create?orderId=${id}`)} 
+                        disabled={hasProductionPlan}
+                        className={`px-4 py-1 rounded ${
+                            hasProductionPlan 
+                                ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+                                : 'bg-yellow-500 text-black hover:bg-yellow-600'
+                        }`}
+                        title={hasProductionPlan ? 'Đơn hàng đã có kế hoạch sản xuất' : 'Tạo kế hoạch sản xuất'}
+                    >
+                        {hasProductionPlan ? '🏭 Đã có kế hoạch sản xuất' : '🏭 Tạo kế hoạch sản xuất'}
                     </button>
                 </div>
             </div>

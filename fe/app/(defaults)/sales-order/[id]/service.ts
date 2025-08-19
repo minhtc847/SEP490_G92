@@ -49,3 +49,8 @@ export const updateOrderMisaStatus = async (orderId: number): Promise<any> => {
   const res = await axios.put(`/api/orders/${orderId}/update-misa-status`);
   return res.data;
 };
+
+export const checkHasProductionPlan = async (orderId: number): Promise<boolean> => {
+  const response = await axios.get(`/api/ProductionPlan/has-production-plan/${orderId}`);
+  return response.data.hasProductionPlan;
+};

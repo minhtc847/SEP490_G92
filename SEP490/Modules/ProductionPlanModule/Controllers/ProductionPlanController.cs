@@ -71,6 +71,13 @@ namespace SEP490.Modules.Production_plans.Controllers
             return Ok(result);
         }
 
+        [HttpGet("has-production-plan/{saleOrderId}")]
+        public async Task<IActionResult> HasProductionPlan(int saleOrderId)
+        {
+            var hasPlan = await _productionPlanService.HasProductionPlanAsync(saleOrderId);
+            return Ok(new { hasProductionPlan = hasPlan });
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProductionPlan(int id)
         {

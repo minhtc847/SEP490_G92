@@ -12,5 +12,6 @@ namespace SEP490.Modules.Production_plans.Services
         Task<ProductionPlanMaterialDetailDTO> GetProductionPlanMaterialDetailAsync(int id);
         Task<List<ProductionPlanOutputDto>> GetProductionPlanOutputsAsync(int productionPlanId);
         Task<bool> DeleteProductionPlanAsync(int id);
+        Task<bool> HasProductionPlanAsync(int saleOrderId);
     }
 }

@@ -176,7 +176,7 @@ const OrderSelectionModal: React.FC<OrderSelectionModalProps> = ({ isOpen, onClo
                                                                             {order.orderCode}
                                                                         </div>
                                                                         <span className="badge badge-outline-warning">
-                                                                            Chờ xử lý
+                                                                            Chưa thực hiện
                                                                         </span>
                                                                     </div>
                                                                     <div className="mt-1 text-sm text-gray-600">
