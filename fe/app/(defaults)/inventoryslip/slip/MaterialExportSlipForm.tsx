@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
-import { CreateInventorySlipDto, CreateInventorySlipDetailDto, ProductionOrderInfo, ProductInfo, ProductionMaterial, fetchMaterialsByProductionOutput, createMaterialExportSlip } from '../../service';
+import { CreateInventorySlipDto, CreateInventorySlipDetailDto, ProductionOrderInfo, ProductInfo, ProductionMaterial, fetchMaterialsByProductionOutput, createMaterialExportSlip } from '../service';
 
 interface MaterialExportSlipFormProps {
     productionOrderInfo: ProductionOrderInfo;
@@ -491,7 +491,7 @@ export default function MaterialExportSlipForm({
                                                 return (
                                                     <div className="text-xs text-green-500 text-center flex items-center justify-center">
                                                         <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                                                         </svg>
                                                         Đã hợp lệ
                                                     </div>
@@ -692,3 +692,5 @@ export default function MaterialExportSlipForm({
         </div>
     );
 }
+
+

@@ -6,6 +6,8 @@ import {
     fetchProductionOrderInfo,
     searchProducts,
     createMaterialExportSlip,
+    createCutGlassSlip,
+    addMappings,
     InventorySlip,
     CreateInventorySlipDto,
     ProductionOrderInfo,
@@ -15,7 +17,7 @@ import {
 import InventorySlipForm from '../slip/InventorySlipForm';
 import InventorySlipList from '../slip/InventorySlipList';
 import IconPlus from '@/components/icon/icon-plus';
-import MaterialExportSlipForm from './material-export/MaterialExportSlipForm';
+import MaterialExportSlipForm from '../slip/MaterialExportSlipForm';
 
 const ProductionOrderInventorySlipPage = () => {
     const params = useParams();
@@ -33,6 +35,7 @@ const ProductionOrderInventorySlipPage = () => {
     const [loading, setLoading] = useState(true);
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [showMaterialExportForm, setShowMaterialExportForm] = useState(false);
+    const [showCutGlassForm, setShowCutGlassForm] = useState(false);
 
     const [paginatedProducts, setPaginatedProducts] = useState<PaginatedProductsDto | null>(null);
     const [productSearchTerm, setProductSearchTerm] = useState('');
@@ -166,15 +169,76 @@ const ProductionOrderInventorySlipPage = () => {
         }
     };
 
+    const handleCutGlassSlipCreated = async (formData: CreateInventorySlipDto, mappingInfo?: any) => {
+        try {
+            const createdSlip = await createCutGlassSlip(formData, mappingInfo);
+            if (!createdSlip) {
+                throw new Error('Failed to create slip');
+            }
+
+            if (mappingInfo && mappingInfo.tempMappings && mappingInfo.tempMappings.length > 0) {
+                if (createdSlip.details && Array.isArray(createdSlip.details)) {
+                    const actualMappings = mappingInfo.tempMappings
+                        .map((m: any) => {
+                            const inputDetail = createdSlip.details.find(d =>
+                                d.productId === formData.details[m.inputDetailId]?.productId
+                            );
+                            const outputDetail = createdSlip.details.find(d =>
+                                d.productId === formData.details[m.outputDetailId]?.productId
+                            );
+                            return {
+                                inputDetailId: inputDetail?.id || 0,
+                                outputDetailId: outputDetail?.id || 0,
+                                note: m.note,
+                            };
+                        })
+                        .filter((m: any) => m.inputDetailId > 0 && m.outputDetailId > 0);
+
+                    if (actualMappings.length > 0) {
+                        const ok = await addMappings(createdSlip.id, actualMappings);
+                        if (!ok) {
+                            console.warn('Failed to add mappings, but slip was created');
+                        }
+                    }
+                } else {
+                    console.warn('Created slip details is invalid or missing:', createdSlip);
+                }
+            }
+
+            const { default: Swal } = await import('sweetalert2');
+            Swal.fire({
+                title: 'Tạo phiếu cắt kính thành công!',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
+
+            setShowCutGlassForm(false);
+            await loadData();
+        } catch (error: any) {
+            console.error('Error creating cut glass slip:', error);
+            const { default: Swal } = await import('sweetalert2');
+            Swal.fire({
+                title: 'Có lỗi xảy ra khi tạo phiếu',
+                text: error instanceof Error ? error.message : 'Vui lòng thử lại',
+                icon: 'error',
+                confirmButtonText: 'Đã hiểu',
+            });
+        }
+    };
+
     
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
-        if (event.key === 'Escape' && showMaterialExportForm) {
-            setShowMaterialExportForm(false);
+        if (event.key === 'Escape') {
+            if (showMaterialExportForm) setShowMaterialExportForm(false);
+            if (showCutGlassForm) setShowCutGlassForm(false);
         }
-    }, [showMaterialExportForm]);
+    }, [showMaterialExportForm, showCutGlassForm]);
 
     useEffect(() => {
-        if (showMaterialExportForm) {
+        if (showMaterialExportForm || showCutGlassForm) {
             document.addEventListener('keydown', handleKeyDown);
             document.body.style.overflow = 'hidden';
         } else {
@@ -185,7 +249,7 @@ const ProductionOrderInventorySlipPage = () => {
             document.removeEventListener('keydown', handleKeyDown);
             document.body.style.overflow = 'unset';
         };
-    }, [showMaterialExportForm, handleKeyDown]);
+    }, [showMaterialExportForm, showCutGlassForm, handleKeyDown]);
 
     const getSlipTypeText = (type: string | undefined) => {
         switch (type) {
@@ -236,7 +300,7 @@ const ProductionOrderInventorySlipPage = () => {
                         </button>
                         {productionOrderInfo.type === 'Cắt kính' && (
                             <button
-                                onClick={() => router.push(`/inventoryslip/${productionOrderId}/cut-glass`)}
+                                onClick={() => setShowCutGlassForm(true)}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                             >
                                 Tạo phiếu cắt kính
@@ -451,6 +515,50 @@ const ProductionOrderInventorySlipPage = () => {
                             setShowCreateForm(false);
                         }}
                     />
+                </div>
+            )}
+
+            {/* Cut Glass Form Modal */}
+            {showCutGlassForm && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4"
+                    onClick={() => setShowCutGlassForm(false)}
+                >
+                    <div 
+                        className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto relative"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-lg">
+                            <div>
+                                <h3 className="text-xl font-semibold text-gray-900">
+                                    Tạo phiếu cắt kính
+                                </h3>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    Lệnh sản xuất: {productionOrderInfo?.productionOrderCode}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowCutGlassForm(false)}
+                                className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full"
+                                title="Đóng"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-6">
+                            <InventorySlipForm
+                                productionOrderInfo={productionOrderInfo!}
+                                onSlipCreated={handleCutGlassSlipCreated}
+                                onCancel={() => setShowCutGlassForm(false)}
+                                onRefreshProductionOrderInfo={loadData}
+                            />
+                        </div>
+                    </div>
                 </div>
             )}
 
