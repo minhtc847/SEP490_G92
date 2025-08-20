@@ -120,7 +120,7 @@ const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {slip.details.map((detail, index) => (
+                                            {(slip.details || []).map((detail, index) => (
                                                 <tr key={detail.id} className="bg-white hover:bg-gray-50">
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-900">
@@ -193,34 +193,22 @@ const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
     // Create a mapping from raw material to its output products
     const materialOutputMap = new Map<number, InventorySlipDetail[]>();
 
-    // Debug logging
-    console.log('Raw materials:', rawMaterials);
-    console.log('Semi-finished products:', semiFinishedProducts);
-    console.log('Waste glass:', wasteGlass);
+
 
     // Use the actual mappings from the backend
     rawMaterials.forEach(material => {
-        console.log(`Processing material ${material.id} (${material.productName}):`);
-        console.log('  OutputMappings:', material.outputMappings);
-        
         if (material.outputMappings && material.outputMappings.length > 0) {
             // Use actual mappings if available
             const outputs = material.outputMappings.map(mapping => {
-                console.log(`  Mapping: ${mapping.inputDetailId} -> ${mapping.outputDetailId}`);
                 const outputDetail = [...semiFinishedProducts, ...wasteGlass].find(d => d.id === mapping.outputDetailId);
-                console.log(`  Found output detail:`, outputDetail);
                 return outputDetail;
             }).filter(Boolean) as InventorySlipDetail[];
 
-            console.log(`  Final outputs for material ${material.id}:`, outputs);
             materialOutputMap.set(material.id, outputs);
         } else {
-            console.log(`  No output mappings for material ${material.id}`);
             materialOutputMap.set(material.id, []);
         }
     });
-
-    console.log('Final materialOutputMap:', materialOutputMap);
 
     return (
         <div className="space-y-4">

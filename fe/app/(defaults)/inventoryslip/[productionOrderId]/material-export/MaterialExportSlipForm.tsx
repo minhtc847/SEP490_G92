@@ -187,7 +187,7 @@ export default function MaterialExportSlipForm({
             return;
         }
 
-        // Kiểm tra validation cho từng sản phẩm mục tiêu đã chọn
+        // validate
         const validationErrors: string[] = [];
         
         for (const target of selectedTargets) {
@@ -223,16 +223,27 @@ export default function MaterialExportSlipForm({
             return;
         }
 
-        // Chuyển đổi selectedMaterials thành formData.details
+        // convert selectedMaterials to formData.details
         const details: CreateInventorySlipDetailDto[] = validMaterials.map((material, index) => ({
             productId: material.productId,
             quantity: material.quantity,
             note: material.note,
             sortOrder: index,
-            productionOutputId: material.productionOutputId // Sử dụng production_output_id để gom nhóm
+            productionOutputId: material.productionOutputId // use production_output_id to group
         }));
 
-        // Tạo ProductionOutputTargets từ các sản phẩm mục tiêu đã chọn
+        // add target product details (với productId: undefined)
+        const targetProductDetails: CreateInventorySlipDetailDto[] = selectedTargets.map((target, index) => ({
+            productId: undefined,
+            quantity: target.targetQuantity,
+            note: `Thành phẩm mục tiêu: ${target.productName}`,
+            sortOrder: details.length + index, // Sắp xếp sau nguyên liệu
+            productionOutputId: target.id
+        }));
+
+        // Kết hợp nguyên liệu và thành phẩm mục tiêu
+        const allDetails = [...details, ...targetProductDetails];
+
         const productionOutputTargets = selectedTargets.map(target => ({
             productionOutputId: target.id,
             targetQuantity: target.targetQuantity
@@ -242,12 +253,11 @@ export default function MaterialExportSlipForm({
         const builtDto: CreateInventorySlipDto = {
             productionOrderId: productionOrderInfo.id,
             description: formData.description,
-            details,
+            details: allDetails, 
             mappings: [],
             productionOutputTargets
         };
 
-        // SweetAlert confirm
         MySwal.fire({
             title: 'Xác nhận tạo phiếu',
             text: 'Bạn có chắc chắn muốn tạo phiếu xuất này?',
@@ -266,16 +276,17 @@ export default function MaterialExportSlipForm({
     const handleConfirmCreate = async (dto: CreateInventorySlipDto) => {
         // Ngăn chặn double click
         if (loading) {
+            console.log('Already loading, skipping...');
             return;
         }
 
         try {
             setLoading(true);
 
-            // Gửi một lần với DTO đã xây dựng
             onSlipCreated(dto);
 
         } catch (error) {
+            console.error('Error in handleConfirmCreate:', error);
             MySwal.fire({
                 title: 'Có lỗi xảy ra khi xử lý form',
                 toast: true,
@@ -301,21 +312,18 @@ export default function MaterialExportSlipForm({
         return 'Xuất vật liệu cho quá trình sản xuất';
     };
 
-    // Hàm kiểm tra validation form
+    //validate form
     const isFormValid = (): boolean => {
         const selectedTargets = targetProducts.filter(t => t.selected);
         
-        // Kiểm tra có sản phẩm mục tiêu nào được chọn không
         if (selectedTargets.length === 0) {
             return false;
         }
         
-        // Kiểm tra tất cả sản phẩm mục tiêu đã chọn có số lượng > 0 không
         if (selectedTargets.some(t => t.targetQuantity <= 0)) {
             return false;
         }
         
-        // Kiểm tra mỗi sản phẩm mục tiêu có ít nhất một nguyên liệu được điền số lượng > 0 không
         for (const target of selectedTargets) {
             const targetMaterials = selectedMaterials.filter(m => m.productionOutputId === target.id);
             const hasValidMaterial = targetMaterials.some(m => m.quantity > 0);
@@ -364,7 +372,6 @@ export default function MaterialExportSlipForm({
                     </div>
                 </div>
 
-                {/* Step 1: Select Target Products */}
                 <div className="border-t pt-6 mb-6">
                     <div className="mb-4">
                         <h3 className="text-lg font-semibold text-blue-800 mb-2">
@@ -476,7 +483,7 @@ export default function MaterialExportSlipForm({
                                                             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                                                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                                             </svg>
-                                                            Cần điền số lượng > 0 cho ít nhất 1 nguyên liệu
+                                                            Cần điền số lượng &gt; 0 cho ít nhất 1 nguyên liệu
                                                         </div>
                                                     );
                                                 }
@@ -502,7 +509,6 @@ export default function MaterialExportSlipForm({
                     )}
                 </div>
 
-                {/* Step 2: Materials for Selected Targets */}
                 {selectedMaterials.length > 0 && (
                     <div className="border-t pt-6 mb-6">
                         <div className="mb-4">
@@ -637,7 +643,6 @@ export default function MaterialExportSlipForm({
                     </div>
                 )}
 
-                {/* Confirmation handled by SweetAlert2 */}
 
                 {/* Form Actions */}
                 <div className="flex flex-col space-y-4 pt-6 border-t">
@@ -649,7 +654,7 @@ export default function MaterialExportSlipForm({
                                     <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                 </svg>
                                 <div className="text-sm text-yellow-800">
-                                    <strong>Lưu ý:</strong> Vui lòng đảm bảo mỗi sản phẩm mục tiêu đã chọn có ít nhất một nguyên liệu được điền số lượng > 0
+                                    <strong>Lưu ý:</strong> Vui lòng đảm bảo mỗi sản phẩm mục tiêu đã chọn có ít nhất một nguyên liệu được điền số lượng &gt; 0
                                 </div>
                             </div>
                         </div>

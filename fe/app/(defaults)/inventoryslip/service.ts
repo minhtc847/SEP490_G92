@@ -195,8 +195,55 @@ export const createInventorySlip = async (dto: CreateInventorySlipDto): Promise<
 
 export const createMaterialExportSlip = async (dto: CreateInventorySlipDto): Promise<InventorySlip | null> => {
     try {
-        const response = await axios.post<InventorySlip>("/api/InventorySlip/create", dto);
-        return response.data;
+        let endpoint = "/api/InventorySlip/create";
+        
+        if (dto.productionOutputTargets && dto.productionOutputTargets.length > 0) {
+            endpoint = "/api/InventorySlip/chemical-export";
+        }       
+       
+        const response = await axios.post<any>(endpoint, dto);
+
+        
+        let slipData: any = null;
+        
+        if (response.data && response.data.data) {
+            slipData = response.data.data;
+        } else if (response.data) {
+            slipData = response.data;
+        }
+        
+        if (slipData) {
+            // Ensure the slip data has required fields
+            const transformedSlip: InventorySlip = {
+                id: slipData.id || 0,
+                slipCode: slipData.slipCode || `SLIP-${Date.now()}`,
+                description: slipData.description || '',
+                productionOrderId: slipData.productionOrderId || dto.productionOrderId,
+                productionOrderCode: slipData.productionOrderCode || '',
+                productionOrderType: slipData.productionOrderType || '',
+                createdBy: slipData.createdBy || 0,
+                createdByEmployeeName: slipData.createdByEmployeeName || '',
+                createdAt: slipData.createdAt || new Date().toISOString(),
+                updatedAt: slipData.updatedAt || new Date().toISOString(),
+                details: slipData.details || dto.details.map((detail, index) => ({
+                    id: index,
+                    productId: detail.productId,
+                    productCode: '',
+                    productName: '',
+                    productType: '',
+                    uom: '',
+                    quantity: detail.quantity,
+                    note: detail.note,
+                    sortOrder: detail.sortOrder,
+                    productionOutputId: detail.productionOutputId
+                }))
+            };
+            
+            return transformedSlip;
+        }
+        
+        console.log('No valid data found, returning null');
+        return null;
     } catch (error) {
         console.error('Error creating material export slip:', error);
         return null;
