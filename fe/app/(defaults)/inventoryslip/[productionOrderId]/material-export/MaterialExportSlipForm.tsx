@@ -147,6 +147,9 @@ export default function MaterialExportSlipForm({
                 ? { ...material, [field]: value }
                 : material
         ));
+        
+        // Force re-render để cập nhật validation status
+        setFormData(prev => ({ ...prev }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -180,6 +183,29 @@ export default function MaterialExportSlipForm({
                 showConfirmButton: false,
                 timer: 3000,
                 showCloseButton: true,
+            });
+            return;
+        }
+
+        // Kiểm tra validation cho từng sản phẩm mục tiêu đã chọn
+        const validationErrors: string[] = [];
+        
+        for (const target of selectedTargets) {
+            const targetMaterials = selectedMaterials.filter(m => m.productionOutputId === target.id);
+            const hasValidMaterial = targetMaterials.some(m => m.quantity > 0);
+            
+            if (!hasValidMaterial) {
+                validationErrors.push(`Sản phẩm "${target.productName}" chưa có nguyên liệu nào được điền số lượng > 0`);
+            }
+        }
+        
+        if (validationErrors.length > 0) {
+            MySwal.fire({
+                title: 'Vui lòng kiểm tra lại thông tin',
+                html: validationErrors.map(error => `<div class="text-left mb-2">• ${error}</div>`).join(''),
+                icon: 'warning',
+                confirmButtonText: 'Đã hiểu',
+                customClass: { popup: 'sweet-alerts' },
             });
             return;
         }
@@ -273,6 +299,33 @@ export default function MaterialExportSlipForm({
         if (isButylGlueSlip) return 'Xuất keo butyl cho quá trình ghép kính';
         if (isChemicalExportSlip) return 'Xuất hóa chất cho quá trình sản xuất keo';
         return 'Xuất vật liệu cho quá trình sản xuất';
+    };
+
+    // Hàm kiểm tra validation form
+    const isFormValid = (): boolean => {
+        const selectedTargets = targetProducts.filter(t => t.selected);
+        
+        // Kiểm tra có sản phẩm mục tiêu nào được chọn không
+        if (selectedTargets.length === 0) {
+            return false;
+        }
+        
+        // Kiểm tra tất cả sản phẩm mục tiêu đã chọn có số lượng > 0 không
+        if (selectedTargets.some(t => t.targetQuantity <= 0)) {
+            return false;
+        }
+        
+        // Kiểm tra mỗi sản phẩm mục tiêu có ít nhất một nguyên liệu được điền số lượng > 0 không
+        for (const target of selectedTargets) {
+            const targetMaterials = selectedMaterials.filter(m => m.productionOutputId === target.id);
+            const hasValidMaterial = targetMaterials.some(m => m.quantity > 0);
+            
+            if (!hasValidMaterial) {
+                return false;
+            }
+        }
+        
+        return true;
     };
 
     return (
@@ -391,16 +444,53 @@ export default function MaterialExportSlipForm({
                                     </div>
 
                                     {target.selected && (
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleLoadMaterialsForTarget(target.id);
-                                            }}
-                                            className="w-full px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-                                        >
-                                            Tải nguyên liệu
-                                        </button>
+                                        <div className="space-y-2">
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleLoadMaterialsForTarget(target.id);
+                                                }}
+                                                className="w-full px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                                            >
+                                                Tải nguyên liệu
+                                            </button>
+                                            
+                                            {/* Validation indicator */}
+                                            {(() => {
+                                                const targetMaterials = selectedMaterials.filter(m => m.productionOutputId === target.id);
+                                                const hasValidMaterial = targetMaterials.some(m => m.quantity > 0);
+                                                const hasMaterials = targetMaterials.length > 0;
+                                                
+                                                if (!hasMaterials) {
+                                                    return (
+                                                        <div className="text-xs text-gray-500 text-center">
+                                                            Chưa tải nguyên liệu
+                                                        </div>
+                                                    );
+                                                }
+                                                
+                                                if (!hasValidMaterial) {
+                                                    return (
+                                                        <div className="text-xs text-red-500 text-center flex items-center justify-center">
+                                                            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                            </svg>
+                                                            Cần điền số lượng > 0 cho ít nhất 1 nguyên liệu
+                                                        </div>
+                                                    );
+                                                }
+                                                
+                                                return (
+                                                    <div className="text-xs text-green-500 text-center flex items-center justify-center">
+                                                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                        </svg>
+                                                        Đã hợp lệ
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
                                     )}
                                 </div>
                             ))}
@@ -550,30 +640,48 @@ export default function MaterialExportSlipForm({
                 {/* Confirmation handled by SweetAlert2 */}
 
                 {/* Form Actions */}
-                <div className="flex justify-end space-x-4 pt-6 border-t">
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className="px-6 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                    >
-                        Hủy
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={
-                            targetProducts.filter(t => t.selected).length === 0 ||
-                            targetProducts.filter(t => t.selected && t.targetQuantity <= 0).length > 0 ||
-                            loading
-                        }
-                        className={`px-6 py-2 rounded-md transition-colors ${targetProducts.filter(t => t.selected).length === 0 ||
-                            targetProducts.filter(t => t.selected && t.targetQuantity <= 0).length > 0 ||
-                            loading
-                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                            : 'bg-blue-500 text-white hover:bg-blue-600'
-                            }`}
-                    >
-                        {loading ? 'Đang xử lý...' : 'Tạo phiếu'}
-                    </button>
+                <div className="flex flex-col space-y-4 pt-6 border-t">
+                    {/* Validation Status */}
+                    {!isFormValid() && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                            <div className="flex items-center">
+                                <svg className="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                                <div className="text-sm text-yellow-800">
+                                    <strong>Lưu ý:</strong> Vui lòng đảm bảo mỗi sản phẩm mục tiêu đã chọn có ít nhất một nguyên liệu được điền số lượng > 0
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    <div className="flex justify-end space-x-4">
+                        <button
+                            type="button"
+                            onClick={onCancel}
+                            className="px-6 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                        >
+                            Hủy
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={
+                                targetProducts.filter(t => t.selected).length === 0 ||
+                                targetProducts.filter(t => t.selected && t.targetQuantity <= 0).length > 0 ||
+                                !isFormValid() ||
+                                loading
+                            }
+                            className={`px-6 py-2 rounded-md transition-colors ${targetProducts.filter(t => t.selected).length === 0 ||
+                                targetProducts.filter(t => t.selected && t.targetQuantity <= 0).length > 0 ||
+                                !isFormValid() ||
+                                loading
+                                ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                                : 'bg-blue-500 text-white hover:bg-blue-600'
+                                }`}
+                        >
+                            {loading ? 'Đang xử lý...' : 'Tạo phiếu'}
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
