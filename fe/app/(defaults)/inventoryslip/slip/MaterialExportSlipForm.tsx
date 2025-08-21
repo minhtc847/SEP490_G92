@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
-import { CreateInventorySlipDto, CreateInventorySlipDetailDto, ProductionOrderInfo, ProductInfo, ProductionMaterial, fetchMaterialsByProductionOutput, createMaterialExportSlip } from '../service';
+import { CreateInventorySlipDto, CreateInventorySlipDetailDto, ProductionOrderInfo, ProductInfo, ProductionMaterial, fetchMaterialsByProductionOutput, createMaterialExportSlip, InventorySlip } from '../service';
 
 interface MaterialExportSlipFormProps {
     productionOrderInfo: ProductionOrderInfo;
     onSlipCreated: (slip: any) => void;
     onCancel: () => void;
+    initialSlip?: InventorySlip | null; // Prefill for update
 }
 
 interface TargetProduct {
@@ -36,7 +37,8 @@ interface MaterialForTarget {
 export default function MaterialExportSlipForm({
     productionOrderInfo,
     onSlipCreated,
-    onCancel
+    onCancel,
+    initialSlip,
 }: MaterialExportSlipFormProps) {
     const MySwal = withReactContent(Swal);
     const [formData, setFormData] = useState<CreateInventorySlipDto>({
@@ -62,6 +64,50 @@ export default function MaterialExportSlipForm({
             setLoading(false);
         };
     }, [productionOrderInfo]);
+
+    // Prefill from initialSlip (for update)
+    useEffect(() => {
+        if (!initialSlip) return;
+        setFormData(prev => ({ ...prev, description: initialSlip.description || '' }));
+
+        // Build base targets from productionOrderInfo.productionOutputs to ensure consistent list
+        const baseTargets: TargetProduct[] = (productionOrderInfo?.productionOutputs || []).map((output: any) => ({
+            id: output.id,
+            productId: output.productId,
+            productName: output.productName || `Sản phẩm ${output.productId}`,
+            productCode: productionOrderInfo.availableProducts?.find((p: any) => p.id === output.productId)?.productCode || '',
+            uom: output.uom || '',
+            amount: output.amount || 0,
+            selected: false,
+            targetQuantity: 0,
+        }));
+
+        // Derive selected targets and quantities from existing slip (target product details)
+        const targetsFromSlip = (initialSlip.details || [])
+            .filter(d => d.productId === null && d.productionOutputId)
+            .map(d => ({ productionOutputId: d.productionOutputId!, targetQuantity: d.quantity }));
+
+        const mergedTargets = baseTargets.map(t => ({
+            ...t,
+            selected: targetsFromSlip.some(x => x.productionOutputId === t.id),
+            targetQuantity: targetsFromSlip.find(x => x.productionOutputId === t.id)?.targetQuantity || 0,
+        }));
+        setTargetProducts(mergedTargets);
+
+        // Prefill materials used for each target (details with productId not null)
+        const materials = (initialSlip.details || []).filter(d => d.productId !== null && d.productionOutputId);
+        const prefillSelectedMaterials = materials.map(m => ({
+            productionOutputId: m.productionOutputId!,
+            productId: m.productId!,
+            productName: m.productName || `Sản phẩm ${m.productId}`,
+            productCode: m.productCode || '',
+            uom: m.uom || '',
+            amount: 0,
+            quantity: m.quantity,
+            note: m.note || '',
+        }));
+        setSelectedMaterials(prefillSelectedMaterials);
+    }, [initialSlip, productionOrderInfo]);
 
     const loadTargetProducts = async () => {
         if (!productionOrderInfo.productionOutputs || productionOrderInfo.productionOutputs.length === 0) {

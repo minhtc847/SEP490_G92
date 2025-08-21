@@ -42,6 +42,52 @@ namespace SEP490.Modules.InventorySlipModule.Controller
             }
         }
 
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateInventorySlip(int id, [FromBody] object requestData)
+        {
+            try
+            {
+                var jsonElement = (System.Text.Json.JsonElement)requestData;
+                var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true, PropertyNamingPolicy = null };
+
+                CreateInventorySlipDto dto = null;
+                MappingInfoDto mappingInfo = null;
+
+                if (jsonElement.TryGetProperty("formData", out var formDataElement))
+                {
+                    dto = System.Text.Json.JsonSerializer.Deserialize<CreateInventorySlipDto>(formDataElement.GetRawText(), options);
+                }
+                else
+                {
+                    dto = System.Text.Json.JsonSerializer.Deserialize<CreateInventorySlipDto>(jsonElement.GetRawText(), options);
+                }
+
+                if (jsonElement.TryGetProperty("productClassifications", out var productClassificationsElement))
+                {
+                    var productClassifications = System.Text.Json.JsonSerializer.Deserialize<List<ProductClassificationDto>>(productClassificationsElement.GetRawText(), options);
+                    List<CreateMaterialOutputMappingDto> tempMappings = null;
+                    if (jsonElement.TryGetProperty("tempMappings", out var tempMappingsElement))
+                    {
+                        tempMappings = System.Text.Json.JsonSerializer.Deserialize<List<CreateMaterialOutputMappingDto>>(tempMappingsElement.GetRawText(), options);
+                    }
+                    mappingInfo = new MappingInfoDto
+                    {
+                        ProductClassifications = productClassifications,
+                        TempMappings = tempMappings ?? new List<CreateMaterialOutputMappingDto>()
+                    };
+                }
+
+                if (dto == null) return BadRequest(new { message = "Dữ liệu không hợp lệ!" });
+
+                var result = await _inventorySlipService.UpdateInventorySlipAsync(id, dto, mappingInfo);
+                return Ok(new { message = "Cập nhật phiếu kho thành công!", data = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Cập nhật phiếu kho thất bại!", error = ex.Message });
+            }
+        }
+
         [HttpPost("{slipId}/mappings")]
         public async Task<IActionResult> AddMappings(int slipId, [FromBody] List<CreateMaterialOutputMappingDto> mappings)
         {
@@ -161,6 +207,24 @@ namespace SEP490.Modules.InventorySlipModule.Controller
             catch (Exception ex)
             {
                 return BadRequest(new { message = "Lỗi khi xóa phiếu kho!", error = ex.Message });
+            }
+        }
+
+        [HttpPut("{id}/finalize")]
+        public async Task<IActionResult> FinalizeInventorySlip(int id)
+        {
+            try
+            {
+                var ok = await _inventorySlipService.FinalizeInventorySlipAsync(id);
+                if (!ok)
+                {
+                    return NotFound(new { message = "Không tìm thấy phiếu hoặc không thể hoàn tất." });
+                }
+                return Ok(new { message = "Đã cập nhật số lượng thành phẩm và khóa phiếu." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Lỗi khi hoàn tất phiếu!", error = ex.Message });
             }
         }
 

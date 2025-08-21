@@ -11,6 +11,7 @@ export interface InventorySlipListItem {
     createdByEmployeeName?: string;
     createdAt: string;
     updatedAt: string;
+    isFinalized?: boolean;
 }
 
 export interface InventorySlipDetail {
@@ -49,6 +50,7 @@ export interface InventorySlip {
     createdAt: string;
     updatedAt: string;
     details: InventorySlipDetail[];
+    isFinalized?: boolean;
 }
 
 export interface CreateInventorySlipDto {
@@ -291,6 +293,16 @@ export const addMappings = async (slipId: number, mappings: CreateMaterialOutput
     }
 };
 
+export const finalizeInventorySlip = async (slipId: number): Promise<boolean> => {
+    try {
+        const response = await axios.put(`/api/InventorySlip/${slipId}/finalize`);
+        return response.status === 200;
+    } catch (error) {
+        console.error('Error finalizing inventory slip:', error);
+        throw error;
+    }
+};
+
 export const updateProductionOutputFinished = async (productionOutputId: number, finishedQuantity: number): Promise<boolean> => {
     try {
         // Endpoint này không tồn tại, có thể cần tạo hoặc sử dụng endpoint khác
@@ -400,10 +412,11 @@ export const createInventoryProduct = async (dto: CreateInventoryProductDto): Pr
     }
 };
 
-export const updateInventorySlip = async (id: number, dto: CreateInventorySlipDto): Promise<InventorySlip | null> => {
+export const updateInventorySlip = async (id: number, dto: CreateInventorySlipDto, mappingInfo?: any): Promise<InventorySlip | null> => {
     try {
-        const response = await axios.put<InventorySlip>(`/api/InventorySlip/${id}`, dto);
-        return response.data;
+        const requestBody = mappingInfo ? { ...dto, ...mappingInfo } : dto;
+        const response = await axios.put<any>(`/api/InventorySlip/${id}`, requestBody);
+        return (response.data && response.data.data) ? response.data.data : response.data;
     } catch (error) {
         console.error('Error updating inventory slip:', error);
         return null;

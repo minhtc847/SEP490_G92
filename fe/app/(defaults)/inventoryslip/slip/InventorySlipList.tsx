@@ -1,17 +1,29 @@
 'use client';
-import { useState } from 'react';
-import { InventorySlip, InventorySlipDetail, MaterialOutputMappingDto } from '../service';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { InventorySlip, InventorySlipDetail, MaterialOutputMappingDto, fetchInventorySlipById, updateInventorySlip, finalizeInventorySlip } from '../service';
+import InventorySlipForm from './InventorySlipForm';
+import MaterialExportSlipForm from './MaterialExportSlipForm';
+import Swal from 'sweetalert2';
 import IconEye from '@/components/icon/icon-eye';
 import IconArrowLeft from '@/components/icon/icon-arrow-left';
 
 interface InventorySlipListProps {
     slips: InventorySlip[];
     onRefresh: () => void;
+    productionOrderInfo?: any;
 }
 
-const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
+const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventorySlipListProps) => {
     const [expandedSlips, setExpandedSlips] = useState<Set<number>>(new Set());
     const [expandedMaterials, setExpandedMaterials] = useState<Set<number>>(new Set());
+    const [showUpdateModal, setShowUpdateModal] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+    const [updating, setUpdating] = useState(false);
+    const [selectedSlip, setSelectedSlip] = useState<InventorySlip | null>(null);
+    const [updateDescription, setUpdateDescription] = useState('');
+    const [updatePayload, setUpdatePayload] = useState<any>(null);
+    const [updateType, setUpdateType] = useState<'cut-glass' | 'material-export' | 'other'>('other');
 
     const toggleExpanded = (slipId: number) => {
         const newExpanded = new Set(expandedSlips);
@@ -45,6 +57,114 @@ const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
         }
     };
 
+    const openUpdateModal = async (slip: InventorySlip) => {
+        try {
+            const fullSlip = await fetchInventorySlipById(slip.id);
+            if (!fullSlip) return;
+            setSelectedSlip(fullSlip);
+            setUpdateDescription(fullSlip.description || '');
+            const type = fullSlip.productionOrderType === 'Cắt kính'
+                ? 'cut-glass'
+                : (['Ghép kính', 'Sản xuất keo', 'Đổ keo'].includes(fullSlip.productionOrderType || '') ? 'material-export' : 'other');
+            setUpdateType(type);
+            const details = (fullSlip.details || []).map((d, idx) => ({
+                productId: d.productId ?? undefined,
+                quantity: d.quantity,
+                note: d.note,
+                sortOrder: typeof (d as any).sortOrder === 'number' ? (d as any).sortOrder : idx,
+                productionOutputId: d.productionOutputId ?? undefined,
+            }));
+            setUpdatePayload({
+                productionOrderId: fullSlip.productionOrderId,
+                description: fullSlip.description || '',
+                details,
+                mappings: [],
+            });
+            setShowUpdateModal(true);
+        } catch (e) {
+            console.error('Failed to load slip for update', e);
+        }
+    };
+
+    const submitUpdate = async () => {
+        if (!selectedSlip || !updatePayload) return;
+        try {
+            setUpdating(true);
+            const dto = { ...updatePayload, description: updateDescription };
+            const result = await updateInventorySlip(selectedSlip.id, dto);
+            if (result) {
+                setShowUpdateModal(false);
+                setSelectedSlip(null);
+                onRefresh();
+                Swal.fire({
+                    title: 'Cập nhật phiếu thành công!',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 2500,
+                    showCloseButton: true,
+                });
+            } else {
+                Swal.fire({
+                    title: 'Cập nhật phiếu thất bại',
+                    icon: 'error',
+                    confirmButtonText: 'Đã hiểu',
+                });
+            }
+        } finally {
+            setUpdating(false);
+        }
+    };
+
+    // Mount flag for portal & lock body scroll when modal open
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (showUpdateModal) {
+            document.body.style.overflow = 'hidden';
+            const htmlEl = document.documentElement as HTMLElement;
+            const bodyEl = document.body as HTMLElement;
+            const nextEl = document.getElementById('__next') as HTMLElement | null;
+
+            const prev = {
+                htmlTransform: htmlEl.style.transform,
+                bodyTransform: bodyEl.style.transform,
+                nextTransform: nextEl?.style.transform,
+                htmlZoom: (htmlEl.style as any).zoom,
+                bodyZoom: (bodyEl.style as any).zoom,
+                nextZoom: nextEl ? (nextEl.style as any).zoom : undefined,
+            } as any;
+            (window as any).__modal_prev_transform__ = prev;
+
+            htmlEl.style.transform = 'none';
+            bodyEl.style.transform = 'none';
+            if (nextEl) nextEl.style.transform = 'none';
+            (htmlEl.style as any).zoom = '';
+            (bodyEl.style as any).zoom = '';
+            if (nextEl) (nextEl.style as any).zoom = '';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+            const prev = (window as any).__modal_prev_transform__;
+            if (prev) {
+                const htmlEl = document.documentElement as HTMLElement;
+                const bodyEl = document.body as HTMLElement;
+                const nextEl = document.getElementById('__next') as HTMLElement | null;
+                htmlEl.style.transform = prev.htmlTransform || '';
+                bodyEl.style.transform = prev.bodyTransform || '';
+                if (nextEl) nextEl.style.transform = prev.nextTransform || '';
+                (htmlEl.style as any).zoom = prev.htmlZoom || '';
+                (bodyEl.style as any).zoom = prev.bodyZoom || '';
+                if (nextEl) (nextEl.style as any).zoom = prev.nextZoom || '';
+                (window as any).__modal_prev_transform__ = null;
+            }
+        };
+    }, [showUpdateModal]);
+
     if (slips.length === 0) {
         return (
             <div className="text-center py-8 text-gray-500">
@@ -72,6 +192,17 @@ const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
                                 <div className="text-sm text-gray-600">
                                     <p><strong>Ngày tạo:</strong> {new Date(slip.createdAt).toLocaleDateString()}</p>
                                     <p><strong>Người tạo:</strong> {slip.createdByEmployeeName}</p>
+                                    <p><strong>Trạng thái:</strong> 
+                                        {slip.isFinalized ? (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 ml-2">
+                                                Đã cập nhật số lượng
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 ml-2">
+                                                Chưa cập nhật số lượng
+                                            </span>
+                                        )}
+                                    </p>
                                     {slip.description && (
                                         <p><strong>Mô tả:</strong> {slip.description}</p>
                                     )}
@@ -86,6 +217,61 @@ const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
                                     <IconEye className="w-4 h-4" />
                                     {expandedSlips.has(slip.id) ? ' Thu gọn' : ' Chi tiết'}
                                 </button>
+                                {!slip.isFinalized && (
+                                    <button
+                                        onClick={() => openUpdateModal(slip)}
+                                        className="px-3 py-1 text-sm border border-amber-300 text-amber-700 bg-white hover:bg-amber-50 rounded-md transition-colors"
+                                        title="Cập nhật phiếu"
+                                    >
+                                        Cập nhật
+                                    </button>
+                                )}
+                                {!slip.isFinalized && (
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const { default: Swal } = await import('sweetalert2');
+                                                const result = await Swal.fire({
+                                                    title: 'Xác nhận cập nhật số lượng',
+                                                    text: 'Bạn có chắc chắn muốn cập nhật số lượng sản phẩm từ phiếu này lên kho?',
+                                                    icon: 'question',
+                                                    showCancelButton: true,
+                                                    confirmButtonText: 'Cập nhật',
+                                                    cancelButtonText: 'Hủy',
+                                                });
+                                                
+                                                if (result.isConfirmed) {
+                                                    try {
+                                                        await finalizeInventorySlip(slip.id);
+                                                        onRefresh();
+                                                        Swal.fire({
+                                                            title: 'Cập nhật số lượng thành công!',
+                                                            toast: true,
+                                                            position: 'bottom-start',
+                                                            showConfirmButton: false,
+                                                            timer: 3000,
+                                                            showCloseButton: true,
+                                                        });
+                                                    } catch (error) {
+                                                        console.error('Error finalizing slip:', error);
+                                                        Swal.fire({
+                                                            title: 'Lỗi',
+                                                            text: 'Không thể cập nhật số lượng. Vui lòng thử lại.',
+                                                            icon: 'error',
+                                                            confirmButtonText: 'Đã hiểu',
+                                                        });
+                                                    }
+                                                }
+                                            } catch (error) {
+                                                console.error('Error showing confirmation:', error);
+                                            }
+                                        }}
+                                        className="px-3 py-1 text-sm border border-green-300 text-green-700 bg-white hover:bg-green-50 rounded-md transition-colors"
+                                        title="Cập nhật số lượng"
+                                    >
+                                        Cập nhật số lượng
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -123,9 +309,6 @@ const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
                                             {(slip.details || []).map((detail, index) => (
                                                 <tr key={detail.id} className="bg-white hover:bg-gray-50">
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-900">
-                                                        {detail.productCode}
-                                                    </td>
                                                     <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
                                                         {detail.productName}
                                                     </td>
@@ -151,8 +334,81 @@ const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
                     )}
                 </div>
             ))}
-
-
+            {isMounted && showUpdateModal && selectedSlip && createPortal(
+                <div className="fixed inset-0 z-[1000]">
+                    <div className="fixed inset-0 bg-black/50" onClick={() => !updating && setShowUpdateModal(false)} />
+                    <div data-modal-root="inventory-update" className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-lg">
+                            <div>
+                                <h3 className="text-xl font-semibold text-gray-900">Cập nhật phiếu kho</h3>
+                                <p className="text-sm text-gray-600 mt-1">Mã phiếu: {selectedSlip.slipCode}</p>
+                            </div>
+                            <button onClick={() => !updating && setShowUpdateModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full" title="Đóng">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            {updateType === 'cut-glass' && productionOrderInfo ? (
+                                <div className="">
+                                    {/* Reuse InventorySlipForm for cut-glass with initial data */}
+                                    <InventorySlipForm
+                                        productionOrderInfo={productionOrderInfo}
+                                        initialSlip={selectedSlip}
+                                        isUpdateMode
+                                        onSlipCreated={async (dto: any, mappingInfo?: any) => {
+                                            // For update, reuse update API
+                                            const success = await updateInventorySlip(selectedSlip.id, dto, mappingInfo);
+                                            if (success) {
+                                                setShowUpdateModal(false);
+                                                setSelectedSlip(null);
+                                                onRefresh();
+                                                Swal.fire({ title: 'Cập nhật phiếu thành công!', toast: true, position: 'bottom-start', showConfirmButton: false, timer: 2500, showCloseButton: true });
+                                            }
+                                        }}
+                                        onCancel={() => setShowUpdateModal(false)}
+                                        onRefreshProductionOrderInfo={onRefresh}
+                                    />
+                                </div>
+                            ) : updateType === 'material-export' && productionOrderInfo ? (
+                                <div className="">
+                                    {/* Reuse MaterialExportSlipForm for material-export */}
+                                    <MaterialExportSlipForm
+                                        productionOrderInfo={productionOrderInfo}
+                                        initialSlip={selectedSlip}
+                                        onSlipCreated={async (dto: any) => {
+                                            const success = await updateInventorySlip(selectedSlip.id, dto);
+                                            if (success) {
+                                                setShowUpdateModal(false);
+                                                setSelectedSlip(null);
+                                                onRefresh();
+                                                Swal.fire({ title: 'Cập nhật phiếu thành công!', toast: true, position: 'bottom-start', showConfirmButton: false, timer: 2500, showCloseButton: true });
+                                            }
+                                        }}
+                                        onCancel={() => setShowUpdateModal(false)}
+                                    />
+                                </div>
+                            ) : (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Mô tả</label>
+                                    <textarea
+                                        value={updateDescription}
+                                        onChange={(e) => setUpdateDescription(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md resize-vertical"
+                                        placeholder="Nhập mô tả phiếu..."
+                                        rows={3}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                        <div className="px-6 py-4 border-t flex justify-end gap-3">
+                            <button disabled={updating} onClick={() => setShowUpdateModal(false)} className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">Hủy</button>
+                            {updateType === 'other' && (
+                                <button disabled={updating} onClick={submitUpdate} className={`px-4 py-2 rounded-md text-white ${updating ? 'bg-blue-300' : 'bg-blue-600 hover:bg-blue-700'}`}>{updating ? 'Đang lưu...' : 'Lưu'}</button>
+                            )}
+                        </div>
+                    </div>
+                </div>, document.body)
+            }
         </div>
     );
 };

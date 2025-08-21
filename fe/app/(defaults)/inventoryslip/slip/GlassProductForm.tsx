@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { ProductInfo, createInventoryProduct } from '../service';
@@ -47,18 +47,24 @@ export default function GlassProductForm({
             .filter((glassProduct: any) => (glassProduct.uom || '').toLowerCase() === 'tấm');
     };
 
-    const availableGlassProducts = getFilteredGlassProducts();
+    // Memoize to avoid new array reference each render → prevents infinite useEffect loops
+    const availableGlassProducts = useMemo(() => getFilteredGlassProducts(), [
+        productionOrderInfo?.glassProducts,
+        productionOrderInfo?.productionOutputs,
+    ]);
 
     useEffect(() => {
-        if (productSearch.trim()) {
-            const filtered = availableGlassProducts.filter((product: ProductInfo) => 
-                product.productName?.toLowerCase().includes(productSearch.toLowerCase()) ||
-                product.productCode?.toLowerCase().includes(productSearch.toLowerCase())
+        const term = productSearch.trim().toLowerCase();
+        if (term) {
+            const filtered = availableGlassProducts.filter((product: ProductInfo) =>
+                (product.productName || '').toLowerCase().includes(term) ||
+                (product.productCode || '').toLowerCase().includes(term)
             );
             setFilteredProducts(filtered);
         } else {
             setFilteredProducts(availableGlassProducts);
         }
+        // availableGlassProducts is memoized, so this effect won't thrash
     }, [productSearch, availableGlassProducts]);
 
     const handleInputChange = (field: string, value: string) => {

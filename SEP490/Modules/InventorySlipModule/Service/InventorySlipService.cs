@@ -75,7 +75,8 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     ProductionOrderId = dto.ProductionOrderId,
                     CreatedBy = GetCurrentEmployeeId() ?? 1,
                     CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now
+                    UpdatedAt = DateTime.Now,
+                    IsFinalized = false
                 };
 
                 _context.InventorySlips.Add(slip);
@@ -149,12 +150,11 @@ namespace SEP490.Modules.InventorySlipModule.Service
                             // Check for duplicate mappings using more robust key
                             var mappingKey = $"{inputDetail.Id}_{outputDetail.Id}";
                             if (processedMappings.Contains(mappingKey))
-                            {
-        
+                            {        
                                 continue;
                             }
                             
-                            // Also check if this mapping already exists in database
+                            // check if this mapping already exists in database
                             var existingMapping = await _context.MaterialOutputMappings
                                 .FirstOrDefaultAsync(m => m.InputDetailId == inputDetail.Id && m.OutputDetailId == outputDetail.Id);
                             
@@ -204,16 +204,11 @@ namespace SEP490.Modules.InventorySlipModule.Service
         
                     }
                 }
-                if (mappingInfo != null)
-                {
-                    await UpdateProductionOutputFinishedQuantitiesAsync(details, mappingInfo);
-                }
-
                 await transaction.CommitAsync();
                 var result = await GetInventorySlipByIdAsync(slip.Id);
                 return result;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await transaction.RollbackAsync();
                 throw;
@@ -225,7 +220,6 @@ namespace SEP490.Modules.InventorySlipModule.Service
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Create main slip
                 var slip = new InventorySlip
                 {
                     SlipCode = await GenerateSlipCodeAsync(dto.ProductionOrderId),
@@ -233,13 +227,14 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     ProductionOrderId = dto.ProductionOrderId,
                     CreatedBy = GetCurrentEmployeeId() ?? 1, 
                     CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now
+                    UpdatedAt = DateTime.Now,
+                    IsFinalized = false
                 };
 
                 _context.InventorySlips.Add(slip);
                 await _context.SaveChangesAsync();
 
-                // Create details - Sử dụng ProductionOutputId để gom nhóm nguyên liệu theo sản phẩm mục tiêu
+                // details 
                 var details = new List<InventorySlipDetail>();
                 foreach (var detailDto in dto.Details)
                 {
@@ -257,7 +252,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     details.Add(detail);
                 }
 
-                // Thêm thành phẩm mục tiêu (product_id = null)
+                // add target product(product_id = null)
                 if (dto.ProductionOutputTargets != null && dto.ProductionOutputTargets.Any())
                 {
                     foreach (var target in dto.ProductionOutputTargets)
@@ -271,7 +266,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                             var targetProductDetail = new InventorySlipDetail
                             {
                                 InventorySlipId = slip.Id,
-                                ProductId = null, // Thành phẩm mục tiêu có product_id = null
+                                ProductId = null, 
                                 Quantity = target.TargetQuantity,
                                 Note = $"Thành phẩm mục tiêu: {productionOutput.Product?.ProductName ?? productionOutput.ProductName}",
                                 SortOrder = details.Count, 
@@ -286,8 +281,6 @@ namespace SEP490.Modules.InventorySlipModule.Service
 
                 _context.InventorySlipDetails.AddRange(details);
                 await _context.SaveChangesAsync();
-
-                await UpdateProductionOutputFinishedQuantitiesForMaterialExportAsync(dto);
 
                 await transaction.CommitAsync();
                 return await GetInventorySlipByIdAsync(slip.Id);
@@ -352,7 +345,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 var result = await MapToDtoAsync(slip);
                 return result;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -397,7 +390,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     {
                         foreach (var detail in slip.Details)
                         {                            
-                            // Debug: Kiểm tra xem có bao nhiêu mappings trong database cho detail này
+                            
                             var allMappingsForDetail = await _context.MaterialOutputMappings
                                 .Where(m => m.InputDetailId == detail.Id)
                                 .ToListAsync();
@@ -445,7 +438,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
             }
             return result;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -493,7 +486,6 @@ namespace SEP490.Modules.InventorySlipModule.Service
             var productionOrder = await _context.ProductionOrders
                 .FirstOrDefaultAsync(po => po.Id == productionOrderId);
 
-            // If ProductionOrder doesn't exist, try to get info from ProductionOutput
             if (productionOrder == null)
             {
                 var productionOutput = await _context.ProductionOutputs
@@ -601,7 +593,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
             }
             else
             {
-                // For chemical export and glue butyl export: get materials from production_materials
+                //materials slip
                 var productionMaterials = await _context.ProductionMaterials
                     .Include(pm => pm.Product)
                     .Include(pm => pm.ProductionOutput)
@@ -750,6 +742,11 @@ namespace SEP490.Modules.InventorySlipModule.Service
         {
             if (mappings == null || mappings.Count == 0) return true;
 
+            // Disallow updates when slip finalized
+            var slip = await _context.InventorySlips.FirstOrDefaultAsync(s => s.Id == slipId);
+            if (slip == null) throw new ArgumentException("Phiếu không tồn tại");
+            if (slip.IsFinalized) throw new ArgumentException("Phiếu đã khóa, không thể cập nhật");
+
             var detailIds = await _context.InventorySlipDetails
                 .Where(d => d.InventorySlipId == slipId)
                 .Select(d => d.Id)
@@ -850,7 +847,6 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     
                     if (detail.OutputMappings != null && detail.OutputMappings.Any())
                     {
-                        // Có OutputMappings => đây là nguyên vật liệu (input)
                         productType = "NVL";
                     }
                     else if (detail.InputMappings != null && detail.InputMappings.Any())
@@ -974,8 +970,342 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 CreatedByEmployeeName = slip.CreatedByEmployee?.FullName,
                 CreatedAt = slip.CreatedAt,
                 UpdatedAt = slip.UpdatedAt,
+                IsFinalized = slip.IsFinalized,
                 Details = details
             };
+        }
+
+        public async Task<bool> FinalizeInventorySlipAsync(int slipId)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var slip = await _context.InventorySlips
+                    .Include(s => s.Details)
+                    .FirstOrDefaultAsync(s => s.Id == slipId);
+
+                if (slip == null) return false;
+                if (slip.IsFinalized) return true;
+
+                var productionOrder = await _context.ProductionOrders.FirstOrDefaultAsync(po => po.Id == slip.ProductionOrderId);
+                if (productionOrder == null) return false;
+
+                if (productionOrder.Type == "Cắt kính")
+                {
+                    var productionOutputs = await _context.ProductionOutputs
+                        .Where(po => po.ProductionOrderId == slip.ProductionOrderId)
+                        .ToListAsync();                    
+                    
+                    if (productionOutputs.Any())
+                    {                        
+                        // Get all input details (raw materials - kính lớn)
+                        var inputDetails = slip.Details.Where(d => d.ProductId.HasValue).ToList();
+                        
+                        Console.WriteLine($"Found {inputDetails.Count} input details");
+                        
+                        // Calculate total input quantity for each target product
+                        var targetProductQuantities = new Dictionary<int, decimal>();
+                        
+                        // Initialize all production outputs with 0 quantity
+                        foreach (var po in productionOutputs)
+                        {
+                            targetProductQuantities[po.Id] = 0;
+                            Console.WriteLine($"Initializing ProductionOutput {po.Id} (ProductId: {po.ProductId}, ProductName: {po.ProductName}) for ProductionOrder {po.ProductionOrderId}");
+                        }
+                        
+                        foreach (var inputDetail in inputDetails)
+                        {
+                            // Find the corresponding production output for this input material
+                            var productionOutput = productionOutputs.FirstOrDefault(po => po.ProductId == inputDetail.ProductId);
+                            
+                            if (productionOutput != null)
+                            {
+                                // This input material contributes to the target product
+                                targetProductQuantities[productionOutput.Id] += inputDetail.Quantity;
+                                
+                                Console.WriteLine($"Input detail {inputDetail.Id} (ProductId: {inputDetail.ProductId}, Quantity: {inputDetail.Quantity}) contributes to target product {productionOutput.Id} (ProductId: {productionOutput.ProductId}, ProductionOrderId: {productionOutput.ProductionOrderId})");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Input detail {inputDetail.Id} (ProductId: {inputDetail.ProductId}) has no direct production output in ProductionOrder {slip.ProductionOrderId} - might be waste glass");
+                            }
+                        }
+                        
+                        // Update finished quantities for each target product
+                        foreach (var kvp in targetProductQuantities)
+                        {
+                            var productionOutputId = kvp.Key;
+                            var quantity = kvp.Value;
+                            
+                            if (quantity > 0)
+                            {
+                                Console.WriteLine($"Updating target product ProductionOutput {productionOutputId} with quantity {quantity} for ProductionOrder {slip.ProductionOrderId}");
+                                
+                                // Get the production output and update directly
+                                var productionOutput = await _context.ProductionOutputs.FindAsync(productionOutputId);
+                                if (productionOutput != null)
+                                {
+                                    var oldFinished = productionOutput.Finished ?? 0m;
+                                    productionOutput.Finished = oldFinished + quantity;
+                                    Console.WriteLine($"Updated ProductionOutput {productionOutputId}: Finished {oldFinished} -> {productionOutput.Finished}");
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Warning: ProductionOutput {productionOutputId} not found");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Skipping ProductionOutput {productionOutputId} - no quantity to add");
+                            }
+                        }
+                        
+                        // Save all changes to ProductionOutputs
+                        await _context.SaveChangesAsync();
+                        Console.WriteLine("Successfully saved ProductionOutput updates to database");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"No production outputs found for production order {slip.ProductionOrderId}");
+                    }
+                }
+                else
+                {
+                    // For material export/glue, use target product details (ProductId == null)
+                    var targets = slip.Details.Where(d => d.ProductId == null && d.ProductionOutputId.HasValue);
+                    foreach (var t in targets)
+                    {
+                        var po = await _context.ProductionOutputs.FirstOrDefaultAsync(po => po.Id == t.ProductionOutputId!.Value);
+                        if (po != null)
+                        {
+                            var oldFinished = po.Finished ?? 0m;
+                            po.Finished = oldFinished + t.Quantity;
+                        }
+                    }
+                    await _context.SaveChangesAsync();
+                }
+
+                slip.IsFinalized = true;
+                slip.UpdatedAt = DateTime.Now;
+                await _context.SaveChangesAsync();
+
+                await _productionOrderService.CheckAndUpdateCompletionAsync(slip.ProductionOrderId);
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task<InventorySlipDto> UpdateInventorySlipAsync(int id, CreateInventorySlipDto dto, MappingInfoDto mappingInfo = null)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var slip = await _context.InventorySlips
+                    .Include(s => s.Details)
+                    .FirstOrDefaultAsync(s => s.Id == id);
+                if (slip == null) throw new ArgumentException("Không tìm thấy phiếu kho");
+                if (slip.IsFinalized) throw new ArgumentException("Phiếu đã khóa, không thể cập nhật");
+
+                // Get production order info for type checking
+                var productionOrder = await _context.ProductionOrders.FirstOrDefaultAsync(po => po.Id == slip.ProductionOrderId);
+                if (productionOrder == null) throw new ArgumentException("Không tìm thấy lệnh sản xuất");
+
+                // Update header
+                slip.Description = dto.Description;
+                slip.UpdatedAt = DateTime.Now;
+                await _context.SaveChangesAsync();
+
+                // Remove old mappings and details
+                var detailIds = slip.Details.Select(d => d.Id).ToList();
+                var oldMappings = await _context.MaterialOutputMappings
+                    .Where(m => detailIds.Contains(m.InputDetailId) || detailIds.Contains(m.OutputDetailId))
+                    .ToListAsync();
+                if (oldMappings.Any()) _context.MaterialOutputMappings.RemoveRange(oldMappings);
+                _context.InventorySlipDetails.RemoveRange(slip.Details);
+                await _context.SaveChangesAsync();
+
+                // Insert new details
+                var newDetails = new List<InventorySlipDetail>();
+                foreach (var detailDto in dto.Details.OrderBy(d => d.SortOrder))
+                {
+                    // For cut glass slips, use mappingInfo to determine ProductionOutputId
+                    int? productionOutputId = detailDto.ProductionOutputId;
+                    
+                    if (mappingInfo?.ProductClassifications != null && productionOrder.Type == "Cắt kính")
+                    {
+                        // Try to find classification by productId first (more reliable)
+                        var classification = mappingInfo.ProductClassifications
+                            .FirstOrDefault(c => c.ProductId == detailDto.ProductId);
+                        
+                        // If not found by productId, try by index
+                        if (classification == null)
+                        {
+                            classification = mappingInfo.ProductClassifications
+                                .FirstOrDefault(c => c.Index == detailDto.SortOrder);
+                        }
+                        
+                        if (classification != null && classification.ProductionOutputId.HasValue)
+                        {
+                            productionOutputId = classification.ProductionOutputId.Value;
+                        }
+                    }
+                    
+                    var detail = new InventorySlipDetail
+                    {
+                        InventorySlipId = slip.Id,
+                        ProductId = detailDto.ProductId,
+                        Quantity = detailDto.Quantity,
+                        Note = detailDto.Note,
+                        SortOrder = detailDto.SortOrder,
+                        ProductionOutputId = productionOutputId,
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now
+                    };
+                    newDetails.Add(detail);
+                }
+                _context.InventorySlipDetails.AddRange(newDetails);
+                await _context.SaveChangesAsync();
+
+                // Recreate mappings (cut glass) if provided
+                if (mappingInfo?.TempMappings != null && mappingInfo.TempMappings.Any())
+                {
+                    Console.WriteLine($"Updating cut glass slip {id}: Processing {mappingInfo.TempMappings.Count} mappings");
+                    
+                    var processed = new List<MaterialOutputMapping>();
+                    
+                    // First pass: create mappings and collect output details that need ProductionOutputId updates
+                    var outputDetailsToUpdate = new List<InventorySlipDetail>();
+                    
+                    foreach (var m in mappingInfo.TempMappings)
+                    {
+                        var inputDetail = newDetails.ElementAtOrDefault(m.InputDetailId);
+                        var outputDetail = newDetails.ElementAtOrDefault(m.OutputDetailId);
+                        if (inputDetail == null || outputDetail == null) continue;
+                        
+                        Console.WriteLine($"Mapping: InputDetail {m.InputDetailId} (ProductId: {inputDetail.ProductId}) -> OutputDetail {m.OutputDetailId} (ProductId: {outputDetail.ProductId})");
+                        
+                        // For cut glass slips, collect output details that need ProductionOutputId updates
+                        if (productionOrder.Type == "Cắt kính" && outputDetail != null)
+                        {
+                            outputDetailsToUpdate.Add(outputDetail);
+                        }
+                        
+                        processed.Add(new MaterialOutputMapping
+                        {
+                            InputDetailId = inputDetail.Id,
+                            OutputDetailId = outputDetail.Id,
+                            Note = m.Note,
+                            CreatedAt = DateTime.Now,
+                            UpdatedAt = DateTime.Now
+                        });
+                    }
+                    
+                    // Second pass: update ProductionOutputId for output details based on current mappings
+                    if (productionOrder.Type == "Cắt kính" && outputDetailsToUpdate.Any())
+                    {
+                        Console.WriteLine($"Updating ProductionOutputId for {outputDetailsToUpdate.Count} output details");
+                        
+                        // Create a set of output detail indices from the mappings
+                        var outputDetailIndices = new HashSet<int>();
+                        foreach (var mapping in mappingInfo.TempMappings)
+                        {
+                            outputDetailIndices.Add(mapping.OutputDetailId);
+                        }
+                        
+                        foreach (var outputDetail in outputDetailsToUpdate.Distinct())
+                        {
+                            if (outputDetail.ProductId.HasValue)
+                            {
+                                // For cut glass slips, we need to determine if this is a semi-finished product
+                                // Check if this detail is mapped from any input detail (meaning it's an output)
+                                // find the index of this detail in the newDetails list
+                                var detailIndex = newDetails.IndexOf(outputDetail);
+                                var isOutputProduct = outputDetailIndices.Contains(detailIndex);
+                                
+                                if (isOutputProduct)
+                                {
+                                    // This is a semi-finished product, find the corresponding ProductionOutput
+                                    var productionOutput = await _context.ProductionOutputs
+                                        .FirstOrDefaultAsync(po => po.ProductId == outputDetail.ProductId.Value);
+                                    
+                                    if (productionOutput != null)
+                                    {
+                                        var oldProductionOutputId = outputDetail.ProductionOutputId;
+                                        outputDetail.ProductionOutputId = productionOutput.Id;
+                                        Console.WriteLine($"Updated detail {outputDetail.Id}: ProductionOutputId {oldProductionOutputId} -> {outputDetail.ProductionOutputId} (Product: {outputDetail.ProductId}) - Semi-finished product");
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"Warning: No ProductionOutput found for ProductId {outputDetail.ProductId}");
+                                    }
+                                }
+                                else
+                                {
+                                    // This is not a semi-finished product (could be waste glass), clear ProductionOutputId
+                                    if (outputDetail.ProductionOutputId.HasValue)
+                                    {
+                                        Console.WriteLine($"Clearing ProductionOutputId for detail {outputDetail.Id} (Product: {outputDetail.ProductId}) - Not a semi-finished product");
+                                        outputDetail.ProductionOutputId = null;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        await _context.SaveChangesAsync();
+                        Console.WriteLine("Saved updated details with new ProductionOutputId values");
+                        
+                        var updatedDetails = await _context.InventorySlipDetails
+                            .Where(d => d.InventorySlipId == slip.Id)
+                            .ToListAsync();
+                        
+                        Console.WriteLine("Verification - Current detail ProductionOutputId values:");
+                        foreach (var detail in updatedDetails.Where(d => d.ProductionOutputId.HasValue))
+                        {
+                            Console.WriteLine($"  Detail {detail.Id}: ProductId {detail.ProductId}, ProductionOutputId {detail.ProductionOutputId}");
+                        }
+                        
+                        // Also verify the mappings were created correctly
+                        var createdMappings = await _context.MaterialOutputMappings
+                            .Include(m => m.InputDetail)
+                            .Include(m => m.OutputDetail)
+                            .Where(m => m.InputDetail.InventorySlipId == slip.Id)
+                            .ToListAsync();
+                        
+                        Console.WriteLine("Verification - Created mappings:");
+                        foreach (var mapping in createdMappings)
+                        {
+                            Console.WriteLine($"  Mapping: InputDetail {mapping.InputDetailId} (ProductId: {mapping.InputDetail.ProductId}) -> OutputDetail {mapping.OutputDetailId} (ProductId: {mapping.OutputDetail.ProductId}, ProductionOutputId: {mapping.OutputDetail.ProductionOutputId})");
+                        }
+                    }
+                    
+                    if (processed.Any())
+                    {
+                        // Deduplicate
+                        processed = processed
+                            .GroupBy(x => new { x.InputDetailId, x.OutputDetailId })
+                            .Select(g => g.First()).ToList();
+                        
+                        Console.WriteLine($"Adding {processed.Count} unique mappings to database");
+                        _context.MaterialOutputMappings.AddRange(processed);
+                        await _context.SaveChangesAsync();
+                        Console.WriteLine("Successfully saved new mappings");
+                    }
+                }
+
+                await transaction.CommitAsync();
+                return await GetInventorySlipByIdAsync(slip.Id);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
         
         public async Task<PaginatedProductsDto> GetPaginatedProductsAsync(ProductSearchRequestDto request)
@@ -1139,7 +1469,6 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     Console.WriteLine($"Update result: {result}");
                 }
 
-                // Check and update production order status if all outputs are completed
                 if (semiFinishedDetails.Any())
                 {
                     var productionOrderId = details.FirstOrDefault()?.InventorySlip?.ProductionOrderId;
@@ -1153,7 +1482,6 @@ namespace SEP490.Modules.InventorySlipModule.Service
             }
             catch (Exception ex)
             {
-                // Log the error but don't throw to avoid breaking the main transaction
                 Console.WriteLine($"Error updating ProductionOutput finished quantities: {ex.Message}");
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
             }
@@ -1163,7 +1491,6 @@ namespace SEP490.Modules.InventorySlipModule.Service
         {
             try
             {
-                // Sử dụng ProductionOutputTargets để cập nhật số lượng finished
                 if (dto.ProductionOutputTargets != null && dto.ProductionOutputTargets.Any())
                 {
                     foreach (var target in dto.ProductionOutputTargets)
@@ -1180,7 +1507,6 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     
                     await _context.SaveChangesAsync();
 
-                    // Check and update production order status if all outputs are completed
                     var productionOrderIds = dto.ProductionOutputTargets
                         .Select(t => _context.ProductionOutputs
                             .Where(po => po.Id == t.ProductionOutputId)
@@ -1203,9 +1529,9 @@ namespace SEP490.Modules.InventorySlipModule.Service
             }
             catch (Exception ex)
             {
-                // Log the error but don't throw to avoid breaking the main transaction
                 Console.WriteLine($"Error updating ProductionOutput finished quantities for material export: {ex.Message}");
             }
         }
+        
     }
 }

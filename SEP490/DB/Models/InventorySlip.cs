@@ -18,4 +18,7 @@ public class InventorySlip
     // Timestamps
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
+
+    // Locked state: false = chưa cập nhật; true = đã cập nhật số lượng và khóa chỉnh sửa
+    public bool IsFinalized { get; set; } = false;
 }

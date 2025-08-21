@@ -28,5 +28,9 @@ namespace SEP490.Modules.InventorySlipModule.Service
         Task<PaginatedProductsDto> GetPaginatedProductsAsync(ProductSearchRequestDto request);
         
         Task<List<ProductionMaterialDto>> GetMaterialsByProductionOutputAsync(int productionOutputId);
+
+        Task<bool> FinalizeInventorySlipAsync(int slipId);
+
+        Task<InventorySlipDto> UpdateInventorySlipAsync(int id, CreateInventorySlipDto dto, MappingInfoDto mappingInfo = null);
     }
 }

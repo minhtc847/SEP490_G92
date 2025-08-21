@@ -293,10 +293,10 @@ const ProductionOrderInventorySlipPage = () => {
                     </div>
                     <div className="flex gap-2">
                         <button
-                            onClick={() => router.push(`/production-orders/view/${productionOrderId}`)}
+                            onClick={() => window.history.back()}
                             className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
                         >
-                            ← Xem lệnh sản xuất
+                            ← Quay lại
                         </button>
                         {productionOrderInfo.type === 'Cắt kính' && (
                             <button
@@ -610,6 +610,7 @@ const ProductionOrderInventorySlipPage = () => {
                 <InventorySlipList
                     slips={inventorySlips}
                     onRefresh={loadData}
+                    productionOrderInfo={productionOrderInfo}
                 />
             </div>
         </div>
