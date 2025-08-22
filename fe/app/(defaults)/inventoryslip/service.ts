@@ -185,15 +185,7 @@ export const fetchInventorySlipsByProductionOrder = async (productionOrderId: nu
     }
 };
 
-export const createInventorySlip = async (dto: CreateInventorySlipDto): Promise<InventorySlip | null> => {
-    try {
-        const response = await axios.post<InventorySlip>("/api/InventorySlip/create", dto);
-        return response.data;
-    } catch (error) {
-        console.error('Error creating inventory slip:', error);
-        return null;
-    }
-};
+// removed unused: createInventorySlip
 
 export const createMaterialExportSlip = async (dto: CreateInventorySlipDto): Promise<InventorySlip | null> => {
     try {
@@ -303,17 +295,7 @@ export const finalizeInventorySlip = async (slipId: number): Promise<boolean> =>
     }
 };
 
-export const updateProductionOutputFinished = async (productionOutputId: number, finishedQuantity: number): Promise<boolean> => {
-    try {
-        // Endpoint này không tồn tại, có thể cần tạo hoặc sử dụng endpoint khác
-        // Tạm thời return true để không block quá trình
-        console.warn(`updateProductionOutputFinished: Endpoint /api/InventorySlip/production-output/${productionOutputId}/finished không tồn tại`);
-        return true;
-    } catch (error) {
-        console.error('Error updating production output finished:', error);
-        return false;
-    }
-};
+// removed unused: updateProductionOutputFinished
 
 // Kiểm tra và cập nhật trạng thái lệnh sản xuất
 export const checkAndUpdateProductionOrderStatus = async (productionOrderId: number): Promise<boolean> => {
@@ -368,37 +350,6 @@ export const fetchProductionOrderInfo = async (productionOrderId: number): Promi
     } catch (error) {
         console.error('Error fetching production order info:', error);
         return null;
-    }
-};
-
-// Lấy thông tin ProductionOutput để kiểm tra tiến độ
-export const fetchProductionOutputs = async (productionOrderId: number): Promise<ProductionOutput[]> => {
-    try {
-        const response = await axios.get<ProductionOutput[]>(`/api/InventorySlip/production-order/${productionOrderId}/outputs`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching production outputs:', error);
-        return [];
-    }
-};
-
-export const fetchOutputsFromInputMaterial = async (inputDetailId: number): Promise<InventorySlipDetail[]> => {
-    try {
-        const response = await axios.get<InventorySlipDetail[]>(`/api/InventorySlip/input-material/${inputDetailId}/outputs`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching outputs from input material:', error);
-        return [];
-    }
-};
-
-export const fetchInputMaterialsForOutput = async (outputDetailId: number): Promise<InventorySlipDetail[]> => {
-    try {
-        const response = await axios.get<InventorySlipDetail[]>(`/api/InventorySlip/output-product/${outputDetailId}/inputs`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching input materials for output:', error);
-        return [];
     }
 };
 

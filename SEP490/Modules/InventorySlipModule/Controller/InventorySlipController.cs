@@ -165,34 +165,7 @@ namespace SEP490.Modules.InventorySlipModule.Controller
             }
         }
 
-        [HttpGet("input-material/{inputDetailId}/outputs")]
-        public async Task<IActionResult> GetOutputsFromInputMaterial(int inputDetailId)
-        {
-            try
-            {
-                var result = await _inventorySlipService.GetOutputsFromInputMaterialAsync(inputDetailId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = "Lỗi khi lấy thông tin sản phẩm đầu ra!", error = ex.Message });
-            }
-        }
-
-        [HttpGet("output-product/{outputDetailId}/inputs")]
-        public async Task<IActionResult> GetInputMaterialsForOutput(int outputDetailId)
-        {
-            try
-            {
-                var result = await _inventorySlipService.GetInputMaterialsForOutputAsync(outputDetailId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = "Lỗi khi lấy thông tin nguyên liệu đầu vào!", error = ex.Message });
-            }
-        }
-
+        
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteInventorySlip(int id)
         {
