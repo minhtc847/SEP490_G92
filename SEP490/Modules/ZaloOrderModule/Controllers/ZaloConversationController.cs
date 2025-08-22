@@ -131,7 +131,7 @@ namespace SEP490.Modules.ZaloOrderModule.Controllers
         public async Task<ActionResult<ConversationState>> GetConversationDetail(int id)
         {
             try
-            {
+                {
                 var conversation = await _context.ZaloConversationStates
                     .Include(cs => cs.MessageHistory)
                     .Include(cs => cs.OrderItems)

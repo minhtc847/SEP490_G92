@@ -59,14 +59,14 @@ export interface ConversationMessage {
 }
 
 export interface OrderItem {
-  productCode: string;
-  productType: string;
+  item_code: string;
+  item_type: string;
   height: number;
   width: number;
   thickness: number;
   quantity: number;
-  unitPrice: number;
-  totalPrice: number;
+  unit_price: number | null;
+  total_price: number | null;
 }
 
 export interface ConversationStatistics {
