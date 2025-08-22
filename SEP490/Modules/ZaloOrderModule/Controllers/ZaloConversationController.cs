@@ -164,9 +164,10 @@ namespace SEP490.Modules.ZaloOrderModule.Controllers
                     LastError = conversation.LastError,
                     UserName = conversation.UserName,
                     CustomerPhone = conversation.CustomerPhone,
-                    CustomerId = conversation.CustomerId,
-                    CustomerName = conversation.Customer?.CustomerName,
-                    OrderItems = conversation.OrderItems.Select(oi => new OrderItem
+                                         CustomerId = conversation.CustomerId,
+                     CustomerName = conversation.Customer?.CustomerName,
+                     ZaloOaId = "4582552177953221290", // Default Zalo OA ID
+                     OrderItems = conversation.OrderItems.Select(oi => new OrderItem
                     {
                         ProductCode = oi.ProductCode,
                         ProductType = oi.ProductType,

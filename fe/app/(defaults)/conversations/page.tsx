@@ -296,16 +296,23 @@ export default function ConversationsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${conversationService.getStateColor(conversation.currentState)}`}>
-                        {conversationService.formatState(conversation.currentState)}
-                      </span>
-                      {!conversation.isActive && (
-                        <span className="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                          Không hoạt động
-                        </span>
-                      )}
-                    </td>
+                                         <td className="px-6 py-4 whitespace-nowrap">
+                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${conversationService.getStateColor(conversation.currentState)}`}>
+                         {conversationService.formatState(conversation.currentState)}
+                       </span>
+                       {!conversation.isActive && (
+                         <span className="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                           Không hoạt động
+                         </span>
+                       )}
+                       {conversation.currentState === 'contacting_staff' && (
+                         <div className="mt-1">
+                           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
+                             👨‍💼 Đang liên hệ nhân viên
+                           </span>
+                         </div>
+                       )}
+                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">
                         {conversation.lastUserMessage && (
@@ -332,22 +339,30 @@ export default function ConversationsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                                                 <button
+                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                       <div className="flex space-x-2">
+                         <button
                            onClick={() => handleViewDetail(conversation.id)}
                            className="text-blue-600 hover:text-blue-900"
                          >
-                          Chi tiết
-                        </button>
-                                                 <button
+                           Chi tiết
+                         </button>
+                         <a
+                           href={conversationService.generateZaloChatLink(conversation.zaloUserId)}
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           className="text-green-600 hover:text-green-900"
+                         >
+                           Zalo Chat
+                         </a>
+                         <button
                            onClick={() => handleDeleteConversation(conversation.id)}
                            className="text-red-600 hover:text-red-900"
                          >
-                          Xóa
-                        </button>
-                      </div>
-                    </td>
+                           Xóa
+                         </button>
+                       </div>
+                     </td>
                   </tr>
                 ))}
               </tbody>

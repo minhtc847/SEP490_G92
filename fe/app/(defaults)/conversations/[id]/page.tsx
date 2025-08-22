@@ -95,14 +95,25 @@ export default function ConversationDetailPage() {
             <h1 className="text-2xl font-bold text-gray-900">Chi tiết cuộc hội thoại</h1>
             <p className="text-gray-600">ID: {conversation.zaloUserId}</p>
           </div>
-          <div className="flex space-x-2">
-            <button
-              onClick={loadConversationDetail}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              Làm mới
-            </button>
-          </div>
+                     <div className="flex space-x-2">
+             <button
+               onClick={loadConversationDetail}
+               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+             >
+               Làm mới
+             </button>
+             <a
+               href={conversationService.generateZaloChatLink(conversation.zaloUserId, conversation.zaloOaId)}
+               target="_blank"
+               rel="noopener noreferrer"
+               className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center"
+             >
+               <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+               </svg>
+               Mở Zalo Chat
+             </a>
+           </div>
         </div>
       </div>
 
@@ -154,12 +165,36 @@ export default function ConversationDetailPage() {
                 </div>
               </div>
               
-              {conversation.lastError && (
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700">Lỗi cuối cùng</label>
-                  <p className="mt-1 text-sm text-red-600 bg-red-50 p-2 rounded">{conversation.lastError}</p>
-                </div>
-              )}
+                             {conversation.lastError && (
+                 <div className="mt-4">
+                   <label className="block text-sm font-medium text-gray-700">Lỗi cuối cùng</label>
+                   <p className="mt-1 text-sm text-red-600 bg-red-50 p-2 rounded">{conversation.lastError}</p>
+                 </div>
+               )}
+
+               {/* Zalo Chat Section */}
+               <div className="mt-6 pt-6 border-t border-gray-200">
+                 <div className="flex items-center justify-between">
+                   <div>
+                     <h4 className="text-sm font-medium text-gray-700 mb-2">Liên hệ trực tiếp</h4>
+                     <p className="text-sm text-gray-500">Mở cuộc hội thoại Zalo với khách hàng này</p>
+                   </div>
+                   <a
+                     href={conversationService.generateZaloChatLink(conversation.zaloUserId, conversation.zaloOaId)}
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                   >
+                     <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                     </svg>
+                     Mở Zalo Chat
+                   </a>
+                 </div>
+                 <div className="mt-2 text-xs text-gray-500">
+                   Link: {conversationService.generateZaloChatLink(conversation.zaloUserId, conversation.zaloOaId)}
+                 </div>
+               </div>
             </div>
           </div>
 

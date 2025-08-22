@@ -48,6 +48,7 @@ export interface ConversationState {
   orderItems: OrderItem[];
   messageHistory: ConversationMessage[];
   lastLLMResponse?: any;
+  zaloOaId?: string;
 }
 
 export interface ConversationMessage {
@@ -180,6 +181,12 @@ class ConversationService {
     if (diffInDays < 7) return `${diffInDays} ngày trước`;
     
     return this.formatDate(dateString);
+  }
+
+  // Helper method to generate Zalo chat link
+  generateZaloChatLink(zaloUserId: string, zaloOaId?: string): string {
+    const oaId = zaloOaId || '4582552177953221290'; // Default OA ID
+    return `https://oa.zalo.me/chat?uid=${zaloUserId}&oaid=${oaId}`;
   }
 }
 

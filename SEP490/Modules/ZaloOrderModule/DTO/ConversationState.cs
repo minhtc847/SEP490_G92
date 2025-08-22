@@ -59,6 +59,9 @@ namespace SEP490.Modules.ZaloOrderModule.DTO
         [JsonPropertyName("customerName")]
         public string? CustomerName { get; set; }
 
+        [JsonPropertyName("zaloOaId")]
+        public string? ZaloOaId { get; set; }
+
         [JsonPropertyName("orderItems")]
         public List<OrderItem> OrderItems { get; set; } = new();
 
