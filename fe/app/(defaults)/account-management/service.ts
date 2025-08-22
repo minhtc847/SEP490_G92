@@ -24,8 +24,8 @@ export interface AccountListResponse {
 export interface CreateAccountRequest {
   username: string;
   password: string;
-  employeeId: number;
-  roleId: number;
+  employeeId: string;
+  roleId: string;
 }
 
 export interface EmployeeWithoutAccount {
@@ -80,5 +80,15 @@ export const getEmployeesWithoutAccount = async (): Promise<EmployeeWithoutAccou
 
 export const getRoles = async (): Promise<Role[]> => {
   const response = await axios.get<Role[]>(`/api/AccountManagement/roles`);
+  return response.data;
+};
+
+export const checkUsernameExists = async (username: string): Promise<{ exists: boolean; message: string }> => {
+  const response = await axios.get<{ exists: boolean; message: string }>(`/api/AccountManagement/check-username/${username}`);
+  return response.data;
+};
+
+export const changeAccountPassword = async (id: number, newPassword: string): Promise<ServiceResult> => {
+  const response = await axios.put<ServiceResult>(`/api/AccountManagement/${id}/change-password`, { newPassword });
   return response.data;
 };

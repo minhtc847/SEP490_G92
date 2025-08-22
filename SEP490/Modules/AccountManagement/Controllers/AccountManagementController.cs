@@ -60,13 +60,13 @@ namespace SEP490.Modules.AccountManagement.Controllers
                 var result = await _accountService.CreateAccountAsync(request);
                 if (!result.Success)
                 {
-                    return BadRequest(new { message = result.Message });
+                    return BadRequest(new { success = false, message = result.Message });
                 }
-                return Ok(new { message = result.Message });
+                return Ok(new { success = true, message = result.Message });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new { success = false, message = ex.Message });
             }
         }
 
@@ -78,13 +78,13 @@ namespace SEP490.Modules.AccountManagement.Controllers
                 var result = await _accountService.ToggleAccountStatusAsync(id);
                 if (!result.Success)
                 {
-                    return BadRequest(new { message = result.Message });
+                    return BadRequest(new { success = false, message = result.Message });
                 }
-                return Ok(new { message = result.Message });
+                return Ok(new { success = true, message = result.Message });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new { success = false, message = ex.Message });
             }
         }
 
@@ -96,13 +96,27 @@ namespace SEP490.Modules.AccountManagement.Controllers
                 var result = await _accountService.DeleteAccountAsync(id);
                 if (!result.Success)
                 {
-                    return BadRequest(new { message = result.Message });
+                    return BadRequest(new { success = false, message = result.Message });
                 }
-                return Ok(new { message = result.Message });
+                return Ok(new { success = true, message = result.Message });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpGet("check-username/{username}")]
+        public async Task<IActionResult> CheckUsernameExists(string username)
+        {
+            try
+            {
+                var exists = await _accountService.CheckUsernameExistsAsync(username);
+                return Ok(new { exists, message = exists ? "Tên đăng nhập đã tồn tại" : "Tên đăng nhập có thể sử dụng" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
             }
         }
 
@@ -133,5 +147,28 @@ namespace SEP490.Modules.AccountManagement.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        [HttpPut("{id}/change-password")]
+        public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangePasswordRequest request)
+        {
+            try
+            {
+                var result = await _accountService.ChangePasswordAsync(id, request.NewPassword);
+                if (!result.Success)
+                {
+                    return BadRequest(new { success = false, message = result.Message });
+                }
+                return Ok(new { success = true, message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+    }
+
+    public class ChangePasswordRequest
+    {
+        public string NewPassword { get; set; }
     }
 }

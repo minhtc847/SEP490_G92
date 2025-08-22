@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { loginStart, loginSuccess, loginFailure } from '@/store/authSlice';
 import authService from '@/services/authService';
+import Swal from 'sweetalert2';
 
 const ComponentsAuthLoginForm = () => {
     const router = useRouter();
@@ -28,7 +29,7 @@ const ComponentsAuthLoginForm = () => {
         e.preventDefault();
         
         if (!formData.username || !formData.password) {
-            alert('Vui lòng nhập đầy đủ thông tin');
+            Swal.fire({ title: 'Thiếu thông tin', text: 'Vui lòng nhập đầy đủ thông tin', icon: 'warning', customClass: { popup: 'sweet-alerts' } });
             return;
         }
 
@@ -58,7 +59,12 @@ const ComponentsAuthLoginForm = () => {
             }
         } catch (error: any) {
             dispatch(loginFailure(error.message));
-            alert(error.message);
+            Swal.fire({
+                title: 'Đăng nhập thất bại',
+                text: error.message || 'Đăng nhập thất bại',
+                icon: 'error',
+                customClass: { popup: 'sweet-alerts' },
+            });
         } finally {
             setLoading(false);
         }

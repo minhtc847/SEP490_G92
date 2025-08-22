@@ -3,7 +3,6 @@ using SEP490.DB;
 using SEP490.DB.Models;
 using SEP490.Modules.AccountManagement.DTO;
 using SEP490.Common.Services;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace SEP490.Modules.AccountManagement.Services
@@ -17,6 +16,8 @@ namespace SEP490.Modules.AccountManagement.Services
         Task<ServiceResult> DeleteAccountAsync(int id);
         Task<List<EmployeeWithoutAccountResponse>> GetEmployeesWithoutAccountAsync();
         Task<List<RoleResponse>> GetRolesAsync();
+        Task<bool> CheckUsernameExistsAsync(string username);
+        Task<ServiceResult> ChangePasswordAsync(int id, string newPassword);
     }
 
     public class AccountManagementService : BaseScopedService, IAccountManagementService
@@ -125,6 +126,12 @@ namespace SEP490.Modules.AccountManagement.Services
                     return new ServiceResult { Success = false, Message = "Vai trò không tồn tại" };
                 }
 
+                // Chỉ cho phép tạo tài khoản với role Sản xuất hoặc Kế toán
+                if (!role.RoleName.ToLower().Contains("sản xuất") && !role.RoleName.ToLower().Contains("kế toán"))
+                {
+                    return new ServiceResult { Success = false, Message = "Chỉ có thể tạo tài khoản cho vai trò Sản xuất hoặc Kế toán" };
+                }
+
                 var passwordHash = HashPassword(request.Password);
                 var account = new Account
                 {
@@ -213,6 +220,7 @@ namespace SEP490.Modules.AccountManagement.Services
         public async Task<List<RoleResponse>> GetRolesAsync()
         {
             var roles = await _context.Roles
+                .Where(r => r.RoleName.ToLower().Contains("sản xuất") || r.RoleName.ToLower().Contains("kế toán"))
                 .Select(r => new RoleResponse
                 {
                     Id = r.Id,
@@ -223,13 +231,41 @@ namespace SEP490.Modules.AccountManagement.Services
             return roles;
         }
 
+        public async Task<bool> CheckUsernameExistsAsync(string username)
+        {
+            return await _context.Accounts.AnyAsync(a => a.UserName == username);
+        }
+
+        public async Task<ServiceResult> ChangePasswordAsync(int id, string newPassword)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+                {
+                    return new ServiceResult { Success = false, Message = "Mật khẩu phải có ít nhất 6 ký tự" };
+                }
+
+                var account = await _context.Accounts.FindAsync(id);
+                if (account == null)
+                {
+                    return new ServiceResult { Success = false, Message = "Tài khoản không tồn tại" };
+                }
+
+                account.PasswordHash = HashPassword(newPassword);
+                await _context.SaveChangesAsync();
+
+                return new ServiceResult { Success = true, Message = "Đổi mật khẩu thành công" };
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResult { Success = false, Message = $"Lỗi: {ex.Message}" };
+            }
+        }
+
         private string HashPassword(string password)
         {
-            using (var sha256 = SHA256.Create())
-            {
-                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return Convert.ToBase64String(hashedBytes);
-            }
+            // Use Base64 encoding (same as AuthService) for consistency
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(password));
         }
     }
 }
