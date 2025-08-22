@@ -610,6 +610,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             {
                 _logger.LogInformation("User {UserId} cancelled the conversation", zaloUserId);
                 
+                await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.CANCELLED);
                 await _conversationStateService.DeleteConversationAsync(zaloUserId);
 
                 // // Reset conversation state to NEW instead of deleting
