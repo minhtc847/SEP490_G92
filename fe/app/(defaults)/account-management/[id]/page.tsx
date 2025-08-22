@@ -8,13 +8,14 @@ import IconEdit from '@/components/icon/icon-edit';
 import IconLock from '@/components/icon/icon-lock';
 
 import IconTrashLines from '@/components/icon/icon-trash-lines';
-import { AccountDetail, getAccountById, toggleAccountStatus, deleteAccount } from '../service';
+import Swal from 'sweetalert2';
+import { AccountDetail, getAccountById, toggleAccountStatus, deleteAccount, changeAccountPassword } from '../service';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const AccountDetailPage = () => {
-    const params = useParams();
+    const params = useParams<{ id: string }>()!;
     const router = useRouter();
-    const accountId = parseInt(params.id as string);
+    const accountId = Number(params.id);
     const [account, setAccount] = useState<AccountDetail | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -111,6 +112,63 @@ const AccountDetailPage = () => {
                             >
                                 {account.isActive ? <IconLock className="mr-1" /> : <IconLock className="mr-1" />}
                                 {account.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
+                            </button>
+                            <button
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={async () => {
+                                    const { value: newPassword } = await Swal.fire({
+                                        title: `Đổi mật khẩu - ${account.username}`,
+                                        html: `
+                                            <div class="text-left">
+                                                <label class="block text-sm font-medium mb-1">Mật khẩu mới</label>
+                                                <input id="swal-new-password" type="password" class="swal2-input" placeholder=">= 6 ký tự" />
+                                                <label class="block text-sm font-medium mb-1 mt-2">Xác nhận mật khẩu</label>
+                                                <input id="swal-confirm-password" type="password" class="swal2-input" placeholder="Nhập lại mật khẩu" />
+                                            </div>
+                                        `,
+                                        focusConfirm: false,
+                                        showCancelButton: true,
+                                        confirmButtonText: 'Cập nhật',
+                                        cancelButtonText: 'Hủy',
+                                        preConfirm: () => {
+                                            const pw = (document.getElementById('swal-new-password') as HTMLInputElement)?.value || '';
+                                            const pw2 = (document.getElementById('swal-confirm-password') as HTMLInputElement)?.value || '';
+                                            if (!pw || pw.length < 6) {
+                                                Swal.showValidationMessage('Mật khẩu phải có ít nhất 6 ký tự');
+                                                return null;
+                                            }
+                                            if (pw !== pw2) {
+                                                Swal.showValidationMessage('Mật khẩu xác nhận không khớp');
+                                                return null;
+                                            }
+                                            return pw;
+                                        },
+                                        customClass: { popup: 'sweet-alerts' },
+                                    });
+
+                                    if (newPassword) {
+                                        try {
+                                            const res = await changeAccountPassword(account.id, newPassword);
+                                            if (res.success) {
+                                                Swal.fire({
+                                                    title: 'Thành công!',
+                                                    text: res.message,
+                                                    icon: 'success',
+                                                    timer: 2000,
+                                                    showConfirmButton: false,
+                                                    customClass: { popup: 'sweet-alerts' },
+                                                });
+                                            } else {
+                                                Swal.fire({ title: 'Thất bại!', text: res.message, icon: 'error', customClass: { popup: 'sweet-alerts' } });
+                                            }
+                                        } catch (e) {
+                                            Swal.fire({ title: 'Lỗi!', text: 'Không thể đổi mật khẩu.', icon: 'error', customClass: { popup: 'sweet-alerts' } });
+                                        }
+                                    }
+                                }}
+                            >
+                                <IconEdit className="mr-1" />
+                                Đổi mật khẩu
                             </button>
                             <button
                                 className="btn btn-sm btn-outline-danger"

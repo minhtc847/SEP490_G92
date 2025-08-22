@@ -87,3 +87,8 @@ export const checkUsernameExists = async (username: string): Promise<{ exists: b
   const response = await axios.get<{ exists: boolean; message: string }>(`/api/AccountManagement/check-username/${username}`);
   return response.data;
 };
+
+export const changeAccountPassword = async (id: number, newPassword: string): Promise<ServiceResult> => {
+  const response = await axios.put<ServiceResult>(`/api/AccountManagement/${id}/change-password`, { newPassword });
+  return response.data;
+};

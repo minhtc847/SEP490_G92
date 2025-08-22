@@ -17,6 +17,7 @@ namespace SEP490.Modules.AccountManagement.Services
         Task<List<EmployeeWithoutAccountResponse>> GetEmployeesWithoutAccountAsync();
         Task<List<RoleResponse>> GetRolesAsync();
         Task<bool> CheckUsernameExistsAsync(string username);
+        Task<ServiceResult> ChangePasswordAsync(int id, string newPassword);
     }
 
     public class AccountManagementService : BaseScopedService, IAccountManagementService
@@ -233,6 +234,32 @@ namespace SEP490.Modules.AccountManagement.Services
         public async Task<bool> CheckUsernameExistsAsync(string username)
         {
             return await _context.Accounts.AnyAsync(a => a.UserName == username);
+        }
+
+        public async Task<ServiceResult> ChangePasswordAsync(int id, string newPassword)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+                {
+                    return new ServiceResult { Success = false, Message = "Mật khẩu phải có ít nhất 6 ký tự" };
+                }
+
+                var account = await _context.Accounts.FindAsync(id);
+                if (account == null)
+                {
+                    return new ServiceResult { Success = false, Message = "Tài khoản không tồn tại" };
+                }
+
+                account.PasswordHash = HashPassword(newPassword);
+                await _context.SaveChangesAsync();
+
+                return new ServiceResult { Success = true, Message = "Đổi mật khẩu thành công" };
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResult { Success = false, Message = $"Lỗi: {ex.Message}" };
+            }
         }
 
         private string HashPassword(string password)

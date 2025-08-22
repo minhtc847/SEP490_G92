@@ -147,5 +147,28 @@ namespace SEP490.Modules.AccountManagement.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        [HttpPut("{id}/change-password")]
+        public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangePasswordRequest request)
+        {
+            try
+            {
+                var result = await _accountService.ChangePasswordAsync(id, request.NewPassword);
+                if (!result.Success)
+                {
+                    return BadRequest(new { success = false, message = result.Message });
+                }
+                return Ok(new { success = true, message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+    }
+
+    public class ChangePasswordRequest
+    {
+        public string NewPassword { get; set; }
     }
 }

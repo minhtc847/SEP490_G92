@@ -43,6 +43,11 @@ namespace SEP490.Modules.Auth.Services
                     return new AuthResult { Success = false, Message = "Tài khoản không tồn tại" };
                 }
 
+                if (!account.IsActive)
+                {
+                    return new AuthResult { Success = false, Message = "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên." };
+                }
+
                 // Verify password (implement proper password hashing)
                 if (!VerifyPassword(password, account.PasswordHash))
                 {
