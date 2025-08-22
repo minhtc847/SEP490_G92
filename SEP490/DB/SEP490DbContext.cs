@@ -99,6 +99,11 @@ namespace SEP490.DB
                 .HasForeignKey(m => m.OutputDetailId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Add unique constraint to prevent duplicate mappings
+            modelBuilder.Entity<MaterialOutputMapping>()
+                .HasIndex(m => new { m.InputDetailId, m.OutputDetailId })
+                .IsUnique();
+
         }
 
         // Define DbSet properties for your entities here

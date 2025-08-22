@@ -12,6 +12,8 @@ using SEP490.Modules.ZaloOrderModule.Services;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
+using SEP490.Modules.InventorySlipModule.Service;
+using SEP490.Modules.InventorySlipModule.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +44,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+//builder.Services.AddScoped<IInventorySlipService, InventorySlipService>();
+//builder.Services.AddScoped<IInventoryProductionOutputService, ProductionOutputService>();
+builder.Services.AddHttpContextAccessor();
 // Add Authorization
 builder.Services.AddAuthorization(options =>
 {

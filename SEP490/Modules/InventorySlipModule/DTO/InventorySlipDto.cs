@@ -15,6 +15,7 @@ namespace SEP490.Modules.InventorySlipModule.DTO
         
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public bool IsFinalized { get; set; }
         
         public List<InventorySlipDetailDto> Details { get; set; } = new List<InventorySlipDetailDto>();
     }
@@ -22,7 +23,7 @@ namespace SEP490.Modules.InventorySlipModule.DTO
     public class InventorySlipDetailDto
     {
         public int Id { get; set; }
-        public int ProductId { get; set; }
+        public int? ProductId { get; set; } // Nullable để hỗ trợ thành phẩm mục tiêu
         public string? ProductCode { get; set; }
         public string? ProductName { get; set; }
         public string? ProductType { get; set; }
@@ -68,7 +69,7 @@ namespace SEP490.Modules.InventorySlipModule.DTO
 
     public class CreateInventorySlipDetailDto
     {
-        public int ProductId { get; set; }
+        public int? ProductId { get; set; } // Nullable để hỗ trợ thành phẩm mục tiêu
         public decimal Quantity { get; set; }
         public string? Note { get; set; }
         public int SortOrder { get; set; }
@@ -104,8 +105,8 @@ namespace SEP490.Modules.InventorySlipModule.DTO
         public string? ProductName { get; set; }
         public string? UOM { get; set; }
         public decimal? Amount { get; set; }
-        public int? Finished { get; set; }
-        public int? Defected { get; set; }
+        public decimal? Finished { get; set; }
+        public decimal? Defected { get; set; }
     }
 
     public class ProductInfoDto

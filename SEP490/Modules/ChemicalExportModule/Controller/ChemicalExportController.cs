@@ -88,22 +88,6 @@ namespace SEP490.Modules.ChemicalExportModule.Controller
             }
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteChemicalExport(int id)
-        {
-            try
-            {
-                var result = await _chemicalExportService.DeleteChemicalExportAsync(id);
-                if (!result)
-                    return NotFound(new { message = "Không tìm thấy phiếu xuất hóa chất để xóa." });
-
-                return Ok(new { message = "Xóa phiếu xuất hóa chất thành công!" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = "Lỗi khi xóa phiếu xuất hóa chất!", error = ex.Message });
-            }
-        }
 
         [HttpPost("production-order/{productionOrderId}/check-completion")]
         public async Task<IActionResult> CheckAndUpdateProductionOrderStatus(int productionOrderId)

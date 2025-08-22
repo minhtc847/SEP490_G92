@@ -7,5 +7,6 @@ namespace SEP490.Modules.GlueButylExport.Services
         public Task AddGlueButylExport(CreateNewDTO createNewDTO);
         public Task<List<GlueButylExportResponseDTO>> getAllExportByProductionOrderId(int productionOrderId);
         public Task<GlueButylExportResponseDTO> GetExportById(int id);
+        public Task<bool> CheckAndUpdateProductionOrderStatusAsync(int productionOrderId);
     }
 }

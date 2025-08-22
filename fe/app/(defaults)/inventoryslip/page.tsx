@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { fetchAllInventorySlips, InventorySlipListItem } from './service';
+import { fetchAllInventorySlips, InventorySlipListItem, finalizeInventorySlip } from './service';
 import IconEye from '@/components/icon/icon-eye';
 import IconPlus from '@/components/icon/icon-plus';
 
@@ -108,6 +108,7 @@ const InventorySlipPage = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại phiếu</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID lệnh sản xuất</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Người tạo</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mô tả</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
                             </tr>
@@ -142,17 +143,30 @@ const InventorySlipPage = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.createdByEmployeeName}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {item.isFinalized ? (
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                     Đã cập nhật
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                     Chưa cập nhật
+                                                </span>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title={item.description}>
                                             {item.description || '-'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <Link
-                                                href={`/inventoryslip/${item.productionOrderId}`}
-                                                className="p-2 bg-sky-100 rounded-full hover:bg-sky-200 transition inline-flex items-center justify-center"
-                                                title="Xem chi tiết"
-                                            >
-                                                <IconEye className="w-4 h-4" />
-                                            </Link>
+                                            <div className="flex items-center space-x-2">
+                                                <Link
+                                                    href={`/inventoryslip/${item.productionOrderId}`}
+                                                    className="p-2 bg-sky-100 rounded-full hover:bg-sky-200 transition inline-flex items-center justify-center"
+                                                    title="Xem chi tiết"
+                                                >
+                                                    <IconEye className="w-4 h-4" />
+                                                </Link>                                                
+                                            </div>
                                         </td>
                                     </tr>
                                 ))

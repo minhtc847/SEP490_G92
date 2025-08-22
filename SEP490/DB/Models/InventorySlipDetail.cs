@@ -6,7 +6,7 @@ public class InventorySlipDetail
     
     // Foreign key references
     public int InventorySlipId { get; set; }
-    public int ProductId { get; set; }
+    public int? ProductId { get; set; } // Nullable để hỗ trợ thành phẩm mục tiêu
     public int? ProductionOutputId { get; set; }
     
     // Properties
@@ -16,7 +16,7 @@ public class InventorySlipDetail
     
     // Navigation properties
     public InventorySlip InventorySlip { get; set; } = null!;
-    public Product Product { get; set; } = null!;
+    public Product? Product { get; set; } // Nullable vì ProductId có thể null
     public ProductionOutput? ProductionOutput { get; set; }
     
     // Navigation properties cho MaterialOutputMapping

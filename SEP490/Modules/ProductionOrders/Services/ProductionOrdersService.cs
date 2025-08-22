@@ -119,9 +119,9 @@ namespace SEP490.Modules.ProductionOrders.Services
                 _context.ProductionDefects.Add(defect);
 
                
-                productionOutput.Defected = (productionOutput.Defected ?? 0) + dto.Quantity;
+                productionOutput.Defected = (productionOutput.Defected ?? 0m) + dto.Quantity;
 
-                productionOutput.Finished = Math.Max((productionOutput.Finished ?? 0) - dto.Quantity, 0);
+                productionOutput.Finished = Math.Max((productionOutput.Finished ?? 0m) - dto.Quantity, 0m);
 
                 if (productionOrder != null)
                 {
@@ -161,9 +161,9 @@ namespace SEP490.Modules.ProductionOrders.Services
                 existingDefect.Note = dto.Note;
                 existingDefect.ReportedAt = DateTime.UtcNow; 
 
-                productionOutput.Defected = (productionOutput.Defected ?? 0) + quantityDifference;
+                productionOutput.Defected = (productionOutput.Defected ?? 0m) + quantityDifference;
 
-                productionOutput.Finished = Math.Max((productionOutput.Finished ?? 0) - quantityDifference, 0);
+                productionOutput.Finished = Math.Max((productionOutput.Finished ?? 0m) - quantityDifference, 0m);
 
                 var productionOrder = await _context.ProductionOrders.FindAsync(existingDefect.ProductionOrderId);
                 if (productionOrder != null)
@@ -185,9 +185,9 @@ namespace SEP490.Modules.ProductionOrders.Services
             var output = await _context.ProductionOutputs.Include(o => o.ProductionOrder).FirstOrDefaultAsync(o => o.Id == outputId);
             if (output == null || dto.Broken <= 0) return false;
 
-            output.Defected = (output.Defected ?? 0) + dto.Broken;
+            output.Defected = (output.Defected ?? 0m) + dto.Broken;
 
-            output.Finished = Math.Max((output.Finished ?? 0) - dto.Broken, 0);
+            output.Finished = Math.Max((output.Finished ?? 0m) - dto.Broken, 0m);
 
             if (output.ProductionOrder != null)
             {

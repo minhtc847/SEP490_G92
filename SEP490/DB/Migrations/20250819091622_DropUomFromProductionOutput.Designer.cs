@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SEP490.DB;
 
@@ -10,9 +11,10 @@ using SEP490.DB;
 namespace SEP490.DB.Migrations
 {
     [DbContext(typeof(SEP490DbContext))]
-    partial class SEP490DbContextModelSnapshot : ModelSnapshot
+    [Migration("20250819091622_DropUomFromProductionOutput")]
+    partial class DropUomFromProductionOutput
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -451,6 +453,50 @@ namespace SEP490.DB.Migrations
                     b.ToTable("delivery_histories", (string)null);
                 });
 
+            modelBuilder.Entity("SEP490.DB.Models.DocumentMaterial", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    b.Property<int>("ChunkCount")
+                        .HasColumnType("int")
+                        .HasColumnName("chunk_count");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("content");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext")
+                        .HasColumnName("description");
+
+                    b.Property<string>("FilePath")
+                        .HasColumnType("longtext")
+                        .HasColumnName("file_path");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_document_materials");
+
+                    b.ToTable("document_materials", (string)null);
+                });
+
             modelBuilder.Entity("SEP490.DB.Models.Employee", b =>
                 {
                     b.Property<int>("Id")
@@ -664,10 +710,6 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("description");
 
-                    b.Property<bool>("IsFinalized")
-                        .HasColumnType("tinyint(1)")
-                        .HasColumnName("is_finalized");
-
                     b.Property<int>("ProductionOrderId")
                         .HasColumnType("int")
                         .HasColumnName("production_order_id");
@@ -781,16 +823,16 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("status");
 
-                    b.Property<int?>("Subtotal")
-                        .HasColumnType("int")
+                    b.Property<decimal?>("Subtotal")
+                        .HasColumnType("decimal(65,30)")
                         .HasColumnName("subtotal");
 
                     b.Property<decimal?>("Tax")
                         .HasColumnType("decimal(65,30)")
                         .HasColumnName("tax");
 
-                    b.Property<int?>("TotalAmount")
-                        .HasColumnType("int")
+                    b.Property<decimal?>("TotalAmount")
+                        .HasColumnType("decimal(65,30)")
                         .HasColumnName("total_amount");
 
                     b.HasKey("Id")
@@ -877,12 +919,11 @@ namespace SEP490.DB.Migrations
                     b.HasKey("Id")
                         .HasName("pk_material_output_mappings");
 
+                    b.HasIndex("InputDetailId")
+                        .HasDatabaseName("ix_material_output_mappings_input_detail_id");
+
                     b.HasIndex("OutputDetailId")
                         .HasDatabaseName("ix_material_output_mappings_output_detail_id");
-
-                    b.HasIndex("InputDetailId", "OutputDetailId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_material_output_mappings_input_detail_id_output_detail_id");
 
                     b.ToTable("material_output_mappings", (string)null);
                 });
@@ -1036,10 +1077,6 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("width");
 
-                    b.Property<bool>("isupdatemisa")
-                        .HasColumnType("tinyint(1)")
-                        .HasColumnName("isupdatemisa");
-
                     b.Property<double>("quantity")
                         .HasColumnType("double")
                         .HasColumnName("quantity");
@@ -1181,6 +1218,37 @@ namespace SEP490.DB.Migrations
                         .HasDatabaseName("ix_production_orders_production_plan_id");
 
                     b.ToTable("production_orders", (string)null);
+                });
+
+            modelBuilder.Entity("SEP490.DB.Models.ProductionOrderDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int")
+                        .HasColumnName("product_id");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int")
+                        .HasColumnName("quantity");
+
+                    b.Property<int>("productionOrderId")
+                        .HasColumnType("int")
+                        .HasColumnName("production_order_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_production_order_details");
+
+                    b.HasIndex("ProductId")
+                        .HasDatabaseName("ix_production_order_details_product_id");
+
+                    b.HasIndex("productionOrderId")
+                        .HasDatabaseName("ix_production_order_details_production_order_id");
+
+                    b.ToTable("production_order_details", (string)null);
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.ProductionOutput", b =>
@@ -1537,187 +1605,6 @@ namespace SEP490.DB.Migrations
                     b.ToTable("test_table", (string)null);
                 });
 
-            modelBuilder.Entity("SEP490.DB.Models.ZaloConversationMessage", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("content");
-
-                    b.Property<string>("MessageType")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("message_type");
-
-                    b.Property<string>("SenderType")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("sender_type");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("timestamp");
-
-                    b.Property<int>("ZaloConversationStateId")
-                        .HasColumnType("int")
-                        .HasColumnName("zalo_conversation_state_id");
-
-                    b.HasKey("Id")
-                        .HasName("pk_zalo_conversation_messages");
-
-                    b.HasIndex("ZaloConversationStateId")
-                        .HasDatabaseName("ix_zalo_conversation_messages_zalo_conversation_state_id");
-
-                    b.ToTable("zalo_conversation_messages", (string)null);
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.ZaloConversationOrderItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("created_at");
-
-                    b.Property<float>("Height")
-                        .HasColumnType("float")
-                        .HasColumnName("height");
-
-                    b.Property<string>("ProductCode")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("product_code");
-
-                    b.Property<string>("ProductType")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("product_type");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int")
-                        .HasColumnName("quantity");
-
-                    b.Property<float>("Thickness")
-                        .HasColumnType("float")
-                        .HasColumnName("thickness");
-
-                    b.Property<decimal>("TotalPrice")
-                        .HasColumnType("decimal(65,30)")
-                        .HasColumnName("total_price");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(65,30)")
-                        .HasColumnName("unit_price");
-
-                    b.Property<float>("Width")
-                        .HasColumnType("float")
-                        .HasColumnName("width");
-
-                    b.Property<int>("ZaloConversationStateId")
-                        .HasColumnType("int")
-                        .HasColumnName("zalo_conversation_state_id");
-
-                    b.HasKey("Id")
-                        .HasName("pk_zalo_conversation_order_items");
-
-                    b.HasIndex("ZaloConversationStateId")
-                        .HasDatabaseName("ix_zalo_conversation_order_items_zalo_conversation_state_id");
-
-                    b.ToTable("zalo_conversation_order_items", (string)null);
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.ZaloConversationState", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("CurrentOrderId")
-                        .HasColumnType("longtext")
-                        .HasColumnName("current_order_id");
-
-                    b.Property<string>("CurrentState")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("current_state");
-
-                    b.Property<int?>("CustomerId")
-                        .HasColumnType("int")
-                        .HasColumnName("customer_id");
-
-                    b.Property<string>("CustomerPhone")
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasColumnName("customer_phone");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)")
-                        .HasColumnName("is_active");
-
-                    b.Property<DateTime>("LastActivity")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("last_activity");
-
-                    b.Property<string>("LastBotResponse")
-                        .HasMaxLength(1000)
-                        .HasColumnType("varchar(1000)")
-                        .HasColumnName("last_bot_response");
-
-                    b.Property<string>("LastError")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)")
-                        .HasColumnName("last_error");
-
-                    b.Property<string>("LastLLMResponseJson")
-                        .HasMaxLength(4000)
-                        .HasColumnType("varchar(4000)")
-                        .HasColumnName("last_llm_response_json");
-
-                    b.Property<string>("LastUserMessage")
-                        .HasMaxLength(1000)
-                        .HasColumnType("varchar(1000)")
-                        .HasColumnName("last_user_message");
-
-                    b.Property<int>("MessageCount")
-                        .HasColumnType("int")
-                        .HasColumnName("message_count");
-
-                    b.Property<int>("RetryCount")
-                        .HasColumnType("int")
-                        .HasColumnName("retry_count");
-
-                    b.Property<string>("UserName")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("user_name");
-
-                    b.Property<string>("ZaloUserId")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("zalo_user_id");
-
-                    b.HasKey("Id")
-                        .HasName("pk_zalo_conversation_states");
-
-                    b.HasIndex("CustomerId")
-                        .HasDatabaseName("ix_zalo_conversation_states_customer_id");
-
-                    b.ToTable("zalo_conversation_states", (string)null);
-                });
-
             modelBuilder.Entity("SEP490.DB.Models.ZaloOrder", b =>
                 {
                     b.Property<int>("Id")
@@ -1786,15 +1673,6 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("datetime(6)")
                         .HasColumnName("created_at");
 
-                    b.Property<string>("Height")
-                        .HasColumnType("longtext")
-                        .HasColumnName("height");
-
-                    b.Property<string>("ProductCode")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("product_code");
-
                     b.Property<string>("ProductName")
                         .IsRequired()
                         .HasColumnType("longtext")
@@ -1804,10 +1682,6 @@ namespace SEP490.DB.Migrations
                         .HasColumnType("int")
                         .HasColumnName("quantity");
 
-                    b.Property<string>("Thickness")
-                        .HasColumnType("longtext")
-                        .HasColumnName("thickness");
-
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("decimal(65,30)")
                         .HasColumnName("total_price");
@@ -1815,10 +1689,6 @@ namespace SEP490.DB.Migrations
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(65,30)")
                         .HasColumnName("unit_price");
-
-                    b.Property<string>("Width")
-                        .HasColumnType("longtext")
-                        .HasColumnName("width");
 
                     b.Property<int>("ZaloOrderId")
                         .HasColumnType("int")
@@ -2300,6 +2170,27 @@ namespace SEP490.DB.Migrations
                     b.Navigation("ProductionPlan");
                 });
 
+            modelBuilder.Entity("SEP490.DB.Models.ProductionOrderDetail", b =>
+                {
+                    b.HasOne("SEP490.DB.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_production_order_details_products_product_id");
+
+                    b.HasOne("SEP490.DB.Models.ProductionOrder", "ProductionOrder")
+                        .WithMany()
+                        .HasForeignKey("productionOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_production_order_details_production_orders_production_order_");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("ProductionOrder");
+                });
+
             modelBuilder.Entity("SEP490.DB.Models.ProductionOutput", b =>
                 {
                     b.HasOne("SEP490.DB.Models.Product", "Product")
@@ -2412,41 +2303,6 @@ namespace SEP490.DB.Migrations
                     b.Navigation("Customer");
                 });
 
-            modelBuilder.Entity("SEP490.DB.Models.ZaloConversationMessage", b =>
-                {
-                    b.HasOne("SEP490.DB.Models.ZaloConversationState", "ZaloConversationState")
-                        .WithMany("MessageHistory")
-                        .HasForeignKey("ZaloConversationStateId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_zalo_conversation_messages_zalo_conversation_states_zalo_con");
-
-                    b.Navigation("ZaloConversationState");
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.ZaloConversationOrderItem", b =>
-                {
-                    b.HasOne("SEP490.DB.Models.ZaloConversationState", "ZaloConversationState")
-                        .WithMany("OrderItems")
-                        .HasForeignKey("ZaloConversationStateId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_zalo_conversation_order_items_zalo_conversation_states_zalo_");
-
-                    b.Navigation("ZaloConversationState");
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.ZaloConversationState", b =>
-                {
-                    b.HasOne("SEP490.DB.Models.Customer", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_zalo_conversation_states_customers_customer_id");
-
-                    b.Navigation("Customer");
-                });
-
             modelBuilder.Entity("SEP490.DB.Models.ZaloOrderDetail", b =>
                 {
                     b.HasOne("SEP490.DB.Models.ZaloOrder", "ZaloOrder")
@@ -2513,13 +2369,6 @@ namespace SEP490.DB.Migrations
             modelBuilder.Entity("SEP490.DB.Models.SaleOrder", b =>
                 {
                     b.Navigation("OrderDetails");
-                });
-
-            modelBuilder.Entity("SEP490.DB.Models.ZaloConversationState", b =>
-                {
-                    b.Navigation("MessageHistory");
-
-                    b.Navigation("OrderItems");
                 });
 
             modelBuilder.Entity("SEP490.DB.Models.ZaloOrder", b =>

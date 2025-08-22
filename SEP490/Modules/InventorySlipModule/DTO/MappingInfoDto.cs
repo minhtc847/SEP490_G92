@@ -12,7 +12,7 @@ namespace SEP490.Modules.InventorySlipModule.DTO
 
     public class MappingInfoDto
     {
-        public List<object> TempMappings { get; set; }
+        public List<CreateMaterialOutputMappingDto> TempMappings { get; set; }
         public List<ProductClassificationDto> ProductClassifications { get; set; }
     }
 }

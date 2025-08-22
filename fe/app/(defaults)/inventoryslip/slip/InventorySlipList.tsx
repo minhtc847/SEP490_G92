@@ -1,17 +1,29 @@
 'use client';
-import { useState } from 'react';
-import { InventorySlip, InventorySlipDetail, MaterialOutputMappingDto } from '../service';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { InventorySlip, InventorySlipDetail, MaterialOutputMappingDto, fetchInventorySlipById, updateInventorySlip, finalizeInventorySlip } from '../service';
+import InventorySlipForm from './InventorySlipForm';
+import MaterialExportSlipForm from './MaterialExportSlipForm';
+import Swal from 'sweetalert2';
 import IconEye from '@/components/icon/icon-eye';
 import IconArrowLeft from '@/components/icon/icon-arrow-left';
 
 interface InventorySlipListProps {
     slips: InventorySlip[];
     onRefresh: () => void;
+    productionOrderInfo?: any;
 }
 
-const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
+const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventorySlipListProps) => {
     const [expandedSlips, setExpandedSlips] = useState<Set<number>>(new Set());
     const [expandedMaterials, setExpandedMaterials] = useState<Set<number>>(new Set());
+    const [showUpdateModal, setShowUpdateModal] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+    const [updating, setUpdating] = useState(false);
+    const [selectedSlip, setSelectedSlip] = useState<InventorySlip | null>(null);
+    const [updateDescription, setUpdateDescription] = useState('');
+    const [updatePayload, setUpdatePayload] = useState<any>(null);
+    const [updateType, setUpdateType] = useState<'cut-glass' | 'material-export' | 'other'>('other');
 
     const toggleExpanded = (slipId: number) => {
         const newExpanded = new Set(expandedSlips);
@@ -45,6 +57,114 @@ const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
         }
     };
 
+    const openUpdateModal = async (slip: InventorySlip) => {
+        try {
+            const fullSlip = await fetchInventorySlipById(slip.id);
+            if (!fullSlip) return;
+            setSelectedSlip(fullSlip);
+            setUpdateDescription(fullSlip.description || '');
+            const type = fullSlip.productionOrderType === 'Cắt kính'
+                ? 'cut-glass'
+                : (['Ghép kính', 'Sản xuất keo', 'Đổ keo'].includes(fullSlip.productionOrderType || '') ? 'material-export' : 'other');
+            setUpdateType(type);
+            const details = (fullSlip.details || []).map((d, idx) => ({
+                productId: d.productId ?? undefined,
+                quantity: d.quantity,
+                note: d.note,
+                sortOrder: typeof (d as any).sortOrder === 'number' ? (d as any).sortOrder : idx,
+                productionOutputId: d.productionOutputId ?? undefined,
+            }));
+            setUpdatePayload({
+                productionOrderId: fullSlip.productionOrderId,
+                description: fullSlip.description || '',
+                details,
+                mappings: [],
+            });
+            setShowUpdateModal(true);
+        } catch (e) {
+            console.error('Failed to load slip for update', e);
+        }
+    };
+
+    const submitUpdate = async () => {
+        if (!selectedSlip || !updatePayload) return;
+        try {
+            setUpdating(true);
+            const dto = { ...updatePayload, description: updateDescription };
+            const result = await updateInventorySlip(selectedSlip.id, dto);
+            if (result) {
+                setShowUpdateModal(false);
+                setSelectedSlip(null);
+                onRefresh();
+                Swal.fire({
+                    title: 'Cập nhật phiếu thành công!',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 2500,
+                    showCloseButton: true,
+                });
+            } else {
+                Swal.fire({
+                    title: 'Cập nhật phiếu thất bại',
+                    icon: 'error',
+                    confirmButtonText: 'Đã hiểu',
+                });
+            }
+        } finally {
+            setUpdating(false);
+        }
+    };
+
+    // Mount flag for portal & lock body scroll when modal open
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (showUpdateModal) {
+            document.body.style.overflow = 'hidden';
+            const htmlEl = document.documentElement as HTMLElement;
+            const bodyEl = document.body as HTMLElement;
+            const nextEl = document.getElementById('__next') as HTMLElement | null;
+
+            const prev = {
+                htmlTransform: htmlEl.style.transform,
+                bodyTransform: bodyEl.style.transform,
+                nextTransform: nextEl?.style.transform,
+                htmlZoom: (htmlEl.style as any).zoom,
+                bodyZoom: (bodyEl.style as any).zoom,
+                nextZoom: nextEl ? (nextEl.style as any).zoom : undefined,
+            } as any;
+            (window as any).__modal_prev_transform__ = prev;
+
+            htmlEl.style.transform = 'none';
+            bodyEl.style.transform = 'none';
+            if (nextEl) nextEl.style.transform = 'none';
+            (htmlEl.style as any).zoom = '';
+            (bodyEl.style as any).zoom = '';
+            if (nextEl) (nextEl.style as any).zoom = '';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+            const prev = (window as any).__modal_prev_transform__;
+            if (prev) {
+                const htmlEl = document.documentElement as HTMLElement;
+                const bodyEl = document.body as HTMLElement;
+                const nextEl = document.getElementById('__next') as HTMLElement | null;
+                htmlEl.style.transform = prev.htmlTransform || '';
+                bodyEl.style.transform = prev.bodyTransform || '';
+                if (nextEl) nextEl.style.transform = prev.nextTransform || '';
+                (htmlEl.style as any).zoom = prev.htmlZoom || '';
+                (bodyEl.style as any).zoom = prev.bodyZoom || '';
+                if (nextEl) (nextEl.style as any).zoom = prev.nextZoom || '';
+                (window as any).__modal_prev_transform__ = null;
+            }
+        };
+    }, [showUpdateModal]);
+
     if (slips.length === 0) {
         return (
             <div className="text-center py-8 text-gray-500">
@@ -72,6 +192,17 @@ const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
                                 <div className="text-sm text-gray-600">
                                     <p><strong>Ngày tạo:</strong> {new Date(slip.createdAt).toLocaleDateString()}</p>
                                     <p><strong>Người tạo:</strong> {slip.createdByEmployeeName}</p>
+                                    <p><strong>Trạng thái:</strong> 
+                                        {slip.isFinalized ? (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 ml-2">
+                                                Đã cập nhật số lượng
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 ml-2">
+                                                Chưa cập nhật số lượng
+                                            </span>
+                                        )}
+                                    </p>
                                     {slip.description && (
                                         <p><strong>Mô tả:</strong> {slip.description}</p>
                                     )}
@@ -86,6 +217,61 @@ const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
                                     <IconEye className="w-4 h-4" />
                                     {expandedSlips.has(slip.id) ? ' Thu gọn' : ' Chi tiết'}
                                 </button>
+                                {!slip.isFinalized && (
+                                    <button
+                                        onClick={() => openUpdateModal(slip)}
+                                        className="px-3 py-1 text-sm border border-amber-300 text-amber-700 bg-white hover:bg-amber-50 rounded-md transition-colors"
+                                        title="Cập nhật phiếu"
+                                    >
+                                        Cập nhật
+                                    </button>
+                                )}
+                                {!slip.isFinalized && (
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const { default: Swal } = await import('sweetalert2');
+                                                const result = await Swal.fire({
+                                                    title: 'Xác nhận cập nhật số lượng',
+                                                    text: 'Bạn có chắc chắn muốn cập nhật số lượng sản phẩm từ phiếu này lên kho?',
+                                                    icon: 'question',
+                                                    showCancelButton: true,
+                                                    confirmButtonText: 'Cập nhật',
+                                                    cancelButtonText: 'Hủy',
+                                                });
+                                                
+                                                if (result.isConfirmed) {
+                                                    try {
+                                                        await finalizeInventorySlip(slip.id);
+                                                        onRefresh();
+                                                        Swal.fire({
+                                                            title: 'Cập nhật số lượng thành công!',
+                                                            toast: true,
+                                                            position: 'bottom-start',
+                                                            showConfirmButton: false,
+                                                            timer: 3000,
+                                                            showCloseButton: true,
+                                                        });
+                                                    } catch (error) {
+                                                        console.error('Error finalizing slip:', error);
+                                                        Swal.fire({
+                                                            title: 'Lỗi',
+                                                            text: 'Không thể cập nhật số lượng. Vui lòng thử lại.',
+                                                            icon: 'error',
+                                                            confirmButtonText: 'Đã hiểu',
+                                                        });
+                                                    }
+                                                }
+                                            } catch (error) {
+                                                console.error('Error showing confirmation:', error);
+                                            }
+                                        }}
+                                        className="px-3 py-1 text-sm border border-green-300 text-green-700 bg-white hover:bg-green-50 rounded-md transition-colors"
+                                        title="Cập nhật số lượng"
+                                    >
+                                        Cập nhật số lượng
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -94,14 +280,14 @@ const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
                     {expandedSlips.has(slip.id) && (
                         <div className="p-4">
                             <h5 className="font-medium mb-3">Chi tiết phiếu:</h5>
-                            
+
                             {/* For Cut Glass Slips - Show hierarchical structure */}
                             {slip.productionOrderType === 'Cắt kính' ? (
                                 <CutGlassSlipDetails slip={slip} />
                             ) : ['Ghép kính', 'Sản xuất keo', 'Đổ keo'].includes(slip.productionOrderType || '') ? (
                                 /* For material export slips - Show grouped structure */
-                                <MaterialExportSlipDetails 
-                                    slip={slip} 
+                                <MaterialExportSlipDetails
+                                    slip={slip}
                                     expandedMaterials={expandedMaterials}
                                     toggleMaterialsExpanded={toggleMaterialsExpanded}
                                 />
@@ -112,7 +298,6 @@ const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
                                         <thead>
                                             <tr className="bg-gray-50">
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã SP</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên sản phẩm</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượng</th>
@@ -121,12 +306,9 @@ const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {slip.details.map((detail, index) => (
+                                            {(slip.details || []).map((detail, index) => (
                                                 <tr key={detail.id} className="bg-white hover:bg-gray-50">
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-900">
-                                                        {detail.productCode}
-                                                    </td>
                                                     <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
                                                         {detail.productName}
                                                     </td>
@@ -152,13 +334,85 @@ const InventorySlipList = ({ slips, onRefresh }: InventorySlipListProps) => {
                     )}
                 </div>
             ))}
-
-
+            {isMounted && showUpdateModal && selectedSlip && createPortal(
+                <div className="fixed inset-0 z-[1000]">
+                    <div className="fixed inset-0 bg-black/50" onClick={() => !updating && setShowUpdateModal(false)} />
+                    <div data-modal-root="inventory-update" className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-lg">
+                            <div>
+                                <h3 className="text-xl font-semibold text-gray-900">Cập nhật phiếu kho</h3>
+                                <p className="text-sm text-gray-600 mt-1">Mã phiếu: {selectedSlip.slipCode}</p>
+                            </div>
+                            <button onClick={() => !updating && setShowUpdateModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full" title="Đóng">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            {updateType === 'cut-glass' && productionOrderInfo ? (
+                                <div className="">
+                                    {/* Reuse InventorySlipForm for cut-glass with initial data */}
+                                    <InventorySlipForm
+                                        productionOrderInfo={productionOrderInfo}
+                                        initialSlip={selectedSlip}
+                                        isUpdateMode
+                                        onSlipCreated={async (dto: any, mappingInfo?: any) => {
+                                            // For update, reuse update API
+                                            const success = await updateInventorySlip(selectedSlip.id, dto, mappingInfo);
+                                            if (success) {
+                                                setShowUpdateModal(false);
+                                                setSelectedSlip(null);
+                                                onRefresh();
+                                                Swal.fire({ title: 'Cập nhật phiếu thành công!', toast: true, position: 'bottom-start', showConfirmButton: false, timer: 2500, showCloseButton: true });
+                                            }
+                                        }}
+                                        onCancel={() => setShowUpdateModal(false)}
+                                        onRefreshProductionOrderInfo={onRefresh}
+                                    />
+                                </div>
+                            ) : updateType === 'material-export' && productionOrderInfo ? (
+                                <div className="">
+                                    {/* Reuse MaterialExportSlipForm for material-export */}
+                                    <MaterialExportSlipForm
+                                        productionOrderInfo={productionOrderInfo}
+                                        initialSlip={selectedSlip}
+                                        onSlipCreated={async (dto: any) => {
+                                            const success = await updateInventorySlip(selectedSlip.id, dto);
+                                            if (success) {
+                                                setShowUpdateModal(false);
+                                                setSelectedSlip(null);
+                                                onRefresh();
+                                                Swal.fire({ title: 'Cập nhật phiếu thành công!', toast: true, position: 'bottom-start', showConfirmButton: false, timer: 2500, showCloseButton: true });
+                                            }
+                                        }}
+                                        onCancel={() => setShowUpdateModal(false)}
+                                    />
+                                </div>
+                            ) : (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Mô tả</label>
+                                    <textarea
+                                        value={updateDescription}
+                                        onChange={(e) => setUpdateDescription(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md resize-vertical"
+                                        placeholder="Nhập mô tả phiếu..."
+                                        rows={3}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                        <div className="px-6 py-4 border-t flex justify-end gap-3">
+                            <button disabled={updating} onClick={() => setShowUpdateModal(false)} className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">Hủy</button>
+                            {updateType === 'other' && (
+                                <button disabled={updating} onClick={submitUpdate} className={`px-4 py-2 rounded-md text-white ${updating ? 'bg-blue-300' : 'bg-blue-600 hover:bg-blue-700'}`}>{updating ? 'Đang lưu...' : 'Lưu'}</button>
+                            )}
+                        </div>
+                    </div>
+                </div>, document.body)
+            }
         </div>
     );
 };
 
-// Component for displaying cut glass slip details in hierarchical structure
 const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
     const [expandedMaterials, setExpandedMaterials] = useState<Set<number>>(new Set());
 
@@ -172,59 +426,58 @@ const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
         setExpandedMaterials(newExpanded);
     };
 
-    // Separate raw materials from output products
-    // Check for all possible raw material productType values
-    const rawMaterials = slip.details.filter(detail => {
-        const isRawMaterial = detail.productType === 'NVL' || 
-                             detail.productType === 'Nguyên vật liệu' || 
-                             detail.productType === 'raw_material';
-        
-        return isRawMaterial;
-    });
-    
-    const outputProducts = slip.details.filter(detail => {
-        const isOutputProduct = detail.productType === 'Bán thành phẩm' || 
-                               detail.productType === 'BTP' || 
-                               detail.productType === 'semi_finished' ||
-                               detail.productType === 'Kính dư' ||
-                               detail.productType === 'Kính';
-        
-        return isOutputProduct;
-    });
+    const rawMaterials = slip.details.filter(detail =>
+        detail.productId !== null && detail.productType === 'NVL'
+    );
+
+    // get semi finished products from production outputs
+    const semiFinishedProducts = slip.details.filter(detail =>
+        detail.productId !== null &&
+        (detail.productType === 'Bán thành phẩm' || detail.productType === 'BTP' || detail.productType === 'semi_finished')
+    );
+
+    // get waste glass from material_output_mappings
+    const wasteGlass = slip.details.filter(detail =>
+        detail.productId !== null &&
+        (detail.productType === 'Kính dư' || detail.productType === 'Kính')
+    );
+
+    const targetProducts = slip.details.filter(detail =>
+        detail.productId === null // Thành phẩm mục tiêu
+    );
 
     // Create a mapping from raw material to its output products
     const materialOutputMap = new Map<number, InventorySlipDetail[]>();
-    
+
+
+
     // Use the actual mappings from the backend
     rawMaterials.forEach(material => {
         if (material.outputMappings && material.outputMappings.length > 0) {
             // Use actual mappings if available
             const outputs = material.outputMappings.map(mapping => {
-                const outputDetail = outputProducts.find(d => d.id === mapping.outputDetailId);
+                const outputDetail = [...semiFinishedProducts, ...wasteGlass].find(d => d.id === mapping.outputDetailId);
                 return outputDetail;
             }).filter(Boolean) as InventorySlipDetail[];
-            
+
             materialOutputMap.set(material.id, outputs);
         } else {
-            // If no mappings, show empty array (don't show all output products)
             materialOutputMap.set(material.id, []);
         }
     });
 
     return (
         <div className="space-y-4">
-            {/* Raw Materials Section */}
             <div>
                 <h6 className="font-medium text-blue-800 mb-3">Nguyên vật liệu (Kính lớn)</h6>
                 <div className="space-y-3">
                     {rawMaterials.map((material) => {
                         const outputs = materialOutputMap.get(material.id) || [];
                         const isExpanded = expandedMaterials.has(material.id);
-                        
+
                         return (
                             <div key={material.id} className="border rounded-lg overflow-hidden">
-                                {/* Material Header - Clickable */}
-                                <div 
+                                <div
                                     className="bg-blue-50 p-3 cursor-pointer hover:bg-blue-100 transition-colors"
                                     onClick={() => toggleExpanded(material.id)}
                                 >
@@ -240,9 +493,19 @@ const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
                                                     {material.productName}
                                                 </div>
                                                 <div className="text-sm text-blue-700">
-                                                    Mã: {material.productCode} | 
-                                                    Số lượng: {material.quantity} {material.uom || 'cái'} | 
-                                                    {outputs.length > 0 ? ` Tạo ra ${outputs.length} sản phẩm` : ' Chưa có sản phẩm đầu ra'}
+                                                    Số lượng: {material.quantity} {material.uom || 'cái'} |
+                                                    {outputs.length > 0 ? (
+                                                        <>
+                                                            Tạo ra {outputs.length} sản phẩm
+                                                            {targetProducts.length > 0 && (
+                                                                <span className="ml-2 text-green-600">
+                                                                    Thành phẩm mục tiêu: {
+                                                                        targetProducts.reduce((total, target) => total + (target.quantity || 0), 0)
+                                                                    } cái
+                                                                </span>
+                                                            )}
+                                                        </>
+                                                    ) : ' Chưa có sản phẩm đầu ra'}
                                                 </div>
                                             </div>
                                         </div>
@@ -253,35 +516,39 @@ const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
                                 {isExpanded && outputs.length > 0 && (
                                     <div className="border-t bg-white">
                                         <div className="p-3">
-                                                                                         <h6 className="font-medium text-gray-700 mb-2 block">
-                                                 Sản phẩm đầu ra:
-                                             </h6>
+                                            <h6 className="font-medium text-gray-700 mb-2 block">
+                                                Sản phẩm đầu ra:
+                                            </h6>
                                             <div className="space-y-2">
-                                                {outputs.map((output) => (
-                                                    <div key={output.id} className="flex items-center justify-between p-2 bg-gray-50 rounded border-l-4 border-green-400">
-                                                        <div className="flex-1">
-                                                            <div className="font-medium text-gray-800">
-                                                                {output.productName}
-                                                            </div>
-                                                            <div className="text-sm text-gray-600">
-                                                                Mã: {output.productCode} | 
-                                                                Số lượng: {output.quantity} {output.uom || 'cái'} | 
-                                                                Loại: {output.productType}
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center space-x-2">
-                                                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                                                output.productType === 'Bán thành phẩm' || output.productType === 'BTP' || output.productType === 'semi_finished'
-                                                                    ? 'bg-green-100 text-green-800 border border-green-200' 
-                                                                    : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                                                {outputs.map((output) => {
+                                                    const isSemiFinished = semiFinishedProducts.some(p => p.id === output.id);
+                                                    const isWasteGlass = wasteGlass.some(p => p.id === output.id);
+
+                                                    return (
+                                                        <div key={output.id} className={`flex items-center justify-between p-2 rounded border-l-4 ${isSemiFinished
+                                                                ? 'bg-green-50 border-green-400'
+                                                                : 'bg-yellow-50 border-yellow-400'
                                                             }`}>
-                                                                {output.productType === 'Bán thành phẩm' || output.productType === 'BTP' || output.productType === 'semi_finished'
-                                                                    ? 'Bán thành phẩm' 
-                                                                    : 'Kính dư'}
-                                                            </span>
+                                                            <div className="flex-1">
+                                                                <div className="font-medium text-gray-800">
+                                                                    {output.productName}
+                                                                </div>
+                                                                <div className="text-sm text-gray-600">
+                                                                    Số lượng: {output.quantity} {output.uom || 'cái'} |
+                                                                    Loại: {output.productType}
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center space-x-2">
+                                                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${isSemiFinished
+                                                                        ? 'bg-green-100 text-green-800 border border-green-200'
+                                                                        : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                                                                    }`}>
+                                                                    {isSemiFinished ? 'Bán thành phẩm' : 'Kính dư'}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     </div>
@@ -304,25 +571,58 @@ const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
             {/* Summary */}
             <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                 <div className="text-sm text-gray-600">
-                    <p><strong>Tổng cộng:</strong> {rawMaterials.length} nguyên vật liệu, {outputProducts.length} sản phẩm đầu ra</p>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="text-center">
+                            <div className="text-lg font-bold text-blue-600">{rawMaterials.length}</div>
+                            <div className="text-xs text-gray-500">Nguyên vật liệu</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-lg font-bold text-green-600">{semiFinishedProducts.length}</div>
+                            <div className="text-xs text-gray-500">Bán thành phẩm</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-lg font-bold text-orange-600">{wasteGlass.length}</div>
+                            <div className="text-xs text-gray-500">Kính dư</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-lg font-bold text-purple-600">{targetProducts.length}</div>
+                            <div className="text-xs text-gray-500">Thành phẩm mục tiêu</div>
+                        </div>
+                    </div>
+                    {targetProducts.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                            <p className="text-sm text-gray-700">
+                                <strong>🎯 Tổng số lượng thành phẩm sẽ được nhập kho:</strong> {
+                                    targetProducts.reduce((total, target) => total + (target.quantity || 0), 0)
+                                } cái
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
     );
 };
 
-// Component for displaying material export slip details (chemical export, glue butyl)
-const MaterialExportSlipDetails = ({ 
-    slip, 
-    expandedMaterials, 
-    toggleMaterialsExpanded 
-}: { 
+const MaterialExportSlipDetails = ({
+    slip,
+    expandedMaterials,
+    toggleMaterialsExpanded
+}: {
     slip: InventorySlip;
     expandedMaterials: Set<number>;
     toggleMaterialsExpanded: (id: number) => void;
 }) => {
-    // Group details by production_output_id
-    const groupedDetails = slip.details.reduce((groups, detail) => {
+    const targetProducts = slip.details.filter(detail =>
+        detail.productId === null // Thành phẩm mục tiêu
+    );
+
+    const rawMaterials = slip.details.filter(detail =>
+        detail.productId !== null // Nguyên liệu thực
+    );
+
+    // Group nguyên liệu by production_output_id (loại bỏ thành phẩm mục tiêu)
+    const groupedDetails = rawMaterials.reduce((groups, detail) => {
         const key = detail.productionOutputId || 0;
         if (!groups[key]) {
             groups[key] = [];
@@ -331,11 +631,19 @@ const MaterialExportSlipDetails = ({
         return groups;
     }, {} as Record<number, InventorySlipDetail[]>);
 
-    // Get production output info for each group
-    const productionOutputs = slip.details
+    const productionOutputs = rawMaterials
         .filter(d => d.productionOutputId)
         .map(d => d.productionOutputId!)
         .filter((value, index, self) => self.indexOf(value) === index);
+
+    // Helper function to get target product info 
+    const getTargetProductInfo = (productionOutputId: number) => {
+        const targetProduct = slip.details.find(d =>
+            d.productionOutputId === productionOutputId &&
+            d.productId === null // Thành phẩm mục tiêu
+        );
+        return targetProduct;
+    };
 
     return (
         <div className="space-y-4">
@@ -343,11 +651,14 @@ const MaterialExportSlipDetails = ({
                 productionOutputs.map((productionOutputId) => {
                     const materials = groupedDetails[productionOutputId] || [];
                     const isExpanded = expandedMaterials.has(productionOutputId);
-                    
+                    const targetProduct = getTargetProductInfo(productionOutputId);
+
+                    // Chỉ hiển thị nếu có nguyên liệu thực
+                    if (materials.length === 0) return null;
+
                     return (
                         <div key={productionOutputId} className="border border-green-200 rounded-lg overflow-hidden">
-                            {/* Production Output Header - Clickable */}
-                            <div 
+                            <div
                                 className="bg-green-50 p-3 cursor-pointer hover:bg-green-100 transition-colors"
                                 onClick={() => toggleMaterialsExpanded(productionOutputId)}
                             >
@@ -364,11 +675,20 @@ const MaterialExportSlipDetails = ({
                                         )}
                                         <div className="flex-1">
                                             <div className="font-medium text-green-900">
-                                                {materials[0]?.targetProductName || `Sản phẩm mục tiêu #${productionOutputId}`}
+                                                {targetProduct?.note?.replace('Thành phẩm mục tiêu: ', '') || `Sản phẩm mục tiêu #${productionOutputId}`}
                                             </div>
                                             <div className="text-sm text-green-700">
-                                                {materials[0]?.targetProductCode && `Mã: ${materials[0].targetProductCode} | `}
-                                                {materials.length} nguyên liệu được sử dụng
+                                                {targetProduct ? (
+                                                    <>
+                                                        <span className="font-semibold text-green-800 bg-green-100 px-2 py-1 rounded">
+                                                            Số lượng: {targetProduct.quantity} {targetProduct.uom || 'cái'}
+                                                        </span>
+                                                        {' | '}
+                                                    </>
+                                                ) : null}
+                                                <span className="text-blue-600">
+                                                    {materials.length} nguyên liệu được sử dụng
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -390,8 +710,7 @@ const MaterialExportSlipDetails = ({
                                                             {material.productName}
                                                         </div>
                                                         <div className="text-sm text-gray-600">
-                                                            Mã: {material.productCode} | 
-                                                            Số lượng: {material.quantity} {material.uom || 'cái'} | 
+                                                            Số lượng: {material.quantity} {material.uom || 'cái'} |
                                                             Loại: {material.productType}
                                                         </div>
                                                         {material.note && (
@@ -411,14 +730,37 @@ const MaterialExportSlipDetails = ({
                 })
             ) : (
                 <div className="text-center py-8 text-gray-500">
-                    Không có thông tin sản phẩm mục tiêu nào.
+                    <div className="mb-2">
+                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                        </svg>
+                    </div>
+                    <p className="text-lg font-medium text-gray-900 mb-1">Không có thông tin nguyên liệu</p>
+                    <p className="text-sm">Phiếu này không có nguyên liệu nào được định nghĩa</p>
                 </div>
             )}
 
             {/* Summary */}
             <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                 <div className="text-sm text-gray-600">
-                    <p><strong>Tổng cộng:</strong> {productionOutputs.length} sản phẩm mục tiêu, {slip.details.length} nguyên liệu</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="text-center">
+                            <div className="text-lg font-bold text-blue-600">{targetProducts.length}</div>
+                            <div className="text-xs text-gray-500">Sản phẩm mục tiêu</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-lg font-bold text-green-600">{
+                                targetProducts.reduce((total, targetProduct) => {
+                                    return total + (targetProduct.quantity || 0);
+                                }, 0)
+                            }</div>
+                            <div className="text-xs text-gray-500">Tổng số lượng thành phẩm</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-lg font-bold text-orange-600">{rawMaterials.length}</div>
+                            <div className="text-xs text-gray-500">Nguyên liệu</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

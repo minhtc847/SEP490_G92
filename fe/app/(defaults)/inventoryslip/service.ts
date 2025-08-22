@@ -1,6 +1,5 @@
-
 import axios from "@/setup/axios";
-// Types for Inventory Slip
+
 export interface InventorySlipListItem {
     id: number;
     slipCode: string;
@@ -12,11 +11,12 @@ export interface InventorySlipListItem {
     createdByEmployeeName?: string;
     createdAt: string;
     updatedAt: string;
+    isFinalized?: boolean;
 }
 
 export interface InventorySlipDetail {
     id: number;
-    productId: number;
+    productId?: number; 
     productCode?: string;
     productName?: string;
     productType?: string;
@@ -50,6 +50,7 @@ export interface InventorySlip {
     createdAt: string;
     updatedAt: string;
     details: InventorySlipDetail[];
+    isFinalized?: boolean;
 }
 
 export interface CreateInventorySlipDto {
@@ -57,8 +58,6 @@ export interface CreateInventorySlipDto {
     description?: string;
     details: CreateInventorySlipDetailDto[];
     mappings: CreateMaterialOutputMappingDto[];
-    
-    // Thêm trường để lưu số lượng sản phẩm mục tiêu cho phiếu xuất vật liệu
     productionOutputTargets?: ProductionOutputTargetDto[];
 }
 
@@ -68,7 +67,7 @@ export interface ProductionOutputTargetDto {
 }
 
 export interface CreateInventorySlipDetailDto {
-    productId: number;
+    productId?: number; 
     quantity: number;
     note?: string;
     sortOrder: number;
@@ -81,15 +80,20 @@ export interface CreateMaterialOutputMappingDto {
     note?: string;
 }
 
+export interface ProductClassification {
+    index: number;
+    productId: number;
+    productType: 'NVL' | 'Bán thành phẩm' | 'Kính dư';
+    productionOutputId?: number;
+}
+
 export interface ProductionOrderInfo {
     id: number;
     productionOrderCode: string;
     type: string;
     description?: string;
     productionOutputs: ProductionOutput[];
-    availableProducts: ProductInfo[];
-    
-    // Separate lists for cut glass slips
+    availableProducts: ProductInfo[];    
     rawMaterials: ProductInfo[];
     semiFinishedProducts: ProductInfo[];
     glassProducts: ProductInfo[];
@@ -131,7 +135,6 @@ export interface CreateInventoryProductDto {
     unitPrice?: number;
 }
 
-// New interfaces for pagination
 export interface PaginatedProductsDto {
     products: ProductInfo[];
     totalCount: number;
@@ -144,18 +147,17 @@ export interface PaginatedProductsDto {
 
 export interface ProductSearchRequestDto {
     productionOrderId: number;
-    productType?: string; // "NVL", "Bán thành phẩm", "Kính dư"
+    productType?: string;
     searchTerm?: string;
     pageNumber: number;
     pageSize: number;
-    sortBy?: string; // "ProductName", "ProductCode", "Id"
+    sortBy?: string; 
     sortDescending: boolean;
 }
 
-// API calls using axios
 export const fetchAllInventorySlips = async (): Promise<InventorySlipListItem[]> => {
     try {
-        const response = await axios.get('/api/InventorySlip/all');
+        const response = await axios.get<InventorySlipListItem[]>("/api/InventorySlip/all");
         return response.data;
     } catch (error) {
         console.error('Error fetching inventory slips:', error);
@@ -165,7 +167,7 @@ export const fetchAllInventorySlips = async (): Promise<InventorySlipListItem[]>
 
 export const fetchInventorySlipById = async (id: number): Promise<InventorySlip | null> => {
     try {
-        const response = await axios.get(`/api/InventorySlip/${id}`);
+        const response = await axios.get<InventorySlip>(`/api/InventorySlip/${id}`);
         return response.data;
     } catch (error) {
         console.error('Error fetching inventory slip:', error);
@@ -175,7 +177,7 @@ export const fetchInventorySlipById = async (id: number): Promise<InventorySlip 
 
 export const fetchInventorySlipsByProductionOrder = async (productionOrderId: number): Promise<InventorySlip[]> => {
     try {
-        const response = await axios.get(`/api/InventorySlip/production-order/${productionOrderId}`);
+        const response = await axios.get<InventorySlip[]>(`/api/InventorySlip/production-order/${productionOrderId}`);
         return response.data;
     } catch (error) {
         console.error('Error fetching inventory slips by production order:', error);
@@ -185,8 +187,8 @@ export const fetchInventorySlipsByProductionOrder = async (productionOrderId: nu
 
 export const createInventorySlip = async (dto: CreateInventorySlipDto): Promise<InventorySlip | null> => {
     try {
-        const response = await axios.post('/api/InventorySlip/create', dto);
-        return response.data?.data ?? response.data;
+        const response = await axios.post<InventorySlip>("/api/InventorySlip/create", dto);
+        return response.data;
     } catch (error) {
         console.error('Error creating inventory slip:', error);
         return null;
@@ -195,10 +197,55 @@ export const createInventorySlip = async (dto: CreateInventorySlipDto): Promise<
 
 export const createMaterialExportSlip = async (dto: CreateInventorySlipDto): Promise<InventorySlip | null> => {
     try {
-        // Determine which endpoint to use based on production order type
-        // This will be handled by the backend based on the production order type
-        const response = await axios.post('/api/InventorySlip/create', dto);
-        return response.data?.data ?? response.data;
+        let endpoint = "/api/InventorySlip/create";
+        
+        if (dto.productionOutputTargets && dto.productionOutputTargets.length > 0) {
+            endpoint = "/api/InventorySlip/chemical-export";
+        }       
+       
+        const response = await axios.post<any>(endpoint, dto);
+
+        
+        let slipData: any = null;
+        
+        if (response.data && response.data.data) {
+            slipData = response.data.data;
+        } else if (response.data) {
+            slipData = response.data;
+        }
+        
+        if (slipData) {
+            // Ensure the slip data has required fields
+            const transformedSlip: InventorySlip = {
+                id: slipData.id || 0,
+                slipCode: slipData.slipCode || `SLIP-${Date.now()}`,
+                description: slipData.description || '',
+                productionOrderId: slipData.productionOrderId || dto.productionOrderId,
+                productionOrderCode: slipData.productionOrderCode || '',
+                productionOrderType: slipData.productionOrderType || '',
+                createdBy: slipData.createdBy || 0,
+                createdByEmployeeName: slipData.createdByEmployeeName || '',
+                createdAt: slipData.createdAt || new Date().toISOString(),
+                updatedAt: slipData.updatedAt || new Date().toISOString(),
+                details: slipData.details || dto.details.map((detail, index) => ({
+                    id: index,
+                    productId: detail.productId,
+                    productCode: '',
+                    productName: '',
+                    productType: '',
+                    uom: '',
+                    quantity: detail.quantity,
+                    note: detail.note,
+                    sortOrder: detail.sortOrder,
+                    productionOutputId: detail.productionOutputId
+                }))
+            };
+            
+            return transformedSlip;
+        }
+        
+        console.log('No valid data found, returning null');
+        return null;
     } catch (error) {
         console.error('Error creating material export slip:', error);
         return null;
@@ -207,13 +254,29 @@ export const createMaterialExportSlip = async (dto: CreateInventorySlipDto): Pro
 
 export const createCutGlassSlip = async (dto: CreateInventorySlipDto, mappingInfo?: any): Promise<InventorySlip | null> => {
     try {
-        // Prepare request body with both dto and mappingInfo
-        const requestBody = mappingInfo ? { formData: dto, mappingInfo } : dto;
+        // Prepare request body - flatten the structure so productionOrderId is at root level
+        const requestBody = mappingInfo ? { 
+            ...dto,  // This spreads all dto properties to root level
+            ...mappingInfo  // This spreads all mappingInfo properties to root level
+        } : dto;     
+        const response = await axios.post<any>("/api/InventorySlip/cut-glass", requestBody);
+        const result = response.data;
         
-        const response = await axios.post('/api/InventorySlip/cut-glass', requestBody);
-        console.log('createCutGlassSlip response:', response.data);
-        console.log('createCutGlassSlip response.data:', response.data?.data);
-        return response.data?.data ?? response.data;
+        const slipData = result?.data ?? result;
+        
+        if (slipData && mappingInfo?.productClassifications) {
+            try {
+                await processCutGlassSlipCompletion(
+                    dto.productionOrderId,
+                    mappingInfo.productClassifications,
+                    dto.details
+                );
+            } catch (updateError) {
+                console.error('Error updating production outputs or checking completion:', updateError);
+            }
+        }
+        
+        return slipData;
     } catch (error) {
         console.error('Error creating cut glass slip:', error);
         return null;
@@ -222,11 +285,62 @@ export const createCutGlassSlip = async (dto: CreateInventorySlipDto, mappingInf
 
 export const addMappings = async (slipId: number, mappings: CreateMaterialOutputMappingDto[]): Promise<boolean> => {
     try {
-        await axios.post(`/api/InventorySlip/${slipId}/mappings`, mappings);
-        return true;
+        const response = await axios.post(`/api/InventorySlip/${slipId}/mappings`, mappings);
+        return response.status === 200;
     } catch (error) {
         console.error('Error adding mappings:', error);
         return false;
+    }
+};
+
+export const finalizeInventorySlip = async (slipId: number): Promise<boolean> => {
+    try {
+        const response = await axios.put(`/api/InventorySlip/${slipId}/finalize`);
+        return response.status === 200;
+    } catch (error) {
+        console.error('Error finalizing inventory slip:', error);
+        throw error;
+    }
+};
+
+export const updateProductionOutputFinished = async (productionOutputId: number, finishedQuantity: number): Promise<boolean> => {
+    try {
+        // Endpoint này không tồn tại, có thể cần tạo hoặc sử dụng endpoint khác
+        // Tạm thời return true để không block quá trình
+        console.warn(`updateProductionOutputFinished: Endpoint /api/InventorySlip/production-output/${productionOutputId}/finished không tồn tại`);
+        return true;
+    } catch (error) {
+        console.error('Error updating production output finished:', error);
+        return false;
+    }
+};
+
+// Kiểm tra và cập nhật trạng thái lệnh sản xuất
+export const checkAndUpdateProductionOrderStatus = async (productionOrderId: number): Promise<boolean> => {
+    try {
+        const response = await axios.put(`/api/ProductionOrder/${productionOrderId}/check-completion`);
+        return response.status === 200;
+    } catch (error) {
+        console.error('Error checking and updating production order status:', error);
+        return false;
+    }
+};
+
+// Helper function để cập nhật ProductionOutput và kiểm tra hoàn thành
+export const processCutGlassSlipCompletion = async (
+    productionOrderId: number, 
+    productClassifications: ProductClassification[], 
+    details: CreateInventorySlipDetailDto[]
+): Promise<void> => {
+    try {
+        // Backend đã tự động cập nhật ProductionOutput.finished khi tạo phiếu cắt kính
+        // Chỉ cần kiểm tra và cập nhật trạng thái lệnh sản xuất
+        await checkAndUpdateProductionOrderStatus(productionOrderId);
+        
+
+    } catch (error) {
+        console.error('Error processing cut glass slip completion:', error);
+        throw error;
     }
 };
 
@@ -238,9 +352,9 @@ export const deleteInventorySlip = async (id: number): Promise<boolean> => {
         const response = await axios.delete(`/api/InventorySlip/${id}`);
         
         console.log(`deleteInventorySlip: Response status: ${response.status}`);
-        console.log(`deleteInventorySlip: Response ok: ${response.status >= 200 && response.status < 300}`);
+        console.log(`deleteInventorySlip: Response ok: ${response.status === 200}`);
         
-        return response.status >= 200 && response.status < 300;
+        return response.status === 200;
     } catch (error) {
         console.error('Error deleting inventory slip:', error);
         return false;
@@ -249,7 +363,7 @@ export const deleteInventorySlip = async (id: number): Promise<boolean> => {
 
 export const fetchProductionOrderInfo = async (productionOrderId: number): Promise<ProductionOrderInfo | null> => {
     try {
-        const response = await axios.get(`/api/InventorySlip/production-order/${productionOrderId}/info`);
+        const response = await axios.get<ProductionOrderInfo>(`/api/InventorySlip/production-order/${productionOrderId}/info`);
         return response.data;
     } catch (error) {
         console.error('Error fetching production order info:', error);
@@ -257,9 +371,20 @@ export const fetchProductionOrderInfo = async (productionOrderId: number): Promi
     }
 };
 
+// Lấy thông tin ProductionOutput để kiểm tra tiến độ
+export const fetchProductionOutputs = async (productionOrderId: number): Promise<ProductionOutput[]> => {
+    try {
+        const response = await axios.get<ProductionOutput[]>(`/api/InventorySlip/production-order/${productionOrderId}/outputs`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching production outputs:', error);
+        return [];
+    }
+};
+
 export const fetchOutputsFromInputMaterial = async (inputDetailId: number): Promise<InventorySlipDetail[]> => {
     try {
-        const response = await axios.get(`/api/InventorySlip/input-material/${inputDetailId}/outputs`);
+        const response = await axios.get<InventorySlipDetail[]>(`/api/InventorySlip/input-material/${inputDetailId}/outputs`);
         return response.data;
     } catch (error) {
         console.error('Error fetching outputs from input material:', error);
@@ -269,7 +394,7 @@ export const fetchOutputsFromInputMaterial = async (inputDetailId: number): Prom
 
 export const fetchInputMaterialsForOutput = async (outputDetailId: number): Promise<InventorySlipDetail[]> => {
     try {
-        const response = await axios.get(`/api/InventorySlip/output-product/${outputDetailId}/inputs`);
+        const response = await axios.get<InventorySlipDetail[]>(`/api/InventorySlip/output-product/${outputDetailId}/inputs`);
         return response.data;
     } catch (error) {
         console.error('Error fetching input materials for output:', error);
@@ -279,28 +404,28 @@ export const fetchInputMaterialsForOutput = async (outputDetailId: number): Prom
 
 export const createInventoryProduct = async (dto: CreateInventoryProductDto): Promise<ProductInfo | null> => {
     try {
-        const response = await axios.post('/api/InventorySlip/create-product', dto);
-        return response.data?.data ?? response.data;
+        const response = await axios.post<ProductInfo>("/api/InventorySlip/create-product", dto);
+        return response.data;
     } catch (error) {
         console.error('Error creating inventory product:', error);
         return null;
     }
 };
 
-export const updateInventorySlip = async (id: number, dto: CreateInventorySlipDto): Promise<InventorySlip | null> => {
+export const updateInventorySlip = async (id: number, dto: CreateInventorySlipDto, mappingInfo?: any): Promise<InventorySlip | null> => {
     try {
-        const response = await axios.put(`/api/InventorySlip/${id}`, dto);
-        return response.data?.data ?? response.data;
+        const requestBody = mappingInfo ? { ...dto, ...mappingInfo } : dto;
+        const response = await axios.put<any>(`/api/InventorySlip/${id}`, requestBody);
+        return (response.data && response.data.data) ? response.data.data : response.data;
     } catch (error) {
         console.error('Error updating inventory slip:', error);
         return null;
     }
 };
 
-// Paginated product search for cut glass slips
 export const searchProducts = async (request: ProductSearchRequestDto): Promise<PaginatedProductsDto | null> => {
     try {
-        const response = await axios.post('/api/InventorySlip/products/search', request);
+        const response = await axios.post<PaginatedProductsDto>("/api/InventorySlip/products/search", request);
         return response.data;
     } catch (error) {
         console.error('Error searching products:', error);
@@ -308,7 +433,6 @@ export const searchProducts = async (request: ProductSearchRequestDto): Promise<
     }
 };
 
-// Production Material interface and functions
 export interface ProductionMaterial {
     id: number;
     productId: number;
@@ -321,7 +445,7 @@ export interface ProductionMaterial {
 
 export const fetchMaterialsByProductionOutput = async (productionOutputId: number): Promise<ProductionMaterial[]> => {
     try {
-        const response = await axios.get(`/api/InventorySlip/materials/production-output/${productionOutputId}`);
+        const response = await axios.get<ProductionMaterial[]>(`/api/InventorySlip/materials/production-output/${productionOutputId}`);
         return response.data;
     } catch (error) {
         console.error('Error fetching materials by production output:', error);

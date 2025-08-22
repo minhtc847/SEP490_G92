@@ -47,7 +47,7 @@ namespace SEP490.Modules.Accountant.Services
                 {
                     OutputId = po.Id,
                     ProductName = po.ProductName,
-                    Uom = po.UOM.HasValue ? (int)po.UOM.Value : 0,
+                    Uom = ConvertStringUOMToInt(po.Product.UOM),
                     Quantity = po.Amount ?? 0,
                     //Done = po.Done ?? 0
                 })
@@ -125,7 +125,6 @@ namespace SEP490.Modules.Accountant.Services
             }
 
             output.ProductName = dto.ProductName;
-            output.UOM = (UOM)dto.Uom;
             output.Amount = dto.Amount;
 
             await _context.SaveChangesAsync();
@@ -176,7 +175,6 @@ namespace SEP490.Modules.Accountant.Services
             {
                 ProductId = product.Id,
                 ProductName = dto.ProductName,
-                UOM = (UOM)dto.Uom,
                 Amount = dto.Quantity,
                 ProductionOrderId = productionOrderId
             };
