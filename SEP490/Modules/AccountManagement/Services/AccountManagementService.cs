@@ -3,7 +3,6 @@ using SEP490.DB;
 using SEP490.DB.Models;
 using SEP490.Modules.AccountManagement.DTO;
 using SEP490.Common.Services;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace SEP490.Modules.AccountManagement.Services
@@ -17,6 +16,7 @@ namespace SEP490.Modules.AccountManagement.Services
         Task<ServiceResult> DeleteAccountAsync(int id);
         Task<List<EmployeeWithoutAccountResponse>> GetEmployeesWithoutAccountAsync();
         Task<List<RoleResponse>> GetRolesAsync();
+        Task<bool> CheckUsernameExistsAsync(string username);
     }
 
     public class AccountManagementService : BaseScopedService, IAccountManagementService
@@ -223,13 +223,15 @@ namespace SEP490.Modules.AccountManagement.Services
             return roles;
         }
 
+        public async Task<bool> CheckUsernameExistsAsync(string username)
+        {
+            return await _context.Accounts.AnyAsync(a => a.UserName == username);
+        }
+
         private string HashPassword(string password)
         {
-            using (var sha256 = SHA256.Create())
-            {
-                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return Convert.ToBase64String(hashedBytes);
-            }
+            // Use Base64 encoding (same as AuthService) for consistency
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(password));
         }
     }
 }
