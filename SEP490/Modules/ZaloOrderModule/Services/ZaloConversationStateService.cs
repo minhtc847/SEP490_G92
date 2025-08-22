@@ -209,6 +209,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             {
                 ZaloUserId = dbConversation.ZaloUserId,
                 CurrentState = dbConversation.CurrentState,
+                PreviousState = dbConversation.PreviousState,
                 CurrentOrderId = dbConversation.CurrentOrderId,
                 LastActivity = dbConversation.LastActivity,
                 CreatedAt = dbConversation.CreatedAt,
@@ -258,6 +259,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         private void UpdateDatabaseEntity(ZaloConversationState dbConversation, ConversationState conversationState)
         {
             dbConversation.CurrentState = conversationState.CurrentState;
+            dbConversation.PreviousState = conversationState.PreviousState;
             dbConversation.CurrentOrderId = conversationState.CurrentOrderId;
             dbConversation.MessageCount = conversationState.MessageCount;
             dbConversation.LastUserMessage = conversationState.LastUserMessage;

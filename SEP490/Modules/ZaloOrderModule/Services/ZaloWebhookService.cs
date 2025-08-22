@@ -76,8 +76,15 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             // Xử lý tin nhắn text
             var response = await _messageProcessor.ProcessMessageAsync(request.Sender.Id, request.Message.Text);
 
-            // Gửi phản hồi về Zalo
-            await SendMessageToZaloAsync(request.Sender.Id, response.Content);
+            // Gửi phản hồi về Zalo chỉ khi có nội dung
+            if (!string.IsNullOrEmpty(response.Content))
+            {
+                await SendMessageToZaloAsync(request.Sender.Id, response.Content);
+            }
+            else
+            {
+                _logger.LogInformation("No bot response sent for user: {UserId} - message forwarded to staff", request.Sender.Id);
+            }
 
             return new ZaloWebhookResponse { Status = "success", Message = "Text message processed" };
         }

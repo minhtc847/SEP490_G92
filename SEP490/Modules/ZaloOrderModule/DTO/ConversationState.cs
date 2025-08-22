@@ -11,6 +11,9 @@ namespace SEP490.Modules.ZaloOrderModule.DTO
         [JsonPropertyName("currentState")]
         public string CurrentState { get; set; } = UserStates.NEW;
 
+        [JsonPropertyName("previousState")]
+        public string? PreviousState { get; set; }
+
         [JsonPropertyName("currentOrderId")]
         public string? CurrentOrderId { get; set; }
 
@@ -133,12 +136,14 @@ namespace SEP490.Modules.ZaloOrderModule.DTO
         public const string CONFIRMING = "confirming";
         public const string COMPLETED = "completed";
         public const string CANCELLED = "cancelled";
+        public const string CONTACTING_STAFF = "contacting_staff";
     }
 
     public static class MessageIntents
     {
         public const string PLACE_ORDER = "place_order";
         public const string CONTACT_STAFF = "contact_staff";
+        public const string END_STAFF_CONTACT = "end_staff_contact";
         public const string UNKNOWN = "unknown";
         public const string ADD_ORDER_DETAIL = "add_order_detail";
         public const string PHONE_NUMBER = "phone_number";
