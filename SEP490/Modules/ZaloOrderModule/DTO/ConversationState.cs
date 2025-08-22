@@ -5,6 +5,9 @@ namespace SEP490.Modules.ZaloOrderModule.DTO
 {
     public class ConversationState
     {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
         [JsonPropertyName("zaloUserId")]
         public string ZaloUserId { get; set; } = string.Empty;
 
@@ -52,6 +55,9 @@ namespace SEP490.Modules.ZaloOrderModule.DTO
 
         [JsonPropertyName("customerId")]
         public int? CustomerId { get; set; }
+
+        [JsonPropertyName("customerName")]
+        public string? CustomerName { get; set; }
 
         [JsonPropertyName("orderItems")]
         public List<OrderItem> OrderItems { get; set; } = new();

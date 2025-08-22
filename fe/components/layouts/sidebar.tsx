@@ -359,6 +359,18 @@ const Sidebar = () => {
                     </Link>
                 </li>
             );
+            items.push(
+                <li key="conversations" className="menu nav-item">
+                    <Link href="/conversations" className="nav-link group w-full">
+                        <div className="flex items-center">
+                            <IconMenuChat className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Cuộc Hội Thoại Zalo
+                            </span>
+                        </div>
+                    </Link>
+                </li>
+            );
         }
 
         // Glue Management - All roles can view
