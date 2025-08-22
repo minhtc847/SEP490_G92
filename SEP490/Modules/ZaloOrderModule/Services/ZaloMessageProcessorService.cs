@@ -524,12 +524,8 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     };
                 }
 
-                // Save current state and switch to staff contact mode
-                await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
-                {
-                    conv.PreviousState = conv.CurrentState;
-                    conv.CurrentState = UserStates.CONTACTING_STAFF;
-                });
+                // Switch to staff contact mode
+                await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.CONTACTING_STAFF);
 
                 // Check if staff is available
                 var isStaffAvailable = await _staffForwardService.IsStaffAvailableAsync();
@@ -561,19 +557,10 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         {
             try
             {
-                _logger.LogInformation("User {UserId} ended staff contact, returning to previous state: {PreviousState}", zaloUserId, conversation.PreviousState);
+                _logger.LogInformation("User {UserId} ended staff contact, returning to NEW state", zaloUserId);
 
-                // Get the previous state, default to NEW if not set
-                var previousState = !string.IsNullOrEmpty(conversation.PreviousState) 
-                    ? conversation.PreviousState 
-                    : UserStates.NEW;
-
-                // Return to previous state
-                await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
-                {
-                    conv.CurrentState = previousState;
-                    conv.PreviousState = null; // Clear the previous state
-                });
+                // Return to NEW state
+                await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.NEW);
 
                 return new MessageResponse
                 {

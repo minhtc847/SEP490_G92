@@ -11,8 +11,7 @@ namespace SEP490.Modules.ZaloOrderModule.DTO
         [JsonPropertyName("currentState")]
         public string CurrentState { get; set; } = UserStates.NEW;
 
-        [JsonPropertyName("previousState")]
-        public string? PreviousState { get; set; }
+
 
         [JsonPropertyName("currentOrderId")]
         public string? CurrentOrderId { get; set; }

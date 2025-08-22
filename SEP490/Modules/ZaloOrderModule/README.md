@@ -82,8 +82,8 @@ Module xử lý webhook từ Zalo để hỗ trợ đặt hàng qua chat. Module
   - **Trạng thái**: Giữ nguyên `CONTACTING_STAFF`
 
 - **Bước 3**: Người dùng nhắn "Kết thúc" hoặc "Quay lại"
-  - **Phản hồi**: "✅ Đã kết thúc cuộc trò chuyện với nhân viên.\n\n🔄 Bạn đã quay lại trạng thái trước đó.\n\n💡 Bạn có thể tiếp tục sử dụng các lệnh:\n• 'Đặt hàng' - Bắt đầu đặt hàng\n• 'Nhân viên' - Liên hệ nhân viên hỗ trợ\n• 'Hủy' - Hủy đơn hàng hiện tại"
-  - **Trạng thái**: Quay lại trạng thái trước khi vào `CONTACTING_STAFF`
+  - **Phản hồi**: "✅ Đã kết thúc cuộc trò chuyện với nhân viên.\n\n🔄 Bạn đã quay lại trạng thái ban đầu.\n\n💡 Bạn có thể tiếp tục sử dụng các lệnh:\n• 'Đặt hàng' - Bắt đầu đặt hàng\n• 'Nhân viên' - Liên hệ nhân viên hỗ trợ\n• 'Hủy' - Hủy đơn hàng hiện tại"
+  - **Trạng thái**: Quay lại trạng thái `NEW`
 
 ### Lưu ý quan trọng
 - **Chỉ xử lý đúng text**: Phải gõ chính xác "Đặt hàng", "Đơn hàng", "Sản phẩm", "Nhân viên"
@@ -166,7 +166,6 @@ Các lệnh có sẵn:
 - `CustomerPhone`: Số điện thoại khách hàng
 - `CustomerId`: ID khách hàng (nếu tìm thấy)
 - `OrderItems`: Danh sách sản phẩm trong đơn hàng
-- `PreviousState`: Trạng thái trước khi vào chế độ liên hệ nhân viên
 - `IsWaitingForPhone`: Đang chờ số điện thoại
 - `IsWaitingForProductInfo`: Đang chờ thông tin sản phẩm
 
