@@ -338,15 +338,36 @@ namespace SEP490.Modules.ZaloOrderModule.Services
 
         private async Task<MessageResponse> HandlePlaceOrderIntentAsync(string zaloUserId, string message, ConversationState conversation)
         {
-            // Start the order process by asking for phone number
-            await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.WAITING_FOR_PHONE);
-
-            return new MessageResponse
+            // Check if conversation already has customer info
+            if (!string.IsNullOrEmpty(conversation.CustomerPhone) && conversation.CustomerId.HasValue)
             {
-                Content = ZaloWebhookConstants.DefaultMessages.ORDER_START_PHONE_REQUEST,
-                MessageType = "text",
-                Intent = MessageIntents.PLACE_ORDER
-            };
+                // Skip phone number step and go directly to product info
+                await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.WAITING_FOR_PRODUCT_INFO);
+
+                // Use customer name from conversation state if available
+                var customerName = !string.IsNullOrEmpty(conversation.CustomerName) 
+                    ? conversation.CustomerName 
+                    : "Khách hàng";
+
+                return new MessageResponse
+                {
+                    Content = string.Format(ZaloWebhookConstants.DefaultMessages.CUSTOMER_FOUND_ORDER_START, customerName),
+                    MessageType = "text",
+                    Intent = MessageIntents.PLACE_ORDER
+                };
+            }
+            else
+            {
+                // Start the order process by asking for phone number
+                await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.WAITING_FOR_PHONE);
+
+                return new MessageResponse
+                {
+                    Content = ZaloWebhookConstants.DefaultMessages.ORDER_START_PHONE_REQUEST,
+                    MessageType = "text",
+                    Intent = MessageIntents.PLACE_ORDER
+                };
+            }
         }
 
         private async Task<MessageResponse> HandlePhoneNumberIntentAsync(string zaloUserId, string message, ConversationState conversation)
@@ -378,6 +399,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
                     {
                         conv.CustomerId = customer.Id;
+                        conv.CustomerName = customer.CustomerName;
                     });
 
                     await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.WAITING_FOR_PRODUCT_INFO);
@@ -642,12 +664,36 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             }
             else
             {
-                return new MessageResponse
+                // Check if user has customer info to provide personalized welcome message
+                if (!string.IsNullOrEmpty(conversation.CustomerPhone) && conversation.CustomerId.HasValue)
                 {
-                    Content = ZaloWebhookConstants.DefaultMessages.UNKNOWN_INTENT,
-                    MessageType = "text",
-                    Intent = MessageIntents.UNKNOWN
-                };
+                    var customer = await _customerService.GetCustomerByPhoneAsync(conversation.CustomerPhone);
+                    var customerName = customer?.CustomerName ?? "Khách hàng";
+                    
+                    var responseMessage = $"👋 **Xin chào {customerName}!**\n\n";
+                    responseMessage += " **Các chức năng có sẵn:**\n";
+                    responseMessage += "• 🛒 **Đặt hàng** - Đặt hàng kính mới\n";
+                    responseMessage += "• 🔍 **Kiểm tra đơn hàng** - Xem tình trạng đơn hàng của bạn\n";
+                    responseMessage += "• 👨‍💼 **Nhân viên** - Liên hệ nhân viên hỗ trợ\n";
+                    responseMessage += "• ❌ **Hủy** - Hủy bỏ thao tác hiện tại\n\n";
+                    responseMessage += "💡 Hãy nhắn tin để sử dụng các chức năng trên!";
+
+                    return new MessageResponse
+                    {
+                        Content = responseMessage,
+                        MessageType = "text",
+                        Intent = MessageIntents.UNKNOWN
+                    };
+                }
+                else
+                {
+                    return new MessageResponse
+                    {
+                        Content = ZaloWebhookConstants.DefaultMessages.UNKNOWN_INTENT,
+                        MessageType = "text",
+                        Intent = MessageIntents.UNKNOWN
+                    };
+                }
             }
         }
 
