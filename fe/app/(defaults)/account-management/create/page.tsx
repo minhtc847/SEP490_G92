@@ -105,6 +105,11 @@ const CreateAccountPage = () => {
 
         if (!formData.roleId) {
             newErrors.roleId = 'Hãy chọn vai trò';
+        } else {
+            const selectedRole = roles.find(role => role.id === parseInt(formData.roleId));
+            if (!selectedRole) {
+                newErrors.roleId = 'Vai trò được chọn không hợp lệ';
+            }
         }
 
         setErrors(newErrors);

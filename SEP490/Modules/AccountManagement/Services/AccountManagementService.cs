@@ -125,6 +125,12 @@ namespace SEP490.Modules.AccountManagement.Services
                     return new ServiceResult { Success = false, Message = "Vai trò không tồn tại" };
                 }
 
+                // Chỉ cho phép tạo tài khoản với role Sản xuất hoặc Kế toán
+                if (!role.RoleName.ToLower().Contains("sản xuất") && !role.RoleName.ToLower().Contains("kế toán"))
+                {
+                    return new ServiceResult { Success = false, Message = "Chỉ có thể tạo tài khoản cho vai trò Sản xuất hoặc Kế toán" };
+                }
+
                 var passwordHash = HashPassword(request.Password);
                 var account = new Account
                 {
@@ -213,6 +219,7 @@ namespace SEP490.Modules.AccountManagement.Services
         public async Task<List<RoleResponse>> GetRolesAsync()
         {
             var roles = await _context.Roles
+                .Where(r => r.RoleName.ToLower().Contains("sản xuất") || r.RoleName.ToLower().Contains("kế toán"))
                 .Select(r => new RoleResponse
                 {
                     Id = r.Id,
