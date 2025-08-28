@@ -24,6 +24,16 @@ namespace SEP490.Selenium.SaleOrder
             options.AddArgument("--disable-dev-shm-usage");
             options.AddArgument("--disable-gpu");
             options.AddArgument("--window-size=1920,1080");
+
+            options.AddArgument(@"user-data-dir=C:\Users\caomi\AppData\Local\Google\Chrome\User Data");
+            // pick a profile (e.g., "Default" or "Profile 1")
+            options.AddArgument("profile-directory=Profile 1");
+
+            // optional if you run on Windows
+            options.AddArgument("--remote-debugging-port=9222");
+            options.AddExcludedArgument("enable-automation");
+            options.AddAdditionalOption("useAutomationExtension", false);
+
             driver = new ChromeDriver(options);
             wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
             _config = configuration;
@@ -41,12 +51,26 @@ namespace SEP490.Selenium.SaleOrder
         private void Login()
         {
             Thread.Sleep(1500); // Wait for the page to load
-            IWebElement emailInput = wait.Until(drv => drv.FindElement(By.Name("username")));
-            emailInput.SendKeys(_config["Misa:Username"]);
-            IWebElement passwordInput = wait.Until(drv => drv.FindElement(By.Name("pass")));
-            passwordInput.SendKeys(_config["Misa:Password"]);
-            IWebElement loginButton = driver.FindElement(By.CssSelector("#box-login-right > div > div > div.login-form-basic-container > div > div.login-form-btn-container.login-class > button"));
-            loginButton.Click();
+            var emailInputs = wait.Until(d => d.FindElements(By.Name("username")));
+            if (emailInputs.Any())
+            {
+                IWebElement emailInput = emailInputs[0];
+
+                // Clear any prefilled value
+                emailInput.Clear();
+                emailInput.SendKeys(_config["Misa:Username"]);
+
+                IWebElement passwordInput = driver.FindElement(By.Name("pass"));
+                passwordInput.Clear();
+                passwordInput.SendKeys(_config["Misa:Password"]);
+
+                IWebElement loginButton = driver.FindElement(By.CssSelector(
+                    "#box-login-right > div > div > div.login-form-basic-container > div > div.login-form-btn-container.login-class > button"
+                ));
+                loginButton.Click();
+
+                Thread.Sleep(1000);
+            }
             Thread.Sleep(1000);
 
 
@@ -83,6 +107,10 @@ namespace SEP490.Selenium.SaleOrder
         }
         private void AddField(SaleOrderInput soInput)
         {
+
+
+
+
             Thread.Sleep(1000);
             var userDropdownButton = wait.Until(drv => drv.FindElement(By.XPath(
     "//div[div[contains(@class, 'combo-title__text') and text()='Mã khách hàng']]//following::div[contains(@class, 'btn-dropdown')][1]"
