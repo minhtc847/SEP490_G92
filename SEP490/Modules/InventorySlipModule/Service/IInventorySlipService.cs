@@ -13,6 +13,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
         Task<InventorySlipDto> CreateCutGlassSlipAsync(CreateInventorySlipDto dto, MappingInfoDto mappingInfo = null);
         Task<InventorySlipDto> CreateChemicalExportSlipAsync(CreateInventorySlipDto dto);
         Task<InventorySlipDto> CreateGlueButylSlipAsync(CreateInventorySlipDto dto);
+        Task<ExportDto> GetExportInfoBySlipIdAsync(int slipId);
         
         Task<bool> ValidateSlipCreationAsync(CreateInventorySlipDto dto);
         Task<string> GenerateSlipCodeAsync(int productionOrderId);

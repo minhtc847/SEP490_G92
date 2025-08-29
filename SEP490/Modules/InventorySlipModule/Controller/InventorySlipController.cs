@@ -416,6 +416,24 @@ namespace SEP490.Modules.InventorySlipModule.Controller
             }
         }
 
+        [HttpGet("{id}/export-info")]
+        [AllowAnonymous] // Temporary for testing
+        public async Task<IActionResult> GetExportInfo(int id)
+        {
+            try
+            {
+                var result = await _inventorySlipService.GetExportInfoBySlipIdAsync(id);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Lỗi khi lấy dữ liệu export/import!", error = ex.Message });
+            }
+        }
 
 
     }

@@ -1367,5 +1367,132 @@ namespace SEP490.Modules.InventorySlipModule.Service
             };
         }
         
+        public async Task<ExportDto> GetExportInfoBySlipIdAsync(int slipId)
+        {
+            var slip = await _context.InventorySlips
+                .Include(s => s.CreatedByEmployee)
+                .Include(s => s.ProductionOrder)
+                .Include(s => s.Details)
+                    .ThenInclude(d => d.Product)
+                .Include(s => s.Details)
+                    .ThenInclude(d => d.ProductionOutput)
+                        .ThenInclude(po => po.Product)
+                .FirstOrDefaultAsync(s => s.Id == slipId);
+
+            if (slip == null) throw new ArgumentException("Không tìm thấy phiếu kho");
+
+            var exportDto = new ExportDto
+            {
+                EmployeeName = slip.CreatedByEmployee?.FullName
+            };
+
+            if (slip.ProductionOrder?.Type == "Cắt kính")
+            {
+                // For cut glass: inputs (NVL) are export; outputs (semi-finished or waste) are import
+                // Determine product types similar to MapToDtoAsync
+                var productionOutputProductIds = _context.ProductionOutputs
+                    .Where(po => po.ProductionOrderId == slip.ProductionOrderId)
+                    .Select(po => po.ProductId)
+                    .ToList();
+
+                // Load mappings for classification
+                var detailIds = slip.Details.Select(d => d.Id).ToList();
+                var mappings = await _context.MaterialOutputMappings
+                    .Where(m => detailIds.Contains(m.InputDetailId) || detailIds.Contains(m.OutputDetailId))
+                    .ToListAsync();
+
+                foreach (var d in slip.Details.OrderBy(x => x.SortOrder))
+                {
+                    // For cut glass slips:
+                    // - Details that are INPUTS (raw materials) have OutputMappings (they produce other products)
+                    // - Details that are OUTPUTS (semi-finished) have InputMappings (they are produced from other products)
+                    var hasOutputMappings = mappings.Any(m => m.InputDetailId == d.Id);
+                    var hasInputMappings = mappings.Any(m => m.OutputDetailId == d.Id);
+
+                    bool isExport; // true = NVL (xuất kho), false = Bán thành phẩm/Kính dư (nhập kho)
+                    
+                    if (hasOutputMappings)
+                    {
+                        // This detail is an INPUT (raw material) that produces other products
+                        isExport = true; // NVL - xuất kho
+                    }
+                    else if (hasInputMappings)
+                    {
+                        // This detail is an OUTPUT (semi-finished product) produced from other products
+                        isExport = false; // Bán thành phẩm/Kính dư - nhập kho
+                    }
+                    else
+                    {
+                        // No mappings: fallback logic
+                        // If this product is in ProductionOutputs, it's likely a semi-finished product
+                        isExport = !(d.ProductId.HasValue && productionOutputProductIds.Contains(d.ProductId.Value));
+                    }
+
+                    var item = new ExportProductsDto
+                    {
+                        ProductName = d.Product?.ProductName,
+                        ProductQuantity = d.Quantity.ToString(),
+                        Price = d.Product?.UnitPrice?.ToString()
+                    };
+
+                    if (isExport)
+                    {
+                        // NVL - xuất kho
+                        exportDto.ProductsExport.Add(item);
+                    }
+                    else
+                    {
+                        // Bán thành phẩm/Kính dư - nhập kho
+                        exportDto.ProductsImport.Add(new ImportProductsDto
+                        {
+                            ProductName = item.ProductName,
+                            ProductQuantity = item.ProductQuantity,
+                            Price = item.Price
+                        });
+                    }
+                }
+            }
+            else
+            {
+                // Chemical export / Glue butyl:
+                // Details with ProductId != null are materials (export)
+                // Details with ProductId == null and ProductionOutputId set are target products (import)
+                
+                // Group import products by ProductionOutputId to avoid duplicates
+                var importGroups = slip.Details
+                    .Where(d => d.ProductId == null && d.ProductionOutputId.HasValue)
+                    .GroupBy(d => d.ProductionOutputId.Value)
+                    .ToList();
+                
+                foreach (var group in importGroups)
+                {
+                    var firstDetail = group.First();
+                    // Take quantity from first detail only, don't sum to avoid doubling
+                    var quantity = firstDetail.Quantity;
+                    var poName = firstDetail.ProductionOutput?.Product?.ProductName ?? 
+                                firstDetail.Note?.Replace("Thành phẩm mục tiêu: ", "");
+                    
+                    exportDto.ProductsImport.Add(new ImportProductsDto
+                    {
+                        ProductName = poName,
+                        ProductQuantity = quantity.ToString(),
+                        Price = firstDetail.ProductionOutput?.Product?.UnitPrice?.ToString()
+                    });
+                }
+                
+                // Add export products (materials)
+                foreach (var d in slip.Details.Where(d => d.ProductId.HasValue))
+                {
+                    exportDto.ProductsExport.Add(new ExportProductsDto
+                    {
+                        ProductName = d.Product?.ProductName,
+                        ProductQuantity = d.Quantity.ToString(),
+                        Price = d.Product?.UnitPrice?.ToString()
+                    });
+                }
+            }
+
+            return exportDto;
+        }
     }
 }
