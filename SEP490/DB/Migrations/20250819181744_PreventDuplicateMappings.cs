@@ -16,21 +16,16 @@ namespace SEP490.DB.Migrations
                 AND m1.input_detail_id = m2.input_detail_id 
                 AND m1.output_detail_id = m2.output_detail_id
             ");
-
-            // Add unique constraint to prevent duplicate mappings
-            migrationBuilder.CreateIndex(
-                name: "IX_material_output_mappings_input_detail_id_output_detail_id",
-                table: "material_output_mappings",
-                columns: new[] { "input_detail_id", "output_detail_id" },
-                unique: true);
+            
+            // Unique index on (input_detail_id, output_detail_id) already exists
+            // (defined in earlier migration/model snapshot as
+            //  HasIndex("InputDetailId", "OutputDetailId").IsUnique().HasDatabaseName("ix_material_output_mappings_input_detail_id_output_detail_id")).
+            // Do NOT attempt to recreate it here to avoid duplicate key name errors on MySQL.
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Remove the unique constraint
-            migrationBuilder.DropIndex(
-                name: "IX_material_output_mappings_input_detail_id_output_detail_id",
-                table: "material_output_mappings");
+            // Nothing to rollback for the index here because we did not create it in Up().
         }
     }
 }
