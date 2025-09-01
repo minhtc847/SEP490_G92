@@ -47,7 +47,7 @@ namespace SEP490.Selenium.ImportExportInvoice
             driver.Navigate().GoToUrl(importUrl);
 
             //Login();
-            //AddField1(input);
+            AddField1(input);
             AddField2(input);
 
             CloseDriver();
@@ -169,11 +169,11 @@ namespace SEP490.Selenium.ImportExportInvoice
             saveButton[0].Click();
             Thread.Sleep(1000);
 
-            var confirmDiv = driver.FindElement(By.CssSelector("div.ms-message-box--content"));
+            //var confirmDiv = driver.FindElement(By.CssSelector("div.ms-message-box--content"));
 
-            var buttonCo = driver.FindElement(By.XPath("//button[.//div[text()='Có']]"));
-            buttonCo.Click();
-            Thread.Sleep(500);
+            //var buttonCo = driver.FindElement(By.XPath("//button[.//div[text()='Có']]"));
+            //buttonCo.Click();
+            //Thread.Sleep(500);
             var closeBtn = wait.Until(drv => drv.FindElement(
      By.CssSelector("div.close-btn.header-detail-btn")
  ));

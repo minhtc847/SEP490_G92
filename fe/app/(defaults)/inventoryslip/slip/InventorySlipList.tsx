@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { InventorySlip, InventorySlipDetail, MaterialOutputMappingDto, fetchInventorySlipById, updateInventorySlip, finalizeInventorySlip } from '../service';
+import { InventorySlip, InventorySlipDetail, MaterialOutputMappingDto, fetchInventorySlipById, updateInventorySlip, finalizeInventorySlip, callImportExportInvoice, updateMisaStatus } from '../service';
 import InventorySlipForm from './InventorySlipForm';
 import MaterialExportSlipForm from './MaterialExportSlipForm';
 import Swal from 'sweetalert2';
@@ -299,10 +299,18 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                                                 
                                                 if (result.isConfirmed) {
                                                     try {
-                                                        // TODO: Implement API call to update Misa
-                                                        // await updateMisaInventorySlip(slip.id);
+                                                        // Gọi API import-export-invoice
+                                                        const importExportResult = await callImportExportInvoice(slip.id);
+                                                        if (!importExportResult) {
+                                                            throw new Error('Không thể gọi API import-export-invoice');
+                                                        }
                                                         
-                                                        // For now, just show success message
+                                                        // Cập nhật trạng thái isUpdateMisa
+                                                        const updateStatusResult = await updateMisaStatus(slip.id);
+                                                        if (!updateStatusResult) {
+                                                            throw new Error('Không thể cập nhật trạng thái Misa');
+                                                        }
+                                                        
                                                         Swal.fire({
                                                             title: 'Cập nhật lên Misa thành công!',
                                                             toast: true,

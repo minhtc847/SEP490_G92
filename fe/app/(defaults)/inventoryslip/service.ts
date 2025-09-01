@@ -404,3 +404,23 @@ export const fetchMaterialsByProductionOutput = async (productionOutputId: numbe
         return [];
     }
 };
+
+export const callImportExportInvoice = async (slipId: number): Promise<boolean> => {
+    try {
+        const response = await axios.post(`/api/Selenium/import-export-invoice`, slipId);
+        return response.status === 200;
+    } catch (error) {
+        console.error('Error calling import-export-invoice API:', error);
+        return false;
+    }
+};
+
+export const updateMisaStatus = async (slipId: number): Promise<boolean> => {
+    try {
+        const response = await axios.put(`/api/InventorySlip/${slipId}/update-misa-status`);
+        return response.status === 200;
+    } catch (error) {
+        console.error('Error updating Misa status:', error);
+        return false;
+    }
+};

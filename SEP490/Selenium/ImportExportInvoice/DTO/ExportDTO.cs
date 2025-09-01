@@ -4,8 +4,8 @@
     {
         public string EmployeeName { get; set; }
 
-        public List<ImportProductsDTO> ProductsImport { get; set; }
-        public List<ExportProductsDTO> ProductsExport { get; set; }
+        public List<ImportProductsDTO> ProductsImport { get; set; } = new List<ImportProductsDTO>();
+        public List<ExportProductsDTO> ProductsExport { get; set; } = new List<ExportProductsDTO>();
     }
 
     public class ExportProductsDTO

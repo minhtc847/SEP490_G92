@@ -1,4 +1,5 @@
 using SEP490.Modules.InventorySlipModule.DTO;
+using SEP490.Selenium.ImportExportInvoice.DTO;
 
 namespace SEP490.Modules.InventorySlipModule.Service
 {
@@ -13,7 +14,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
         Task<InventorySlipDto> CreateCutGlassSlipAsync(CreateInventorySlipDto dto, MappingInfoDto mappingInfo = null);
         Task<InventorySlipDto> CreateChemicalExportSlipAsync(CreateInventorySlipDto dto);
         Task<InventorySlipDto> CreateGlueButylSlipAsync(CreateInventorySlipDto dto);
-        Task<ExportDto> GetExportInfoBySlipIdAsync(int slipId);
+        Task<ExportDTO> GetExportInfoBySlipIdAsync(int slipId);
         
         Task<bool> ValidateSlipCreationAsync(CreateInventorySlipDto dto);
         Task<string> GenerateSlipCodeAsync(int productionOrderId);
@@ -29,5 +30,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
         Task<bool> FinalizeInventorySlipAsync(int slipId);
 
         Task<InventorySlipDto> UpdateInventorySlipAsync(int id, CreateInventorySlipDto dto, MappingInfoDto mappingInfo = null);
+
+        Task<bool> UpdateMisaStatusAsync(int slipId);
     }
 }

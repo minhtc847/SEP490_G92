@@ -435,6 +435,23 @@ namespace SEP490.Modules.InventorySlipModule.Controller
             }
         }
 
+        [HttpPut("{id}/update-misa-status")]
+        public async Task<IActionResult> UpdateMisaStatus(int id)
+        {
+            try
+            {
+                var slip = await _inventorySlipService.GetInventorySlipByIdAsync(id);
+                if (slip == null)
+                    return NotFound(new { message = "Không tìm thấy phiếu kho." });
+
+                await _inventorySlipService.UpdateMisaStatusAsync(id);
+                return Ok(new { message = "Cập nhật trạng thái MISA thành công!", isUpdateMisa = true });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Cập nhật trạng thái MISA thất bại!", error = ex.Message });
+            }
+        }
 
     }
 }

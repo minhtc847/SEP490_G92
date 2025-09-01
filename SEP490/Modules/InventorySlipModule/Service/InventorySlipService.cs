@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
+using SEP490.Selenium.ImportExportInvoice.DTO;
 
 namespace SEP490.Modules.InventorySlipModule.Service
 {
@@ -1371,7 +1372,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
             };
         }
         
-        public async Task<ExportDto> GetExportInfoBySlipIdAsync(int slipId)
+        public async Task<ExportDTO> GetExportInfoBySlipIdAsync(int slipId)
         {
             var slip = await _context.InventorySlips
                 .Include(s => s.CreatedByEmployee)
@@ -1385,7 +1386,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
 
             if (slip == null) throw new ArgumentException("Không tìm thấy phiếu kho");
 
-            var exportDto = new ExportDto
+            var exportDto = new ExportDTO
             {
                 EmployeeName = slip.CreatedByEmployee?.FullName
             };
@@ -1432,7 +1433,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                         isExport = !(d.ProductId.HasValue && productionOutputProductIds.Contains(d.ProductId.Value));
                     }
 
-                    var item = new ExportProductsDto
+                    var item = new ExportProductsDTO
                     {
                         ProductName = d.Product?.ProductName,
                         ProductQuantity = d.Quantity.ToString(),
@@ -1447,7 +1448,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     else
                     {
                         // Bán thành phẩm/Kính dư - nhập kho
-                        exportDto.ProductsImport.Add(new ImportProductsDto
+                        exportDto.ProductsImport.Add(new ImportProductsDTO
                         {
                             ProductName = item.ProductName,
                             ProductQuantity = item.ProductQuantity,
@@ -1476,7 +1477,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     var poName = firstDetail.ProductionOutput?.Product?.ProductName ?? 
                                 firstDetail.Note?.Replace("Thành phẩm mục tiêu: ", "");
                     
-                    exportDto.ProductsImport.Add(new ImportProductsDto
+                    exportDto.ProductsImport.Add(new ImportProductsDTO
                     {
                         ProductName = poName,
                         ProductQuantity = quantity.ToString(),
@@ -1487,7 +1488,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 // Add export products (materials)
                 foreach (var d in slip.Details.Where(d => d.ProductId.HasValue))
                 {
-                    exportDto.ProductsExport.Add(new ExportProductsDto
+                    exportDto.ProductsExport.Add(new ExportProductsDTO
                     {
                         ProductName = d.Product?.ProductName,
                         ProductQuantity = d.Quantity.ToString(),
@@ -1497,6 +1498,25 @@ namespace SEP490.Modules.InventorySlipModule.Service
             }
 
             return exportDto;
+        }
+
+        public async Task<bool> UpdateMisaStatusAsync(int slipId)
+        {
+            try
+            {
+                var slip = await _context.InventorySlips.FindAsync(slipId);
+                if (slip == null)
+                    return false;
+
+                slip.IsUpdateMisa = true;
+                slip.UpdatedAt = DateTime.Now;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
     }
 }

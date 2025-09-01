@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SEP490.Modules.InventorySlipModule.Service;
 using SEP490.Selenium.ImportExportInvoice;
 using SEP490.Selenium.ImportExportInvoice.DTO;
 using SEP490.Selenium.Product;
@@ -16,11 +17,16 @@ namespace SEP490.Selenium.Controller
         private readonly IMisaProductService _misaProductService;
         private readonly ISeleniumSaleOrderServices _saleOrderServices;
         private readonly IImportExportInvoiceServices _importExportInvoiceServices;
-        public SeleniumController(IMisaProductService misaProductService, ISeleniumSaleOrderServices saleOrderServices, IImportExportInvoiceServices importExportInvoiceServices)
+        private readonly IInventorySlipService _inventoryServices;
+        public SeleniumController(IMisaProductService misaProductService, 
+            ISeleniumSaleOrderServices saleOrderServices, 
+            IImportExportInvoiceServices importExportInvoiceServices,
+            IInventorySlipService inventorySlipService)
         {
             _misaProductService = misaProductService;
             _saleOrderServices = saleOrderServices;
             _importExportInvoiceServices = importExportInvoiceServices;
+            _inventoryServices = inventorySlipService;
 
         }
         [HttpPost("product")]
@@ -36,10 +42,18 @@ namespace SEP490.Selenium.Controller
             return Ok("Add Sale Order Successfully");
         }
 
-        [HttpPost("import-export-invoice")]
-        public IActionResult addImportExportInvoice([FromBody] ExportDTO input)
+        [HttpPost("import-export-invoice-test")]
+        public IActionResult addImportExportInvoiceTest([FromBody] ExportDTO input)
         {
             Task.Run(() => _importExportInvoiceServices.OpenImportPage(input));
+            return Ok("Processing import page...");
+        }
+
+        [HttpPost("import-export-invoice")]
+        public async Task<IActionResult> addImportExportInvoice([FromBody] int slipId)
+        {
+            ExportDTO info = await _inventoryServices.GetExportInfoBySlipIdAsync(slipId);
+            Task.Run(() => _importExportInvoiceServices.OpenImportPage(info));
             return Ok("Processing import page...");
         }
     }
