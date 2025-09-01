@@ -23,6 +23,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         private readonly IZaloChatForwardService _zaloChatForwardService;
         private readonly IZaloPriceCalculationService _priceCalculationService;
         private readonly IZaloOrderService _zaloOrderService;
+        private readonly IZaloStaffForwardService _staffForwardService;
 
         public ZaloMessageProcessorService(
             ILogger<ZaloMessageProcessorService> logger,
@@ -32,7 +33,8 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             IZaloMessageHistoryService messageHistoryService,
             IZaloChatForwardService zaloChatForwardService,
             IZaloPriceCalculationService priceCalculationService,
-            IZaloOrderService zaloOrderService)
+            IZaloOrderService zaloOrderService,
+            IZaloStaffForwardService staffForwardService)
         {
             _logger = logger;
             _conversationStateService = conversationStateService;
@@ -42,6 +44,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             _zaloChatForwardService = zaloChatForwardService;
             _priceCalculationService = priceCalculationService;
             _zaloOrderService = zaloOrderService;
+            _staffForwardService = staffForwardService;
         }
 
         public async Task<MessageResponse> ProcessMessageAsync(string zaloUserId, string message)
@@ -67,12 +70,15 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 // Process based on intent and current state
                 var response = await ProcessIntentAsync(zaloUserId, message, intent, conversation);
 
-                // Store bot response in conversation history
-                await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
+                // Store bot response in conversation history only if there's content
+                if (!string.IsNullOrEmpty(response.Content))
                 {
-                    conv.LastBotResponse = response.Content;
-                    conv.AddMessageToHistory(response.Content, "business");
-                });
+                    await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
+                    {
+                        conv.LastBotResponse = response.Content;
+                        conv.AddMessageToHistory(response.Content, "business");
+                    });
+                }
 
                 return response;
             }
@@ -138,6 +144,20 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 }
                 return MessageIntents.ADD_ORDER_DETAIL;
             }
+
+            // Handle staff contact state
+            if (currentState == UserStates.CONTACTING_STAFF)
+            {
+                if (trimmedMessage.Equals("Kết thúc", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedMessage.Equals("Quay lại", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedMessage.Equals("Thoát", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedMessage.Equals("Exit", StringComparison.OrdinalIgnoreCase))
+                {
+                    return MessageIntents.END_STAFF_CONTACT;
+                }
+                // In staff contact mode, all other messages are treated as direct messages to staff
+                return MessageIntents.CONTACT_STAFF;
+            }
         
             
             if (trimmedMessage.Equals("Đặt hàng", StringComparison.OrdinalIgnoreCase))
@@ -170,6 +190,9 @@ namespace SEP490.Modules.ZaloOrderModule.Services
 
                 case MessageIntents.CONTACT_STAFF:
                     return await HandleContactStaffIntentAsync(zaloUserId, message, conversation);
+                
+                case MessageIntents.END_STAFF_CONTACT:
+                    return await HandleEndStaffContactIntentAsync(zaloUserId, message, conversation);
                 
                 case MessageIntents.CANCEL:
                     return await HandleCancelIntentAsync(zaloUserId, message, conversation);
@@ -315,15 +338,36 @@ namespace SEP490.Modules.ZaloOrderModule.Services
 
         private async Task<MessageResponse> HandlePlaceOrderIntentAsync(string zaloUserId, string message, ConversationState conversation)
         {
-            // Start the order process by asking for phone number
-            await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.WAITING_FOR_PHONE);
-
-            return new MessageResponse
+            // Check if conversation already has customer info
+            if (!string.IsNullOrEmpty(conversation.CustomerPhone) && conversation.CustomerId.HasValue)
             {
-                Content = ZaloWebhookConstants.DefaultMessages.ORDER_START_PHONE_REQUEST,
-                MessageType = "text",
-                Intent = MessageIntents.PLACE_ORDER
-            };
+                // Skip phone number step and go directly to product info
+                await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.WAITING_FOR_PRODUCT_INFO);
+
+                // Use customer name from conversation state if available
+                var customerName = !string.IsNullOrEmpty(conversation.CustomerName) 
+                    ? conversation.CustomerName 
+                    : "Khách hàng";
+
+                return new MessageResponse
+                {
+                    Content = string.Format(ZaloWebhookConstants.DefaultMessages.CUSTOMER_FOUND_ORDER_START, customerName),
+                    MessageType = "text",
+                    Intent = MessageIntents.PLACE_ORDER
+                };
+            }
+            else
+            {
+                // Start the order process by asking for phone number
+                await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.WAITING_FOR_PHONE);
+
+                return new MessageResponse
+                {
+                    Content = ZaloWebhookConstants.DefaultMessages.ORDER_START_PHONE_REQUEST,
+                    MessageType = "text",
+                    Intent = MessageIntents.PLACE_ORDER
+                };
+            }
         }
 
         private async Task<MessageResponse> HandlePhoneNumberIntentAsync(string zaloUserId, string message, ConversationState conversation)
@@ -355,6 +399,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     await _conversationStateService.UpdateConversationDataAsync(zaloUserId, conv =>
                     {
                         conv.CustomerId = customer.Id;
+                        conv.CustomerName = customer.CustomerName;
                     });
 
                     await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.WAITING_FOR_PRODUCT_INFO);
@@ -466,25 +511,97 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             }
         }
 
-
+        /// <summary>
+        /// Handles contact staff intent - either initiates staff contact or forwards messages to staff
+        /// </summary>
+        /// <param name="zaloUserId">Zalo user ID</param>
+        /// <param name="message">User message</param>
+        /// <param name="conversation">Current conversation state</param>
+        /// <returns>Message response</returns>
         private async Task<MessageResponse> HandleContactStaffIntentAsync(string zaloUserId, string message, ConversationState conversation)
         {
-            return new MessageResponse
+            try
             {
-                Content = "👨‍💼 Liên hệ nhân viên hỗ trợ:\n\n" +
-                         "📞 Hotline: 1900-xxxx\n" +
-                         "📧 Email: support@vngglass.com\n" +
-                         "💬 Zalo: @vngglass_support\n" +
-                         "🌐 Website: www.vngglass.com\n\n" +
-                         "⏰ Giờ làm việc:\n" +
-                         "• Thứ 2 - Thứ 6: 8:00 - 18:00\n" +
-                         "• Thứ 7: 8:00 - 12:00\n" +
-                         "• Chủ nhật: Nghỉ\n\n" +
-                         "Nhân viên sẽ phản hồi trong vòng 15 phút!",
-                MessageType = "text",
-                Intent = MessageIntents.CONTACT_STAFF,
-               
-            };
+                _logger.LogInformation("User {UserId} requested staff contact from state: {CurrentState}", zaloUserId, conversation.CurrentState);
+
+                // If already in staff contact mode, just forward the message
+                if (conversation.CurrentState == UserStates.CONTACTING_STAFF)
+                {
+                    // Forward message to staff
+                    await _staffForwardService.ForwardToStaffAsync(zaloUserId, message, new
+                    {
+                        UserId = zaloUserId,
+                        CustomerPhone = conversation.CustomerPhone,
+                        CustomerId = conversation.CustomerId,
+                        MessageCount = conversation.MessageCount,
+                        CurrentState = conversation.CurrentState
+                    });
+
+                    // This is a direct message to staff - no bot response needed
+                    return new MessageResponse
+                    {
+                        Content = "", // Empty content means no bot response
+                        MessageType = "text",
+                        Intent = MessageIntents.CONTACT_STAFF
+                    };
+                }
+
+                // Switch to staff contact mode
+                await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.CONTACTING_STAFF);
+
+                // Check if staff is available
+                var isStaffAvailable = await _staffForwardService.IsStaffAvailableAsync();
+                var responseMessage = isStaffAvailable 
+                    ? ZaloWebhookConstants.DefaultMessages.STAFF_CONTACT_START
+                    : "👨‍💼 Hiện tại nhân viên không có mặt. Vui lòng thử lại trong giờ làm việc (8:00 - 18:00, Thứ 2 - Thứ 7).\n\n📞 Hoặc bạn có thể liên hệ:\n• Hotline: 1900-xxxx\n• Email: support@vngglass.com";
+
+                return new MessageResponse
+                {
+                    Content = responseMessage,
+                    MessageType = "text",
+                    Intent = MessageIntents.CONTACT_STAFF
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling contact staff intent for user: {UserId}", zaloUserId);
+                
+                return new MessageResponse
+                {
+                    Content = "❌ Có lỗi xảy ra khi kết nối với nhân viên. Vui lòng thử lại sau.",
+                    MessageType = "text",
+                    Intent = MessageIntents.CONTACT_STAFF
+                };
+            }
+        }
+
+        private async Task<MessageResponse> HandleEndStaffContactIntentAsync(string zaloUserId, string message, ConversationState conversation)
+        {
+            try
+            {
+                _logger.LogInformation("User {UserId} ended staff contact, returning to NEW state", zaloUserId);
+
+                // Return to NEW state
+                await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.NEW);
+
+                return new MessageResponse
+                {
+                    Content = ZaloWebhookConstants.DefaultMessages.STAFF_CONTACT_END,
+                    MessageType = "text",
+                    Intent = MessageIntents.END_STAFF_CONTACT
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling end staff contact intent for user: {UserId}", zaloUserId);
+                
+                return new MessageResponse
+                {
+                    Content = "❌ Có lỗi xảy ra khi kết thúc liên hệ nhân viên hỗ trợ. Vui lòng thử lại sau.",
+                    MessageType = "text",
+                    Intent = MessageIntents.END_STAFF_CONTACT
+                };
+            }
         }
 
         private async Task<MessageResponse> HandleCancelIntentAsync(string zaloUserId, string message, ConversationState conversation)
@@ -493,6 +610,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             {
                 _logger.LogInformation("User {UserId} cancelled the conversation", zaloUserId);
                 
+                await _conversationStateService.UpdateConversationStateAsync(zaloUserId, UserStates.CANCELLED);
                 await _conversationStateService.DeleteConversationAsync(zaloUserId);
 
                 // // Reset conversation state to NEW instead of deleting
@@ -547,12 +665,36 @@ namespace SEP490.Modules.ZaloOrderModule.Services
             }
             else
             {
-                return new MessageResponse
+                // Check if user has customer info to provide personalized welcome message
+                if (!string.IsNullOrEmpty(conversation.CustomerPhone) && conversation.CustomerId.HasValue)
                 {
-                    Content = ZaloWebhookConstants.DefaultMessages.UNKNOWN_INTENT,
-                    MessageType = "text",
-                    Intent = MessageIntents.UNKNOWN
-                };
+                    var customer = await _customerService.GetCustomerByPhoneAsync(conversation.CustomerPhone);
+                    var customerName = customer?.CustomerName ?? "Khách hàng";
+                    
+                    var responseMessage = $"👋 **Xin chào {customerName}!**\n\n";
+                    responseMessage += " **Các chức năng có sẵn:**\n";
+                    responseMessage += "• 🛒 **Đặt hàng** - Đặt hàng kính mới\n";
+                    responseMessage += "• 🔍 **Kiểm tra đơn hàng** - Xem tình trạng đơn hàng của bạn\n";
+                    responseMessage += "• 👨‍💼 **Nhân viên** - Liên hệ nhân viên hỗ trợ\n";
+                    responseMessage += "• ❌ **Hủy** - Hủy bỏ thao tác hiện tại\n\n";
+                    responseMessage += "💡 Hãy nhắn tin để sử dụng các chức năng trên!";
+
+                    return new MessageResponse
+                    {
+                        Content = responseMessage,
+                        MessageType = "text",
+                        Intent = MessageIntents.UNKNOWN
+                    };
+                }
+                else
+                {
+                    return new MessageResponse
+                    {
+                        Content = ZaloWebhookConstants.DefaultMessages.UNKNOWN_INTENT,
+                        MessageType = "text",
+                        Intent = MessageIntents.UNKNOWN
+                    };
+                }
             }
         }
 

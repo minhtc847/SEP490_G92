@@ -11,7 +11,7 @@ namespace SEP490.DB.Models
         
         [Required]
         public string CurrentState { get; set; } = "new";
-        
+
         public string? CurrentOrderId { get; set; }
         
         public DateTime LastActivity { get; set; } = DateTime.UtcNow;

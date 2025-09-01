@@ -91,6 +91,10 @@ namespace SEP490.Modules.ZaloOrderModule.Constants
             public const string NO_PRODUCTS_IN_ORDER = "❌ Chưa có sản phẩm nào trong đơn hàng. Vui lòng nhập thông tin sản phẩm trước:";
             public const string ORDER_COMPLETED_SUCCESS = "✅ Đây là tóm tắt đơn hàng của bạn!\n\n{0}\n\n1. Nhắn \"Xác nhận\" để lên đơn hàng.\n2. Nhắn \"Hủy\" để hủy đơn hàng.\n3. Nếu cần chỉnh sửa hãy tiếp tục chỉnh sửa.";
             public const string ORDER_CANCELLED_AND_DELETED = "✅ Đã hủy đơn hàng. Cảm ơn bạn đã sử dụng dịch vụ!\n\n🔄 Nếu cần hỗ trợ, hãy gửi tin nhắn 'Đặt hàng' để bắt đầu lại.";
+            
+            // Staff contact flow messages
+            public const string STAFF_CONTACT_START = "👨‍💼 Bạn đã được kết nối với nhân viên hỗ trợ!\n\n💬 Bạn có thể nhắn tin trực tiếp với nhân viên. Nhân viên sẽ phản hồi trong vòng 15 phút.\n\n🔚 Để kết thúc cuộc trò chuyện với nhân viên, hãy nhắn 'Kết thúc' hoặc 'Quay lại'.";
+            public const string STAFF_CONTACT_END = "✅ Đã kết thúc cuộc trò chuyện với nhân viên.\n\n🔄 Bạn đã quay lại trạng thái trước đó.\n\n💡 Bạn có thể tiếp tục sử dụng các lệnh:\n• 'Đặt hàng' - Bắt đầu đặt hàng\n• 'Nhân viên' - Liên hệ nhân viên hỗ trợ\n• 'Hủy' - Hủy đơn hàng hiện tại";
         }
 
     }

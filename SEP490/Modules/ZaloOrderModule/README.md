@@ -71,6 +71,20 @@ Module xử lý webhook từ Zalo để hỗ trợ đặt hàng qua chat. Module
 - **Phản hồi**: Thông tin liên hệ và giờ làm việc
 - **Trạng thái**: Kết thúc cuộc hội thoại
 
+### 4. "Nhân viên" - Chế độ liên hệ trực tiếp
+- **Bước 1**: Người dùng nhắn "Nhân viên"
+  - **Phản hồi**: "👨‍💼 Bạn đã được kết nối với nhân viên hỗ trợ!\n\n💬 Bạn có thể nhắn tin trực tiếp với nhân viên. Nhân viên sẽ phản hồi trong vòng 15 phút.\n\n🔚 Để kết thúc cuộc trò chuyện với nhân viên, hãy nhắn 'Kết thúc' hoặc 'Quay lại'."
+  - **Trạng thái**: Chuyển sang `CONTACTING_STAFF`
+
+- **Bước 2**: Người dùng nhắn tin tự do
+  - **Xử lý**: Tin nhắn được forward đến nhân viên thực
+  - **Bot response**: Không có (để nhân viên trả lời trực tiếp)
+  - **Trạng thái**: Giữ nguyên `CONTACTING_STAFF`
+
+- **Bước 3**: Người dùng nhắn "Kết thúc" hoặc "Quay lại"
+  - **Phản hồi**: "✅ Đã kết thúc cuộc trò chuyện với nhân viên.\n\n🔄 Bạn đã quay lại trạng thái ban đầu.\n\n💡 Bạn có thể tiếp tục sử dụng các lệnh:\n• 'Đặt hàng' - Bắt đầu đặt hàng\n• 'Nhân viên' - Liên hệ nhân viên hỗ trợ\n• 'Hủy' - Hủy đơn hàng hiện tại"
+  - **Trạng thái**: Quay lại trạng thái `NEW`
+
 ### Lưu ý quan trọng
 - **Chỉ xử lý đúng text**: Phải gõ chính xác "Đặt hàng", "Đơn hàng", "Sản phẩm", "Nhân viên"
 - **Không phân biệt hoa thường**: "đặt hàng" = "Đặt hàng" = "ĐẶT HÀNG"
@@ -96,7 +110,9 @@ ZaloOrderModule/
 │   ├── ZaloResponseService.cs       # Tạo phản hồi
 │   ├── ZaloConversationStateService.cs # Quản lý trạng thái (Database)
 │   ├── IZaloCustomerService.cs      # Interface customer service
-│   └── ZaloCustomerService.cs       # Service tìm kiếm customer
+│   ├── ZaloCustomerService.cs       # Service tìm kiếm customer
+│   ├── IZaloStaffForwardService.cs  # Interface staff forward service
+│   └── ZaloStaffForwardService.cs   # Service forward tin nhắn đến nhân viên
 ```
 
 ## Database Models
@@ -144,6 +160,7 @@ Các lệnh có sẵn:
 ### Các trạng thái mới
 - `WAITING_FOR_PHONE`: Đang chờ người dùng nhập số điện thoại
 - `WAITING_FOR_PRODUCT_INFO`: Đang chờ người dùng nhập thông tin sản phẩm
+- `CONTACTING_STAFF`: Đang trong chế độ liên hệ với nhân viên
 
 ### Dữ liệu cuộc hội thoại
 - `CustomerPhone`: Số điện thoại khách hàng

@@ -34,19 +34,29 @@ namespace SEP490.Modules.ZaloOrderModule.Services
         {
             try
             {
-                var existingConversation = await _context.ZaloConversationStates
+                // First, check for active conversation
+                var existingActiveConversation = await _context.ZaloConversationStates
                     .Include(cs => cs.MessageHistory)
                     .Include(cs => cs.OrderItems)
+                    .Include(cs => cs.Customer)
                     .FirstOrDefaultAsync(cs => cs.ZaloUserId == zaloUserId && cs.IsActive);
 
-                if (existingConversation != null)
+                if (existingActiveConversation != null)
                 {
                     // Update last activity
-                    existingConversation.LastActivity = DateTime.UtcNow;
+                    existingActiveConversation.LastActivity = DateTime.UtcNow;
                     await _context.SaveChangesAsync();
 
-                    return MapToConversationState(existingConversation);
+                    return MapToConversationState(existingActiveConversation);
                 }
+
+                // If no active conversation, check for any previous conversations with customer info
+                var previousConversationWithCustomerInfo = await _context.ZaloConversationStates
+                    .Where(cs => cs.ZaloUserId == zaloUserId && 
+                                !string.IsNullOrEmpty(cs.CustomerPhone) && 
+                                cs.CustomerId.HasValue)
+                    .OrderByDescending(cs => cs.LastActivity)
+                    .FirstOrDefaultAsync();
 
                 // Create new conversation
                 var newConversation = new ZaloConversationState
@@ -58,10 +68,33 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                     IsActive = true
                 };
 
+                // If we found a previous conversation with customer info, copy it to the new conversation
+                if (previousConversationWithCustomerInfo != null)
+                {
+                    newConversation.CustomerPhone = previousConversationWithCustomerInfo.CustomerPhone;
+                    newConversation.CustomerId = previousConversationWithCustomerInfo.CustomerId;
+                    
+                    // Get customer name from the customer service if we have customer ID
+                    if (previousConversationWithCustomerInfo.CustomerId.HasValue)
+                    {
+                        var customer = await _context.Customers
+                            .FirstOrDefaultAsync(c => c.Id == previousConversationWithCustomerInfo.CustomerId.Value);
+                        if (customer != null)
+                        {
+                            newConversation.Customer = customer;
+                        }
+                    }
+                    
+                    _logger.LogInformation("Created new conversation for user: {UserId} with existing customer info (Phone: {Phone}, CustomerId: {CustomerId})", 
+                        zaloUserId, previousConversationWithCustomerInfo.CustomerPhone, previousConversationWithCustomerInfo.CustomerId);
+                }
+                else
+                {
+                    _logger.LogInformation("Created new conversation for user: {UserId} without existing customer info", zaloUserId);
+                }
+
                 _context.ZaloConversationStates.Add(newConversation);
                 await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Created new conversation for user: {UserId}", zaloUserId);
                 
                 return MapToConversationState(newConversation);
             }
@@ -114,6 +147,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 var conversation = await _context.ZaloConversationStates
                     .Include(cs => cs.MessageHistory)
                     .Include(cs => cs.OrderItems)
+                    .Include(cs => cs.Customer)
                     .FirstOrDefaultAsync(cs => cs.ZaloUserId == zaloUserId && cs.IsActive);
 
                 if (conversation != null)
@@ -170,6 +204,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 var conversation = await _context.ZaloConversationStates
                     .Include(cs => cs.MessageHistory)
                     .Include(cs => cs.OrderItems)
+                    .Include(cs => cs.Customer)
                     .FirstOrDefaultAsync(cs => cs.ZaloUserId == zaloUserId && cs.IsActive);
 
                 if (conversation != null)
@@ -221,6 +256,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 UserName = dbConversation.UserName,
                 CustomerPhone = dbConversation.CustomerPhone,
                 CustomerId = dbConversation.CustomerId,
+                CustomerName = dbConversation.Customer?.CustomerName,
                 OrderItems = dbConversation.OrderItems.Select(MapToOrderItem).ToList(),
                 MessageHistory = dbConversation.MessageHistory.Select(MapToConversationMessage).ToList(),
                 LastLLMResponse = !string.IsNullOrEmpty(dbConversation.LastLLMResponseJson) 
