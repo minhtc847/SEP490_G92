@@ -749,6 +749,21 @@ export default function InventorySlipForm({
         // no-op: confirm handled by SweetAlert2
     };
 
+    const handleReset = () => {
+        setFormData({
+            productionOrderId: productionOrderInfo.id,
+            description: '',
+            details: [],
+            mappings: []
+        });
+        setTempMappings([]);
+        setMappingDisplay({});
+        setRawMaterialDetailIndices(new Set());
+        setLocalNewProducts([]);
+        setSelectedRawMaterial(null);
+        setSelectedRawMaterialIndex(null);
+    };
+
 
 
     const isUpdate = Boolean(isUpdateMode || initialSlip);
@@ -757,13 +772,6 @@ export default function InventorySlipForm({
 
     return (
         <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow">
-            {/* Header với nút quay lại */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-4">
-                    <h2 className="text-2xl font-bold mb-6">{headerTitle}</h2>
-                </div>
-            </div>
-
             <form onSubmit={handleSubmit}>
                 {/* Production Order Info (simplified) */}
                 <div className="grid grid-cols-1 gap-4 mb-6">
@@ -1443,12 +1451,6 @@ export default function InventorySlipForm({
                     <div className="fixed inset-0 z-[1101]">
                         <div className="fixed inset-0 bg-black/50" onClick={() => setShowRawMaterialForm(false)} />
                         <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-semibold text-gray-900">Thêm nguyên vật liệu (Kính lớn)</h2>
-                                <button onClick={() => setShowRawMaterialForm(false)} className="text-gray-400 hover:text-gray-600">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                </button>
-                            </div>
                             <RawMaterialForm
                                 productionOrderInfo={productionOrderInfo}
                                 onRawMaterialAdded={handleRawMaterialAdded}
@@ -1463,12 +1465,6 @@ export default function InventorySlipForm({
                     <div className="fixed inset-0 z-[1101]">
                         <div className="fixed inset-0 bg-black/50" onClick={() => setShowSemiFinishedForm(false)} />
                         <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-semibold text-gray-900">Thêm bán thành phẩm (Kính nhỏ)</h2>
-                                <button onClick={() => setShowSemiFinishedForm(false)} className="text-gray-400 hover:text-gray-600">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                </button>
-                            </div>
                             <SemiFinishedProductForm
                                 productionOrderInfo={productionOrderInfo}
                                 onSemiFinishedProductAdded={handleSemiFinishedProductAdded}
@@ -1484,12 +1480,6 @@ export default function InventorySlipForm({
                     <div className="fixed inset-0 z-[1101]">
                         <div className="fixed inset-0 bg-black/50" onClick={() => setShowGlassProductForm(false)} />
                         <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-semibold text-gray-900">Thêm kính dư (Tái sử dụng)</h2>
-                                <button onClick={() => setShowGlassProductForm(false)} className="text-gray-400 hover:text-gray-600">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                </button>
-                            </div>
                             <GlassProductForm
                                 productionOrderInfo={productionOrderInfo}
                                 onGlassProductAdded={handleGlassProductAdded}
@@ -1506,10 +1496,10 @@ export default function InventorySlipForm({
                 <div className="flex justify-end space-x-4 pt-6 border-t">
                     <button
                         type="button"
-                        onClick={onCancel}
+                        onClick={handleReset}
                         className="px-6 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
                     >
-                        Hủy
+                        Reset
                     </button>
                     <button
                         type="submit"

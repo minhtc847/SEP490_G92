@@ -401,7 +401,6 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                             )}
                         </div>
                         <div className="px-6 py-4 border-t flex justify-end gap-3">
-                            <button disabled={updating} onClick={() => setShowUpdateModal(false)} className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">Hủy</button>
                             {updateType === 'other' && (
                                 <button disabled={updating} onClick={submitUpdate} className={`px-4 py-2 rounded-md text-white ${updating ? 'bg-blue-300' : 'bg-blue-600 hover:bg-blue-700'}`}>{updating ? 'Đang lưu...' : 'Lưu'}</button>
                             )}

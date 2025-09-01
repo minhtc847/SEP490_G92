@@ -533,10 +533,7 @@ const ProductionOrderInventorySlipPage = () => {
                             <div>
                                 <h3 className="text-xl font-semibold text-gray-900">
                                     Tạo phiếu cắt kính
-                                </h3>
-                                <p className="text-sm text-gray-600 mt-1">
-                                    Lệnh sản xuất: {productionOrderInfo?.productionOrderCode}
-                                </p>
+                                </h3>                                
                             </div>
                             <button
                                 onClick={() => setShowCutGlassForm(false)}
