@@ -62,7 +62,7 @@ namespace SEP490.Selenium.ImportExportInvoice
         {
             driver.Navigate().GoToUrl(importUrl);
 
-            //Login();
+            Login();
             AddField1(input);
             AddField2(input);
 
@@ -70,30 +70,30 @@ namespace SEP490.Selenium.ImportExportInvoice
         }
         private void Login()
         {
-            Thread.Sleep(1500); // Wait for the page to load
-            IWebElement emailInput = wait.Until(drv => drv.FindElement(By.Name("username")));
-            emailInput.SendKeys(_config["Misa:Username"]);
-            IWebElement passwordInput = wait.Until(drv => drv.FindElement(By.Name("pass")));
-            passwordInput.SendKeys(_config["Misa:Password"]);
-            IWebElement loginButton = driver.FindElement(By.CssSelector("#box-login-right > div > div > div.login-form-basic-container > div > div.login-form-btn-container.login-class > button"));
-            loginButton.Click();
-            Thread.Sleep(1000);
+            //Thread.Sleep(1500); // Wait for the page to load
+            //IWebElement emailInput = wait.Until(drv => drv.FindElement(By.Name("username")));
+            //emailInput.SendKeys(_config["Misa:Username"]);
+            //IWebElement passwordInput = wait.Until(drv => drv.FindElement(By.Name("pass")));
+            //passwordInput.SendKeys(_config["Misa:Password"]);
+            //IWebElement loginButton = driver.FindElement(By.CssSelector("#box-login-right > div > div > div.login-form-basic-container > div > div.login-form-btn-container.login-class > button"));
+            //loginButton.Click();
+            //Thread.Sleep(1000);
 
 
-            // Ấn skip nếu có
-            ClickIfExists(By.XPath("/html/body/div[5]/div/i"), driver, wait);
+            //// Ấn skip nếu có
+            //ClickIfExists(By.XPath("/html/body/div[5]/div/i"), driver, wait);
 
-            Thread.Sleep(1000);
+            //Thread.Sleep(1000);
 
-            // Đợi loading biến mất
-            wait.Until(d => d.FindElement(By.Id("loading-bg")).GetAttribute("style").Contains("display: none"));
+            //// Đợi loading biến mất
+            //wait.Until(d => d.FindElement(By.Id("loading-bg")).GetAttribute("style").Contains("display: none"));
 
-            // Ấn continue nếu có
-            ClickIfExists(
-                By.CssSelector("#app > div.w-full.overflow-auto.h-full > div > div > div.cnl-box-container.flexed > div > div.flexed-row.buttons > div:nth-child(1) > button > div"),
-                driver,
-                wait
-            );
+            //// Ấn continue nếu có
+            //ClickIfExists(
+            //    By.CssSelector("#app > div.w-full.overflow-auto.h-full > div > div > div.cnl-box-container.flexed > div > div.flexed-row.buttons > div:nth-child(1) > button > div"),
+            //    driver,
+            //    wait
+            //);
             Thread.Sleep(500);
             //Add Button Da hieu 
             ClickIfExists(
