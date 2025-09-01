@@ -74,14 +74,14 @@ namespace SEP490.Selenium
             //    wait
             //);
 
-            //Thread.Sleep(500);
+            Thread.Sleep(500);
 
-            //ClickIfExists(
-            //    By.XPath("//div[@class='ms-button-text ms-button--text flex align-center' and normalize-space()='Đã hiểu']"),
-            //    driver,
-            //    wait
-            //);
-            //Thread.Sleep(500);
+            ClickIfExists(
+                By.XPath("//div[@class='ms-button-text ms-button--text flex align-center' and normalize-space()='Đã hiểu']"),
+                driver,
+                wait
+            );
+            Thread.Sleep(500);
         }
 
         protected virtual void CloseDriver()
