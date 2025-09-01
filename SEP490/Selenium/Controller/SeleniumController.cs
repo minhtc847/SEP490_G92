@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SEP490.Selenium.ImportExportInvoice;
+using SEP490.Selenium.ImportExportInvoice.DTO;
 using SEP490.Selenium.Product;
 using SEP490.Selenium.Product.DTO;
 using SEP490.Selenium.SaleOrder;
@@ -13,10 +15,13 @@ namespace SEP490.Selenium.Controller
     {
         private readonly IMisaProductService _misaProductService;
         private readonly ISeleniumSaleOrderServices _saleOrderServices;
-        public SeleniumController(IMisaProductService misaProductService, ISeleniumSaleOrderServices saleOrderServices)
+        private readonly IImportExportInvoiceServices _importExportInvoiceServices;
+        public SeleniumController(IMisaProductService misaProductService, ISeleniumSaleOrderServices saleOrderServices, IImportExportInvoiceServices importExportInvoiceServices)
         {
             _misaProductService = misaProductService;
             _saleOrderServices = saleOrderServices;
+            _importExportInvoiceServices = importExportInvoiceServices;
+
         }
         [HttpPost("product")]
         public IActionResult addProduct(InputSingleProduct product)
@@ -29,6 +34,13 @@ namespace SEP490.Selenium.Controller
         {
             _saleOrderServices.OpenSaleOrderPage(saleOrder);
             return Ok("Add Sale Order Successfully");
+        }
+
+        [HttpPost("import-export-invoice")]
+        public IActionResult addImportExportInvoice([FromBody] ExportDTO input)
+        {
+            Task.Run(() => _importExportInvoiceServices.OpenImportPage(input));
+            return Ok("Processing import page...");
         }
     }
 }
