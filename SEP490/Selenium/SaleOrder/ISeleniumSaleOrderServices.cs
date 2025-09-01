@@ -4,6 +4,6 @@ namespace SEP490.Selenium.SaleOrder
 {
     public interface ISeleniumSaleOrderServices
     {
-        public void OpenSaleOrderPage(SaleOrderInput saleOrderInput);
+        public string OpenSaleOrderPage(SaleOrderInput saleOrderInput);
     }
 }

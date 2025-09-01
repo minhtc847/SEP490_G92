@@ -5,6 +5,8 @@ using SEP490.Selenium.ImportExportInvoice;
 using SEP490.Selenium.ImportExportInvoice.DTO;
 using SEP490.Selenium.Product;
 using SEP490.Selenium.Product.DTO;
+using SEP490.Selenium.ProductionOrder;
+using SEP490.Selenium.ProductionOrder.DTO;
 using SEP490.Selenium.SaleOrder;
 using SEP490.Selenium.SaleOrder.DTO;
 
@@ -16,17 +18,20 @@ namespace SEP490.Selenium.Controller
     {
         private readonly IMisaProductService _misaProductService;
         private readonly ISeleniumSaleOrderServices _saleOrderServices;
+        private readonly ISeleniumProductionOrderServices _seleniumProductionOrderServices;
         private readonly IImportExportInvoiceServices _importExportInvoiceServices;
         private readonly IInventorySlipService _inventoryServices;
         public SeleniumController(IMisaProductService misaProductService, 
             ISeleniumSaleOrderServices saleOrderServices, 
             IImportExportInvoiceServices importExportInvoiceServices,
-            IInventorySlipService inventorySlipService)
+            IInventorySlipService inventorySlipService,
+            ISeleniumProductionOrderServices seleniumProductionOrderServices)
         {
             _misaProductService = misaProductService;
             _saleOrderServices = saleOrderServices;
             _importExportInvoiceServices = importExportInvoiceServices;
             _inventoryServices = inventorySlipService;
+            _seleniumProductionOrderServices = seleniumProductionOrderServices;
 
         }
         [HttpPost("product")]
@@ -38,8 +43,14 @@ namespace SEP490.Selenium.Controller
         [HttpPost("sale-order")]
         public IActionResult addSaleOrder([FromBody]SaleOrderInput saleOrder)
         {
-            _saleOrderServices.OpenSaleOrderPage(saleOrder);
-            return Ok("Add Sale Order Successfully");
+            string orderId = _saleOrderServices.OpenSaleOrderPage(saleOrder);
+            return Ok("Add Sale Order Successfully: " + orderId);
+        }
+        [HttpPost("production-order")]
+        public IActionResult addProductionOrder([FromBody] ProductionOrderInput productionOrder)
+        {
+            _seleniumProductionOrderServices.OpenProductionOrderPage(productionOrder);
+            return Ok("Add Production Order Successfully");
         }
 
         [HttpPost("import-export-invoice-test")]

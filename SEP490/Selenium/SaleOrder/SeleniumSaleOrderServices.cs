@@ -38,15 +38,23 @@ namespace SEP490.Selenium.SaleOrder
             wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
             _config = configuration;
         }
-        public void OpenSaleOrderPage(SaleOrderInput input)
+        public string OpenSaleOrderPage(SaleOrderInput input)
         {
+            string orderId = "";
             driver.Navigate().GoToUrl(saleOrderUrl);
             
             Login();
             var button = wait.Until(drv => drv.FindElement(By.XPath("//div[contains(@class, 'ms-button-text') and contains(text(), 'Thêm đơn đặt hàng')]//ancestor::button")));
             button.Click();
+            var orderIdInput = wait.Until(drv => drv.FindElement(By.XPath("//div[contains(text(),'Số đơn hàng')]/ancestor::div[contains(@class,'ms-input')]//input")));
+
+            wait.Until(drv => !string.IsNullOrEmpty(orderIdInput.GetAttribute("value")));
+
+            orderId = orderIdInput.GetAttribute("value");
+            Console.WriteLine(orderId);
             AddField(input);
             CloseDriver();
+            return orderId;
         }
         private void Login()
         {
@@ -163,9 +171,9 @@ namespace SEP490.Selenium.SaleOrder
                     rowInputText44.SendKeys(products[i].ProductCode);
                     Thread.Sleep(2000);
                     var productOption2 = wait.Until(drv => drv.FindElement(By.XPath(
-    "//tr[contains(@class, 'combobox-item')]//td[div/div[text()='" + products[i].ProductCode + "']]"
+    "//tr[contains(@class,'combobox-item') and .//div[text()='" + products[i].ProductCode + "']]//td[2]//div[contains(@class,'combobox-item-td--text')]"
 )));
-                    productOption2.Click();
+                    //productOption2.Click();
                     var input = driver.FindElement(By.XPath(
             "//*[@id=\"body-layout\"]/div[2]/div/div[3]/div/div/div/div/div/div[2]/div/div/div[1]/table/tbody/tr[" + (i + 1) + "]/td[6]/div/div/div[1]/div"
         ));
@@ -209,9 +217,9 @@ namespace SEP490.Selenium.SaleOrder
                     rowInputText44.SendKeys(products[i].ProductCode);
                     Thread.Sleep(2000);
                     var productOption = wait.Until(drv => drv.FindElement(By.XPath(
-        "//tr[contains(@class, 'combobox-item')]//td[div/div[text()='" + products[i].ProductCode + "']]"
-    )));
-                    productOption.Click();
+    "//tr[contains(@class,'combobox-item') and .//div[text()='" + products[i].ProductCode + "']]//td[2]//div[contains(@class,'combobox-item-td--text')]"
+)));
+                    //productOption.Click();
 
                     Thread.Sleep(100);
                     // send key 

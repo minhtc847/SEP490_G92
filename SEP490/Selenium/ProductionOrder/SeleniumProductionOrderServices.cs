@@ -4,24 +4,15 @@ using OpenQA.Selenium;
 using SEP490.Common.Services;
 using SEP490.Selenium.ProductionOrder.DTO;
 using OpenQA.Selenium.Interactions;
+using StackExchange.Redis;
 
 namespace SEP490.Selenium.ProductionOrder
 {
-    public class SeleniumProductionOrderServices : BaseTransientService, ISeleniumProductionOrderServices
+    public class SeleniumProductionOrderServices : SeleniumService, ISeleniumProductionOrderServices
     {
-        private IWebDriver driver;
-        private string URL = "https://actapp.misa.vn/app/IN/INProductionOrder";
-        private WebDriverWait wait;
-        private readonly IConfiguration _config;
         public SeleniumProductionOrderServices(IConfiguration configuration)
+            : base(configuration, "https://actapp.misa.vn/app/IN/INProductionOrder")
         {
-            _config = configuration;
-        }
-        private void InitSelenium()
-        {
-            driver = new ChromeDriver();
-            wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-            driver.Navigate().GoToUrl(URL);
         }
         public void OpenProductionOrderPage(ProductionOrderInput input)
         {
@@ -32,62 +23,23 @@ namespace SEP490.Selenium.ProductionOrder
             button.Click();
             Thread.Sleep(500); // Wait for the modal to open
             AddField(input);
+
+
             CloseDriver();
+
         }
-        private void Login()
-        {
-            Thread.Sleep(1500); // Wait for the page to load
-            IWebElement emailInput = wait.Until(drv => drv.FindElement(By.Name("username")));
-            emailInput.SendKeys(_config["Misa:Username"]);
-            IWebElement passwordInput = wait.Until(drv => drv.FindElement(By.Name("pass")));
-            passwordInput.SendKeys(_config["Misa:Password"]);
-            IWebElement loginButton = driver.FindElement(By.CssSelector("#box-login-right > div > div > div.login-form-basic-container > div > div.login-form-btn-container.login-class > button"));
-            loginButton.Click();
-            Thread.Sleep(1000);
-
-
-            // Ấn skip nếu có
-            ClickIfExists(By.XPath("/html/body/div[5]/div/i"), driver, wait);
-
-            Thread.Sleep(1000);
-
-            // Đợi loading biến mất
-            wait.Until(d => d.FindElement(By.Id("loading-bg")).GetAttribute("style").Contains("display: none"));
-
-            // Ấn continue nếu có
-            ClickIfExists(
-                By.CssSelector("#app > div.w-full.overflow-auto.h-full > div > div > div.cnl-box-container.flexed > div > div.flexed-row.buttons > div:nth-child(1) > button > div"),
-                driver,
-                wait
-            );
-            Thread.Sleep(500);
-            //Add Button Da hieu 
-            ClickIfExists(
-        By.XPath("//div[@class='ms-button-text ms-button--text flex align-center' and normalize-space()='Đã hiểu']"),
-        driver,
-        wait
-    );
-            Thread.Sleep(500);
-        }
-        private void CloseDriver()
-        {
-            if (driver != null)
-            {
-                driver.Close();
-                driver.Quit();
-            }
-        }
+       
         //#header-layout > div > div.header-detail-input > div > div:nth-child(2) > span > div > div.tooltip-content > div > div.combo-actions > div.btn-dropdown > div
         private void AddField(ProductionOrderInput poInput)
         {
-            Thread.Sleep(1000);
-            IWebElement userDropDown = wait.Until(drv => drv.FindElement(By.CssSelector("#header-layout > div > div.header-detail-input > div > div:nth-child(2) > span > div > div.tooltip-content > div > div.combo-actions > div.btn-dropdown > div")));
-            userDropDown.Click();
-            Thread.Sleep(3000);
-            var option = wait.Until(drv => drv.FindElement(By.XPath(
-    "//tr[contains(@class, 'combobox-item')]//td[div/div[text()='" + poInput.SaleOrderCode + "']]"
-)));
-            option.Click();
+//            Thread.Sleep(1000);
+//            IWebElement userDropDown = wait.Until(drv => drv.FindElement(By.CssSelector("#header-layout > div > div.header-detail-input > div > div:nth-child(2) > span > div > div.tooltip-content > div > div.combo-actions > div.btn-dropdown > div")));
+//            userDropDown.Click();
+//            Thread.Sleep(3000);
+//            var option = wait.Until(drv => drv.FindElement(By.XPath(
+//    "//tr[contains(@class, 'combobox-item')]//td[div/div[text()='" + poInput.SaleOrderCode + "']]"
+//)));
+//            option.Click();
             Thread.Sleep(500);
             var products = poInput.OutputProducts;
             int i = 0;
@@ -174,62 +126,10 @@ namespace SEP490.Selenium.ProductionOrder
                     inputCount2.SendKeys(products[i].OutputProductQuantity.ToString());
                     j++;
                 }
-
-
                 i++;
             }
-        }
-        public static bool ClickIfExists(By by, IWebDriver driver, WebDriverWait wait)
-        {
-            try
-            {
-                // 1. Chờ overlay biến mất tối đa 5s
-                var shortWait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
-                try
-                {
-                    shortWait.Until(d =>
-                    {
-                        var overlays = d.FindElements(By.CssSelector(".ms-popup--background"));
-                        return overlays.Count == 0 || overlays.All(o =>
-                        {
-                            var style = o.GetAttribute("style") ?? "";
-                            return !o.Displayed || style.Contains("display: none") || style.Contains("visibility: hidden");
-                        });
-                    });
-                }
-                catch (WebDriverTimeoutException)
-                {
-                    // Overlay vẫn tồn tại → bỏ qua để force click
-                }
 
-                // 2. Tìm element
-                var element = wait.Until(d =>
-                {
-                    var elements = d.FindElements(by);
-                    return elements.FirstOrDefault(e => e.Displayed);
-                });
-
-                if (element != null)
-                {
-                    try
-                    {
-                        element.Click(); // Click bình thường
-                    }
-                    catch (ElementClickInterceptedException)
-                    {
-                        // 3. Nếu bị chặn → click bằng JavaScript
-                        IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
-                        js.ExecuteScript("arguments[0].click();", element);
-                    }
-                    return true;
-                }
-            }
-            catch (WebDriverTimeoutException)
-            {
-                // Không tìm thấy element
-                return false;
-            }
-            return false;
         }
+        
     }
 }
