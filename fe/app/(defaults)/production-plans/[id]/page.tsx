@@ -24,7 +24,8 @@ import ListOutputsPP from '@/components/VNG/manager/production-plans/list-output
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const ProductionPlanDetailPage = () => {
-    const { id } = useParams();
+    const params = useParams();
+    const id = params?.id as string;
     const [detail, setDetail] = useState<ProductionPlanDetail | null>(null);
     const [productDetails, setProductDetails] = useState<ProductionPlanProductDetail[]>([]);
     const [loading, setLoading] = useState(true);

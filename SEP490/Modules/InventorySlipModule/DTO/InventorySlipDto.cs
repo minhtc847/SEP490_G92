@@ -16,6 +16,7 @@ namespace SEP490.Modules.InventorySlipModule.DTO
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public bool IsFinalized { get; set; }
+        public bool IsUpdateMisa { get; set; }
         
         public List<InventorySlipDetailDto> Details { get; set; } = new List<InventorySlipDetailDto>();
     }

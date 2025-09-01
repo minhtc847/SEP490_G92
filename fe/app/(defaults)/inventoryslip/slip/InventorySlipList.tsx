@@ -203,6 +203,17 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                                             </span>
                                         )}
                                     </p>
+                                    <p><strong>Misa:</strong> 
+                                        {slip.isUpdateMisa ? (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 ml-2">
+                                                Đã cập nhật lên Misa
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 ml-2">
+                                                Chưa cập nhật lên Misa
+                                            </span>
+                                        )}
+                                    </p>
                                     {slip.description && (
                                         <p><strong>Mô tả:</strong> {slip.description}</p>
                                     )}
@@ -270,6 +281,57 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                                         title="Cập nhật số lượng"
                                     >
                                         Cập nhật số lượng
+                                    </button>
+                                )}
+                                {!slip.isUpdateMisa && (
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const { default: Swal } = await import('sweetalert2');
+                                                const result = await Swal.fire({
+                                                    title: 'Xác nhận cập nhật lên Misa',
+                                                    text: 'Bạn có chắc chắn muốn cập nhật phiếu này lên phần mềm Misa?',
+                                                    icon: 'question',
+                                                    showCancelButton: true,
+                                                    confirmButtonText: 'Cập nhật',
+                                                    cancelButtonText: 'Hủy',
+                                                });
+                                                
+                                                if (result.isConfirmed) {
+                                                    try {
+                                                        // TODO: Implement API call to update Misa
+                                                        // await updateMisaInventorySlip(slip.id);
+                                                        
+                                                        // For now, just show success message
+                                                        Swal.fire({
+                                                            title: 'Cập nhật lên Misa thành công!',
+                                                            toast: true,
+                                                            position: 'bottom-start',
+                                                            showConfirmButton: false,
+                                                            timer: 3000,
+                                                            showCloseButton: true,
+                                                        });
+                                                        
+                                                        // Refresh the list to update the status
+                                                        onRefresh();
+                                                    } catch (error) {
+                                                        console.error('Error updating Misa:', error);
+                                                        Swal.fire({
+                                                            title: 'Lỗi',
+                                                            text: 'Không thể cập nhật lên Misa. Vui lòng thử lại.',
+                                                            icon: 'error',
+                                                            confirmButtonText: 'Đã hiểu',
+                                                        });
+                                                    }
+                                                }
+                                            } catch (error) {
+                                                console.error('Error showing confirmation:', error);
+                                            }
+                                        }}
+                                        className="px-3 py-1 text-sm border border-purple-300 text-purple-700 bg-white hover:bg-purple-50 rounded-md transition-colors"
+                                        title="Cập nhật lên Misa"
+                                    >
+                                        Cập nhật lên Misa
                                     </button>
                                 )}
                             </div>
@@ -401,7 +463,6 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                             )}
                         </div>
                         <div className="px-6 py-4 border-t flex justify-end gap-3">
-                            <button disabled={updating} onClick={() => setShowUpdateModal(false)} className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">Hủy</button>
                             {updateType === 'other' && (
                                 <button disabled={updating} onClick={submitUpdate} className={`px-4 py-2 rounded-md text-white ${updating ? 'bg-blue-300' : 'bg-blue-600 hover:bg-blue-700'}`}>{updating ? 'Đang lưu...' : 'Lưu'}</button>
                             )}

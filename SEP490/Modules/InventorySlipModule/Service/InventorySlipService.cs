@@ -77,7 +77,8 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     CreatedBy = GetCurrentEmployeeId() ?? 1,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
-                    IsFinalized = false
+                    IsFinalized = false,
+                    IsUpdateMisa = false
                 };
 
                 _context.InventorySlips.Add(slip);
@@ -229,7 +230,8 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     CreatedBy = GetCurrentEmployeeId() ?? 1, 
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
-                    IsFinalized = false
+                    IsFinalized = false,
+                    IsUpdateMisa = false
                 };
 
                 _context.InventorySlips.Add(slip);
@@ -924,6 +926,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 CreatedAt = slip.CreatedAt,
                 UpdatedAt = slip.UpdatedAt,
                 IsFinalized = slip.IsFinalized,
+                IsUpdateMisa = slip.IsUpdateMisa,
                 Details = details
             };
         }
