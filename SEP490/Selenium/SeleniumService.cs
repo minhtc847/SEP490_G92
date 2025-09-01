@@ -28,8 +28,8 @@ namespace SEP490.Selenium
             options.AddArgument("--disable-gpu");
             options.AddArgument("--window-size=1920,1080");
 
-            options.AddArgument(@"user-data-dir=C:\Users\caomi\AppData\Local\Google\Chrome\User Data");
-            options.AddArgument("profile-directory=Profile 1");
+            options.AddArgument(_config["ChromeProfile:UserDataDir"]);
+            options.AddArgument(_config["ChromeProfile:ProfileDir"]);
 
             options.AddArgument("--remote-debugging-port=9222");
             options.AddExcludedArgument("enable-automation");
@@ -42,7 +42,7 @@ namespace SEP490.Selenium
 
         protected virtual void Login()
         {
-            Thread.Sleep(1500);
+            Thread.Sleep(300);
             var emailInputs = wait.Until(d => d.FindElements(By.Name("username")));
             if (emailInputs.Any())
             {
@@ -61,27 +61,27 @@ namespace SEP490.Selenium
 
                 Thread.Sleep(1000);
             }
-            Thread.Sleep(1000);
+            //Thread.Sleep(200);
 
-            ClickIfExists(By.XPath("/html/body/div[5]/div/i"), driver, wait);
-            Thread.Sleep(1000);
+            //ClickIfExists(By.XPath("/html/body/div[5]/div/i"), driver, wait);
+            //Thread.Sleep(200);
 
-            wait.Until(d => d.FindElement(By.Id("loading-bg")).GetAttribute("style").Contains("display: none"));
+            //wait.Until(d => d.FindElement(By.Id("loading-bg")).GetAttribute("style").Contains("display: none"));
 
-            ClickIfExists(
-                By.CssSelector("#app > div.w-full.overflow-auto.h-full > div > div > div.cnl-box-container.flexed > div > div.flexed-row.buttons > div:nth-child(1) > button > div"),
-                driver,
-                wait
-            );
+            //ClickIfExists(
+            //    By.CssSelector("#app > div.w-full.overflow-auto.h-full > div > div > div.cnl-box-container.flexed > div > div.flexed-row.buttons > div:nth-child(1) > button > div"),
+            //    driver,
+            //    wait
+            //);
 
-            Thread.Sleep(500);
+            //Thread.Sleep(500);
 
-            ClickIfExists(
-                By.XPath("//div[@class='ms-button-text ms-button--text flex align-center' and normalize-space()='Đã hiểu']"),
-                driver,
-                wait
-            );
-            Thread.Sleep(500);
+            //ClickIfExists(
+            //    By.XPath("//div[@class='ms-button-text ms-button--text flex align-center' and normalize-space()='Đã hiểu']"),
+            //    driver,
+            //    wait
+            //);
+            //Thread.Sleep(500);
         }
 
         protected virtual void CloseDriver()
