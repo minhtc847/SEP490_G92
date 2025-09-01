@@ -51,6 +51,7 @@ export interface InventorySlip {
     updatedAt: string;
     details: InventorySlipDetail[];
     isFinalized?: boolean;
+    isUpdateMisa?: boolean;
 }
 
 export interface CreateInventorySlipDto {

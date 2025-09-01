@@ -21,4 +21,7 @@ public class InventorySlip
 
     // Locked state: false = chưa cập nhật; true = đã cập nhật số lượng và khóa chỉnh sửa
     public bool IsFinalized { get; set; } = false;
+    
+    // Misa update state: false = chưa cập nhật lên Misa; true = đã cập nhật lên Misa
+    public bool IsUpdateMisa { get; set; } = false;
 }
