@@ -116,7 +116,9 @@ namespace SEP490.Modules.Production_plans.Services
                 int glass5mm = 2;
                 int glass4mm = (product.GlassStructure.GlassLayers ?? 0) - 2;
                 if (glass4mm < 0) glass4mm = 0;
-                int butylType = (int)(product.GlassStructure.AdhesiveThickness ?? 0);
+                int butylType = string.Equals(product.GlassStructure.EdgeType, "Butyl", System.StringComparison.OrdinalIgnoreCase)
+                    ? (int)(product.GlassStructure.AdhesiveThickness ?? 0)
+                    : 0;
 
                 // Parse width and height from string to decimal
                 if (!decimal.TryParse(product.Width, out decimal width) || !decimal.TryParse(product.Height, out decimal height))

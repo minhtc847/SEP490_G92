@@ -312,7 +312,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 .SelectMany(od => od.OrderDetailProducts)
                 .Select(odp => new
                 {
-                    ProductCode = odp.Product?.ProductCode ?? "",
+                    ProductCode = odp.Product?.ProductName ?? "",
                     ProductQuantity = odp.Quantity?.ToString() ?? "0",
                     Price = odp.Product?.UnitPrice?.ToString() ?? "0"
                 })

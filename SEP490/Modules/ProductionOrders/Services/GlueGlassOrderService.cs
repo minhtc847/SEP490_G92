@@ -4,6 +4,7 @@ using SEP490.DB;
 using SEP490.DB.Models;
 using SEP490.Modules.ProductionOrders.DTO;
 using System.Text.RegularExpressions;
+using System.Globalization;
 
 namespace SEP490.Modules.ProductionOrders.Services
 {
@@ -131,7 +132,7 @@ namespace SEP490.Modules.ProductionOrders.Services
             {
                 ProductCode = null,
                 ProductName = productName,
-                ProductType = "Bán thành phẩm",
+                ProductType = "NVL",
                 UOM = "tấm",
                 Width = width,
                 Height = height,
@@ -173,7 +174,21 @@ namespace SEP490.Modules.ProductionOrders.Services
                 // Calculate material quantities
                 var kinh4Quantity = kinh4PerProduct * outputQuantity;
                 var kinh5Quantity = kinh5PerProduct * outputQuantity;
-                var keoQuantity = 0.2m; // Default quantity for keo
+                // Calculate keo quantity based on adhesive area formula
+                // Adhesive area (mm^2) = (20mm * width + 20mm * (height - 20mm)) * 2
+                // keo per cm^2 = 0.2, where 1 cm^2 = 100 mm^2
+                const decimal adhesiveBeadWidthMm = 20m;
+                const decimal gluePerCm2 = 0.2m;
+                decimal keoPerProduct = gluePerCm2; // fallback per product if dimensions missing
+                if (decimal.TryParse(width, NumberStyles.Number, CultureInfo.InvariantCulture, out var widthMm)
+                    && decimal.TryParse(height, NumberStyles.Number, CultureInfo.InvariantCulture, out var heightMm))
+                {
+                    var effectiveHeightMm = Math.Max(0m, heightMm - adhesiveBeadWidthMm);
+                    var areaMm2 = (adhesiveBeadWidthMm * widthMm + adhesiveBeadWidthMm * effectiveHeightMm) * 2m;
+                    var areaCm2 = areaMm2 / 100m;
+                    keoPerProduct = gluePerCm2 * areaCm2;
+                }
+                var keoQuantity = keoPerProduct * outputQuantity;
 
                 // Create materials based on whether it's tempered glass or not
                 var glassPrefix = isCuongLuc ? "Kính cường lực tôi trắng KT:" : "Kính trắng KT:";
