@@ -98,6 +98,39 @@ namespace SEP490.Modules.Accountant.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        [HttpDelete("delete-output/{id}")]
+        public async Task<IActionResult> DeleteOutput(int id)
+        {
+            try
+            {
+                var success = await _service.DeleteOutputAsync(id);
+                if (!success)
+                    return NotFound("Không tìm thấy thành phẩm");
+
+                return Ok(new { message = "Xóa thành phẩm thành công"});
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Lỗi khi xóa thành phẩm", error = ex.Message });
+            }
+        }
+
+        [HttpDelete("delete-material/{id}")]
+        public async Task<IActionResult> DeleteMaterial(int id)
+        {
+            try
+            {
+                var success = await _service.DeleteMaterialAsync(id);
+                if (!success)
+                    return NotFound("Không tìm thấy nguyên vật liệu");
+
+                return Ok(new { message = "Xóa nguyên vật liệu thành công"});
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Lỗi khi xóa nguyên vật liệu", error = ex.Message });
+            }
+        }
 
     }
 }

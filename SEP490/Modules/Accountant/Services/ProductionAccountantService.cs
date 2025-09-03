@@ -218,6 +218,53 @@ namespace SEP490.Modules.Accountant.Services
             return true;
         }
 
+        public async Task<bool> DeleteOutputAsync(int outputId)
+        {
+            try
+            {
+                var output = await _context.ProductionOutputs
+                    .FirstOrDefaultAsync(po => po.Id == outputId);
+
+                if (output == null)
+                {
+                    Console.WriteLine("Không tìm thấy ProductionOutput để xóa");
+                    return false;
+                }
+
+                var relatedMaterials = await _context.ProductionMaterials
+                    .Where(pm => pm.ProductionOutputId == outputId)
+                    .ToListAsync();
+
+                if (relatedMaterials.Any())
+                {
+                    _context.ProductionMaterials.RemoveRange(relatedMaterials);
+                }
+
+                _context.ProductionOutputs.Remove(output);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi khi xóa ProductionOutput: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteMaterialAsync(int materialId)
+        {
+            var material = await _context.ProductionMaterials.FindAsync(materialId);
+
+            if (material == null)
+            {
+                Console.WriteLine("Không tìm thấy Material");
+                return false;
+            }
+            _context.ProductionMaterials.Remove(material);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
         // static methods chuyen doi string
         private static int ConvertStringUOMToInt(string? uom)
         {

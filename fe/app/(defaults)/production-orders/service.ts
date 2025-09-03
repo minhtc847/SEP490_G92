@@ -131,9 +131,42 @@ export async function addMaterialInfo(productionOrderId: number | string, output
 }
 
 /**
+ * Delete production output and all related materials
+ */
+export async function deleteProductionOutput(outputId: number): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await axios.delete(`/api/ProductionAccountantControllers/delete-output/${outputId}`)
+    return response.data
+  } catch (error: any) {
+    console.error("Error deleting production output:", error)
+    return {
+      success: false,
+      message: error.response?.data?.message || "Lỗi khi xóa thành phẩm",
+    }
+  }
+}
+
+/**
+ * Delete production material by ID
+ */
+export async function deleteProductionMaterial(materialId: number): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await axios.delete(`/api/ProductionAccountantControllers/delete-material/${materialId}`)
+    return response.data
+  } catch (error: any) {
+    console.error("Error deleting production material:", error)
+    return {
+      success: false,
+      message: error.response?.data?.message || "Lỗi khi xóa nguyên vật liệu",
+    }
+  }
+}
+
+/**
  * Fetch all products (catalog)
  */
 export async function fetchAllProducts(): Promise<ProductItem[]> {
   const response = await axios.get('/api/Product');
   return response.data;
 }
+

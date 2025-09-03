@@ -19,6 +19,8 @@ namespace SEP490.Modules.Accountant.Services
 
         Task<bool> UpdateOutputInfo(int id, UpdateOutputDTO dto);
         Task<bool> UpdateMaterialInfo(int id, UpdateMaterialDTO dto);
+        Task<bool> DeleteOutputAsync(int id);
+        Task<bool> DeleteMaterialAsync(int id);
 
     }
 }
