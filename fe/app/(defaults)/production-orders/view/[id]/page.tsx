@@ -131,28 +131,59 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     setDetailContent({ title: "", content: "" })
   }
 
+  const refreshProducts = async () => {
+    try {
+      const data = await fetchPOProducts(params.id)
+      const processedData = (data || []).map((item) => ({
+        ...item,
+        uom: convertUOMToString(item.uom),
+      }))
+      setFinishedProducts(processedData)
+
+      // Reset selection if current selected product no longer exists
+      if (selectedProduct && !processedData.find((p) => (p.outputId || p.id) === selectedProduct)) {
+        setSelectedProduct(null)
+        setCurrentMaterials([])
+      }
+    } catch (error) {
+      console.error("Error refreshing products:", error)
+    }
+  }
+
   const handleDeleteOutput = async (outputId: number) => {
+    console.log("[v0] Delete output called with ID:", outputId)
+
     if (confirm("Bạn có chắc chắn muốn xóa không?")) {
-      const result = await deleteProductionOutput(outputId)
-      if (result.success) {
-        alert("Xóa thành phẩm thành công!")
-        // Refresh the data
-        window.location.reload()
-      } else {
-        alert(result.message)
+      try {
+        const result = await deleteProductionOutput(outputId)
+        if (result.success) {
+          alert("Xóa thành phẩm thành công!")
+          await refreshProducts()
+          setSelectedProduct(null)
+        } else {
+          alert(result.message)
+        }
+      } catch (error) {
+        console.error("[v0] Delete error:", error)
+        alert("Có lỗi xảy ra khi xóa thành phẩm")
       }
     }
   }
 
   const handleDeleteMaterial = async (materialId: number) => {
     if (confirm("Bạn có chắc chắn muốn xóa không?")) {
-      const result = await deleteProductionMaterial(materialId)
-      if (result.success) {
-        alert("Xóa nguyên vật liệu thành công!")
-        // Refresh the data
-        window.location.reload()
-      } else {
-        alert(result.message)
+      try {
+        const result = await deleteProductionMaterial(materialId)
+        if (result.success) {
+          alert("Xóa nguyên vật liệu thành công!")
+          await refreshMaterials()
+          setSelectedMaterial(null)
+        } else {
+          alert(result.message)
+        }
+      } catch (error) {
+        console.error("[v0] Delete material error:", error)
+        alert("Có lỗi xảy ra khi xóa nguyên vật liệu")
       }
     }
   }
@@ -583,7 +614,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
             </div>
 
             <div className="flex justify-end items-center mb-4">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <div className="flex gap-2">
                   <button
                     onClick={() => router.push(`/inventoryslip/${params.id}`)}
@@ -604,7 +635,16 @@ export default function ProductionOrderView({ params }: { params: { id: string }
             <div className="grid grid-cols-2 gap-6">
               {/* Thành phẩm */}
               <div>
-                <h2 className="font-semibold text-[#4361ee] mb-2">Thành phẩm</h2>
+                <div className="flex justify-between items-center mb-2">
+                  <h2 className="font-semibold text-[#4361ee]">Thành phẩm</h2>
+                  <button
+                    onClick={refreshProducts}
+                    className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-xs rounded shadow transition-colors"
+                    title="Refresh danh sách thành phẩm"
+                  >
+                    Refresh
+                  </button>
+                </div>
                 <div className="border rounded shadow overflow-x-auto">
                   <table className="w-full text-sm" style={{ minWidth: "600px" }}>
                     <thead className="bg-[#edf0ff]">
@@ -640,39 +680,33 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                     </tbody>
                   </table>
                 </div>
+                {/* Products table section */}
                 <div className="flex gap-2 mt-3">
                   <button
                     onClick={handleAddProduct}
-                    className="px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white text-sm rounded shadow transition-colors"
+                    className="px-4 py-2 bg-[#4361ee] hover:bg-[#3651d4] text-white text-sm rounded shadow transition-colors"
                   >
                     Thêm
                   </button>
                   <button
                     onClick={handleUpdateProduct}
-                    className="px-4 py-2 bg-[#28a745] hover:bg-[#218838] text-white text-sm rounded shadow transition-colors"
+                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm rounded shadow transition-colors"
                   >
                     Sửa
                   </button>
                   <button
                     onClick={() => {
-                      console.log("[v0] Delete button clicked")
-                      console.log("[v0] selectedProduct:", selectedProduct)
-                      console.log("[v0] finishedProducts:", finishedProducts)
-
+                      console.log("[v0] Delete button clicked, selectedProduct:", selectedProduct)
                       const selectedItem = finishedProducts.find(
                         (item) => (item.outputId || item.id) === selectedProduct,
                       )
-                      console.log("[v0] selectedItem found:", selectedItem)
-
-                      if (selectedItem?.id) {
-                        console.log("[v0] Calling handleDeleteOutput with ID:", selectedItem.id)
-                        handleDeleteOutput(selectedItem.id)
-                      } else {
-                        console.log("[v0] No selectedItem.id found")
+                      console.log("[v0] Found selected item:", selectedItem)
+                      if (selectedItem?.outputId || selectedItem?.id) {
+                        handleDeleteOutput(selectedItem.outputId || selectedItem.id)
                       }
                     }}
-                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded shadow transition-colors"
                     disabled={!selectedProduct}
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm rounded shadow transition-colors"
                   >
                     Xóa
                   </button>

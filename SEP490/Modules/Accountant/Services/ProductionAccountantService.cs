@@ -32,7 +32,7 @@ namespace SEP490.Modules.Accountant.Services
                     CustomerName = po.ProductionPlan.Customer.CustomerName,
                     TotalAmount = _context.ProductionOutputs
                         .Where(poOut => poOut.ProductionOrderId == po.Id)
-                        .Sum(poOut => (int?)poOut.Amount ?? 0),
+                        .Sum(poOut => Convert.ToInt32(poOut.Amount ?? 0)),
                     //Status = po.Status,
                 })
                 .ToList();
@@ -48,7 +48,7 @@ namespace SEP490.Modules.Accountant.Services
                     OutputId = po.Id,
                     ProductName = po.ProductName,
                     Uom = ConvertStringUOMToInt(po.Product.UOM),
-                    Quantity = po.Amount ?? 0,
+                    Quantity = Convert.ToInt32(po.Amount ?? 0),
                     //Done = po.Done ?? 0
                 })
                 .ToList();
@@ -94,8 +94,8 @@ namespace SEP490.Modules.Accountant.Services
                     Id = m.Id,
                     ProductName = m.Product.ProductName,
                     Uom = ConvertStringUOMToInt(m.Product.UOM), // dung static method
-                    QuantityPer = m.Amount ?? 0,
-                    TotalQuantity = m.Amount ?? 0
+                    QuantityPer = Convert.ToInt32(m.Amount ?? 0),
+                    TotalQuantity = Convert.ToInt32(m.Amount ?? 0)
                 })
                 .ToListAsync();
 
@@ -106,7 +106,7 @@ namespace SEP490.Modules.Accountant.Services
                     OutputId = output.Id,
                     ProductName = output.Product.ProductName,
                     Uom = ConvertStringUOMToInt(output.Product.UOM), // dung static method
-                    Quantity = (int)totalQuantity
+                    Quantity = Convert.ToInt32(totalQuantity)
                 },
                 Materials = materials
             };
@@ -222,26 +222,37 @@ namespace SEP490.Modules.Accountant.Services
         {
             try
             {
+                Console.WriteLine($"Felete ProductionOutput with ID: {outputId}");
+
                 var output = await _context.ProductionOutputs
                     .FirstOrDefaultAsync(po => po.Id == outputId);
 
+                Console.WriteLine($"Found output: {output != null}");
+
                 if (output == null)
                 {
-                    Console.WriteLine("Không tìm thấy ProductionOutput để xóa");
+                    Console.WriteLine($"Không tìm thấy ProductionOutput với ID: {outputId}");
                     return false;
                 }
+
+                Console.WriteLine($"OutputID: {output.Id}, ProductName: {output.ProductName}");
 
                 var relatedMaterials = await _context.ProductionMaterials
                     .Where(pm => pm.ProductionOutputId == outputId)
                     .ToListAsync();
 
+                Console.WriteLine($"Found {relatedMaterials.Count} related materials to delete");
+
                 if (relatedMaterials.Any())
                 {
                     _context.ProductionMaterials.RemoveRange(relatedMaterials);
+                    Console.WriteLine($"Removed {relatedMaterials.Count} related materials");
                 }
 
                 _context.ProductionOutputs.Remove(output);
                 await _context.SaveChangesAsync();
+
+                Console.WriteLine($"Delete ProductionOutput Successfully");
                 return true;
             }
             catch (Exception ex)
@@ -253,19 +264,27 @@ namespace SEP490.Modules.Accountant.Services
 
         public async Task<bool> DeleteMaterialAsync(int materialId)
         {
-            var material = await _context.ProductionMaterials.FindAsync(materialId);
-
-            if (material == null)
+            try
             {
-                Console.WriteLine("Không tìm thấy Material");
+                var material = await _context.ProductionMaterials.FindAsync(materialId);
+
+                if (material == null)
+                {
+                    Console.WriteLine("Không tìm thấy ProductionMaterial để xóa");
+                    return false;
+                }
+
+                _context.ProductionMaterials.Remove(material);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi khi xóa ProductionMaterial: {ex.Message}");
                 return false;
             }
-            _context.ProductionMaterials.Remove(material);
-            await _context.SaveChangesAsync();
-            return true;
         }
 
-        // static methods chuyen doi string
         private static int ConvertStringUOMToInt(string? uom)
         {
             if (string.IsNullOrEmpty(uom))
@@ -289,4 +308,3 @@ namespace SEP490.Modules.Accountant.Services
         }
     }
 }
-
