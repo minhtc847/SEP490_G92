@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getOrderDetailById, OrderDetailDto, updateMisaOrder, updateOrderMisaStatus, checkHasProductionPlan } from '@/app/(defaults)/sales-order/[id]/service';
+import { checkOrderProductsMisaStatus, getOrderDetailById, OrderDetailDto, updateMisaOrder, updateOrderMisaStatus, checkHasProductionPlan } from '@/app/(defaults)/sales-order/[id]/service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import ExcelJS from 'exceljs';
@@ -52,6 +52,32 @@ const SalesOrderDetailPage = () => {
         setErrorMessage('');
         
         try {
+            // Kiểm tra trạng thái MISA của các sản phẩm trước
+            const misaCheckResult = await checkOrderProductsMisaStatus(Number(id));
+            
+            if (!misaCheckResult.success) {
+                throw new Error(misaCheckResult.message || 'Không thể kiểm tra trạng thái MISA của sản phẩm');
+            }
+            
+            if (!misaCheckResult.canUpdateMisa) {
+                // Hiển thị thông báo lỗi với danh sách sản phẩm chưa update MISA
+                const notUpdatedProducts = misaCheckResult.notUpdatedProducts || [];
+                const productList = notUpdatedProducts.map((p: any) => {
+                    // Sử dụng đúng tên field từ API response
+                    const productName = p.ProductName || p.productName || 'Không có tên';
+                    const productCode = p.ProductCode || p.productCode || 'Không có mã';
+                    return `${productName} (${productCode})`;
+                }).join(', ');
+                
+                setErrorMessage(`Không thể cập nhật MISA. Các sản phẩm sau chưa được cập nhật MISA: ${productList}`);
+                setShowErrorMessage(true);
+                setTimeout(() => {
+                    setShowErrorMessage(false);
+                }, 8000); // Hiển thị lỗi trong 8 giây để user có thể đọc hết
+                return;
+            }
+            
+            // Nếu tất cả sản phẩm đã update MISA, tiến hành cập nhật đơn hàng
             // Gọi API cập nhật MISA
             await updateMisaOrder(Number(id));
             

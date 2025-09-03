@@ -12,6 +12,7 @@ export interface ProductInOrderDto {
   quantity: number;
   totalAmount: number;
   glassProductName?: string;
+  isUpdateMisa: boolean;
 }
 
 export interface OrderDetailDto {
@@ -43,6 +44,11 @@ export const updateMisaOrder = async (orderId: number): Promise<any> => {
   // Gọi API Selenium để cập nhật MISA
   const res = await axios.post('/api/Selenium/sale-order', orderData.data);
   return res.data;
+};
+
+export const checkOrderProductsMisaStatus = async (orderId: number): Promise<any> => {
+  const response = await axios.get(`/api/orders/${orderId}/check-products-misa`);
+  return response.data;
 };
 
 export const updateOrderMisaStatus = async (orderId: number): Promise<any> => {

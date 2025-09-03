@@ -376,6 +376,21 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
             }
         }
 
+        [HttpGet("{id}/check-products-misa")]
+        [AuthorizeRoles(Roles.MANAGER, Roles.ACCOUNTANT)]
+        public IActionResult CheckOrderProductsMisaStatus(int id)
+        {
+            try
+            {
+                var result = _orderService.CheckOrderProductsMisaStatus(id);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Lỗi khi kiểm tra trạng thái MISA của sản phẩm", error = ex.Message });
+            }
+        }
+
         [HttpDelete("{id}")]
         [AuthorizeRoles(Roles.MANAGER)]
         public IActionResult DeleteOrder(int id)

@@ -125,7 +125,8 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                                    AdhesiveLayers = g?.AdhesiveLayers,
                                    AdhesiveThickness = g?.AdhesiveThickness,
                                    GlassUnitPrice = g?.UnitPrice,
-                                   Composition = g?.Composition
+                                   Composition = g?.Composition,
+                                   IsUpdateMisa = p.isupdatemisa
                                }).ToList();
 
             var totalQuantity = productDtos.Sum(p => p.Quantity);
@@ -418,7 +419,47 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             return false; // Invalid status value
         }
 
+        public object CheckOrderProductsMisaStatus(int orderId)
+        {
+            var order = _context.SaleOrders
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.OrderDetailProducts)
+                        .ThenInclude(odp => odp.Product)
+                .FirstOrDefault(o => o.Id == orderId);
 
+            if (order == null) 
+                return new { success = false, message = "Không tìm thấy đơn hàng" };
+
+            var products = order.OrderDetails
+                .SelectMany(od => od.OrderDetailProducts)
+                .Select(odp => new
+                {
+                    ProductId = odp.ProductId,
+                    ProductCode = odp.Product?.ProductCode ?? "",
+                    ProductName = odp.Product?.ProductName ?? "",
+                    Quantity = odp.Quantity ?? 0,
+                    IsUpdateMisa = odp.Product?.isupdatemisa ?? false
+                })
+                .ToList();
+
+            var totalProducts = products.Count;
+            var updatedProducts = products.Count(p => p.IsUpdateMisa);
+            var notUpdatedProducts = products.Where(p => !p.IsUpdateMisa).ToList();
+
+            var canUpdateMisa = totalProducts > 0 && updatedProducts == totalProducts;
+
+            return new
+            {
+                success = true,
+                canUpdateMisa = canUpdateMisa,
+                totalProducts = totalProducts,
+                updatedProducts = updatedProducts,
+                notUpdatedProducts = notUpdatedProducts,
+                message = canUpdateMisa 
+                    ? "Tất cả sản phẩm đã được cập nhật MISA. Có thể tiến hành cập nhật đơn hàng."
+                    : $"Có {notUpdatedProducts.Count} sản phẩm chưa được cập nhật MISA. Vui lòng cập nhật MISA cho tất cả sản phẩm trước."
+            };
+        }
 
     }
 }

@@ -19,6 +19,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
         bool UpdateOrderStatus(int orderId, int status);
         bool UpdateOrderMisaStatus(int orderId);
         object GetOrderDataForMisa(int orderId);
+        object CheckOrderProductsMisaStatus(int orderId);
     }
 
 }
