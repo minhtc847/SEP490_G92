@@ -453,5 +453,19 @@ namespace SEP490.Modules.InventorySlipModule.Controller
             }
         }
 
+        [HttpGet("{id}/check-products-misa")]
+        public async Task<IActionResult> CheckSlipProductsMisaStatus(int id)
+        {
+            try
+            {
+                var result = await _inventorySlipService.CheckSlipProductsMisaStatusAsync(id);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Lỗi khi kiểm tra trạng thái MISA của sản phẩm", error = ex.Message });
+            }
+        }
+
     }
 }

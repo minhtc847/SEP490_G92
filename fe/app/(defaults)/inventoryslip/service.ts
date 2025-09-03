@@ -415,6 +415,16 @@ export const callImportExportInvoice = async (slipId: number): Promise<boolean> 
     }
 };
 
+export const checkSlipProductsMisaStatus = async (slipId: number): Promise<any> => {
+    try {
+        const response = await axios.get(`/api/InventorySlip/${slipId}/check-products-misa`);
+        return response.data;
+    } catch (error) {
+        console.error('Error checking slip products MISA status:', error);
+        return { success: false, message: 'Không thể kiểm tra trạng thái MISA của sản phẩm' };
+    }
+};
+
 export const updateMisaStatus = async (slipId: number): Promise<boolean> => {
     try {
         const response = await axios.put(`/api/InventorySlip/${slipId}/update-misa-status`);

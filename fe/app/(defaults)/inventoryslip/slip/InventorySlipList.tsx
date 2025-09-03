@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { InventorySlip, InventorySlipDetail, MaterialOutputMappingDto, fetchInventorySlipById, updateInventorySlip, finalizeInventorySlip, callImportExportInvoice, updateMisaStatus } from '../service';
+import { InventorySlip, InventorySlipDetail, MaterialOutputMappingDto, fetchInventorySlipById, updateInventorySlip, finalizeInventorySlip, callImportExportInvoice, updateMisaStatus, checkSlipProductsMisaStatus } from '../service';
 import InventorySlipForm from './InventorySlipForm';
 import MaterialExportSlipForm from './MaterialExportSlipForm';
 import Swal from 'sweetalert2';
@@ -299,6 +299,32 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                                                 
                                                 if (result.isConfirmed) {
                                                     try {
+                                                        // Kiểm tra trạng thái MISA của các sản phẩm trước
+                                                        const misaCheckResult = await checkSlipProductsMisaStatus(slip.id);
+                                                        
+                                                        if (!misaCheckResult.success) {
+                                                            throw new Error(misaCheckResult.message || 'Không thể kiểm tra trạng thái MISA của sản phẩm');
+                                                        }
+                                                        
+                                                        if (!misaCheckResult.canUpdateMisa) {
+                                                            // Hiển thị thông báo lỗi với danh sách sản phẩm chưa update MISA
+                                                            const notUpdatedProducts = misaCheckResult.notUpdatedProducts || [];
+                                                            const productList = notUpdatedProducts.map((p: any) => {
+                                                                const productName = p.ProductName || p.productName || 'Không có tên';
+                                                                const productCode = p.ProductCode || p.productCode || 'Không có mã';
+                                                                return `${productName} (${productCode})`;
+                                                            }).join(', ');
+                                                            
+                                                            Swal.fire({
+                                                                title: 'Không thể cập nhật MISA',
+                                                                text: `Các sản phẩm sau chưa được cập nhật MISA: ${productList}`,
+                                                                icon: 'error',
+                                                                confirmButtonText: 'Đã hiểu',
+                                                            });
+                                                            return;
+                                                        }
+                                                        
+                                                        // Nếu tất cả sản phẩm đã update MISA, tiến hành cập nhật phiếu
                                                         // Gọi API import-export-invoice
                                                         const importExportResult = await callImportExportInvoice(slip.id);
                                                         if (!importExportResult) {

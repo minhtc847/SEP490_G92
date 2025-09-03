@@ -32,5 +32,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
         Task<InventorySlipDto> UpdateInventorySlipAsync(int id, CreateInventorySlipDto dto, MappingInfoDto mappingInfo = null);
 
         Task<bool> UpdateMisaStatusAsync(int slipId);
+        
+        Task<object> CheckSlipProductsMisaStatusAsync(int slipId);
     }
 }

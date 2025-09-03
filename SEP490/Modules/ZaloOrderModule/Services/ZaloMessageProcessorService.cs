@@ -267,7 +267,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                 // Create order details
                 var orderDetails = updatedConversation.OrderItems.Select(item => new CreateZaloOrderDetailDTO
                 {
-                    ProductName = $"Kính {item.ProductType}-{item.ProductCode} phút, KT: {item.Width}x{item.Height}x{item.Thickness} mm",
+                    ProductName = $"Kính {item.ProductType}-{item.ProductCode} phút, KT: {item.Width}*{item.Height}*{item.Thickness} mm",
                     ProductCode = $"{item.ProductType}-{item.ProductCode}",
                     Height = item.Height.ToString(),
                     Width = item.Width.ToString(),

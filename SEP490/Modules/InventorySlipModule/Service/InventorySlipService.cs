@@ -1518,5 +1518,91 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 return false;
             }
         }
+
+        public async Task<object> CheckSlipProductsMisaStatusAsync(int slipId)
+        {
+            try
+            {
+                // Lấy thông tin export từ phiếu kho
+                var exportInfo = await GetExportInfoBySlipIdAsync(slipId);
+                if (exportInfo == null)
+                    return new { success = false, message = "Không tìm thấy phiếu kho" };
+
+                var allProducts = new List<string>();
+                
+                // Thêm tất cả sản phẩm export
+                allProducts.AddRange(exportInfo.ProductsExport.Select(p => p.ProductName).Where(name => !string.IsNullOrEmpty(name)));
+                
+                // Thêm tất cả sản phẩm import
+                allProducts.AddRange(exportInfo.ProductsImport.Select(p => p.ProductName).Where(name => !string.IsNullOrEmpty(name)));
+
+                if (!allProducts.Any())
+                    return new { success = false, message = "Phiếu kho không có sản phẩm nào" };
+
+                // Loại bỏ các sản phẩm trùng lặp
+                var uniqueProducts = allProducts.Distinct().ToList();
+
+                // Kiểm tra trạng thái MISA của từng sản phẩm
+                var productsWithMisaStatus = new List<object>();
+                var notUpdatedProducts = new List<object>();
+
+                foreach (var productName in uniqueProducts)
+                {
+                    // Tìm sản phẩm trong database bằng tên
+                    var product = await _context.Products
+                        .FirstOrDefaultAsync(p => p.ProductName == productName);
+
+                    if (product != null)
+                    {
+                        var productInfo = new
+                        {
+                            ProductName = productName,
+                            ProductCode = product.ProductCode ?? "",
+                            IsUpdateMisa = product.isupdatemisa
+                        };
+
+                        productsWithMisaStatus.Add(productInfo);
+
+                        if (!product.isupdatemisa)
+                        {
+                            notUpdatedProducts.Add(productInfo);
+                        }
+                    }
+                    else
+                    {
+                        // Nếu không tìm thấy sản phẩm, coi như chưa update MISA
+                        var productInfo = new
+                        {
+                            ProductName = productName,
+                            ProductCode = "",
+                            IsUpdateMisa = false
+                        };
+
+                        productsWithMisaStatus.Add(productInfo);
+                        notUpdatedProducts.Add(productInfo);
+                    }
+                }
+
+                var totalProducts = productsWithMisaStatus.Count;
+                var updatedProducts = productsWithMisaStatus.Count(p => (bool)p.GetType().GetProperty("IsUpdateMisa").GetValue(p));
+                var canUpdateMisa = totalProducts > 0 && updatedProducts == totalProducts;
+
+                return new
+                {
+                    success = true,
+                    canUpdateMisa = canUpdateMisa,
+                    totalProducts = totalProducts,
+                    updatedProducts = updatedProducts,
+                    notUpdatedProducts = notUpdatedProducts,
+                    message = canUpdateMisa 
+                        ? "Tất cả sản phẩm đã được cập nhật MISA. Có thể tiến hành cập nhật phiếu kho."
+                        : $"Có {notUpdatedProducts.Count} sản phẩm chưa được cập nhật MISA. Vui lòng cập nhật MISA cho tất cả sản phẩm trước."
+                };
+            }
+            catch (Exception ex)
+            {
+                return new { success = false, message = $"Lỗi khi kiểm tra trạng thái MISA: {ex.Message}" };
+            }
+        }
     }
 }
