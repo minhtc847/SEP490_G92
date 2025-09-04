@@ -611,18 +611,27 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                 </table>
               </div>
               <div className="flex gap-2 mt-3">
-                <button
-                  onClick={handleAddProduct}
-                  className="px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white text-sm rounded shadow transition-colors"
-                >
-                  Thêm
-                </button>
-                <button
-                  onClick={handleUpdateProduct}
-                  className="px-4 py-2 bg-[#28a745] hover:bg-[#218838] text-white text-sm rounded shadow transition-colors"
-                >
-                  Sửa
-                </button>
+                {orderStatus !== "Completed" && (
+                  <>
+                    <button
+                      onClick={handleAddProduct}
+                      className="px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white text-sm rounded shadow transition-colors"
+                    >
+                      Thêm
+                    </button>
+                    <button
+                      onClick={handleUpdateProduct}
+                      className="px-4 py-2 bg-[#28a745] hover:bg-[#218838] text-white text-sm rounded shadow transition-colors"
+                    >
+                      Sửa
+                    </button>
+                  </>
+                )}
+                {orderStatus === "Completed" && (
+                  <div className="px-4 py-2 bg-gray-100 text-gray-500 text-sm rounded shadow">
+                    Lệnh sản xuất đã hoàn thành - Không thể chỉnh sửa
+                  </div>
+                )}
               </div>
             </div>
 
@@ -706,20 +715,29 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                 </div>
               </div>
               <div className="flex gap-2 mt-3">
-                <button
-                  onClick={handleAddMaterial}
-                  className="px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white text-sm rounded shadow transition-colors"
-                >
-                  Thêm
-                </button>
-                <button
-                  onClick={handleUpdateMaterial}
-                  className={`px-4 py-2 text-white text-sm rounded shadow transition-colors ${selectedMaterial ? "bg-[#28a745] hover:bg-[#218838]" : "bg-gray-400 cursor-not-allowed"}`}
-                  disabled={!selectedMaterial}
-                  title={selectedMaterial ? `Cập nhật ${selectedMaterial.productName}` : "Chọn nguyên vật liệu để cập nhật"}
-                >
-                  Sửa {selectedMaterial ? `(${selectedMaterial.productName.length > 20 ? selectedMaterial.productName.substring(0, 20) + '...' : selectedMaterial.productName})` : ""}
-                </button>
+                {orderStatus !== "Completed" && (
+                  <>
+                    <button
+                      onClick={handleAddMaterial}
+                      className="px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white text-sm rounded shadow transition-colors"
+                    >
+                      Thêm
+                    </button>
+                    <button
+                      onClick={handleUpdateMaterial}
+                      className={`px-4 py-2 text-white text-sm rounded shadow transition-colors ${selectedMaterial ? "bg-[#28a745] hover:bg-[#218838]" : "bg-gray-400 cursor-not-allowed"}`}
+                      disabled={!selectedMaterial}
+                      title={selectedMaterial ? `Cập nhật ${selectedMaterial.productName}` : "Chọn nguyên vật liệu để cập nhật"}
+                    >
+                      Sửa {selectedMaterial ? `(${selectedMaterial.productName.length > 20 ? selectedMaterial.productName.substring(0, 20) + '...' : selectedMaterial.productName})` : ""}
+                    </button>
+                  </>
+                )}
+                {orderStatus === "Completed" && (
+                  <div className="px-4 py-2 bg-gray-100 text-gray-500 text-sm rounded shadow">
+                    Lệnh sản xuất đã hoàn thành - Không thể chỉnh sửa
+                  </div>
+                )}
               </div>
             </div>
           </div>

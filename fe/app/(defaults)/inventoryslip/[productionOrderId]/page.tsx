@@ -298,7 +298,7 @@ const ProductionOrderInventorySlipPage = () => {
                         >
                             ← Quay lại
                         </button>
-                        {productionOrderInfo.type === 'Cắt kính' && (
+                        {productionOrderInfo.type === 'Cắt kính' && productionOrderInfo.status !== 2 && (
                             <button
                                 onClick={() => setShowCutGlassForm(true)}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
@@ -306,13 +306,23 @@ const ProductionOrderInventorySlipPage = () => {
                                 Tạo phiếu cắt kính
                             </button>
                         )}
-                        {(productionOrderInfo.type === 'Ghép kính' || ['Sản xuất keo', 'Đổ keo'].includes(productionOrderInfo.type)) && (
+                        {productionOrderInfo.type === 'Cắt kính' && productionOrderInfo.status === 2 && (
+                            <div className="px-4 py-2 bg-gray-100 text-gray-500 rounded-md">
+                                Lệnh sản xuất đã hoàn thành - Không thể tạo phiếu
+                            </div>
+                        )}
+                        {(productionOrderInfo.type === 'Ghép kính' || ['Sản xuất keo', 'Đổ keo'].includes(productionOrderInfo.type)) && productionOrderInfo.status !== 2 && (
                             <button
                                 onClick={() => setShowMaterialExportForm(true)}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                             >
                                 {productionOrderInfo.type === 'Ghép kính' ? 'Tạo phiếu xuất keo butyl' : 'Tạo phiếu xuất hóa chất'}
                             </button>
+                        )}
+                        {(productionOrderInfo.type === 'Ghép kính' || ['Sản xuất keo', 'Đổ keo'].includes(productionOrderInfo.type)) && productionOrderInfo.status === 2 && (
+                            <div className="px-4 py-2 bg-gray-100 text-gray-500 rounded-md">
+                                Lệnh sản xuất đã hoàn thành - Không thể tạo phiếu
+                            </div>
                         )}
                     </div>
                 </div>

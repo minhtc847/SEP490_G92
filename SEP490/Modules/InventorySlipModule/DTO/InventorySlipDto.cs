@@ -90,6 +90,7 @@ namespace SEP490.Modules.InventorySlipModule.DTO
         public string? ProductionOrderCode { get; set; }
         public string? Type { get; set; }
         public string? Description { get; set; }
+        public int Status { get; set; } // 0: Pending, 1: InProgress, 2: Completed, 3: Cancelled
         public List<ProductionOutputDto> ProductionOutputs { get; set; } = new List<ProductionOutputDto>();
         public List<ProductInfoDto> AvailableProducts { get; set; } = new List<ProductInfoDto>();
         

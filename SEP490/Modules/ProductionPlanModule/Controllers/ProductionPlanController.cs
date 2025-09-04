@@ -86,5 +86,22 @@ namespace SEP490.Modules.Production_plans.Controllers
                 return StatusCode(500, new { message = "Xoá kế hoạch sản xuất thất bại!" });
             return Ok(new { message = "Xoá kế hoạch sản xuất thành công!" });
         }
+
+        [HttpPut("{id}/complete")]
+        public async Task<IActionResult> CompleteProductionPlan(int id)
+        {
+            try
+            {
+                var result = await _productionPlanService.CompleteProductionPlanAsync(id);
+                if (!result)
+                    return BadRequest(new { message = "Không tìm thấy kế hoạch sản xuất hoặc đã hoàn thành!" });
+                
+                return Ok(new { message = "Kế hoạch sản xuất đã được hoàn thành!" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Có lỗi xảy ra khi hoàn thành kế hoạch sản xuất!", error = ex.Message });
+            }
+        }
     }
 }
