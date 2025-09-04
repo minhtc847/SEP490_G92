@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { fetchProductionOutputsByOrderId, fetchProductionDefectsByOrderId, createDefectReport, updateDefectReport, ProductionOutput, ProductionDefect, UpdateDefectReport } from './service';
 import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react';
 import { Fragment } from 'react';
+import Swal from 'sweetalert2';
 
 interface ListOutputsPOProps {
   productionOrderId: number;
@@ -102,6 +103,42 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
   const handleSubmitDefect = async () => {
     if (!selectedProductId || defectQuantity <= 0 || !defectType || !defectStage) return;
     
+    // Validate defect quantity against finished quantity
+    const selectedOutput = outputs.find(output => output.productId === selectedProductId);
+    if (selectedOutput && defectQuantity > (selectedOutput.done || 0)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi validation',
+        text: 'Số lượng lỗi không được vượt quá số lượng đã hoàn thành!',
+        padding: '2em',
+        customClass: { popup: 'sweet-alerts' },
+      });
+      return;
+    }
+    
+    // Show confirmation dialog
+    const swalWithBootstrapButtons = Swal.mixin({
+      customClass: {
+        confirmButton: 'btn btn-secondary',
+        cancelButton: 'btn btn-dark ltr:mr-3 rtl:ml-3',
+        popup: 'sweet-alerts',
+      },
+      buttonsStyling: false,
+    });
+
+    const result = await swalWithBootstrapButtons.fire({
+      title: 'Xác nhận tạo báo cáo lỗi',
+      text: `Bạn có chắc chắn muốn tạo báo cáo lỗi cho sản phẩm "${selectedOutput?.productName}" với số lượng ${defectQuantity}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Có, tạo báo cáo!',
+      cancelButtonText: 'Không, hủy!',
+      reverseButtons: true,
+      padding: '2em',
+    });
+
+    if (!result.isConfirmed) return;
+    
     setSubmitting(true);
     try {
       await createDefectReport({
@@ -124,10 +161,22 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
       handleCloseModal();
       
       // Show success notification
-      alert('✅ Tạo báo cáo lỗi thành công!');
+      Swal.fire({
+        icon: 'success',
+        title: 'Tạo báo cáo lỗi thành công!',
+        text: 'Báo cáo lỗi đã được tạo và cập nhật vào hệ thống.',
+        padding: '2em',
+        customClass: { popup: 'sweet-alerts' },
+      });
     } catch (error) {
       console.error('Error creating defect report:', error);
-      alert('❌ Tạo báo cáo lỗi thất bại. Vui lòng thử lại!');
+      Swal.fire({
+        icon: 'error',
+        title: 'Tạo báo cáo lỗi thất bại',
+        text: 'Có lỗi xảy ra khi tạo báo cáo lỗi. Vui lòng thử lại!',
+        padding: '2em',
+        customClass: { popup: 'sweet-alerts' },
+      });
     } finally {
       setSubmitting(false);
     }
@@ -154,6 +203,42 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
   const handleSubmitEditDefect = async () => {
     if (!editingDefect || editDefectQuantity <= 0 || !editDefectType || !editDefectStage) return;
     
+    // Validate defect quantity against finished quantity
+    const selectedOutput = outputs.find(output => output.productId === editingDefect.productId);
+    if (selectedOutput && editDefectQuantity > (selectedOutput.done || 0)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi validation',
+        text: 'Số lượng lỗi không được vượt quá số lượng đã hoàn thành!',
+        padding: '2em',
+        customClass: { popup: 'sweet-alerts' },
+      });
+      return;
+    }
+    
+    // Show confirmation dialog
+    const swalWithBootstrapButtons = Swal.mixin({
+      customClass: {
+        confirmButton: 'btn btn-secondary',
+        cancelButton: 'btn btn-dark ltr:mr-3 rtl:ml-3',
+        popup: 'sweet-alerts',
+      },
+      buttonsStyling: false,
+    });
+
+    const result = await swalWithBootstrapButtons.fire({
+      title: 'Xác nhận cập nhật báo cáo lỗi',
+      text: `Bạn có chắc chắn muốn cập nhật báo cáo lỗi cho sản phẩm "${editingDefect.productName}" với số lượng ${editDefectQuantity}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Có, cập nhật!',
+      cancelButtonText: 'Không, hủy!',
+      reverseButtons: true,
+      padding: '2em',
+    });
+
+    if (!result.isConfirmed) return;
+    
     setEditSubmitting(true);
     try {
       await updateDefectReport(editingDefect.id, {
@@ -174,10 +259,22 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
       handleCloseEditModal();
       
       // Show success notification
-      alert('✅ Cập nhật báo cáo lỗi thành công!');
+      Swal.fire({
+        icon: 'success',
+        title: 'Cập nhật báo cáo lỗi thành công!',
+        text: 'Báo cáo lỗi đã được cập nhật và lưu vào hệ thống.',
+        padding: '2em',
+        customClass: { popup: 'sweet-alerts' },
+      });
     } catch (error) {
       console.error('Error updating defect report:', error);
-      alert('❌ Cập nhật báo cáo lỗi thất bại. Vui lòng thử lại!');
+      Swal.fire({
+        icon: 'error',
+        title: 'Cập nhật báo cáo lỗi thất bại',
+        text: 'Có lỗi xảy ra khi cập nhật báo cáo lỗi. Vui lòng thử lại!',
+        padding: '2em',
+        customClass: { popup: 'sweet-alerts' },
+      });
     } finally {
       setEditSubmitting(false);
     }
@@ -199,7 +296,7 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
           disabled={outputs.length === 0}
           title={outputs.length === 0 ? "Không có sản phẩm nào để báo lỗi" : "Tạo báo cáo lỗi mới"}
         >
-          🚨 Báo lỗi
+          Báo lỗi
         </button>
       </div>
       <div className="table-responsive mb-8">
@@ -280,7 +377,7 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
                       onClick={() => handleOpenEditModal(defect)}
                       title="Chỉnh sửa báo cáo lỗi"
                     >
-                      ✏️ Sửa
+                      Sửa
                     </button>
                   </td>
                 </tr>
@@ -341,15 +438,44 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
                       </div>
 
                       <div className="form-group mt-4">
-                        <label className="block text-sm font-medium mb-2">Số lượng lỗi *</label>
+                        <label className="block text-sm font-medium mb-2">
+                          Số lượng lỗi * 
+                          {selectedProductId && (() => {
+                            const selectedOutput = outputs.find(output => output.productId === selectedProductId);
+                            return selectedOutput ? (
+                              <span className="text-xs text-gray-500 ml-2">
+                                (Tối đa: {selectedOutput.done || 0})
+                              </span>
+                            ) : null;
+                          })()}
+                        </label>
                         <input 
                           type="number" 
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-[#1a233a] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                          className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-[#1a233a] focus:outline-none focus:ring-2 focus:border-transparent ${
+                            selectedProductId && (() => {
+                              const selectedOutput = outputs.find(output => output.productId === selectedProductId);
+                              return selectedOutput && defectQuantity > (selectedOutput.done || 0) 
+                                ? 'border-red-500 focus:ring-red-500' 
+                                : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500';
+                            })()
+                          }`}
                           min={1} 
+                          max={selectedProductId ? (() => {
+                            const selectedOutput = outputs.find(output => output.productId === selectedProductId);
+                            return selectedOutput ? selectedOutput.done || 0 : undefined;
+                          })() : undefined}
                           value={defectQuantity} 
                           onChange={e => setDefectQuantity(Number(e.target.value))} 
                           placeholder="Nhập số lượng sản phẩm lỗi"
                         />
+                        {selectedProductId && (() => {
+                          const selectedOutput = outputs.find(output => output.productId === selectedProductId);
+                          return selectedOutput && defectQuantity > (selectedOutput.done || 0) ? (
+                            <p className="text-red-500 text-xs mt-1">
+                              Số lượng lỗi không được vượt quá số lượng đã hoàn thành ({selectedOutput.done || 0})
+                            </p>
+                          ) : null;
+                        })()}
                       </div>
 
                       <div className="form-group mt-4">
@@ -404,7 +530,10 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
                           type="button" 
                           className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
                           onClick={handleSubmitDefect} 
-                          disabled={submitting || defectQuantity <= 0 || !selectedProductId || !defectType || !defectStage}
+                          disabled={submitting || (defectQuantity <= 0) || !selectedProductId || !defectType || !defectStage || (selectedProductId ? (() => {
+                            const selectedOutput = outputs.find(output => output.productId === selectedProductId);
+                            return Boolean(selectedOutput && defectQuantity > (selectedOutput.done || 0));
+                          })() : false)}
                         >
                           {submitting ? 'Đang gửi...' : 'Tạo báo cáo'}
                         </button>
@@ -464,15 +593,44 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
                        </div>
 
                        <div className="form-group mt-4">
-                         <label className="block text-sm font-medium mb-2">Số lượng lỗi *</label>
+                         <label className="block text-sm font-medium mb-2">
+                           Số lượng lỗi * 
+                           {editingDefect && (() => {
+                             const selectedOutput = outputs.find(output => output.productId === editingDefect.productId);
+                             return selectedOutput ? (
+                               <span className="text-xs text-gray-500 ml-2">
+                                 (Tối đa: {selectedOutput.done || 0})
+                               </span>
+                             ) : null;
+                           })()}
+                         </label>
                          <input 
                            type="number" 
-                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-[#1a233a] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                           className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-[#1a233a] focus:outline-none focus:ring-2 focus:border-transparent ${
+                             editingDefect && (() => {
+                               const selectedOutput = outputs.find(output => output.productId === editingDefect.productId);
+                               return selectedOutput && editDefectQuantity > (selectedOutput.done || 0) 
+                                 ? 'border-red-500 focus:ring-red-500' 
+                                 : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500';
+                             })()
+                           }`}
                            min={1} 
+                           max={editingDefect ? (() => {
+                             const selectedOutput = outputs.find(output => output.productId === editingDefect.productId);
+                             return selectedOutput ? selectedOutput.done || 0 : undefined;
+                           })() : undefined}
                            value={editDefectQuantity} 
                            onChange={e => setEditDefectQuantity(Number(e.target.value))} 
                            placeholder="Nhập số lượng sản phẩm lỗi"
                          />
+                         {editingDefect && (() => {
+                           const selectedOutput = outputs.find(output => output.productId === editingDefect.productId);
+                           return selectedOutput && editDefectQuantity > (selectedOutput.done || 0) ? (
+                             <p className="text-red-500 text-xs mt-1">
+                               Số lượng lỗi không được vượt quá số lượng đã hoàn thành ({selectedOutput.done || 0})
+                             </p>
+                           ) : null;
+                         })()}
                        </div>
 
                        <div className="form-group mt-4">
@@ -533,7 +691,10 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
                            type="button" 
                            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
                            onClick={handleSubmitEditDefect} 
-                           disabled={editSubmitting || editDefectQuantity <= 0 || !editDefectType || !editDefectStage}
+                           disabled={editSubmitting || (editDefectQuantity <= 0) || !editDefectType || !editDefectStage || (editingDefect ? (() => {
+                             const selectedOutput = outputs.find(output => output.productId === editingDefect.productId);
+                             return Boolean(selectedOutput && editDefectQuantity > (selectedOutput.done || 0));
+                           })() : false)}
                          >
                            {editSubmitting ? 'Đang cập nhật...' : 'Lưu thay đổi'}
                          </button>

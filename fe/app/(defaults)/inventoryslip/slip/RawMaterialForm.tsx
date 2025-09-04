@@ -104,7 +104,7 @@ export default function RawMaterialForm({
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg w-full max-w-2xl">
+        <div className="w-full">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-blue-800">Thêm Nguyên Vật Liệu (Kính lớn)</h3>
                 <button
