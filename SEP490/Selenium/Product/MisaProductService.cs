@@ -15,11 +15,11 @@ namespace SEP490.Selenium.Product
         {
         }
     //    
-        public void AddProduct(InputSingleProduct input)
+        public string AddProduct(InputSingleProduct input)
         {
             InitSelenium();
             Login();
-            Thread.Sleep(3000); // Wait for the page to load
+            Thread.Sleep(1000); // Wait for the page to load
             
             ClickIfExists(
                 By.XPath("//div[contains(@class, 'ms-button-text') and contains(text(), 'Thêm')]"),
@@ -27,14 +27,19 @@ namespace SEP490.Selenium.Product
                 wait
                 );
             Thread.Sleep(500); // Wait for the modal to open
-            AddField(input);
+            string productCode = AddField(input);
             CloseDriver();
+            return productCode;
+
         }
-        public void AddField(InputSingleProduct input)
+        public string AddField(InputSingleProduct input)
         {
             var hangHoaElement = wait.Until(d => d.FindElement(By.XPath("//div[@class='item-title']/div[text()='"+input.Type+"']")));
             hangHoaElement.Click();
             Thread.Sleep(500); // Wait for the dropdown to open
+
+            string productCode = getProductCode();
+
             var tenInput = wait.Until(d => d.FindElement(By.XPath("//div[text()='Tên']/ancestor::div[contains(@class,'ms-editor')]//input[@type='text']")));
             tenInput.SendKeys(input.Name);
             Thread.Sleep(500); // Wait for the input to be filled
@@ -47,9 +52,50 @@ namespace SEP490.Selenium.Product
     driver.FindElement(By.XPath("//div[text()='Cất và Thêm']/ancestor::button"))
 );
             catVaThemButton.Click();
-            Thread.Sleep(1500); // Wait for the action to complete
+            Thread.Sleep(500); // Wait for the action to complete
+            return productCode;
         }
-        
+        private string getProductCode()
+        {
+            var productIdInput = wait.Until(drv => drv.FindElement(By.XPath("//div[contains(text(),'Mã')]/ancestor::div[contains(@class,'ms-input')]//input")));
+
+            wait.Until(drv => !string.IsNullOrEmpty(productIdInput.GetAttribute("value")));
+
+            return productIdInput.GetAttribute("value");
+
+            
+        }
+
+        public void updateProduct(InputUpdateProduct input)
+        {
+            InitSelenium();
+            Login();
+            Thread.Sleep(1000);
+            updateProductField(input);
+            CloseDriver();
+
+        }
+        private void updateProductField(InputUpdateProduct input)
+        {
+            IWebElement searchInput = wait.Until(drv =>
+    drv.FindElement(By.XPath("(//input[@placeholder='Tìm kiếm'])[2]"))
+);
+            searchInput.SendKeys(input.ProductCode.ToString());
+            Thread.Sleep(500);
+            searchInput.SendKeys(Keys.Enter);
+            Thread.Sleep(500);
+            var editButton = wait.Until(d => d.FindElement(By.XPath("//div[contains(@class, 'ms-button-text') and contains(text(), 'Sửa')]")));
+            editButton.Click();
+            Thread.Sleep(500);
+            var nameInput = wait.Until(d => d.FindElement(By.XPath("//div[text()='Tên']/ancestor::div[contains(@class,'ms-editor')]//input[@type='text']")));
+            ClearAndType(nameInput, input.Name);
+            var unitInput = wait.Until(d => d.FindElement(By.XPath("//div[text()='Đơn vị tính chính']/ancestor::div[contains(@class,'ms-combo-box')]//input[@class='combo-input']")));
+            ClearAndType(unitInput, input.Unit);
+            Thread.Sleep(500);
+            var saveButton = wait.Until(d => d.FindElement(By.XPath("//div[text()='Cất']/ancestor::button")));
+            saveButton.Click();
+            Thread.Sleep(500); // Wait for the action to complete
+        }
     }
 
 }

@@ -42,25 +42,25 @@ namespace SEP490.Selenium
 
         protected virtual void Login()
         {
-            Thread.Sleep(300);
-            var emailInputs = wait.Until(d => d.FindElements(By.Name("username")));
-            if (emailInputs.Any())
-            {
-                IWebElement emailInput = emailInputs[0];
-                emailInput.Clear();
-                emailInput.SendKeys(_config["Misa:Username"]);
+            //Thread.Sleep(300);
+            //var emailInputs = wait.Until(d => d.FindElements(By.Name("username")));
+            //if (emailInputs.Any())
+            //{
+            //    IWebElement emailInput = emailInputs[0];
+            //    emailInput.Clear();
+            //    emailInput.SendKeys(_config["Misa:Username"]);
 
-                IWebElement passwordInput = driver.FindElement(By.Name("pass"));
-                passwordInput.Clear();
-                passwordInput.SendKeys(_config["Misa:Password"]);
+            //    IWebElement passwordInput = driver.FindElement(By.Name("pass"));
+            //    passwordInput.Clear();
+            //    passwordInput.SendKeys(_config["Misa:Password"]);
 
-                IWebElement loginButton = driver.FindElement(By.CssSelector(
-                    "#box-login-right > div > div > div.login-form-basic-container > div > div.login-form-btn-container.login-class > button"
-                ));
-                loginButton.Click();
+            //    IWebElement loginButton = driver.FindElement(By.CssSelector(
+            //        "#box-login-right > div > div > div.login-form-basic-container > div > div.login-form-btn-container.login-class > button"
+            //    ));
+            //    loginButton.Click();
 
-                Thread.Sleep(1000);
-            }
+            //    Thread.Sleep(1000);
+            //}
             //Thread.Sleep(200);
 
             //ClickIfExists(By.XPath("/html/body/div[5]/div/i"), driver, wait);
@@ -140,6 +140,15 @@ namespace SEP490.Selenium
             }
             return false;
         }
-    
-}
+        protected static void ClearAndType(IWebElement element, string text)
+        {
+            // Chọn tất cả nội dung
+            element.SendKeys(Keys.Control + "a");
+            // Xóa
+            element.SendKeys(Keys.Delete);
+            // Gõ text mới
+            element.SendKeys(text);
+        }
+
+    }
 }
