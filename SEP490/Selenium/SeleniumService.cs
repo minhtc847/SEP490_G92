@@ -5,7 +5,7 @@ using SEP490.Common.Services;
 
 namespace SEP490.Selenium
 {
-    public abstract class SeleniumService : BaseService
+    public abstract class SeleniumService : BaseTransientService
     {
         protected IWebDriver driver;
         protected WebDriverWait wait;

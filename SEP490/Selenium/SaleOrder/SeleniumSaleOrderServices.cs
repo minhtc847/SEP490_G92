@@ -9,40 +9,16 @@ using SEP490.Selenium.SaleOrder.DTO;
 
 namespace SEP490.Selenium.SaleOrder
 {
-    public class SeleniumSaleOrderServices : BaseTransientService, ISeleniumSaleOrderServices
+    public class SeleniumSaleOrderServices : SeleniumService, ISeleniumSaleOrderServices
     {
-        private readonly IWebDriver driver;
-        private string saleOrderUrl = "https://actapp.misa.vn/app/SA/SAOrder";
-        private WebDriverWait wait;
-        private readonly IConfiguration _config;
         public SeleniumSaleOrderServices(IConfiguration configuration)
+            : base(configuration, "https://actapp.misa.vn/app/SA/SAOrder")
         {
-            var options = new ChromeOptions();
-            //options.AddArgument("--headless=new");
-            options.AddArgument("--lang=vi-VN");
-            options.AddArgument("--no-sandbox");
-            options.AddArgument("--disable-dev-shm-usage");
-            options.AddArgument("--disable-gpu");
-            options.AddArgument("--window-size=1920,1080");
-
-            options.AddArgument(@"user-data-dir=C:\Users\caomi\AppData\Local\Google\Chrome\User Data");
-            // pick a profile (e.g., "Default" or "Profile 1")
-            options.AddArgument("profile-directory=Profile 1");
-
-            // optional if you run on Windows
-            options.AddArgument("--remote-debugging-port=9222");
-            options.AddExcludedArgument("enable-automation");
-            options.AddAdditionalOption("useAutomationExtension", false);
-
-            driver = new ChromeDriver(options);
-            wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-            _config = configuration;
         }
         public string OpenSaleOrderPage(SaleOrderInput input)
         {
+            InitSelenium();
             string orderId = "";
-            driver.Navigate().GoToUrl(saleOrderUrl);
-            
             Login();
             var button = wait.Until(drv => drv.FindElement(By.XPath("//div[contains(@class, 'ms-button-text') and contains(text(), 'Thêm đơn đặt hàng')]//ancestor::button")));
             button.Click();
@@ -51,74 +27,12 @@ namespace SEP490.Selenium.SaleOrder
             wait.Until(drv => !string.IsNullOrEmpty(orderIdInput.GetAttribute("value")));
 
             orderId = orderIdInput.GetAttribute("value");
-            Console.WriteLine(orderId);
             AddField(input);
             CloseDriver();
             return orderId;
         }
-        private void Login()
-        {
-            Thread.Sleep(1500); // Wait for the page to load
-            var emailInputs = wait.Until(d => d.FindElements(By.Name("username")));
-            if (emailInputs.Any())
-            {
-                IWebElement emailInput = emailInputs[0];
-
-                // Clear any prefilled value
-                emailInput.Clear();
-                emailInput.SendKeys(_config["Misa:Username"]);
-
-                IWebElement passwordInput = driver.FindElement(By.Name("pass"));
-                passwordInput.Clear();
-                passwordInput.SendKeys(_config["Misa:Password"]);
-
-                IWebElement loginButton = driver.FindElement(By.CssSelector(
-                    "#box-login-right > div > div > div.login-form-basic-container > div > div.login-form-btn-container.login-class > button"
-                ));
-                loginButton.Click();
-
-                Thread.Sleep(1000);
-            }
-            Thread.Sleep(1000);
-
-
-            // Ấn skip nếu có
-            ClickIfExists(By.XPath("/html/body/div[5]/div/i"), driver, wait);
-
-            Thread.Sleep(1000);
-
-            // Đợi loading biến mất
-            wait.Until(d => d.FindElement(By.Id("loading-bg")).GetAttribute("style").Contains("display: none"));
-
-            // Ấn continue nếu có
-            ClickIfExists(
-                By.CssSelector("#app > div.w-full.overflow-auto.h-full > div > div > div.cnl-box-container.flexed > div > div.flexed-row.buttons > div:nth-child(1) > button > div"),
-                driver,
-                wait
-            );
-            Thread.Sleep(500);
-            //Add Button Da hieu 
-            ClickIfExists(
-        By.XPath("//button[.//div[normalize-space()='Đã hiểu']]"),
-        driver,
-        wait
-    );
-            Thread.Sleep(500);
-        }
-        private void CloseDriver()
-        {
-            if (driver != null)
-            {
-                driver.Close();
-                driver.Quit();
-            }
-        }
         private void AddField(SaleOrderInput soInput)
         {
-
-
-
-
             Thread.Sleep(1000);
             var userDropdownButton = wait.Until(drv => drv.FindElement(By.XPath(
     "//div[div[contains(@class, 'combo-title__text') and text()='Mã khách hàng']]//following::div[contains(@class, 'btn-dropdown')][1]"
@@ -258,30 +172,6 @@ namespace SEP490.Selenium.SaleOrder
                         ));
             exitButton.Click();
             Thread.Sleep(500);
-        }
-        public static bool ClickIfExists(By by, IWebDriver driver, WebDriverWait wait)
-        {
-            try
-            {
-                var element = wait.Until(d =>
-                {
-                    var elements = d.FindElements(by);
-                    return elements.FirstOrDefault(e => e.Displayed);
-                });
-
-                if (element != null)
-                {
-                    IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
-                    js.ExecuteScript("arguments[0].click();", element);
-                    return true;
-                }
-            }
-            catch (WebDriverTimeoutException)
-            {
-                // Timeout after retries
-                return false;
-            }
-            return false;
         }
     }
 }
