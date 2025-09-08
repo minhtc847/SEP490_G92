@@ -47,7 +47,7 @@ namespace SEP490.Selenium.Product
     driver.FindElement(By.XPath("//div[text()='Đơn vị tính chính']/ancestor::div[contains(@class,'ms-combo-box')]//input[@class='combo-input']"))
 );
             donViTinhInput.SendKeys(input.Unit);
-            Thread.Sleep(500);
+            Thread.Sleep(1000);
             var catVaThemButton = wait.Until(driver =>
     driver.FindElement(By.XPath("//div[text()='Cất và Thêm']/ancestor::button"))
 );

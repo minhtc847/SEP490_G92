@@ -47,14 +47,14 @@ namespace SEP490.Selenium.ImportExportInvoice
             //{
             //DriverHelper.KillChromeDriver();
             driver = new ChromeDriver(options);
-                wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-                
+            wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+
             //}
             //catch (Exception ex)
             //{
             //    Console.WriteLine("ChromeDriver init error: " + ex.Message);
             //}
-            
+
         }
 
 
