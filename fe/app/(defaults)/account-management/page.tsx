@@ -295,14 +295,16 @@ const AccountManagementPage = () => {
                                                         </button>
                                                     </Link>
                                                 </Tippy>
-                                                <Tippy content={account.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}>
-                                                    <button 
-                                                        className={`btn btn-sm ${account.isActive ? 'btn-outline-warning' : 'btn-outline-success'}`}
-                                                        onClick={() => handleToggleStatus(account.id, account.isActive)}
-                                                    >
-                                                        {account.isActive ? <IconLock /> : <IconLock />}
-                                                    </button>
-                                                </Tippy>
+                                                {account.roleName !== 'Chủ xưởng' && (
+                                                    <Tippy content={account.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}>
+                                                        <button 
+                                                            className={`btn btn-sm ${account.isActive ? 'btn-outline-warning' : 'btn-outline-success'}`}
+                                                            onClick={() => handleToggleStatus(account.id, account.isActive)}
+                                                        >
+                                                            {account.isActive ? <IconLock /> : <IconLock />}
+                                                        </button>
+                                                    </Tippy>
+                                                )}
                                                 <Tippy content="Đổi mật khẩu">
                                                     <button 
                                                         className="btn btn-sm btn-outline-primary"
@@ -361,14 +363,16 @@ const AccountManagementPage = () => {
                                                         <IconEdit />
                                                     </button>
                                                 </Tippy>
-                                                <Tippy content="Xóa tài khoản">
-                                                    <button 
-                                                        className="btn btn-sm btn-outline-danger"
-                                                        onClick={() => handleDelete(account.id, account.username)}
-                                                    >
-                                                        <IconTrashLines />
-                                                    </button>
-                                                </Tippy>
+                                                {account.roleName !== 'Chủ xưởng' && (
+                                                    <Tippy content="Xóa tài khoản">
+                                                        <button 
+                                                            className="btn btn-sm btn-outline-danger"
+                                                            onClick={() => handleDelete(account.id, account.username)}
+                                                        >
+                                                            <IconTrashLines />
+                                                        </button>
+                                                    </Tippy>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

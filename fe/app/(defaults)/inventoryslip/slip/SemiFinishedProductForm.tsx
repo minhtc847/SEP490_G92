@@ -109,7 +109,7 @@ export default function SemiFinishedProductForm({
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg w-full max-w-2xl">
+        <div className="w-full">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-green-800">Thêm Bán Thành Phẩm</h3>
                 <button

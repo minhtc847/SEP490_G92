@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import type React from "react"
 import { useRouter } from "next/navigation"
 import ListOutputsPO from "@/components/VNG/manager/production-orders/list-outputs-of-po/list-outputs-po-components"
+import CuttingGlassPage from "@/app/(defaults)/cutting-glass/CuttingGlassPage"
 import ProtectedRoute from "@/components/auth/ProtectedRoute"
 // removed unused Chemical/Product types
 import {
@@ -114,7 +115,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
   // Modal xem chi tiết
   const [showDetailModal, setShowDetailModal] = useState(false)
-  const [detailContent, setDetailContent] = useState({ title: "", content: "" })
+  const [detailContent, setDetailContent] = useState({ title: '', content: '' })
 
   const closeAddProductModal = () => setShowAddProductModal(false)
   const closeAddMaterialModal = () => setShowAddMaterialModal(false)
@@ -128,64 +129,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
   const closeDetailModal = () => {
     setShowDetailModal(false)
-    setDetailContent({ title: "", content: "" })
-  }
-
-  const refreshProducts = async () => {
-    try {
-      const data = await fetchPOProducts(params.id)
-      const processedData = (data || []).map((item) => ({
-        ...item,
-        uom: convertUOMToString(item.uom),
-      }))
-      setFinishedProducts(processedData)
-
-      // Reset selection if current selected product no longer exists
-      if (selectedProduct && !processedData.find((p) => (p.outputId || p.id) === selectedProduct)) {
-        setSelectedProduct(null)
-        setCurrentMaterials([])
-      }
-    } catch (error) {
-      console.error("Error refreshing products:", error)
-    }
-  }
-
-  const handleDeleteOutput = async (outputId: number) => {
-    console.log("[v0] Delete output called with ID:", outputId)
-
-    if (confirm("Bạn có chắc chắn muốn xóa không?")) {
-      try {
-        const result = await deleteProductionOutput(outputId)
-        if (result.success) {
-          alert("Xóa thành phẩm thành công!")
-          await refreshProducts()
-          setSelectedProduct(null)
-        } else {
-          alert(result.message)
-        }
-      } catch (error) {
-        console.error("[v0] Delete error:", error)
-        alert("Có lỗi xảy ra khi xóa thành phẩm")
-      }
-    }
-  }
-
-  const handleDeleteMaterial = async (materialId: number) => {
-    if (confirm("Bạn có chắc chắn muốn xóa không?")) {
-      try {
-        const result = await deleteProductionMaterial(materialId)
-        if (result.success) {
-          alert("Xóa nguyên vật liệu thành công!")
-          await refreshMaterials()
-          setSelectedMaterial(null)
-        } else {
-          alert(result.message)
-        }
-      } catch (error) {
-        console.error("[v0] Delete material error:", error)
-        alert("Có lỗi xảy ra khi xóa nguyên vật liệu")
-      }
-    }
+    setDetailContent({ title: '', content: '' })
   }
 
   // Load outputs (thành phẩm)
@@ -569,728 +513,642 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
   return (
     <ProtectedRoute>
-      <div className="panel">
-        <div className="mb-5">
-          <ul className="flex flex-wrap -mb-px border-b border-[#e0e6ed] dark:border-[#191e3a]">
-            <li className="mr-2">
-              <button
-                type="button"
-                className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === "po" ? "text-primary border-primary" : "text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"}`}
-                onClick={() => toggleTabs("po")}
-              >
-                Lệnh sản xuất
-              </button>
-            </li>
-            <li className="mr-2">
-              <button
-                type="button"
-                className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === "outputs" ? "text-primary border-primary" : "text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"}`}
-                onClick={() => toggleTabs("outputs")}
-              >
-                Tình trạng sản xuất
-              </button>
-            </li>
-          </ul>
-        </div>
 
-        {tabs === "po" && (
-          <div>
-            <div className="mb-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <h1 className="text-xl font-bold text-[#4361ee] break-words">{orderDescription}</h1>
-                <div className="flex items-center gap-2">
-                  {orderType && (
-                    <span className="px-2 py-1 text-xs rounded bg-[#edf0ff] text-[#4361ee] border">
-                      Loại: {orderType}
-                    </span>
-                  )}
-                  {orderStatus && (
-                    <span className="px-2 py-1 text-xs rounded bg-green-50 text-green-700 border">
-                      Trạng thái: {orderStatus}
-                    </span>
-                  )}
-                </div>
+    <div className="panel">
+      <div className="mb-5">
+        <ul className="flex flex-wrap -mb-px border-b border-[#e0e6ed] dark:border-[#191e3a]">
+          <li className="mr-2">
+            <button
+              type="button"
+              className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === "po" ? "text-primary border-primary" : "text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"}`}
+              onClick={() => toggleTabs("po")}
+            >
+              Lệnh sản xuất
+            </button>
+          </li>
+          <li className="mr-2">
+            <button
+              type="button"
+              className={`inline-block p-4 text-sm font-medium rounded-t-lg border-b-2 ${tabs === "outputs" ? "text-primary border-primary" : "text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"}`}
+              onClick={() => toggleTabs("outputs")}
+            >
+              Tình trạng sản xuất
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      {tabs === "po" && (
+        <div>
+          <div className="mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <h1 className="text-xl font-bold text-[#4361ee] break-words">{orderDescription}</h1>
+              <div className="flex items-center gap-2">
+                {orderType && (
+                  <span className="px-2 py-1 text-xs rounded bg-[#edf0ff] text-[#4361ee] border">Loại: {orderType}</span>
+                )}
+                {orderStatus && (
+                  <span className="px-2 py-1 text-xs rounded bg-green-50 text-green-700 border">Trạng thái: {orderStatus}</span>
+                )}
               </div>
             </div>
+          </div>
 
-            <div className="flex justify-end items-center mb-4">
-              <div className="flex items-center gap-2">
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => router.push(`/inventoryslip/${params.id}`)}
-                    className="px-4 py-2 bg-purple-600 text-white rounded shadow-sm hover:bg-purple-700 transition-colors text-sm"
-                  >
-                    Xem Phiếu Kho
-                  </button>
-                </div>
+          <div className="flex justify-end items-center mb-4">
+            <div className="flex items-center gap-4">
+              <div className="flex gap-2">
                 <button
-                  onClick={handleGoBack}
-                  className="px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white text-sm rounded shadow transition-colors"
+                  onClick={() => router.push(`/inventoryslip/${params.id}`)}
+                  className="px-4 py-2 bg-purple-600 text-white rounded shadow-sm hover:bg-purple-700 transition-colors text-sm"
                 >
-                  Quay lại
+                  Xem Phiếu Kho
                 </button>
               </div>
+              <button
+                onClick={handleGoBack}
+                className="px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white text-sm rounded shadow transition-colors"
+              >
+                Quay lại
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            {/* Thành phẩm */}
+            <div>
+              <h2 className="font-semibold text-[#4361ee] mb-2">Thành phẩm</h2>
+              <div className="border rounded shadow overflow-x-auto">
+                <table className="w-full text-sm" style={{ minWidth: '600px' }}>
+                  <thead className="bg-[#edf0ff]">
+                    <tr>
+                      <th className="border p-2 w-12">STT</th>
+                      <th className="border p-2 min-w-[200px]">Tên TP</th>
+                      <th className="border p-2 w-16">ĐVT</th>
+                      <th className="border p-2 w-24">Số lượng</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {finishedProducts.map((item, index) => (
+                      <tr
+                        key={`${item.productName}-${index}`}
+                        onClick={() => {
+                          const productId = item.outputId || item.id
+                          if (productId) handleProductSelect(productId)
+                        }}
+                        className={`hover:bg-blue-50 transition-colors ${
+                          selectedProduct === (item.outputId || item.id)
+                            ? "bg-[#edf0ff] border-l-4 border-[#4361ee] font-bold"
+                            : ""
+                        }`}
+                      >
+                        <td className="border p-2 text-center">{index + 1}</td>
+                        <td className="border p-2 break-words max-w-0" title={item.productName}>
+                          <div className="truncate">{item.productName}</div>
+                        </td>
+                        <td className="border p-2 text-center">{item.uom}</td>
+                        <td className="border p-2 text-right">{Number(item.quantity).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex gap-2 mt-3">
+                {orderStatus !== "Completed" && (
+                  <>
+                    <button
+                      onClick={handleAddProduct}
+                      className="px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white text-sm rounded shadow transition-colors"
+                    >
+                      Thêm
+                    </button>
+                    <button
+                      onClick={handleUpdateProduct}
+                      className="px-4 py-2 bg-[#28a745] hover:bg-[#218838] text-white text-sm rounded shadow transition-colors"
+                    >
+                      Sửa
+                    </button>
+                  </>
+                )}
+                {orderStatus === "Completed" && (
+                  <div className="px-4 py-2 bg-gray-100 text-gray-500 text-sm rounded shadow">
+                    Lệnh sản xuất đã hoàn thành - Không thể chỉnh sửa
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              {/* Thành phẩm */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <h2 className="font-semibold text-[#4361ee]">Thành phẩm</h2>
+            {/* Nguyên vật liệu */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="font-semibold text-[#4361ee]">
+                  Định mức NVL cho:{" "}
+                  <span className="bg-[#edf0ff] text-[#4361ee] px-2 py-1 rounded font-mono text-xs">{selectedProductData?.productName || ""}</span>
+                </h2>
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={refreshProducts}
+                    onClick={refreshMaterials}
                     className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-xs rounded shadow transition-colors"
-                    title="Refresh danh sách thành phẩm"
+                    title="Refresh danh sách nguyên vật liệu"
                   >
                     Refresh
                   </button>
+                  {loading && (
+                    <div className="text-sm text-[#4361ee] flex items-center">
+                      <div className="animate-spin h-4 w-4 border-b-2 border-[#4361ee] rounded-full mr-2" />
+                      Đang tải...
+                    </div>
+                  )}
                 </div>
-                <div className="border rounded shadow overflow-x-auto">
-                  <table className="w-full text-sm" style={{ minWidth: "600px" }}>
+              </div>
+              <div className="border rounded shadow">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm" style={{ minWidth: '700px' }} key={`materials-${selectedProduct}`}>
                     <thead className="bg-[#edf0ff]">
                       <tr>
                         <th className="border p-2 w-12">STT</th>
-                        <th className="border p-2 min-w-[200px]">Tên TP</th>
+                        <th className="border p-2 min-w-[250px]">Tên NVL</th>
                         <th className="border p-2 w-16">ĐVT</th>
-                        <th className="border p-2 w-24">Số lượng</th>
+                        <th className="border p-2 w-24">Tổng SL</th>
+                        <th className="border p-2 w-24">SL / 1 SP</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {finishedProducts.map((item, index) => (
-                        <tr
-                          key={`${item.productName}-${index}`}
-                          onClick={() => {
-                            const productId = item.outputId || item.id
-                            if (productId) handleProductSelect(productId)
-                          }}
-                          className={`hover:bg-blue-50 transition-colors ${
-                            selectedProduct === (item.outputId || item.id)
-                              ? "bg-[#edf0ff] border-l-4 border-[#4361ee] font-bold"
-                              : ""
-                          }`}
-                        >
-                          <td className="border p-2 text-center">{index + 1}</td>
-                          <td className="border p-2 break-words max-w-0" title={item.productName}>
-                            <div className="truncate">{item.productName}</div>
-                          </td>
-                          <td className="border p-2 text-center">{item.uom}</td>
-                          <td className="border p-2 text-right">{Number(item.quantity).toFixed(2)}</td>
+                      {loading ? (
+                        <tr>
+                          <td colSpan={5} className="p-4 text-center text-gray-500 italic">Đang tải dữ liệu...</td>
                         </tr>
-                      ))}
+                      ) : currentMaterials.length > 0 ? (
+                        currentMaterials.map((material, index) => (
+                          <tr
+                            key={`${selectedProduct}-${material.id}-${index}`}
+                            className={`cursor-pointer transition-colors ${
+                              selectedMaterial?.productName === material.productName ? "bg-[#e8f5e8] border-l-4 border-[#28a745] font-bold" : "hover:bg-blue-50"
+                            }`}
+                            onClick={() => handleMaterialSelect(material)}
+                            title="Click để chọn nguyên vật liệu này"
+                          >
+                            <td className="border p-2 text-center">{index + 1}</td>
+                            <td className="border p-2 break-words max-w-0">
+                              <div
+                                className="truncate cursor-pointer hover:text-blue-600 hover:underline"
+                                title="Click để xem đầy đủ tên nguyên vật liệu"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  showDetailInfo('Tên nguyên vật liệu', material.productName)
+                                }}
+                              >
+                                {material.productName}
+                              </div>
+                            </td>
+                            <td className="border p-2 text-center">{material.uom}</td>
+                            <td className="border p-2 text-right">{material.totalQuantity}</td>
+                            <td className="border p-2 text-right">{material.quantityPer}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="border p-4 text-center text-gray-500 italic">
+                            {selectedProduct ? `Không có nguyên vật liệu cho sản phẩm ${selectedProduct}` : "Chọn sản phẩm để xem nguyên vật liệu"}
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
-                {/* Products table section */}
-                <div className="flex gap-2 mt-3">
-                  <button
-                    onClick={handleAddProduct}
-                    className="px-4 py-2 bg-[#4361ee] hover:bg-[#3651d4] text-white text-sm rounded shadow transition-colors"
-                  >
-                    Thêm
-                  </button>
-                  <button
-                    onClick={handleUpdateProduct}
-                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm rounded shadow transition-colors"
-                  >
-                    Sửa
-                  </button>
-                  <button
-                    onClick={() => {
-                      console.log("[v0] Delete button clicked, selectedProduct:", selectedProduct)
-                      const selectedItem = finishedProducts.find(
-                        (item) => (item.outputId || item.id) === selectedProduct,
-                      )
-                      console.log("[v0] Found selected item:", selectedItem)
-                      const idToDelete = selectedItem?.outputId ?? selectedItem?.id
-                      if (typeof idToDelete === 'number') {
-                        handleDeleteOutput(idToDelete)
-                      }
-                    }}
-                    disabled={!selectedProduct}
-                    className="px-4 py-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm rounded shadow transition-colors"
-                  >
-                    Xóa
-                  </button>
-                </div>
               </div>
-
-              {/* Nguyên vật liệu */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <h2 className="font-semibold text-[#4361ee]">
-                    Định mức NVL cho:{" "}
-                    <span className="bg-[#edf0ff] text-[#4361ee] px-2 py-1 rounded font-mono text-xs">
-                      {selectedProductData?.productName || ""}
-                    </span>
-                  </h2>
-                  <div className="flex items-center gap-2">
+              <div className="flex gap-2 mt-3">
+                {orderStatus !== "Completed" && (
+                  <>
                     <button
-                      onClick={refreshMaterials}
-                      className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-xs rounded shadow transition-colors"
-                      title="Refresh danh sách nguyên vật liệu"
+                      onClick={handleAddMaterial}
+                      className="px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white text-sm rounded shadow transition-colors"
                     >
-                      Refresh
+                      Thêm
                     </button>
-                    {loading && (
-                      <div className="text-sm text-[#4361ee] flex items-center">
-                        <div className="animate-spin h-4 w-4 border-b-2 border-[#4361ee] rounded-full mr-2" />
-                        Đang tải...
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="border rounded shadow">
-                  <div className="overflow-x-auto">
-                    <table
-                      className="w-full text-sm"
-                      style={{ minWidth: "700px" }}
-                      key={`materials-${selectedProduct}`}
+                    <button
+                      onClick={handleUpdateMaterial}
+                      className={`px-4 py-2 text-white text-sm rounded shadow transition-colors ${selectedMaterial ? "bg-[#28a745] hover:bg-[#218838]" : "bg-gray-400 cursor-not-allowed"}`}
+                      disabled={!selectedMaterial}
+                      title={selectedMaterial ? `Cập nhật ${selectedMaterial.productName}` : "Chọn nguyên vật liệu để cập nhật"}
                     >
-                      <thead className="bg-[#edf0ff]">
-                        <tr>
-                          <th className="border p-2 w-12">STT</th>
-                          <th className="border p-2 min-w-[250px]">Tên NVL</th>
-                          <th className="border p-2 w-16">ĐVT</th>
-                          <th className="border p-2 w-24">Tổng SL</th>
-                          <th className="border p-2 w-24">SL / 1 SP</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {loading ? (
-                          <tr>
-                            <td colSpan={5} className="p-4 text-center text-gray-500 italic">
-                              Đang tải dữ liệu...
-                            </td>
-                          </tr>
-                        ) : currentMaterials.length > 0 ? (
-                          currentMaterials.map((material, index) => (
-                            <tr
-                              key={`${selectedProduct}-${material.id}-${index}`}
-                              className={`cursor-pointer transition-colors ${
-                                selectedMaterial?.productName === material.productName
-                                  ? "bg-[#e8f5e8] border-l-4 border-[#28a745] font-bold"
-                                  : "hover:bg-blue-50"
-                              }`}
-                              onClick={() => handleMaterialSelect(material)}
-                              title="Click để chọn nguyên vật liệu này"
-                            >
-                              <td className="border p-2 text-center">{index + 1}</td>
-                              <td className="border p-2 break-words max-w-0">
-                                <div
-                                  className="truncate cursor-pointer hover:text-blue-600 hover:underline"
-                                  title="Click để xem đầy đủ tên nguyên vật liệu"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    showDetailInfo("Tên nguyên vật liệu", material.productName)
-                                  }}
-                                >
-                                  {material.productName}
-                                </div>
-                              </td>
-                              <td className="border p-2 text-center">{material.uom}</td>
-                              <td className="border p-2 text-right">{material.totalQuantity}</td>
-                              <td className="border p-2 text-right">{material.quantityPer}</td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan={5} className="border p-4 text-center text-gray-500 italic">
-                              {selectedProduct
-                                ? `Không có nguyên vật liệu cho sản phẩm ${selectedProduct}`
-                                : "Chọn sản phẩm để xem nguyên vật liệu"}
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
+                      Sửa {selectedMaterial ? `(${selectedMaterial.productName.length > 20 ? selectedMaterial.productName.substring(0, 20) + '...' : selectedMaterial.productName})` : ""}
+                    </button>
+                  </>
+                )}
+                {orderStatus === "Completed" && (
+                  <div className="px-4 py-2 bg-gray-100 text-gray-500 text-sm rounded shadow">
+                    Lệnh sản xuất đã hoàn thành - Không thể chỉnh sửa
                   </div>
-                </div>
-                <div className="flex gap-2 mt-3">
-                  <button
-                    onClick={handleAddMaterial}
-                    className="px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white text-sm rounded shadow transition-colors"
-                  >
-                    Thêm
-                  </button>
-                  <button
-                    onClick={handleUpdateMaterial}
-                    className={`px-4 py-2 text-white text-sm rounded shadow transition-colors ${selectedMaterial ? "bg-[#28a745] hover:bg-[#218838]" : "bg-gray-400 cursor-not-allowed"}`}
-                    disabled={!selectedMaterial}
-                    title={
-                      selectedMaterial ? `Cập nhật ${selectedMaterial.productName}` : "Chọn nguyên vật liệu để cập nhật"
-                    }
-                  >
-                    Sửa{" "}
-                    {selectedMaterial
-                      ? `(${selectedMaterial.productName.length > 20 ? selectedMaterial.productName.substring(0, 20) + "..." : selectedMaterial.productName})`
-                      : ""}
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (selectedMaterial?.id) handleDeleteMaterial(selectedMaterial.id)
-                    }}
-                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded shadow transition-colors"
-                    disabled={!selectedMaterial}
-                  >
-                    Xóa
-                  </button>
-                </div>
+                )}
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {tabs === "outputs" && (
+      {tabs === "outputs" && (
+        <div>
           <div>
-            <div>
-              <ListOutputsPO productionOrderId={Number(params.id)} />
-            </div>
+            <ListOutputsPO productionOrderId={Number(params.id)} />
           </div>
-        )}
+        </div>
+      )}
 
-        {/* POPUP THÊM THÀNH PHẨM */}
-        {showAddProductModal && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) closeAddProductModal()
-            }}
-          >
-            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4 animate-in fade-in duration-200">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-[#4361ee]">Thêm thành phẩm mới</h3>
-                <button
-                  onClick={closeAddProductModal}
-                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"
-                >
-                  ×
-                </button>
-              </div>
-              <form onSubmit={handleAddProductFormSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên thành phẩm</label>
-                  {isLoadingAllProducts ? (
-                    <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 flex items-center justify-center">
-                      <div className="animate-spin h-4 w-4 border-b-2 border-[#4361ee] rounded-full mr-2" />
-                      <span className="text-gray-500">Đang tải danh sách sản phẩm...</span>
-                    </div>
-                  ) : (
-                    <select
-                      value={addProductForm.productName}
-                      onChange={(e) => {
-                        const selectedProduct = allProducts.find((p) => p.productName === e.target.value)
-                        setAddProductForm({
-                          ...addProductForm,
-                          productName: e.target.value,
-                          uom: selectedProduct ? selectedProduct.uom : "",
-                        })
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
-                      required
-                    >
-                      <option value="">-- Chọn thành phẩm --</option>
-                      {allProducts.map((product, index) => (
-                        <option key={`${product.productName}-${index}`} value={product.productName}>
-                          {product.productName} ({product.uom})
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
-                  <input
-                    type="text"
-                    value={addProductForm.uom}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
-                    readOnly
-                    placeholder="Đơn vị tính sẽ được lấy từ sản phẩm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
-                  <input
-                    type="number"
-                    value={addProductForm.quantity}
-                    onChange={(e) => setAddProductForm({ ...addProductForm, quantity: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
-                    required
-                    min="0"
-                    step="0.01"
-                    placeholder="Nhập số lượng"
-                  />
-                </div>
-                <div className="flex gap-2 pt-4">
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white rounded-md transition-colors font-medium"
-                  >
-                    Thêm mới
-                  </button>
-                  <button
-                    type="button"
-                    onClick={closeAddProductModal}
-                    className="flex-1 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors font-medium"
-                  >
-                    Hủy
-                  </button>
-                </div>
-              </form>
+      {/* POPUP THÊM THÀNH PHẨM */}
+      {showAddProductModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeAddProductModal()
+          }}
+        >
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4 animate-in fade-in duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-[#4361ee]">Thêm thành phẩm mới</h3>
+              <button
+                onClick={closeAddProductModal}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"
+              >
+                ×
+              </button>
             </div>
-          </div>
-        )}
-
-        {/* POPUP CẬP NHẬT THÀNH PHẨM */}
-        {showProductModal && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) closeProductModal()
-            }}
-          >
-            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4 animate-in fade-in duration-200">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-[#4361ee]">Cập nhật thành phẩm</h3>
-                <button
-                  onClick={closeProductModal}
-                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"
-                >
-                  ×
-                </button>
-              </div>
-              <form onSubmit={handleProductFormSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên thành phẩm</label>
-                  {isLoadingAllProducts ? (
-                    <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 flex items-center justify-center">
-                      <div className="animate-spin h-4 w-4 border-b-2 border-[#4361ee] rounded-full mr-2" />
-                      <span className="text-gray-500">Đang tải danh sách sản phẩm...</span>
-                    </div>
-                  ) : (
-                    <select
-                      value={productForm.productName}
-                      onChange={(e) => {
-                        const selectedProduct = allProducts.find((p) => p.productName === e.target.value)
-                        setProductForm({
-                          ...productForm,
-                          productName: e.target.value,
-                          uom: selectedProduct ? selectedProduct.uom : "",
-                        })
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
-                      required
-                    >
-                      <option value="">-- Chọn thành phẩm --</option>
-                      {allProducts.map((product, index) => (
-                        <option key={`${product.productName}-${index}`} value={product.productName}>
-                          {product.productName} ({product.uom})
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
-                  <input
-                    type="text"
-                    value={productForm.uom as string}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
-                    readOnly
-                    placeholder="Đơn vị tính sẽ được lấy từ sản phẩm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
-                  <input
-                    type="number"
-                    value={productForm.quantity as number}
-                    onChange={(e) => setProductForm({ ...productForm, quantity: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
-                    required
-                    min="0"
-                    step="0.01"
-                    placeholder="Nhập số lượng"
-                  />
-                </div>
-                <div className="flex gap-2 pt-4">
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white rounded-md transition-colors font-medium"
-                  >
-                    Cập nhật
-                  </button>
-                  <button
-                    type="button"
-                    onClick={closeProductModal}
-                    className="flex-1 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors font-medium"
-                  >
-                    Hủy
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* POPUP THÊM NGUYÊN VẬT LIỆU */}
-        {showAddMaterialModal && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) closeAddMaterialModal()
-            }}
-          >
-            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4 animate-in fade-in duration-200">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-[#4361ee]">
-                  Thêm nguyên vật liệu mới
-                  <div className="text-sm font-normal text-gray-600 mt-1">
-                    Cho sản phẩm: <span className="font-mono text-[#4361ee]">{selectedProductData?.productName}</span>
+            <form onSubmit={handleAddProductFormSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tên thành phẩm</label>
+                {isLoadingAllProducts ? (
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 flex items-center justify-center">
+                    <div className="animate-spin h-4 w-4 border-b-2 border-[#4361ee] rounded-full mr-2" />
+                    <span className="text-gray-500">Đang tải danh sách sản phẩm...</span>
                   </div>
-                </h3>
-                <button
-                  onClick={closeAddMaterialModal}
-                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"
-                >
-                  ×
-                </button>
-              </div>
-              <form onSubmit={handleAddMaterialFormSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên nguyên vật liệu</label>
-                  {isLoadingAllProducts ? (
-                    <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 flex items-center justify-center">
-                      <div className="animate-spin h-4 w-4 border-b-2 border-[#4361ee] rounded-full mr-2" />
-                      <span className="text-gray-500">Đang tải danh sách sản phẩm...</span>
-                    </div>
-                  ) : (
-                    <select
-                      value={addMaterialForm.productName}
-                      onChange={(e) => {
-                        const selectedProduct = allProducts.find((p) => p.productName === e.target.value)
-                        setAddMaterialForm({
-                          ...addMaterialForm,
-                          productName: e.target.value,
-                          uom: selectedProduct ? selectedProduct.uom : "",
-                        })
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
-                      required
-                    >
-                      <option value="">-- Chọn nguyên vật liệu --</option>
-                      {allProducts.map((product, index) => (
-                        <option key={`${product.productName}-${index}`} value={product.productName}>
-                          {product.productName} ({product.uom})
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
-                  <input
-                    type="text"
-                    value={addMaterialForm.uom as string}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
-                    readOnly
-                    placeholder="Đơn vị tính sẽ được lấy từ sản phẩm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tổng số lượng</label>
-                  <input
-                    type="number"
-                    value={addMaterialForm.totalQuantity as number}
+                ) : (
+                  <select
+                    value={addProductForm.productName}
                     onChange={(e) => {
-                      const newTotalQuantity = Number(e.target.value)
-                      const selectedProductQuantity = getSelectedProductQuantity()
-                      const newQuantityPer = calculateQuantityPer(newTotalQuantity, selectedProductQuantity)
+                      const selectedProduct = allProducts.find((p) => p.productName === e.target.value)
+                      setAddProductForm({
+                        ...addProductForm,
+                        productName: e.target.value,
+                        uom: selectedProduct ? selectedProduct.uom : "",
+                      })
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
+                    required
+                  >
+                    <option value="">-- Chọn thành phẩm --</option>
+                    {allProducts.map((product, index) => (
+                      <option key={`${product.productName}-${index}`} value={product.productName}>
+                        {product.productName} ({product.uom})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
+                <input
+                  type="text"
+                  value={addProductForm.uom}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
+                  readOnly
+                  placeholder="Đơn vị tính sẽ được lấy từ sản phẩm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
+                <input
+                  type="number"
+                  value={addProductForm.quantity}
+                  onChange={(e) => setAddProductForm({ ...addProductForm, quantity: Number(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
+                  required
+                  min="0"
+                  step="0.01"
+                  placeholder="Nhập số lượng"
+                />
+              </div>
+              <div className="flex gap-2 pt-4">
+                <button type="submit" className="flex-1 px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white rounded-md transition-colors font-medium">Thêm mới</button>
+                <button type="button" onClick={closeAddProductModal} className="flex-1 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors font-medium">Hủy</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* POPUP CẬP NHẬT THÀNH PHẨM */}
+      {showProductModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeProductModal()
+          }}
+        >
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4 animate-in fade-in duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-[#4361ee]">Cập nhật thành phẩm</h3>
+              <button
+                onClick={closeProductModal}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleProductFormSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tên thành phẩm</label>
+                {isLoadingAllProducts ? (
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 flex items-center justify-center">
+                    <div className="animate-spin h-4 w-4 border-b-2 border-[#4361ee] rounded-full mr-2" />
+                    <span className="text-gray-500">Đang tải danh sách sản phẩm...</span>
+                  </div>
+                ) : (
+                  <select
+                    value={productForm.productName}
+                    onChange={(e) => {
+                      const selectedProduct = allProducts.find((p) => p.productName === e.target.value)
+                      setProductForm({
+                        ...productForm,
+                        productName: e.target.value,
+                        uom: selectedProduct ? selectedProduct.uom : "",
+                      })
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
+                    required
+                  >
+                    <option value="">-- Chọn thành phẩm --</option>
+                    {allProducts.map((product, index) => (
+                      <option key={`${product.productName}-${index}`} value={product.productName}>
+                        {product.productName} ({product.uom})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
+                <input
+                  type="text"
+                  value={productForm.uom as string}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
+                  readOnly
+                  placeholder="Đơn vị tính sẽ được lấy từ sản phẩm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
+                <input
+                  type="number"
+                  value={productForm.quantity as number}
+                  onChange={(e) => setProductForm({ ...productForm, quantity: Number(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
+                  required
+                  min="0"
+                  step="0.01"
+                  placeholder="Nhập số lượng"
+                />
+              </div>
+              <div className="flex gap-2 pt-4">
+                <button type="submit" className="flex-1 px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white rounded-md transition-colors font-medium">Cập nhật</button>
+                <button type="button" onClick={closeProductModal} className="flex-1 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors font-medium">Hủy</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* POPUP THÊM NGUYÊN VẬT LIỆU */}
+      {showAddMaterialModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeAddMaterialModal()
+          }}
+        >
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4 animate-in fade-in duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-[#4361ee]">
+                Thêm nguyên vật liệu mới
+                <div className="text-sm font-normal text-gray-600 mt-1">
+                  Cho sản phẩm: <span className="font-mono text-[#4361ee]">{selectedProductData?.productName}</span>
+                </div>
+              </h3>
+              <button
+                onClick={closeAddMaterialModal}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleAddMaterialFormSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tên nguyên vật liệu</label>
+                {isLoadingAllProducts ? (
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 flex items-center justify-center">
+                    <div className="animate-spin h-4 w-4 border-b-2 border-[#4361ee] rounded-full mr-2" />
+                    <span className="text-gray-500">Đang tải danh sách sản phẩm...</span>
+                  </div>
+                ) : (
+                  <select
+                    value={addMaterialForm.productName}
+                    onChange={(e) => {
+                      const selectedProduct = allProducts.find((p) => p.productName === e.target.value)
                       setAddMaterialForm({
                         ...addMaterialForm,
-                        totalQuantity: newTotalQuantity,
-                        quantityPer: newQuantityPer,
+                        productName: e.target.value,
+                        uom: selectedProduct ? selectedProduct.uom : "",
                       })
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
                     required
-                    min="0"
-                    step="0.01"
-                    placeholder="Tổng số lượng cần thiết"
-                  />
-                  <div className="text-xs text-gray-500 mt-1">
-                    SL/1SP: {addMaterialForm.quantityPer?.toFixed(4)} (tự động tính)
-                  </div>
-                </div>
-                <div className="flex gap-2 pt-4">
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white rounded-md transition-colors font-medium"
                   >
-                    Thêm mới
-                  </button>
-                  <button
-                    type="button"
-                    onClick={closeAddMaterialModal}
-                    className="flex-1 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors font-medium"
-                  >
-                    Hủy
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* POPUP CẬP NHẬT NGUYÊN VẬT LIỆU */}
-        {showMaterialModal && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) closeMaterialModal()
-            }}
-          >
-            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4 animate-in fade-in duration-200">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-[#4361ee]">Cập nhật nguyên vật liệu</h3>
-                <button
-                  onClick={closeMaterialModal}
-                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"
-                >
-                  ×
-                </button>
+                    <option value="">-- Chọn nguyên vật liệu --</option>
+                    {allProducts.map((product, index) => (
+                      <option key={`${product.productName}-${index}`} value={product.productName}>
+                        {product.productName} ({product.uom})
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
-              <form onSubmit={handleMaterialFormSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên nguyên vật liệu</label>
-                  {isLoadingAllProducts ? (
-                    <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 flex items-center justify-center">
-                      <div className="animate-spin h-4 w-4 border-b-2 border-[#4361ee] rounded-full mr-2" />
-                      <span className="text-gray-500">Đang tải danh sách sản phẩm...</span>
-                    </div>
-                  ) : (
-                    <select
-                      value={materialForm.productName}
-                      onChange={(e) => {
-                        const selectedProduct = allProducts.find((p) => p.productName === e.target.value)
-                        setMaterialForm({
-                          ...materialForm,
-                          productName: e.target.value,
-                          uom: selectedProduct ? selectedProduct.uom : materialForm.uom,
-                        })
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
-                      required
-                    >
-                      <option value="">-- Chọn nguyên vật liệu --</option>
-                      {allProducts.map((product, index) => (
-                        <option key={`${product.productName}-${index}`} value={product.productName}>
-                          {product.productName} ({product.uom})
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
-                  <input
-                    type="text"
-                    value={materialForm.uom as string}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
-                    readOnly
-                    placeholder="Đơn vị tính sẽ được lấy từ sản phẩm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng / 1 SP</label>
-                  <input
-                    type="number"
-                    value={Number(materialForm.quantityPer).toFixed(4)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-blue-50 text-blue-800 cursor-not-allowed"
-                    readOnly
-                    placeholder="Tự động tính toán"
-                  />
-                  <div className="text-xs text-blue-600 mt-1">
-                    Công thức: {materialForm.totalQuantity} ÷ {getSelectedProductQuantity()} ={" "}
-                    {Number(materialForm.quantityPer).toFixed(4)}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
+                <input
+                  type="text"
+                  value={addMaterialForm.uom as string}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
+                  readOnly
+                  placeholder="Đơn vị tính sẽ được lấy từ sản phẩm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tổng số lượng</label>
+                <input
+                  type="number"
+                  value={addMaterialForm.totalQuantity as number}
+                  onChange={(e) => {
+                    const newTotalQuantity = Number(e.target.value)
+                    const selectedProductQuantity = getSelectedProductQuantity()
+                    const newQuantityPer = calculateQuantityPer(newTotalQuantity, selectedProductQuantity)
+                    setAddMaterialForm({
+                      ...addMaterialForm,
+                      totalQuantity: newTotalQuantity,
+                      quantityPer: newQuantityPer,
+                    })
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
+                  required
+                  min="0"
+                  step="0.01"
+                  placeholder="Tổng số lượng cần thiết"
+                />
+                <div className="text-xs text-gray-500 mt-1">SL/1SP: {addMaterialForm.quantityPer?.toFixed(4)} (tự động tính)</div>
+              </div>
+              <div className="flex gap-2 pt-4">
+                <button type="submit" className="flex-1 px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white rounded-md transition-colors font-medium">Thêm mới</button>
+                <button type="button" onClick={closeAddMaterialModal} className="flex-1 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors font-medium">Hủy</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* POPUP CẬP NHẬT NGUYÊN VẬT LIỆU */}
+      {showMaterialModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeMaterialModal()
+          }}
+        >
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4 animate-in fade-in duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-[#4361ee]">Cập nhật nguyên vật liệu</h3>
+              <button
+                onClick={closeMaterialModal}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleMaterialFormSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tên nguyên vật liệu</label>
+                {isLoadingAllProducts ? (
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 flex items-center justify-center">
+                    <div className="animate-spin h-4 w-4 border-b-2 border-[#4361ee] rounded-full mr-2" />
+                    <span className="text-gray-500">Đang tải danh sách sản phẩm...</span>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tổng số lượng</label>
-                  <input
-                    type="number"
-                    value={materialForm.totalQuantity as number}
+                ) : (
+                  <select
+                    value={materialForm.productName}
                     onChange={(e) => {
-                      const newTotalQuantity = Number(e.target.value)
-                      const selectedProductQuantity = getSelectedProductQuantity()
-                      const newQuantityPer = calculateQuantityPer(newTotalQuantity, selectedProductQuantity)
+                      const selectedProduct = allProducts.find((p) => p.productName === e.target.value)
                       setMaterialForm({
                         ...materialForm,
-                        totalQuantity: newTotalQuantity,
-                        quantityPer: newQuantityPer,
+                        productName: e.target.value,
+                        uom: selectedProduct ? selectedProduct.uom : materialForm.uom,
                       })
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
                     required
-                    min="0"
-                    step="0.01"
-                    placeholder="Tổng số lượng cần thiết"
-                  />
-                  <div className="text-xs text-gray-500 mt-1">
-                    SL/1SP sẽ được tính tự động: {Number(materialForm.quantityPer).toFixed(4)}
-                  </div>
-                </div>
-                <div className="flex gap-2 pt-4">
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white rounded-md transition-colors font-medium"
                   >
-                    Cập nhật
-                  </button>
-                  <button
-                    type="button"
-                    onClick={closeMaterialModal}
-                    className="flex-1 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors font-medium"
-                  >
-                    Hủy
-                  </button>
+                    <option value="">-- Chọn nguyên vật liệu --</option>
+                    {allProducts.map((product, index) => (
+                      <option key={`${product.productName}-${index}`} value={product.productName}>
+                        {product.productName} ({product.uom})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Đơn vị tính</label>
+                <input
+                  type="text"
+                  value={materialForm.uom as string}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
+                  readOnly
+                  placeholder="Đơn vị tính sẽ được lấy từ sản phẩm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng / 1 SP</label>
+                <input
+                  type="number"
+                  value={Number(materialForm.quantityPer).toFixed(4)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-blue-50 text-blue-800 cursor-not-allowed"
+                  readOnly
+                  placeholder="Tự động tính toán"
+                />
+                <div className="text-xs text-blue-600 mt-1">
+                  Công thức: {materialForm.totalQuantity} ÷ {getSelectedProductQuantity()} = {Number(materialForm.quantityPer).toFixed(4)}
                 </div>
-              </form>
-            </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tổng số lượng</label>
+                <input
+                  type="number"
+                  value={materialForm.totalQuantity as number}
+                  onChange={(e) => {
+                    const newTotalQuantity = Number(e.target.value)
+                    const selectedProductQuantity = getSelectedProductQuantity()
+                    const newQuantityPer = calculateQuantityPer(newTotalQuantity, selectedProductQuantity)
+                    setMaterialForm({
+                      ...materialForm,
+                      totalQuantity: newTotalQuantity,
+                      quantityPer: newQuantityPer,
+                    })
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
+                  required
+                  min="0"
+                  step="0.01"
+                  placeholder="Tổng số lượng cần thiết"
+                />
+                <div className="text-xs text-gray-500 mt-1">SL/1SP sẽ được tính tự động: {Number(materialForm.quantityPer).toFixed(4)}</div>
+              </div>
+              <div className="flex gap-2 pt-4">
+                <button type="submit" className="flex-1 px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white rounded-md transition-colors font-medium">Cập nhật</button>
+                <button type="button" onClick={closeMaterialModal} className="flex-1 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors font-medium">Hủy</button>
+              </div>
+            </form>
           </div>
-        )}
+        </div>
+      )}
 
-        {showDetailModal && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) closeDetailModal()
-            }}
-          >
-            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg mx-4 animate-in fade-in duration-200">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-[#4361ee]">{detailContent.title}</h3>
-                <button
-                  onClick={closeDetailModal}
-                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"
-                >
-                  ×
-                </button>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-md border">
-                <p className="text-gray-800 break-words leading-relaxed">{detailContent.content}</p>
-              </div>
-              <div className="flex justify-end mt-4">
-                <button
-                  onClick={closeDetailModal}
-                  className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors font-medium"
-                >
-                  Đóng
-                </button>
-              </div>
+      {showDetailModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeDetailModal()
+          }}
+        >
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg mx-4 animate-in fade-in duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-[#4361ee]">{detailContent.title}</h3>
+              <button
+                onClick={closeDetailModal}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"
+              >
+                ×
+              </button>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-md border">
+              <p className="text-gray-800 break-words leading-relaxed">{detailContent.content}</p>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={closeDetailModal}
+                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors font-medium"
+              >
+                Đóng
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+    </div>
     </ProtectedRoute>
+
   )
 }

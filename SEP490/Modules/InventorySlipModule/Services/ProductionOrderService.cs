@@ -19,6 +19,22 @@ namespace SEP490.Modules.InventorySlipModule.Services
         {
             try
             {
+                var productionOrder = await _context.ProductionOrders
+                    .FirstOrDefaultAsync(po => po.Id == productionOrderId);
+
+                if (productionOrder == null)
+                {
+                    return false;
+                }
+
+                // Nếu production order đang ở trạng thái Pending (0), cập nhật thành InProgress (1)
+                if (productionOrder.Status == ProductionStatus.Pending)
+                {
+                    productionOrder.Status = ProductionStatus.InProgress;
+                    await _context.SaveChangesAsync();
+                    Console.WriteLine($"Updated ProductionOrder {productionOrderId} status from Pending to InProgress");
+                }
+
                 var productionOutputs = await _context.ProductionOutputs
                     .Where(po => po.ProductionOrderId == productionOrderId)
                     .ToListAsync();
@@ -42,21 +58,17 @@ namespace SEP490.Modules.InventorySlipModule.Services
 
                 if (allCompleted)
                 {
-                    var productionOrder = await _context.ProductionOrders
-                        .FirstOrDefaultAsync(po => po.Id == productionOrderId);
-
-                    if (productionOrder != null)
-                    {
-                        productionOrder.Status = ProductionStatus.Completed; // Đã hoàn thành
-                        await _context.SaveChangesAsync();
-                        return true;
-                    }
+                    productionOrder.Status = ProductionStatus.Completed; // Đã hoàn thành
+                    await _context.SaveChangesAsync();
+                    Console.WriteLine($"Updated ProductionOrder {productionOrderId} status to Completed");
+                    return true;
                 }
 
                 return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"Error in CheckAndUpdateCompletionAsync: {ex.Message}");
                 return false;
             }
         }

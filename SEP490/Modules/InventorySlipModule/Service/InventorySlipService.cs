@@ -256,29 +256,36 @@ namespace SEP490.Modules.InventorySlipModule.Service
                     details.Add(detail);
                 }
 
-                // add target product(product_id = null)
+                // add target product(product_id = null) - only if not already in details
                 if (dto.ProductionOutputTargets != null && dto.ProductionOutputTargets.Any())
                 {
                     foreach (var target in dto.ProductionOutputTargets)
                     {
-                        var productionOutput = await _context.ProductionOutputs
-                            .Include(po => po.Product)
-                            .FirstOrDefaultAsync(po => po.Id == target.ProductionOutputId);
+                        // Check if this production output already has a target detail
+                        var existingTargetDetail = details.FirstOrDefault(d => 
+                            d.ProductId == null && d.ProductionOutputId == target.ProductionOutputId);
                         
-                        if (productionOutput != null)
+                        if (existingTargetDetail == null)
                         {
-                            var targetProductDetail = new InventorySlipDetail
+                            var productionOutput = await _context.ProductionOutputs
+                                .Include(po => po.Product)
+                                .FirstOrDefaultAsync(po => po.Id == target.ProductionOutputId);
+                            
+                            if (productionOutput != null)
                             {
-                                InventorySlipId = slip.Id,
-                                ProductId = null, 
-                                Quantity = target.TargetQuantity,
-                                Note = $"Thành phẩm mục tiêu: {productionOutput.Product?.ProductName ?? productionOutput.ProductName}",
-                                SortOrder = details.Count, 
-                                ProductionOutputId = target.ProductionOutputId,
-                                CreatedAt = DateTime.Now,
-                                UpdatedAt = DateTime.Now
-                            };
-                            details.Add(targetProductDetail);
+                                var targetProductDetail = new InventorySlipDetail
+                                {
+                                    InventorySlipId = slip.Id,
+                                    ProductId = null, 
+                                    Quantity = target.TargetQuantity,
+                                    Note = $"Thành phẩm mục tiêu: {productionOutput.Product?.ProductName ?? productionOutput.ProductName}",
+                                    SortOrder = details.Count, 
+                                    ProductionOutputId = target.ProductionOutputId,
+                                    CreatedAt = DateTime.Now,
+                                    UpdatedAt = DateTime.Now
+                                };
+                                details.Add(targetProductDetail);
+                            }
                         }
                     }
                 }
@@ -644,6 +651,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 ProductionOrderCode = productionOrder.ProductionOrderCode,
                 Type = productionOrder.Type,
                 Description = productionOrder.Description,
+                Status = (int)(productionOrder.Status ?? ProductionStatus.Pending),
                 ProductionOutputs = productionOutputs.Select(po => new ProductionOutputDto
                 {
                     Id = po.Id,
@@ -1029,22 +1037,30 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 else
                 {
                     // For material export/glue, use target product details (ProductId == null)
-                    var targets = slip.Details
+                    // Group by ProductionOutputId to avoid duplicate updates
+                    var targetGroups = slip.Details
                         .Where(d => d.ProductId == null && d.ProductionOutputId.HasValue)
                         .GroupBy(d => d.ProductionOutputId!.Value)
-                        .Select(g => new { ProductionOutputId = g.Key, Quantity = g.First().Quantity })
                         .ToList();
-
-                    foreach (var t in targets)
+                    
+                    foreach (var group in targetGroups)
                     {
-                        var po = await _context.ProductionOutputs.FirstOrDefaultAsync(po => po.Id == t.ProductionOutputId);
+                        var productionOutputId = group.Key;
+                        var totalQuantity = group.Sum(t => t.Quantity);
+                        
+                        var po = await _context.ProductionOutputs.FirstOrDefaultAsync(po => po.Id == productionOutputId);
                         if (po != null)
                         {
                             var oldFinished = po.Finished ?? 0m;
-                            po.Finished = oldFinished + t.Quantity;
+                            po.Finished = oldFinished + totalQuantity;
                         }
                     }
                     await _context.SaveChangesAsync();
+                    
+                    if (productionOrder.Type == "Đổ keo")
+                    {
+                        await UpdateProductionPlanDetailDoneAsync(slip.ProductionOrderId, targetGroups);
+                    }
                 }
 
                 slip.IsFinalized = true;
@@ -1607,6 +1623,70 @@ namespace SEP490.Modules.InventorySlipModule.Service
             catch (Exception ex)
             {
                 return new { success = false, message = $"Lỗi khi kiểm tra trạng thái MISA: {ex.Message}" };
+            }
+        }
+
+        private async Task UpdateProductionPlanDetailDoneAsync(int productionOrderId, List<IGrouping<int, InventorySlipDetail>> targetGroups)
+        {
+            try
+            {
+                var productionOrder = await _context.ProductionOrders
+                    .FirstOrDefaultAsync(po => po.Id == productionOrderId);
+                
+                if (productionOrder == null)
+                {
+                    Console.WriteLine($"ProductionOrder {productionOrderId} not found");
+                    return;
+                }
+
+                var productionPlanDetails = await _context.ProductionPlanDetails
+                    .Where(ppd => ppd.ProductionPlanId == productionOrder.ProductionPlanId)
+                    .ToListAsync();
+
+                if (!productionPlanDetails.Any())
+                {
+                    Console.WriteLine($"No ProductionPlanDetails found for ProductionPlan {productionOrder.ProductionPlanId}");
+                    return;
+                }
+
+                foreach (var group in targetGroups)
+                {
+                    var productionOutputId = group.Key;
+                    var totalQuantity = group.Sum(t => t.Quantity);                    
+                    
+                    var productionOutput = await _context.ProductionOutputs
+                        .FirstOrDefaultAsync(po => po.Id == productionOutputId);
+                    
+                    if (productionOutput != null)
+                    {
+                        var planDetail = productionPlanDetails
+                            .FirstOrDefault(ppd => ppd.ProductId == productionOutput.ProductId);
+                        
+                        if (planDetail != null)
+                        {
+                            var oldDone = planDetail.Done;
+                            planDetail.Done += (int)totalQuantity; 
+                            
+                            Console.WriteLine($"Updated ProductionPlanDetail {planDetail.Id} (ProductId: {planDetail.ProductId}): Done {oldDone} -> {planDetail.Done}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"ProductionPlanDetail not found for ProductId {productionOutput.ProductId} in ProductionPlan {productionOrder.ProductionPlanId}");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"ProductionOutput {productionOutputId} not found");
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                Console.WriteLine("Successfully updated ProductionPlanDetail.Done values");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating ProductionPlanDetail.Done: {ex.Message}");
+                throw;
             }
         }
     }
