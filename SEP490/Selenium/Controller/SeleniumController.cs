@@ -24,14 +24,14 @@ namespace SEP490.Selenium.Controller
         private readonly ISeleniumProductionOrderServices _seleniumProductionOrderServices;
         private readonly IImportExportInvoiceServices _importExportInvoiceServices;
         private readonly IInventorySlipService _inventoryServices;
-        private readonly IMisaPOService _misaPOService;
+        //private readonly IMisaPOService _misaPOService;
         private readonly SEP490DbContext _context;
         public SeleniumController(IMisaProductService misaProductService, 
             ISeleniumSaleOrderServices saleOrderServices, 
             IImportExportInvoiceServices importExportInvoiceServices,
             IInventorySlipService inventorySlipService,
             ISeleniumProductionOrderServices seleniumProductionOrderServices,
-            IMisaPOService misaPOService,
+            //IMisaPOService misaPOService,
             SEP490DbContext context
             )
         {
@@ -41,7 +41,7 @@ namespace SEP490.Selenium.Controller
             _importExportInvoiceServices = importExportInvoiceServices;
             _inventoryServices = inventorySlipService;
             _seleniumProductionOrderServices = seleniumProductionOrderServices;
-            _misaPOService = misaPOService;
+            //_misaPOService = misaPOService;
         }
         [HttpPost("product")]
         public IActionResult addProduct(InputSingleProduct product)
@@ -90,11 +90,11 @@ namespace SEP490.Selenium.Controller
             return Ok("Processing import page...");
         }
 
-        [HttpPost("purchasing-order")]
-        public IActionResult addPurchaseOrder([FromBody] InputPO input)
-        {
-            _misaPOService.Add(input);
-            return Ok(" Success");
-        }
+        //[HttpPost("purchasing-order")]
+        //public IActionResult addPurchaseOrder([FromBody] InputPO input)
+        //{
+        //    _misaPOService.Add(input);
+        //    return Ok(" Success");
+        //}
     }
 }
