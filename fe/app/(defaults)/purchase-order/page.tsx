@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { importPurchaseOrder, deletePurchaseOrder, getPurchaseOrders, PurchaseOrderDto, updatePurchaseOrderStatus } from './service';
+import { getPurchaseOrders, PurchaseOrderDto } from './service';
 import { FiSearch } from 'react-icons/fi';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
@@ -115,7 +115,7 @@ const PurchaseOrderPage = () => {
             return true;
         })
         .filter((order) => {
-            const combined = `${order.customerName ?? ''} ${order.description ?? ''}`.toLowerCase();
+            const combined = `${order.customerName ?? ''} ${order.code ?? ''}`.toLowerCase();
             return combined.includes(searchTerm.toLowerCase());
         })
         .filter((order) => (statusFilter ? order.status === statusFilter : true))
@@ -148,7 +148,7 @@ const PurchaseOrderPage = () => {
                 <div className="relative w-full md:w-1/3">
                     <input
                         type="text"
-                        placeholder="Tìm theo tên nhà cung cấp hoặc mô tả..."
+                        placeholder="Tìm theo tên nhà cung cấp hoặc mã đơn hàng..."
                         value={searchTerm}
                         onChange={(e) => {
                             setSearchTerm(e.target.value);
@@ -249,11 +249,11 @@ const PurchaseOrderPage = () => {
                 <table className="table w-full">
                     <thead>
                         <tr>
-                            <th>Mô tả</th>
                             <th>Ngày tạo</th>
                             <th>Mã đơn hàng</th>
                             <th>Tổng tiền</th>
                             <th>Trạng thái</th>
+                            <th>MISA</th>
                             <th>Nhà cung cấp</th>
                             <th>Hành động</th>
                         </tr>
@@ -261,17 +261,21 @@ const PurchaseOrderPage = () => {
                     <tbody>
                         {paginatedOrders.map((order) => (
                             <tr key={order.id}>
-                                <td>{order.description || '-'}</td>
                                 <td>{order.date ? new Date(order.date).toLocaleDateString('vi-VN') : '-'}</td>
                                 <td>{order.code || '-'}</td>
-                                <td>{order.totalValue != null ? `${order.totalValue.toLocaleString()}₫` : '0₫'}</td>
+                                <td>{order.totalValue != null ? `${order.totalValue.toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}</td>
                                 <td>
                                     <span className={`badge ${getStatusClass(order.status || '')}`}>
                                         {getStatusText(order.status || '')}
                                     </span>
                                 </td>
+                                <td>
+                                    <span className={`badge ${order.isUpdateMisa ? 'badge-outline-success' : 'badge-outline-warning'}`}>
+                                        {order.isUpdateMisa ? 'Đã cập nhật' : 'Chưa cập nhật'}
+                                    </span>
+                                </td>
                                 <td>{order.customerName || '-'}</td>
-                                <td className="flex gap-2">
+                                <td>
                                     <button
                                         className="px-2 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-800"
                                         onClick={() => {
@@ -284,62 +288,6 @@ const PurchaseOrderPage = () => {
                                     >
                                         Chi tiết
                                     </button>
-                                    
-                                    {order.status === 'Pending' && (
-                                        <>
-                                            <button
-                                                onClick={async () => {
-                                                    if (confirm(`Bạn có chắc muốn đặt đơn hàng "${order.description}" không?`)) {
-                                                        try {
-                                                            await updatePurchaseOrderStatus(order.id, 1); // Ordered = 1
-                                                            setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: 'Ordered' } : o)));
-                                                            alert('Đơn hàng đã chuyển sang trạng thái "Đã đặt hàng".');
-                                                        } catch (error) {
-                                                            alert('Lỗi khi cập nhật trạng thái. Vui lòng thử lại.');
-                                                        }
-                                                    }
-                                                }}
-                                                className="px-2 py-1 text-sm text-white bg-yellow-500 rounded hover:bg-yellow-600"
-                                            >
-                                                Đặt hàng
-                                            </button>
-
-                                            <button
-                                                onClick={async () => {
-                                                    if (confirm(`Bạn có chắc muốn huỷ đơn hàng "${order.description}" không?`)) {
-                                                        try {
-                                                            await updatePurchaseOrderStatus(order.id, 3); // Cancelled = 3
-                                                            setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: 'Cancelled' } : o)));
-                                                            alert('Đơn hàng đã được huỷ.');
-                                                        } catch (error) {
-                                                            alert('Lỗi khi huỷ đơn hàng. Vui lòng thử lại.');
-                                                        }
-                                                    }
-                                                }}
-                                                className="px-2 py-1 text-sm text-white bg-red-500 rounded hover:bg-red-600"
-                                            >
-                                                Huỷ đơn
-                                            </button>
-                                        </>
-                                    )}
-                                    {order.status !== 'Imported' && order.status !== 'Cancelled' && (
-                                        <button
-                                            onClick={async () => {
-                                                if (confirm(`Bạn có chắc muốn nhập hàng cho đơn hàng "${order.description}" không?`)) {
-                                                    try {
-                                                        await importPurchaseOrder(order.id);
-                                                        setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: 'Imported' } : o)));
-                                                        alert('Đã nhập hàng thành công.');
-                                                    } catch {
-                                                        alert('Lỗi khi nhập hàng. Vui lòng thử lại.');
-                                                    }
-                                                }
-                                            }}
-                                            className="px-2 py-1 text-sm text-white bg-green-600 rounded hover:bg-green-700"
-                                        >
-                                            Nhập hàng
-                                        </button>
-                                    )}
                                 </td>
                             </tr>
                         ))}

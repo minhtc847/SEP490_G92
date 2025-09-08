@@ -440,9 +440,9 @@ namespace SEP490.Modules.InventorySlipModule.Controller
         {
             try
             {
-                var slip = await _inventorySlipService.GetInventorySlipByIdAsync(id);
-                if (slip == null)
-                    return NotFound(new { message = "Không tìm thấy phiếu kho." });
+                //var slip = await _inventorySlipService.GetInventorySlipByIdAsync(id);
+                //if (slip == null)
+                //    return NotFound(new { message = "Không tìm thấy phiếu kho." });
 
                 await _inventorySlipService.UpdateMisaStatusAsync(id);
                 return Ok(new { message = "Cập nhật trạng thái MISA thành công!", isUpdateMisa = true });

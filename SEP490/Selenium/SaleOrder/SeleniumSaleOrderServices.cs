@@ -53,7 +53,6 @@ namespace SEP490.Selenium.SaleOrder
             {
                 if (i > 0)
                 {
-
                     var addRowButton = driver.FindElement(By.XPath(
     "//button[.//div[contains(@class, 'tooltip-content') and text()='Thêm dòng']]"
 ));

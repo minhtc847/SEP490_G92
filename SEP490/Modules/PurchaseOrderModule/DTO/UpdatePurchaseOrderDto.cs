@@ -16,5 +16,8 @@
         public decimal? Height { get; set; }
         public decimal? Thickness { get; set; }
         public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+        public decimal TotalPrice { get; set; }
+        public string? UOM { get; set; }
     }
 }

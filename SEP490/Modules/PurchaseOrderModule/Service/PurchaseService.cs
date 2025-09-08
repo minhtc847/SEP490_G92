@@ -27,17 +27,20 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                 .Include(po => po.Supplier)
                 .Include(po => po.Customer)
                 .Include(po => po.Employee)
+                .Include(po => po.PurchaseOrderDetails)
+                .OrderByDescending(po => po.Id)
                 .Select(po => new PurchaseOrderDto
                 {
                     Id = po.Id,
                     Code = po.Code,
                     Date = po.Date,
                     Description = po.Description,
-                    TotalValue = po.TotalValue,
+                    TotalValue = po.PurchaseOrderDetails != null ? po.PurchaseOrderDetails.Sum(d => d.TotalPrice ?? 0) : 0,
                     Status = po.Status.HasValue ? po.Status.Value.ToString() : null,
                     SupplierName = po.Supplier != null ? po.Supplier.CustomerName : null,
                     CustomerName = po.Customer != null ? po.Customer.CustomerName : null,
-                    EmployeeName = po.Employee != null ? po.Employee.FullName : null
+                    EmployeeName = po.Employee != null ? po.Employee.FullName : null,
+                    IsUpdateMisa = po.IsUpdateMisa
                 })
                 .ToListAsync();
         }
@@ -61,12 +64,13 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                 Code = order.Code,
                 Date = order.Date,
                 Description = order.Description,
-                TotalValue = order.TotalValue,
+                TotalValue = order.PurchaseOrderDetails != null ? order.PurchaseOrderDetails.Sum(d => d.TotalPrice ?? 0) : 0,
                 Status = order.Status.HasValue ? order.Status.Value.ToString() : null,
                 SupplierName = order.Supplier?.CustomerName,
                 CustomerName = order.Customer?.CustomerName,
                 CustomerId = order.CustomerId ?? 0,
                 EmployeeName = order.Employee?.FullName,
+                IsUpdateMisa = order.IsUpdateMisa,
                 PurchaseOrderDetails = order.PurchaseOrderDetails.Select(d => new PurchaseOrderDetailDto
                 {
                     ProductId = d.ProductId,
@@ -118,6 +122,8 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
             _context.PurchaseOrders.Add(order);
             await _context.SaveChangesAsync();       
 
+            decimal totalOrderValue = 0m;
+
             foreach (var p in dto.Products)
             {
 
@@ -131,13 +137,18 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                 {
                     PurchaseOrderId = order.Id,
                     ProductName = p.ProductName,
-                    Unit = "Tấm",
+                    Unit = p.UOM ?? "Tấm",
                     Quantity = p.Quantity,
-
+                    UnitPrice = p.UnitPrice,
+                    TotalPrice = p.TotalPrice,
+                    ProductId = product.Id
                 };
                 _context.PurchaseOrderDetails.Add(detail);
+
+                totalOrderValue += p.TotalPrice;
             }
 
+            order.TotalValue = totalOrderValue;
             await _context.SaveChangesAsync();
             return order.Id;
         }
@@ -197,6 +208,8 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
 
             _context.PurchaseOrderDetails.RemoveRange(order.PurchaseOrderDetails);
 
+            decimal updatedTotalValue = 0m;
+
             foreach (var p in dto.Products)
             {
                 Product? product = null;
@@ -214,7 +227,7 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                         Width = p.Width?.ToString(),
                         Height = p.Height?.ToString(),
                         Thickness = p.Thickness,
-                        UOM = "Tấm",
+                        UOM = p.UOM ?? "Tấm",
                         ProductType = "NVL",
                         isupdatemisa = false
                     };
@@ -227,13 +240,17 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                     PurchaseOrderId = order.Id,
                     ProductId = product.Id,
                     ProductName = p.ProductName,
-                    Unit = "Tấm",
+                    Unit = p.UOM ?? "Tấm",
                     Quantity = p.Quantity,
-                    UnitPrice = 0
+                    UnitPrice = p.UnitPrice,
+                    TotalPrice = p.TotalPrice
                 };
                 _context.PurchaseOrderDetails.Add(detail);
+
+                updatedTotalValue += p.TotalPrice;
             }
 
+            order.TotalValue = updatedTotalValue;
             await _context.SaveChangesAsync();
             return true;
         }
@@ -328,6 +345,44 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
 
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<bool> UpdateMisaPurchaseOrderAsync(int orderId)
+        {
+            var order = await _context.PurchaseOrders.FirstOrDefaultAsync(po => po.Id == orderId);
+            if (order == null)
+                return false;
+
+            order.IsUpdateMisa = true;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<(bool IsValid, string Message)> ValidateProductsForMisaUpdateAsync(int orderId)
+        {
+            var order = await _context.PurchaseOrders
+                .Include(po => po.PurchaseOrderDetails)
+                .ThenInclude(d => d.Product)
+                .FirstOrDefaultAsync(po => po.Id == orderId);
+
+            if (order == null)
+                return (false, "Purchase order not found.");
+
+            if (order.PurchaseOrderDetails == null || !order.PurchaseOrderDetails.Any())
+                return (false, "Purchase order has no products.");
+
+            var productsNotUpdated = order.PurchaseOrderDetails
+                .Where(d => d.ProductId.HasValue && d.Product != null && !d.Product.isupdatemisa)
+                .Select(d => d.Product?.ProductName ?? "Unknown Product")
+                .ToList();
+
+            if (productsNotUpdated.Any())
+            {
+                var productNames = string.Join(", ", productsNotUpdated);
+                return (false, $"The following products have not been updated to MISA yet: {productNames}. Please update these products to MISA first before updating the purchase order.");
+            }
+
+            return (true, "All products are ready for MISA update.");
         }
 
     }

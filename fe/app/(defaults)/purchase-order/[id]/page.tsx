@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getPurchaseOrderById, PurchaseOrderWithDetailsDto, updatePurchaseOrderStatus } from './service';
+import { getPurchaseOrderById, PurchaseOrderWithDetailsDto, updatePurchaseOrderStatus, importPurchaseOrder, updateMisaPurchaseOrder } from './service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import ExcelJS from 'exceljs';
@@ -81,7 +81,7 @@ const PurchaseOrderDetailPage = () => {
         worksheet.addRow(['Trạng thái:', getStatusText(order.status || '')]);
         worksheet.addRow([]);
 
-        const headerRow = worksheet.addRow(['STT', 'Tên sản phẩm', 'Số lượng', 'Đơn vị tính', 'Ghi chú']);
+        const headerRow = worksheet.addRow(['STT', 'Tên sản phẩm', 'Số lượng', 'Đơn vị tính', 'Đơn giá', 'Thành tiền', 'Ghi chú']);
 
         headerRow.eachCell((cell) => {
             cell.fill = {
@@ -100,7 +100,15 @@ const PurchaseOrderDetailPage = () => {
         });
 
         order.purchaseOrderDetails.forEach((item, idx) => {
-            const row = worksheet.addRow([idx + 1, item.productName, item.quantity, item.uom || 'Tấm', '']);
+            const row = worksheet.addRow([
+                idx + 1, 
+                item.productName, 
+                item.quantity, 
+                item.uom || 'Tấm', 
+                item.unitPrice || 0,
+                item.totalPrice || 0,
+                ''
+            ]);
             row.eachCell((cell) => {
                 cell.border = {
                     top: { style: 'thin' },
@@ -113,7 +121,9 @@ const PurchaseOrderDetailPage = () => {
 
         worksheet.addRow([]);
         const totalQuantity = order.purchaseOrderDetails.reduce((sum, item) => sum + (item.quantity || 0), 0);
-        worksheet.addRow(['Tổng số lượng:', '', totalQuantity, '', '']);
+        const totalPrice = order.purchaseOrderDetails.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+        worksheet.addRow(['Tổng số lượng:', '', totalQuantity, '', '', '', '']);
+        worksheet.addRow(['Tổng giá trị:', '', '', '', '', totalPrice, '']);
 
         worksheet.columns.forEach((column) => {
             column.width = 15;
@@ -128,6 +138,7 @@ const PurchaseOrderDetailPage = () => {
     if (!order) return <div className="p-6 text-red-600">Không tìm thấy đơn hàng mua với ID: {id}</div>;
 
     const totalQuantity = order.purchaseOrderDetails.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    const calculatedTotalPrice = order.purchaseOrderDetails.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
 
     return (
         <ProtectedRoute requiredRole={[1, 2]}>
@@ -173,6 +184,46 @@ const PurchaseOrderDetailPage = () => {
                             </button>
                         </div>
                     )}
+                    
+                    {order.status !== 'Imported' && order.status !== 'Cancelled' && (
+                        <button
+                            onClick={async () => {
+                                if (confirm(`Bạn có chắc muốn nhập hàng cho đơn hàng "${order.description}" không?`)) {
+                                    try {
+                                        await importPurchaseOrder(order.id);
+                                        setOrder((prev) => (prev ? { ...prev, status: 'Imported' } : prev));
+                                        alert('Đã nhập hàng thành công.');
+                                    } catch {
+                                        alert('Lỗi khi nhập hàng. Vui lòng thử lại.');
+                                    }
+                                }
+                            }}
+                            className="px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                            📦 Nhập hàng
+                        </button>
+                    )}
+                    
+                    {!order.isUpdateMisa && (
+                        <button
+                            onClick={async () => {
+                                if (confirm(`Bạn có chắc muốn cập nhật MISA cho đơn hàng "${order.description}" không?`)) {
+                                    try {
+                                        await updateMisaPurchaseOrder(order.id);
+                                        setOrder((prev) => (prev ? { ...prev, isUpdateMisa: true } : prev));
+                                        alert('Đã cập nhật MISA thành công.');
+                                    } catch (error: any) {
+                                        const errorMessage = error.response?.data?.message || 'Lỗi khi cập nhật MISA. Vui lòng thử lại.';
+                                        alert(errorMessage);
+                                    }
+                                }
+                            }}
+                            className="px-4 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
+                        >
+                            🔄 Cập nhật MISA
+                        </button>
+                    )}
+                    
                     <button onClick={() => router.push(`/purchase-order/edit/${id}`)} className="px-4 py-1 bg-blue-500 text-white rounded">
                         📝 Sửa
                     </button>
@@ -202,7 +253,13 @@ const PurchaseOrderDetailPage = () => {
                     </span>
                 </div>
                 <div>
-                    <strong>Tổng giá trị:</strong> {order.totalValue ? `${order.totalValue.toLocaleString()}₫` : '0₫'}
+                    <strong>Tổng giá trị:</strong> {calculatedTotalPrice ? `${calculatedTotalPrice.toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}
+                </div>
+                <div>
+                    <strong>MISA:</strong> 
+                    <span className={`ml-2 badge ${order.isUpdateMisa ? 'badge-outline-success' : 'badge-outline-warning'}`}>
+                        {order.isUpdateMisa ? 'Đã cập nhật' : 'Chưa cập nhật'}
+                    </span>
                 </div>
             </div>
 
@@ -213,6 +270,8 @@ const PurchaseOrderDetailPage = () => {
                         <th className="border p-2">Tên sản phẩm</th>
                         <th className="border p-2">Số lượng</th>
                         <th className="border p-2">Đơn vị tính</th>
+                        <th className="border p-2">Đơn giá</th>
+                        <th className="border p-2">Thành tiền</th>
                         <th className="border p-2">Ghi chú</th>
                     </tr>
                 </thead>
@@ -223,6 +282,8 @@ const PurchaseOrderDetailPage = () => {
                             <td className="border p-2">{item.productName || '-'}</td>
                             <td className="border p-2 text-right">{(item.quantity || 0).toLocaleString()}</td>
                             <td className="border p-2">{item.uom || 'Tấm'}</td>
+                            <td className="border p-2 text-right">{(item.unitPrice || 0).toLocaleString('vi-VN')} VNĐ</td>
+                            <td className="border p-2 text-right font-medium">{(item.totalPrice || 0).toLocaleString('vi-VN')} VNĐ</td>
                             <td className="border p-2">-</td>
                         </tr>
                     ))}
@@ -234,11 +295,11 @@ const PurchaseOrderDetailPage = () => {
                     <strong>Tổng số lượng:</strong> {totalQuantity}
                 </p>
                 <p>
-                    <strong>Tổng giá trị:</strong> {order.totalValue ? `${order.totalValue.toLocaleString()}₫` : '0₫'}
+                    <strong>Tổng giá trị:</strong> {calculatedTotalPrice ? `${calculatedTotalPrice.toLocaleString('vi-VN')} VNĐ` : '0 VNĐ'}
                 </p>
             </div>
 
-            <button onClick={() => router.back()} className="btn btn-status-secondary">
+            <button onClick={() => router.push('/purchase-order')} className="btn btn-status-secondary">
                 ◀ Quay lại
             </button>
         </div>

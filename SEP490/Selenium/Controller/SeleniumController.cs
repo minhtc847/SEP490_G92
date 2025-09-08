@@ -42,7 +42,6 @@ namespace SEP490.Selenium.Controller
             _inventoryServices = inventorySlipService;
             _seleniumProductionOrderServices = seleniumProductionOrderServices;
             _misaPOService = misaPOService;
-
         }
         [HttpPost("product")]
         public IActionResult addProduct(InputSingleProduct product)
@@ -90,6 +89,7 @@ namespace SEP490.Selenium.Controller
             Task.Run(() => _importExportInvoiceServices.OpenImportPage(info));
             return Ok("Processing import page...");
         }
+
         [HttpPost("purchasing-order")]
         public IActionResult addPurchaseOrder([FromBody] InputPO input)
         {

@@ -161,7 +161,7 @@ namespace SEP490.Selenium.ImportExportInvoice
                 khoCell.Click();
 
                 var khoInput = wait.Until(drv => khoCell.FindElement(By.CssSelector("input")));
-                khoInput.SendKeys("K1");
+                khoInput.SendKeys("NVL");
 
                 var cellSoLuong = wait.Until(drv => popupDiv.FindElement(
     By.CssSelector("tr:last-child td:nth-child(9)")));
@@ -257,7 +257,7 @@ namespace SEP490.Selenium.ImportExportInvoice
                 khoCell.Click();
 
                 var khoInput = wait.Until(drv => khoCell.FindElement(By.CssSelector("input")));
-                khoInput.SendKeys("K1");
+                khoInput.SendKeys("NVL");
 
                 var cellSoLuong = wait.Until(drv => popupDiv.FindElement(
     By.CssSelector("tr:last-child td:nth-child(9)")));

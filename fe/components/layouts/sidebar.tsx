@@ -7,7 +7,6 @@ import AnimateHeight from 'react-animate-height';
 import { IRootState } from '@/store';
 import { useState, useEffect } from 'react';
 import IconCaretsDown from '@/components/icon/icon-carets-down';
-import IconMenuDashboard from '@/components/icon/menu/icon-menu-dashboard';
 import IconCaretDown from '@/components/icon/icon-caret-down';
 import IconMinus from '@/components/icon/icon-minus';
 import IconMenuChat from '@/components/icon/menu/icon-menu-chat';
@@ -89,29 +88,7 @@ const Sidebar = () => {
     const renderMenuItems = () => {
         const items = [];
 
-        // Dashboard - Factory Manager and Accountant
-        if (isFactoryManager() || isAccountant()) {
-            items.push(
-                <li key="dashboard" className="menu nav-item">
-                    <button type="button" className={`${currentMenu === 'dashboard' ? 'active' : ''} nav-link group w-full`} onClick={() => toggleMenu('dashboard')}>
-                        <div className="flex items-center">
-                            <IconMenuDashboard className="shrink-0 group-hover:!text-primary" />
-                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">{t('dashboard')}</span>
-                        </div>
-                        <div className={currentMenu !== 'dashboard' ? '-rotate-90 rtl:rotate-90' : ''}>
-                            <IconCaretDown />
-                        </div>
-                    </button>
-                    <AnimateHeight duration={300} height={currentMenu === 'dashboard' ? 'auto' : 0}>
-                        <ul className="sub-menu text-gray-500">
-                            <li>
-                                <Link href="/">{t('sales')}</Link>
-                            </li>
-                        </ul>
-                    </AnimateHeight>
-                </li>
-            );
-        }
+        // Dashboard menu removed
 
         // Orders - Factory Manager and Accountant
         if (isFactoryManager() || isAccountant()) {

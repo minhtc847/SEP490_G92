@@ -10,6 +10,7 @@ export interface PurchaseOrderDto {
     supplierName: string | null;
     customerName: string | null;
     employeeName: string | null;
+    isUpdateMisa: boolean | null;
 }
 
 export const getPurchaseOrders = async (): Promise<PurchaseOrderDto[]> => {
@@ -45,6 +46,15 @@ export const importPurchaseOrder = async (orderId: number): Promise<void> => {
         await axios.post(`/api/PurchaseOrder/${orderId}/import`);
     } catch (error) {
         console.error("Lỗi khi nhập hàng:", error);
+        throw error;
+    }
+};
+
+export const updateMisaPurchaseOrder = async (orderId: number): Promise<void> => {
+    try {
+        await axios.put(`/api/PurchaseOrder/${orderId}/update-misa`);
+    } catch (error) {
+        console.error("Lỗi khi cập nhật MISA:", error);
         throw error;
     }
 };
