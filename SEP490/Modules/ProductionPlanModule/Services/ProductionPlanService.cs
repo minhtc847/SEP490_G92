@@ -296,5 +296,23 @@ namespace SEP490.Modules.Production_plans.Services
             
             return productionPlan != null;
         }
+
+        public async Task<bool> CompleteProductionPlanAsync(int id)
+        {
+            try
+            {
+                var productionPlan = await _context.ProductionPlans.FindAsync(id);
+                if (productionPlan == null)
+                    return false;
+
+                productionPlan.Status = "Hoàn thành";
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

@@ -54,6 +54,7 @@ export default function MaterialExportSlipForm({
 
     const isButylGlueSlip = productionOrderInfo.type === 'Ghép kính';
     const isChemicalExportSlip = ['Sản xuất keo', 'Đổ keo'].includes(productionOrderInfo.type);
+    const isUpdateMode = Boolean(initialSlip);
 
     useEffect(() => {
         if (productionOrderInfo) {
@@ -305,8 +306,8 @@ export default function MaterialExportSlipForm({
         };
 
         MySwal.fire({
-            title: 'Xác nhận tạo phiếu',
-            text: 'Bạn có chắc chắn muốn tạo phiếu xuất này?',
+            title: isUpdateMode ? 'Xác nhận cập nhật phiếu' : 'Xác nhận tạo phiếu',
+            text: isUpdateMode ? 'Bạn có chắc chắn muốn cập nhật phiếu xuất này?' : 'Bạn có chắc chắn muốn tạo phiếu xuất này?',
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Xác nhận',
@@ -385,7 +386,7 @@ export default function MaterialExportSlipForm({
     return (
         <div className="max-w-6xl mx-auto p-6 bg-white rounded-lg shadow">
             <h2 className="text-2xl font-bold mb-6">
-                Tạo {getSlipTypeText()} mới
+                {isUpdateMode ? `Cập nhật ${getSlipTypeText()}` : `Tạo ${getSlipTypeText()} mới`}
             </h2>
 
             <form onSubmit={handleSubmit}>
@@ -577,7 +578,7 @@ export default function MaterialExportSlipForm({
                                 return (
                                     <div key={target.id} className="mb-6 border border-green-200 rounded-lg p-4 bg-green-50">
                                         <h4 className="text-lg font-medium text-green-800 mb-4 border-b border-green-300 pb-2">
-                                            {target.productName} ({target.productCode})
+                                            {target.productName}
                                         </h4>
 
                                         <div className="space-y-4">
@@ -602,7 +603,7 @@ export default function MaterialExportSlipForm({
                                                     Nguyên liệu cần xuất:
                                                 </h5>
                                                 {targetMaterials.map((material, index) => (
-                                                    <div key={`${target.id}-${material.productId}`} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-3 bg-white rounded border border-green-200">
+                                                    <div key={`${target.id}-${material.productId}`} className="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 bg-white rounded border border-green-200">
                                                         <div>
                                                             <label className="block text-sm font-medium text-green-700 mb-2">
                                                                 Nguyên liệu
@@ -614,17 +615,7 @@ export default function MaterialExportSlipForm({
                                                                 className="w-full px-3 py-2 border border-green-300 rounded-md bg-gray-50"
                                                             />
                                                         </div>
-                                                        <div>
-                                                            <label className="block text-sm font-medium text-green-700 mb-2">
-                                                                Mã
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                value={material.productCode}
-                                                                disabled
-                                                                className="w-full px-3 py-2 border border-green-300 rounded-md bg-gray-50"
-                                                            />
-                                                        </div>
+                                                        
                                                         <div>
                                                             <label className="block text-sm font-medium text-green-700 mb-2">
                                                                 Số lượng
@@ -730,7 +721,7 @@ export default function MaterialExportSlipForm({
                                 : 'bg-blue-500 text-white hover:bg-blue-600'
                                 }`}
                         >
-                            {loading ? 'Đang xử lý...' : 'Tạo phiếu'}
+                            {loading ? 'Đang xử lý...' : (isUpdateMode ? 'Cập nhật phiếu' : 'Tạo phiếu')}
                         </button>
                     </div>
                 </div>

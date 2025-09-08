@@ -10,12 +10,13 @@ import IconEye from '@/components/icon/icon-eye';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import Swal from 'sweetalert2';
 import {
     fetchProductionPlanDetail, fetchProductionPlanProductDetails,
     ProductionPlanDetail, ProductionPlanProductDetail, fetchProductionOrdersByPlanId,
     ProductionOrderListItem, fetchProductionPlanMaterialDetail, ProductionPlanMaterialDetail, ProductionPlanMaterialProduct,
     createCutGlassOrder, CutGlassOrderData, createGlueGlassOrder, GlueGlassOrderData,
-    createPourGlueOrder, PourGlueOrderData
+    createPourGlueOrder, PourGlueOrderData, completeProductionPlan
 } from '../service';
 import CutGlassModal from '@/components/VNG/manager/production-orders/modals/CutGlassModal';
 import GlueGlassModal from '@/components/VNG/manager/production-orders/modals/GlueGlassModal';
@@ -36,6 +37,7 @@ const ProductionPlanDetailPage = () => {
     const [glueGlassModalOpen, setGlueGlassModalOpen] = useState(false);
     const [pourGlueModalOpen, setPourGlueModalOpen] = useState(false);
     const [materialDetail, setMaterialDetail] = useState<ProductionPlanMaterialDetail | null>(null);
+    const [completing, setCompleting] = useState(false);
     
 
     
@@ -149,6 +151,71 @@ const ProductionPlanDetailPage = () => {
         } catch (error) {
             console.error('Error creating pour glue order:', error);
             alert('Có lỗi xảy ra khi tạo lệnh sản xuất!');
+        }
+    };
+
+    // Handler for completing production plan
+    const handleCompleteProductionPlan = async () => {
+        if (!id) return;
+        
+        const swalWithBootstrapButtons = Swal.mixin({
+            customClass: {
+                confirmButton: 'btn btn-success',
+                cancelButton: 'btn btn-danger ltr:mr-3 rtl:ml-3',
+                popup: 'sweet-alerts',
+            },
+            buttonsStyling: false,
+        });
+
+        const result = await swalWithBootstrapButtons.fire({
+            title: 'Xác nhận hoàn thành',
+            text: 'Bạn có chắc chắn muốn hoàn thành kế hoạch sản xuất này? Hành động này không thể hoàn tác.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Có, hoàn thành!',
+            cancelButtonText: 'Không, hủy!',
+            reverseButtons: true,
+            padding: '2em',
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            setCompleting(true);
+            const completeResult = await completeProductionPlan(id as string);
+            
+            if (completeResult.success) {
+                // Refresh production plan detail
+                const detailData = await fetchProductionPlanDetail(id as string);
+                setDetail(detailData);
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công!',
+                    text: completeResult.message || 'Kế hoạch sản xuất đã được hoàn thành!',
+                    padding: '2em',
+                    customClass: { popup: 'sweet-alerts' },
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Lỗi!',
+                    text: completeResult.message || 'Có lỗi xảy ra khi hoàn thành kế hoạch sản xuất!',
+                    padding: '2em',
+                    customClass: { popup: 'sweet-alerts' },
+                });
+            }
+        } catch (error) {
+            console.error('Error completing production plan:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi!',
+                text: 'Có lỗi xảy ra khi hoàn thành kế hoạch sản xuất!',
+                padding: '2em',
+                customClass: { popup: 'sweet-alerts' },
+            });
+        } finally {
+            setCompleting(false);
         }
     };
 
@@ -447,39 +514,76 @@ const ProductionPlanDetailPage = () => {
             <div className="panel mt-6">
 
                 <div className="flex flex-wrap items-center justify-center gap-4 lg:justify-end">
-                    <div className="dropdown">
-                        <Dropdown
-                            placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`}
-                            btnClassName="btn btn-primary dropdown-toggle"
-                            button={
-                                <>
-                                    <IconSend />
-                                    Lên lệnh sản xuất
-                                    <span>
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
-                                    </span>
-                                </>
-                            }
+                    {detail?.status !== 'Hoàn thành' && (
+                        <div className="dropdown">
+                            <Dropdown
+                                placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`}
+                                btnClassName="btn btn-primary dropdown-toggle"
+                                button={
+                                    <>
+                                        <IconSend />
+                                        Lên lệnh sản xuất
+                                        <span>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
+                                        </span>
+                                    </>
+                                }
+                            >
+                                <ul className="!min-w-[170px]">
+                                    <li>
+                                        <button type="button" onClick={() => handleDropdownSelect('Cắt kính')}>
+                                            Cắt kính
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button type="button" onClick={() => handleDropdownSelect('Ghép kính')}>
+                                            Ghép kính
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button type="button" onClick={() => handleDropdownSelect('Đổ keo')}>
+                                            Đổ keo
+                                        </button>
+                                    </li>
+                                </ul>
+                            </Dropdown>
+                        </div>
+                    )}                    
+
+                    {detail?.status !== 'Hoàn thành' && (
+                        <button
+                            type="button"
+                            onClick={handleCompleteProductionPlan}
+                            disabled={completing}
+                            className={`btn ${completing ? 'btn-warning' : 'btn-success'} ${completing ? 'opacity-75' : ''}`}
                         >
-                            <ul className="!min-w-[170px]">
-                                <li>
-                                    <button type="button" onClick={() => handleDropdownSelect('Cắt kính')}>
-                                        Cắt kính
-                                    </button>
-                                </li>
-                                <li>
-                                    <button type="button" onClick={() => handleDropdownSelect('Ghép kính')}>
-                                        Ghép kính
-                                    </button>
-                                </li>
-                                <li>
-                                    <button type="button" onClick={() => handleDropdownSelect('Đổ keo')}>
-                                        Đổ keo
-                                    </button>
-                                </li>
-                            </ul>
-                        </Dropdown>
-                    </div>
+                            {completing ? (
+                                <>
+                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Đang xử lý...
+                                </>
+                            ) : (
+                                <>
+                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Hoàn thành LSX
+                                </>
+                            )}
+                        </button>
+                    )}
+                    
+                    {detail?.status === 'Hoàn thành' && (
+                        <div className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-800 rounded-lg">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span className="font-medium">Kế hoạch sản xuất đã hoàn thành</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="mb-4">

@@ -93,6 +93,7 @@ export interface ProductionOrderInfo {
     productionOrderCode: string;
     type: string;
     description?: string;
+    status?: number; // 0: Pending, 1: InProgress, 2: Completed, 3: Cancelled
     productionOutputs: ProductionOutput[];
     availableProducts: ProductInfo[];    
     rawMaterials: ProductInfo[];

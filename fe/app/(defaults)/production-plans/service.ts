@@ -217,3 +217,14 @@ export async function deleteProductionPlan(id: number): Promise<void> {
   await axios.delete(`/api/ProductionPlan/${id}`);
 }
 
+
+export async function completeProductionPlan(id: number | string): Promise<{success: boolean, message?: string}> {
+  try {
+    const response = await axios.put(`/api/ProductionPlan/${id}/complete`);
+    return { success: true, message: 'Kế hoạch sản xuất đã được hoàn thành!' };
+  } catch (error: any) {
+    const message = error.response?.data?.message || 'Có lỗi xảy ra khi hoàn thành kế hoạch sản xuất';
+    return { success: false, message };
+  }
+}
+

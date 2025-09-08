@@ -94,7 +94,9 @@ namespace SEP490.Modules.ProductionOrders.Services
         {
             try
             {                
-                var productionOrder = await _context.ProductionOrders.FindAsync(dto.ProductionOrderId);
+                var productionOrder = await _context.ProductionOrders
+                    .Include(po => po.ProductionPlan)
+                    .FirstOrDefaultAsync(po => po.Id == dto.ProductionOrderId);
                 if (productionOrder == null) return false;
 
                 var product = await _context.Products.FindAsync(dto.ProductId);
@@ -123,7 +125,21 @@ namespace SEP490.Modules.ProductionOrders.Services
 
                 productionOutput.Finished = Math.Max((productionOutput.Finished ?? 0m) - dto.Quantity, 0m);
 
-                if (productionOrder != null)
+                // Nếu là lệnh sản xuất "Đổ keo", giảm số lượng hoàn thành trong production plan detail
+                if (productionOrder.Type == "Đổ keo")
+                {
+                    var productionPlanDetail = await _context.ProductionPlanDetails
+                        .FirstOrDefaultAsync(ppd => ppd.ProductionPlanId == productionOrder.ProductionPlanId && ppd.ProductId == dto.ProductId);
+
+                    if (productionPlanDetail != null)
+                    {
+                        productionPlanDetail.Done = Math.Max(0, productionPlanDetail.Done - (int)dto.Quantity);
+                        _context.ProductionPlanDetails.Update(productionPlanDetail);
+                    }
+                }
+
+                // Chỉ thay đổi trạng thái nếu lệnh sản xuất chưa hoàn thành
+                if (productionOrder != null && productionOrder.Status != ProductionStatus.Completed)
                 {
                     productionOrder.Status = ProductionStatus.InProgress;
                 }
@@ -154,6 +170,10 @@ namespace SEP490.Modules.ProductionOrders.Services
                     .FirstOrDefaultAsync(po => po.ProductionOrderId == existingDefect.ProductionOrderId && po.ProductId == existingDefect.ProductId);
                 
                 if (productionOutput == null) return false;
+
+                var productionOrder = await _context.ProductionOrders
+                    .Include(po => po.ProductionPlan)
+                    .FirstOrDefaultAsync(po => po.Id == existingDefect.ProductionOrderId);
            
                 existingDefect.Quantity = dto.Quantity;
                 existingDefect.DefectType = dto.DefectType;
@@ -165,8 +185,21 @@ namespace SEP490.Modules.ProductionOrders.Services
 
                 productionOutput.Finished = Math.Max((productionOutput.Finished ?? 0m) - quantityDifference, 0m);
 
-                var productionOrder = await _context.ProductionOrders.FindAsync(existingDefect.ProductionOrderId);
-                if (productionOrder != null)
+                // Nếu là lệnh sản xuất "Đổ keo", cập nhật số lượng hoàn thành trong production plan detail
+                if (productionOrder != null && productionOrder.Type == "Đổ keo")
+                {
+                    var productionPlanDetail = await _context.ProductionPlanDetails
+                        .FirstOrDefaultAsync(ppd => ppd.ProductionPlanId == productionOrder.ProductionPlanId && ppd.ProductId == existingDefect.ProductId);
+
+                    if (productionPlanDetail != null)
+                    {
+                        productionPlanDetail.Done = Math.Max(0, productionPlanDetail.Done - (int)quantityDifference);
+                        _context.ProductionPlanDetails.Update(productionPlanDetail);
+                    }
+                }
+
+                // Chỉ thay đổi trạng thái nếu lệnh sản xuất chưa hoàn thành
+                if (productionOrder != null && productionOrder.Status != ProductionStatus.Completed)
                 {
                     productionOrder.Status = ProductionStatus.InProgress;
                 }
@@ -189,7 +222,8 @@ namespace SEP490.Modules.ProductionOrders.Services
 
             output.Finished = Math.Max((output.Finished ?? 0m) - dto.Broken, 0m);
 
-            if (output.ProductionOrder != null)
+            // Chỉ thay đổi trạng thái nếu lệnh sản xuất chưa hoàn thành
+            if (output.ProductionOrder != null && output.ProductionOrder.Status != ProductionStatus.Completed)
             {
                 output.ProductionOrder.Status = ProductionStatus.InProgress;
             }
