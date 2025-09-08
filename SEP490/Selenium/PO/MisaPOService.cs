@@ -14,7 +14,7 @@ namespace SEP490.Selenium.PO
         {
             InitSelenium();
             Login();
-            Thread.Sleep(1000); // Wait for the page to load
+            Thread.Sleep(500); // Wait for the page to load
 
             ClickIfExists(
                 By.XPath("//div[contains(@class, 'ms-button-text') and contains(text(), 'Thêm')]"),
@@ -23,6 +23,7 @@ namespace SEP490.Selenium.PO
                 );
             AddField(inputPO);
             Thread.Sleep(500);
+            CloseDriver();
         }
         private void AddField(InputPO inputPO)
         {
@@ -100,7 +101,7 @@ namespace SEP490.Selenium.PO
                     Thread.Sleep(300);
                     ////*[@id="body-layout"]/div[2]/div/div[3]/div/div/div/div/div/div[2]/div/div/div[1]/table/tbody/tr/td[9]/div/div/div[1]
                     var inputPrice = driver.FindElement(By.XPath(
-            "//*[@id=\"body-layout\"]/div[2]/div/div[3]/div/div/div/div/div/div[2]/div/div/div[1]/table/tbody/tr[" + (i + 1) + "]/td[9]/div/div/div[1]/div"
+            "//*[@id=\"body-layout\"]/div[2]/div/div[3]/div/div/div/div/div/div[2]/div/div/div[1]/table/tbody/tr[" + (i + 1) + "]/td[8]/div/div/div[1]/div"
         ));
                     inputPrice.Click();
                     var inputPrice2 = wait.Until(d =>
@@ -148,7 +149,7 @@ namespace SEP490.Selenium.PO
                     inputCount.SendKeys(products[i].ProductQuantity);
                     Thread.Sleep(300);
                     var inputPrice = driver.FindElement(By.XPath(
-            "//*[@id=\"body-layout\"]/div[2]/div/div[3]/div/div/div/div/div/div[2]/div/div/div[1]/table/tbody/tr[1]/td[9]/div/div/div[1]/div"
+            "//*[@id=\"body-layout\"]/div[2]/div/div[3]/div/div/div/div/div/div[2]/div/div/div[1]/table/tbody/tr[1]/td[8]/div/div/div[1]/div"
         ));
                     inputPrice.Click();
                     var inputPrice2 = wait.Until(d =>
@@ -170,7 +171,6 @@ namespace SEP490.Selenium.PO
                         ));
             exitButton.Click();
             Thread.Sleep(500);
-
         }
     }
 }
