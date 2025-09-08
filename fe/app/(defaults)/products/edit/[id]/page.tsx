@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AsyncSelect from 'react-select/async';
-import { getProductById, updateProduct, deleteProduct, ProductDetail, getGlassStructureById } from './service';
+import { getProductById, updateProduct, deleteProduct, ProductDetail, getGlassStructureById, updateProductMisa, InputUpdateProduct } from './service';
 import { searchGlassStructures, GlassStructureOption } from '@/app/(defaults)/products/edit/[id]/service';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
@@ -87,7 +87,24 @@ const ProductEditPage = () => {
         e.preventDefault();
         if (!formData) return;
         try {
+            const changed =
+                (product?.productName ?? '') !== (formData.productName ?? '') ||
+                (product?.uom ?? '') !== (formData.uom ?? '') ||
+                (product?.productCode ?? '') !== (formData.productCode ?? '');
             await updateProduct(formData.id, formData);
+            if (changed) {
+                try {
+                    const latest = await getProductById(String(formData.id));
+                    const payload: InputUpdateProduct = {
+                        productCode: latest.productCode ?? '',
+                        name: latest.productName ?? '',
+                        unit: latest.uom ?? ''
+                    };
+                    await updateProductMisa(payload);
+                } catch (misaErr) {
+                    console.error('Lỗi khi cập nhật MISA:', misaErr);
+                }
+            }
             alert(`Cập nhật sản phẩm ${formData.productName ?? ''} thành công!`);
             router.push(`/products/${formData.id}`);
         } catch (err) {

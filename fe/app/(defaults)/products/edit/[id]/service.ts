@@ -60,3 +60,13 @@ export const updateProduct = async (id: number, data: ProductDetail): Promise<vo
 export const deleteProduct = async (id: string): Promise<void> => {
     await axios.delete(`/api/Product/${id}`);
 };
+
+export interface InputUpdateProduct {
+    productCode: string;
+    name: string;
+    unit: string;
+}
+
+export const updateProductMisa = async (input: InputUpdateProduct): Promise<void> => {
+    await axios.put('/api/Selenium/product', input);
+};
