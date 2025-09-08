@@ -701,8 +701,9 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                         (item) => (item.outputId || item.id) === selectedProduct,
                       )
                       console.log("[v0] Found selected item:", selectedItem)
-                      if (selectedItem?.outputId || selectedItem?.id) {
-                        handleDeleteOutput(selectedItem.outputId || selectedItem.id)
+                      const idToDelete = selectedItem?.outputId ?? selectedItem?.id
+                      if (typeof idToDelete === 'number') {
+                        handleDeleteOutput(idToDelete)
                       }
                     }}
                     disabled={!selectedProduct}
