@@ -47,6 +47,10 @@ const SalesOrderDetailPage = () => {
         if (!order) return;
         
         setIsUpdatingMisa(true);
+        // Show blocking overlay by adding a body class
+        if (typeof document !== 'undefined') {
+            document.body.classList.add('pointer-events-none');
+        }
         setShowSuccessMessage(false);
         setShowErrorMessage(false);
         setErrorMessage('');
@@ -108,6 +112,9 @@ const SalesOrderDetailPage = () => {
             }, 5000); // Hiển thị lỗi trong 5 giây
         } finally {
             setIsUpdatingMisa(false);
+            if (typeof document !== 'undefined') {
+                document.body.classList.remove('pointer-events-none');
+            }
         }
     };
 
@@ -229,6 +236,14 @@ const SalesOrderDetailPage = () => {
         <ProtectedRoute requiredRole={[1, 2]}>
 
         <div className="p-6">
+            {isUpdatingMisa && (
+                <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+                    <div className="bg-white rounded shadow p-4 text-center">
+                        <div className="animate-spin inline-block w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full mr-2"></div>
+                        <span>Đang cập nhật MISA, vui lòng không thao tác...</span>
+                    </div>
+                </div>
+            )}
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl font-bold">Chi tiết đơn hàng: {orderCode}</h1>
                 <div className="space-x-2">
@@ -237,10 +252,12 @@ const SalesOrderDetailPage = () => {
                     </button>
                     <button 
                         onClick={handleUpdateMisa} 
-                        disabled={isUpdatingMisa}
+                        disabled={isUpdatingMisa || order.isUpdateMisa}
+                        title={order.isUpdateMisa ? 'Đơn hàng đã được cập nhật MISA' : ''}
+                        aria-busy={isUpdatingMisa}
                         className={`px-4 py-1 rounded transition ${
-                            isUpdatingMisa 
-                                ? 'bg-orange-400 text-white cursor-not-allowed' 
+                            isUpdatingMisa || order.isUpdateMisa
+                                ? 'bg-gray-400 text-white cursor-not-allowed' 
                                 : 'bg-orange-500 text-white hover:bg-orange-600'
                         }`}
                     >

@@ -190,6 +190,16 @@ namespace SEP490.Selenium.ImportExportInvoice
             //var buttonCo = driver.FindElement(By.XPath("//button[.//div[text()='Có']]"));
             //buttonCo.Click();
             //Thread.Sleep(500);
+
+            var confirmDivs = driver.FindElements(By.CssSelector("div.ms-message-box--content"));
+            if (confirmDivs.Count > 0)
+            {
+                // Nếu có thì tìm nút "Có" và click
+                var buttonCo = driver.FindElement(By.XPath("//button[.//div[text()='Có']]"));
+                buttonCo.Click();
+                Thread.Sleep(500);
+            }
+
             var closeBtn = wait.Until(drv => drv.FindElement(
      By.CssSelector("div.close-btn.header-detail-btn")
  ));
