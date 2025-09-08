@@ -80,10 +80,17 @@ const PurchaseOrderCreatePage = () => {
     const handleItemChange = (idx: number, field: keyof OrderItem, val: string | number) => {
         setForm((f) => {
             const items = [...f.items];
-            items[idx] = {
+            const updatedItem = {
                 ...items[idx],
                 [field]: field === 'productName' ? val.toString() : Number(val),
             } as OrderItem;
+            
+            // Calculate total price when quantity or unit price changes
+            if (field === 'quantity' || field === 'unitPrice') {
+                updatedItem.totalPrice = updatedItem.quantity * updatedItem.unitPrice;
+            }
+            
+            items[idx] = updatedItem;
             return { ...f, items };
         });
     };
@@ -149,6 +156,7 @@ const PurchaseOrderCreatePage = () => {
                 thickness: 0,
                 quantity: 1,
                 unitPrice: 0,
+                totalPrice: 0,
                 uom: p.uom ?? 'Tấm',
                 isFromDatabase: true,
             };
@@ -173,12 +181,17 @@ const PurchaseOrderCreatePage = () => {
 
             const products = validItems.map((p, i) => {
                 const qty = toPositiveInt(p.quantity);
+                const unitPrice = toPositiveNumber(p.unitPrice);
                 if (!p.productName?.trim()) throw new Error(`Sản phẩm #${i + 1}: Vui lòng nhập tên sản phẩm`);
                 if (!qty) throw new Error(`Sản phẩm #${i + 1}: Số lượng phải > 0`);
+                if (!unitPrice) throw new Error(`Sản phẩm #${i + 1}: Đơn giá phải > 0`);
 
                 return {
                     productName: p.productName.trim(),
                     quantity: qty,
+                    unitPrice: unitPrice,
+                    totalPrice: qty * unitPrice,
+                    uom: p.uom,
                 };
             });
 
@@ -266,6 +279,8 @@ const PurchaseOrderCreatePage = () => {
                             <th className="border p-2">Tên SP</th>
                             <th className="border p-2">Số lượng</th>
                             <th className="border p-2">Đơn vị tính</th>
+                            <th className="border p-2">Đơn giá</th>
+                            <th className="border p-2">Thành tiền</th>
                             <th className="border p-2 w-20"></th> {/* cột xoá */}
                         </tr>
                     </thead>
@@ -284,6 +299,21 @@ const PurchaseOrderCreatePage = () => {
 
                                     <td className="border p-2">{it.uom || 'Tấm'}</td>
 
+                                    <td className="border p-2 text-right">
+                                        <input 
+                                            type="number" 
+                                            className="input input-xs w-24" 
+                                            value={it.unitPrice} 
+                                            min={0} 
+                                            step={1000}
+                                            onChange={(e) => handleItemChange(idx, 'unitPrice', +e.target.value)} 
+                                        />
+                                    </td>
+
+                                    <td className="border p-2 text-right font-medium">
+                                        {it.totalPrice.toLocaleString('vi-VN')} VNĐ
+                                    </td>
+
                                     <td className="border p-2 text-center">
                                         <button className="btn btn-xs btn-error" onClick={() => removeItem(idx)}>
                                             Xoá
@@ -294,6 +324,19 @@ const PurchaseOrderCreatePage = () => {
                         })}
                     </tbody>
                 </table>
+                
+                {/* Total Summary */}
+                {form.items.length > 0 && (
+                    <div className="mt-4 flex justify-end">
+                        <div className="bg-gray-50 p-4 rounded-lg border">
+                            <div className="text-right">
+                                <div className="text-lg font-semibold">
+                                    Tổng cộng: {form.items.reduce((sum, item) => sum + item.totalPrice, 0).toLocaleString('vi-VN')} VNĐ
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="flex gap-4">
@@ -320,7 +363,8 @@ const PurchaseOrderCreatePage = () => {
                                 height: Number(p.height),
                                 thickness: Number(p.thickness),
                                 quantity: 1,
-                                unitPrice: 0,
+                                unitPrice: p.unitPrice || 0,
+                                totalPrice: p.unitPrice || 0,
                                 uom: p.uom ?? 'Tấm',
                                 glassStructureId: p.glassStructureId,
                                 isFromDatabase: true,

@@ -4,7 +4,7 @@ using OpenQA.Selenium;
 using SEP490.Common.Services;
 using SEP490.Selenium.ProductionOrder.DTO;
 using OpenQA.Selenium.Interactions;
-using StackExchange.Redis;
+
 
 namespace SEP490.Selenium.ProductionOrder
 {

@@ -25,9 +25,12 @@ namespace SEP490.Selenium.SaleOrder
             options.AddArgument("--disable-gpu");
             options.AddArgument("--window-size=1920,1080");
 
-            options.AddArgument(@"user-data-dir=C:\Users\caomi\AppData\Local\Google\Chrome\User Data");
-            // pick a profile (e.g., "Default" or "Profile 1")
-            options.AddArgument("profile-directory=Profile 1");
+            //options.AddArgument(@"user-data-dir=C:\Users\caomi\AppData\Local\Google\Chrome\User Data");
+            //// pick a profile (e.g., "Default" or "Profile 1")
+            //options.AddArgument("profile-directory=Profile 1");
+
+            options.AddArgument(@"user-data-dir=C:\SeleniumProfiles\Profile1");
+            options.AddArgument("--profile-directory=Profile1");
 
             // optional if you run on Windows
             options.AddArgument("--remote-debugging-port=9222");
@@ -43,8 +46,9 @@ namespace SEP490.Selenium.SaleOrder
             string orderId = "";
             driver.Navigate().GoToUrl(saleOrderUrl);
             
-            Login();
-            var button = wait.Until(drv => drv.FindElement(By.XPath("//div[contains(@class, 'ms-button-text') and contains(text(), 'Thêm đơn đặt hàng')]//ancestor::button")));
+           // Login();
+            //var button = wait.Until(drv => drv.FindElement(By.XPath("//div[contains(@class, 'ms-button-text') and contains(text(), 'Thêm đơn đặt hàng')]//ancestor::button")));
+            var button = wait.Until(drv => drv.FindElement(By.XPath("//div[contains(@class, 'ms-button-text') and contains(text(), 'Thêm')]//ancestor::button")));
             button.Click();
             var orderIdInput = wait.Until(drv => drv.FindElement(By.XPath("//div[contains(text(),'Số đơn hàng')]/ancestor::div[contains(@class,'ms-input')]//input")));
 
@@ -139,7 +143,6 @@ namespace SEP490.Selenium.SaleOrder
             {
                 if (i > 0)
                 {
-
                     var addRowButton = driver.FindElement(By.XPath(
     "//button[.//div[contains(@class, 'tooltip-content') and text()='Thêm dòng']]"
 ));

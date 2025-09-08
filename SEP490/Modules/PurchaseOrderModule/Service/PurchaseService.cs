@@ -131,9 +131,11 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                 {
                     PurchaseOrderId = order.Id,
                     ProductName = p.ProductName,
-                    Unit = "Tấm",
+                    Unit = p.UOM ?? "Tấm",
                     Quantity = p.Quantity,
-
+                    UnitPrice = p.UnitPrice,
+                    TotalPrice = p.TotalPrice,
+                    ProductId = product.Id
                 };
                 _context.PurchaseOrderDetails.Add(detail);
             }
@@ -214,7 +216,7 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                         Width = p.Width?.ToString(),
                         Height = p.Height?.ToString(),
                         Thickness = p.Thickness,
-                        UOM = "Tấm",
+                        UOM = p.UOM ?? "Tấm",
                         ProductType = "NVL",
                         isupdatemisa = false
                     };
@@ -227,9 +229,10 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                     PurchaseOrderId = order.Id,
                     ProductId = product.Id,
                     ProductName = p.ProductName,
-                    Unit = "Tấm",
+                    Unit = p.UOM ?? "Tấm",
                     Quantity = p.Quantity,
-                    UnitPrice = 0
+                    UnitPrice = p.UnitPrice,
+                    TotalPrice = p.TotalPrice
                 };
                 _context.PurchaseOrderDetails.Add(detail);
             }

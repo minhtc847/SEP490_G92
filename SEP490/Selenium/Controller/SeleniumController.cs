@@ -42,7 +42,6 @@ namespace SEP490.Selenium.Controller
             _inventoryServices = inventorySlipService;
             _seleniumProductionOrderServices = seleniumProductionOrderServices;
             _misaPOService = misaPOService;
-
         }
         [HttpPost("product")]
         public IActionResult addProduct(InputSingleProduct product)

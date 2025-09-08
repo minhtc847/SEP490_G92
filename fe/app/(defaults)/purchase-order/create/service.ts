@@ -4,6 +4,8 @@ export interface PurchaseOrderProductDto {
   productName: string;
   quantity: number;
   uom?: string;
+  unitPrice: number;
+  totalPrice: number;
 }
 
 export interface CreatePurchaseOrderDto {
@@ -88,6 +90,7 @@ export type OrderItem = {
     thickness: number;
     quantity: number;
     unitPrice: number;
+    totalPrice: number;
     uom?: string;
     glassStructureId?: number;
     isFromDatabase?: boolean;
