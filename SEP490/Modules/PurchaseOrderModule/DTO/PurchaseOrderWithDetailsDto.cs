@@ -13,6 +13,7 @@
         public string? CustomerName { get; set; }
         public int CustomerId { get; set; }
         public string? EmployeeName { get; set; }
+        public bool IsUpdateMisa { get; set; }
 
         public List<PurchaseOrderDetailDto> PurchaseOrderDetails { get; set; } = new();
     }

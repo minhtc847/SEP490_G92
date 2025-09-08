@@ -14,6 +14,7 @@ namespace SEP490.DB.Models
         public PurchaseStatus? Status { get; set; } = PurchaseStatus.Pending;
         public int? EmployeeId { get; set; }
         public int? CustomerId { get; set; }
+        public bool IsUpdateMisa { get; set; } = false;
         public Customer? Customer { get; set; }
         public Customer? Supplier { get; set; }
         public Employee? Employee { get; set; }

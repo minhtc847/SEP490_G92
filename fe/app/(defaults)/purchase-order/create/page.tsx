@@ -426,7 +426,7 @@ const PurchaseOrderCreatePage = () => {
             </div>
 
             <div className="flex gap-4">
-                <button className="btn btn-secondary" onClick={() => router.back()}>
+                <button className="btn btn-secondary" onClick={() => router.push('/purchase-order')}>
                     ◀ Quay lại
                 </button>
                 <button className="btn btn-primary" onClick={handleSave}>

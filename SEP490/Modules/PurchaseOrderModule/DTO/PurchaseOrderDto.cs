@@ -11,5 +11,6 @@
         public string? SupplierName { get; set; }
         public string? CustomerName { get; set; }
         public string? EmployeeName { get; set; }
+        public bool IsUpdateMisa { get; set; }
     }
 }
