@@ -4,6 +4,7 @@ namespace SEP490.Selenium.Product
 {
     public interface IMisaProductService
     {
-        void AddProduct(InputSingleProduct input);
+        string AddProduct(InputSingleProduct input);
+        void updateProduct(InputUpdateProduct input);
     }
 }

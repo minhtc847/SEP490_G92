@@ -59,6 +59,7 @@ export const updateMisaProduct = async (product: ProductDetail): Promise<any> =>
     };
 
     const misaPayload = {
+        ProductId: product.id,
         Name: product.productName || '',
         Type: mapProductTypeToMisa(product.productType),
         Unit: product.uom || 'Tấm'

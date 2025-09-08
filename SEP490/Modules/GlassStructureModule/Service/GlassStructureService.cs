@@ -71,8 +71,7 @@ namespace SEP490.Modules.GlassStructureModule.Service
             if (dto.ProductCode == null)
                 throw new ArgumentException("ProductCode is required");
 
-            if (dto.Category == null)
-                throw new ArgumentException("Category is required");
+            // Category is optional for updates; do not hard-require it
 
             if (dto.UnitPrice < 0)
                 throw new ArgumentException("UnitPrice must be non-negative");
