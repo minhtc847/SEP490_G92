@@ -24,6 +24,7 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
     const [updateDescription, setUpdateDescription] = useState('');
     const [updatePayload, setUpdatePayload] = useState<any>(null);
     const [updateType, setUpdateType] = useState<'cut-glass' | 'material-export' | 'other'>('other');
+    const [isMisaUpdating, setIsMisaUpdating] = useState(false);
 
     const toggleExpanded = (slipId: number) => {
         const newExpanded = new Set(expandedSlips);
@@ -175,6 +176,14 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
 
     return (
         <div className="space-y-4">
+            {isMisaUpdating && (
+                <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+                    <div className="bg-white rounded shadow p-4 text-center">
+                        <div className="animate-spin inline-block w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full mr-2"></div>
+                        <span>Đang cập nhật MISA, vui lòng không thao tác...</span>
+                    </div>
+                </div>
+            )}
             {slips.map((slip) => (
                 <div key={slip.id} className="border rounded-lg overflow-hidden">
                     {/* Slip Header */}
@@ -299,6 +308,8 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                                                 
                                                 if (result.isConfirmed) {
                                                     try {
+                                                        setIsMisaUpdating(true);
+                                                        if (typeof document !== 'undefined') document.body.classList.add('pointer-events-none');
                                                         // Kiểm tra trạng thái MISA của các sản phẩm trước
                                                         const misaCheckResult = await checkSlipProductsMisaStatus(slip.id);
                                                         
@@ -356,16 +367,20 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                                                             icon: 'error',
                                                             confirmButtonText: 'Đã hiểu',
                                                         });
+                                                    } finally {
+                                                        setIsMisaUpdating(false);
+                                                        if (typeof document !== 'undefined') document.body.classList.remove('pointer-events-none');
                                                     }
                                                 }
                                             } catch (error) {
                                                 console.error('Error showing confirmation:', error);
                                             }
                                         }}
-                                        className="px-3 py-1 text-sm border border-purple-300 text-purple-700 bg-white hover:bg-purple-50 rounded-md transition-colors"
+                                        disabled={isMisaUpdating}
+                                        className={`px-3 py-1 text-sm border rounded-md transition-colors ${isMisaUpdating ? 'border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed' : 'border-purple-300 text-purple-700 bg-white hover:bg-purple-50'}`}
                                         title="Cập nhật lên Misa"
                                     >
-                                        Cập nhật lên Misa
+                                        {isMisaUpdating ? 'Đang cập nhật Misa...' : 'Cập nhật lên Misa'}
                                     </button>
                                 )}
                             </div>

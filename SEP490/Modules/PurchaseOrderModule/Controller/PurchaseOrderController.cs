@@ -127,11 +127,17 @@ namespace SEP490.Modules.PurchaseOrderModule.Controller
                 {
                     supplierName = order.CustomerName ?? "",
                     date = order.Date?.ToString("dd/MM/yyyy") ?? DateTime.Now.ToString("dd/MM/yyyy"),
-                    ProductsInput = order.PurchaseOrderDetails.Select(detail => new SEP490.Selenium.SaleOrder.DTO.SaleOrderProductsInput
+                    ProductsInput = order.PurchaseOrderDetails.Select(detail =>
                     {
-                        ProductCode = detail.ProductName ?? "",
-                        ProductQuantity = (detail.Quantity ?? 0).ToString(),
-                        Price = (detail.UnitPrice ?? 0).ToString()
+                        var unitPrice = detail.UnitPrice ?? 0m;
+                        var formattedPrice = Math.Round(unitPrice, 0, MidpointRounding.AwayFromZero)
+                            .ToString(System.Globalization.CultureInfo.InvariantCulture);
+                        return new SEP490.Selenium.SaleOrder.DTO.SaleOrderProductsInput
+                        {
+                            ProductCode = detail.ProductName ?? "",
+                            ProductQuantity = (detail.Quantity ?? 0).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            Price = formattedPrice
+                        };
                     }).ToList()
                 };
 

@@ -45,6 +45,7 @@ const PurchaseOrderDetailPage = () => {
 
     const [order, setOrder] = useState<PurchaseOrderWithDetailsDto | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isUpdatingMisa, setIsUpdatingMisa] = useState(false);
 
     useEffect(() => {
         if (!id || isNaN(id)) return;
@@ -144,6 +145,14 @@ const PurchaseOrderDetailPage = () => {
         <ProtectedRoute requiredRole={[1, 2]}>
 
         <div className="p-6">
+            {isUpdatingMisa && (
+                <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+                    <div className="bg-white rounded shadow p-4 text-center">
+                        <div className="animate-spin inline-block w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full mr-2"></div>
+                        <span>Đang cập nhật MISA, vui lòng không thao tác...</span>
+                    </div>
+                </div>
+            )}
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl font-bold">Chi tiết đơn hàng mua: {order.code}</h1>
                 <div className="space-x-2">
@@ -203,26 +212,32 @@ const PurchaseOrderDetailPage = () => {
                             📦 Nhập hàng
                         </button>
                     )}
-                    
-                    {!order.isUpdateMisa && (
-                        <button
-                            onClick={async () => {
-                                if (confirm(`Bạn có chắc muốn cập nhật MISA cho đơn hàng "${order.description}" không?`)) {
-                                    try {
-                                        await updateMisaPurchaseOrder(order.id);
-                                        setOrder((prev) => (prev ? { ...prev, isUpdateMisa: true } : prev));
-                                        alert('Đã cập nhật MISA thành công.');
-                                    } catch (error: any) {
-                                        const errorMessage = error.response?.data?.message || 'Lỗi khi cập nhật MISA. Vui lòng thử lại.';
-                                        alert(errorMessage);
-                                    }
-                                }
-                            }}
-                            className="px-4 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
-                        >
-                            🔄 Cập nhật MISA
-                        </button>
-                    )}
+
+                    <button
+                        onClick={async () => {
+                            if (order.isUpdateMisa) return;
+                            if (!confirm(`Bạn có chắc muốn cập nhật MISA cho đơn hàng "${order.description}" không?`)) return;
+                            try {
+                                setIsUpdatingMisa(true);
+                                if (typeof document !== 'undefined') document.body.classList.add('pointer-events-none');
+                                await updateMisaPurchaseOrder(order.id);
+                                setOrder((prev) => (prev ? { ...prev, isUpdateMisa: true } : prev));
+                                alert('Đã cập nhật MISA thành công.');
+                            } catch (error: any) {
+                                const errorMessage = error.response?.data?.message || 'Lỗi khi cập nhật MISA. Vui lòng thử lại.';
+                                alert(errorMessage);
+                            } finally {
+                                setIsUpdatingMisa(false);
+                                if (typeof document !== 'undefined') document.body.classList.remove('pointer-events-none');
+                            }
+                        }}
+                        disabled={order.isUpdateMisa || isUpdatingMisa}
+                        title={order.isUpdateMisa ? 'Đơn hàng đã được cập nhật MISA' : ''}
+                        aria-busy={isUpdatingMisa}
+                        className={`px-4 py-1 rounded ${order.isUpdateMisa || isUpdatingMisa ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-purple-600 text-white hover:bg-purple-700'}`}
+                    >
+                        {isUpdatingMisa ? 'Đang cập nhật MISA...' : '🔄 Cập nhật MISA'}
+                    </button>
                     
                     <button onClick={() => router.push(`/purchase-order/edit/${id}`)} className="px-4 py-1 bg-blue-500 text-white rounded">
                         📝 Sửa
