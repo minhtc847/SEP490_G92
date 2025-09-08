@@ -18,11 +18,18 @@ namespace SEP490.Selenium.ImportExportInvoice
         private readonly IConfiguration _config;
         public ImportExportInvoiceServices(IConfiguration configuration)
         {
-            _config = configuration;
-            var options = new ChromeOptions();
-            //options.AddArgument("--headless=new");
-            //options.AddArgument(@"user-data-dir=C:\SeleniumProfiles\Profile1");
-            //options.AddArgument("--profile-directory=Profile1");
+            //_config = configuration;
+            //var options = new ChromeOptions();
+            ////options.AddArgument("--headless=new");
+            ////options.AddArgument(@"user-data-dir=C:\SeleniumProfiles\Profile1");
+            ////options.AddArgument("--profile-directory=Profile1");
+
+            ////options.AddArgument("--lang=vi-VN");
+            ////options.AddArgument("--no-sandbox");
+            ////options.AddArgument("--disable-dev-shm-usage");
+            ////options.AddArgument("--disable-gpu");
+            ////options.AddArgument("--window-size=1920,1080");
+
 
             //options.AddArgument("--lang=vi-VN");
             //options.AddArgument("--no-sandbox");
@@ -30,30 +37,23 @@ namespace SEP490.Selenium.ImportExportInvoice
             //options.AddArgument("--disable-gpu");
             //options.AddArgument("--window-size=1920,1080");
 
+            //options.AddArgument(_config["ChromeProfile:UserDataDir"]);
+            //options.AddArgument(_config["ChromeProfile:ProfileDir"]);
 
-            options.AddArgument("--lang=vi-VN");
-            options.AddArgument("--no-sandbox");
-            options.AddArgument("--disable-dev-shm-usage");
-            options.AddArgument("--disable-gpu");
-            options.AddArgument("--window-size=1920,1080");
-
-            options.AddArgument(_config["ChromeProfile:UserDataDir"]);
-            options.AddArgument(_config["ChromeProfile:ProfileDir"]);
-
-            options.AddArgument("--remote-debugging-port=9222");
-            options.AddExcludedArgument("enable-automation");
-            options.AddAdditionalOption("useAutomationExtension", false);
-            //try
-            //{
-            //DriverHelper.KillChromeDriver();
-            driver = new ChromeDriver(options);
-                wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+            //options.AddArgument("--remote-debugging-port=9222");
+            //options.AddExcludedArgument("enable-automation");
+            //options.AddAdditionalOption("useAutomationExtension", false);
+            ////try
+            ////{
+            ////DriverHelper.KillChromeDriver();
+            //driver = new ChromeDriver(options);
+            //    wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
                 
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine("ChromeDriver init error: " + ex.Message);
-            //}
+            ////}
+            ////catch (Exception ex)
+            ////{
+            ////    Console.WriteLine("ChromeDriver init error: " + ex.Message);
+            ////}
             
         }
 
