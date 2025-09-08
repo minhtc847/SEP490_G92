@@ -1029,10 +1029,15 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 else
                 {
                     // For material export/glue, use target product details (ProductId == null)
-                    var targets = slip.Details.Where(d => d.ProductId == null && d.ProductionOutputId.HasValue);
+                    var targets = slip.Details
+                        .Where(d => d.ProductId == null && d.ProductionOutputId.HasValue)
+                        .GroupBy(d => d.ProductionOutputId!.Value)
+                        .Select(g => new { ProductionOutputId = g.Key, Quantity = g.First().Quantity })
+                        .ToList();
+
                     foreach (var t in targets)
                     {
-                        var po = await _context.ProductionOutputs.FirstOrDefaultAsync(po => po.Id == t.ProductionOutputId!.Value);
+                        var po = await _context.ProductionOutputs.FirstOrDefaultAsync(po => po.Id == t.ProductionOutputId);
                         if (po != null)
                         {
                             var oldFinished = po.Finished ?? 0m;
