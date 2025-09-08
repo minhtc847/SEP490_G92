@@ -236,6 +236,8 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             _context.OrderDetails.Add(detail);
             await _context.SaveChangesAsync();
 
+            decimal orderValue = 0m;
+
             foreach (var p in dto.Products)
             {
                 var product = await _context.Products.FindAsync(p.ProductId);
@@ -250,8 +252,11 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                     TotalAmount = p.Quantity * p.UnitPrice
                 };
                 _context.OrderDetailProducts.Add(odp);
+
+                orderValue += (p.Quantity * p.UnitPrice);
             }
 
+            order.OrderValue = orderValue;
             await _context.SaveChangesAsync();
             return order.Id;
         }

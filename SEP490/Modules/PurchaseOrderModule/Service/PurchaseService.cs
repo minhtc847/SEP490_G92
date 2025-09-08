@@ -122,6 +122,8 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
             _context.PurchaseOrders.Add(order);
             await _context.SaveChangesAsync();       
 
+            decimal totalOrderValue = 0m;
+
             foreach (var p in dto.Products)
             {
 
@@ -142,8 +144,11 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                     ProductId = product.Id
                 };
                 _context.PurchaseOrderDetails.Add(detail);
+
+                totalOrderValue += p.TotalPrice;
             }
 
+            order.TotalValue = totalOrderValue;
             await _context.SaveChangesAsync();
             return order.Id;
         }
@@ -203,6 +208,8 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
 
             _context.PurchaseOrderDetails.RemoveRange(order.PurchaseOrderDetails);
 
+            decimal updatedTotalValue = 0m;
+
             foreach (var p in dto.Products)
             {
                 Product? product = null;
@@ -239,8 +246,11 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                     TotalPrice = p.TotalPrice
                 };
                 _context.PurchaseOrderDetails.Add(detail);
+
+                updatedTotalValue += p.TotalPrice;
             }
 
+            order.TotalValue = updatedTotalValue;
             await _context.SaveChangesAsync();
             return true;
         }

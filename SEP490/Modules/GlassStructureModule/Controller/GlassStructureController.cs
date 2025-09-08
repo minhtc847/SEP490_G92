@@ -38,11 +38,21 @@ namespace SEP490.Modules.GlassStructureModule.Controller
         }
 
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] UpdateGlassStructureDto dto)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateGlassStructureDto dto)
         {
-            _service.UpdateGlassStructureById(id, dto);
-
-            return Ok(new { message = "Cập nhật thành công!" });
+            try
+            {
+                var ok = await _service.UpdateGlassStructureById(id, dto);
+                if (!ok)
+                {
+                    return NotFound(new { message = "Không tìm thấy cấu trúc kính với ID này." });
+                }
+                return Ok(new { message = "Cập nhật thành công!" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Cập nhật thất bại!", error = ex.Message });
+            }
         }
 
         [HttpPost]
