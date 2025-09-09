@@ -78,16 +78,16 @@ namespace SEP490.Selenium.Controller
         [HttpPost("import-export-invoice-test")]
         public IActionResult addImportExportInvoiceTest([FromBody] ExportDTO input)
         {
-            _importExportInvoiceServices.OpenImportPage(input);
-            return Ok("Import page executed.");
+            Task.Run(() => _importExportInvoiceServices.OpenImportPage(input));
+            return Ok("Processing import page...");
         }
 
         [HttpPost("import-export-invoice")]
         public async Task<IActionResult> addImportExportInvoice([FromBody] int slipId)
         {
             ExportDTO info = await _inventoryServices.GetExportInfoBySlipIdAsync(slipId);
-            _importExportInvoiceServices.OpenImportPage(info);
-            return Ok("Import page executed.");
+            Task.Run(() => _importExportInvoiceServices.OpenImportPage(info));
+            return Ok("Processing import page...");
         }
 
         [HttpPost("purchasing-order")]
