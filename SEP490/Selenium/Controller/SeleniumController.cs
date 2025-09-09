@@ -86,7 +86,7 @@ namespace SEP490.Selenium.Controller
         public async Task<IActionResult> addImportExportInvoice([FromBody] int slipId)
         {
             ExportDTO info = await _inventoryServices.GetExportInfoBySlipIdAsync(slipId);
-            _importExportInvoiceServices.OpenImportPage(info);
+            Task.Run(()=>_importExportInvoiceServices.OpenImportPage(info));
             return Ok("Import page executed.");
         }
 
