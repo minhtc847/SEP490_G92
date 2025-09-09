@@ -50,18 +50,13 @@ namespace SEP490.Modules.InventorySlipModule.Controller
                 var jsonElement = (System.Text.Json.JsonElement)requestData;
                 var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true, PropertyNamingPolicy = null };
 
-                CreateInventorySlipDto dto = null;
+                // Deserialize request directly (no formData wrapper)
+                var dto = System.Text.Json.JsonSerializer.Deserialize<CreateInventorySlipDto>(jsonElement.GetRawText(), options);
+
+                if (dto == null) return BadRequest(new { message = "Dữ liệu không hợp lệ!" });
+
+                // Extract mappingInfo from productClassifications and tempMappings
                 MappingInfoDto mappingInfo = null;
-
-                if (jsonElement.TryGetProperty("formData", out var formDataElement))
-                {
-                    dto = System.Text.Json.JsonSerializer.Deserialize<CreateInventorySlipDto>(formDataElement.GetRawText(), options);
-                }
-                else
-                {
-                    dto = System.Text.Json.JsonSerializer.Deserialize<CreateInventorySlipDto>(jsonElement.GetRawText(), options);
-                }
-
                 if (jsonElement.TryGetProperty("productClassifications", out var productClassificationsElement))
                 {
                     var productClassifications = System.Text.Json.JsonSerializer.Deserialize<List<ProductClassificationDto>>(productClassificationsElement.GetRawText(), options);
@@ -76,8 +71,6 @@ namespace SEP490.Modules.InventorySlipModule.Controller
                         TempMappings = tempMappings ?? new List<CreateMaterialOutputMappingDto>()
                     };
                 }
-
-                if (dto == null) return BadRequest(new { message = "Dữ liệu không hợp lệ!" });
 
                 var result = await _inventorySlipService.UpdateInventorySlipAsync(id, dto, mappingInfo);
                 return Ok(new { message = "Cập nhật phiếu kho thành công!", data = result });
@@ -214,7 +207,6 @@ namespace SEP490.Modules.InventorySlipModule.Controller
                     PropertyNamingPolicy = null
                 };
                 
-                // Deserialize request directly (no formData wrapper)
                 var dto = System.Text.Json.JsonSerializer.Deserialize<CreateInventorySlipDto>(jsonElement.GetRawText(), options);
 
                 if (dto == null)

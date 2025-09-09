@@ -105,12 +105,14 @@ export default function InventorySlipForm({
             const isRaw = rawIndices.has(i);
             if (!isRaw) return;
             const mappings = d.outputMappings || [];
+            const processedOutputs = new Set<number>(); // Track processed outputs to avoid duplicates
             mappings.forEach(m => {
                 const outIndex = idToIndex[m.outputDetailId];
-                if (typeof outIndex === 'number') {
+                if (typeof outIndex === 'number' && !processedOutputs.has(outIndex)) {
                     rebuiltMappings.push({ inputDetailId: i, outputDetailId: outIndex, note: m.note });
                     if (!rebuiltDisplay[i]) rebuiltDisplay[i] = [];
                     rebuiltDisplay[i].push(outIndex);
+                    processedOutputs.add(outIndex);
                 }
             });
         });
