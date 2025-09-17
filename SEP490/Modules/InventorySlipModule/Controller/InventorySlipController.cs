@@ -50,12 +50,10 @@ namespace SEP490.Modules.InventorySlipModule.Controller
                 var jsonElement = (System.Text.Json.JsonElement)requestData;
                 var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true, PropertyNamingPolicy = null };
 
-                // Deserialize request directly (no formData wrapper)
                 var dto = System.Text.Json.JsonSerializer.Deserialize<CreateInventorySlipDto>(jsonElement.GetRawText(), options);
 
                 if (dto == null) return BadRequest(new { message = "Dữ liệu không hợp lệ!" });
 
-                // Extract mappingInfo from productClassifications and tempMappings
                 MappingInfoDto mappingInfo = null;
                 if (jsonElement.TryGetProperty("productClassifications", out var productClassificationsElement))
                 {

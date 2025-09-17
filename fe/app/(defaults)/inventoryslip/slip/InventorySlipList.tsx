@@ -434,11 +434,7 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                 <div className="fixed inset-0 z-[1000]">
                     <div className="fixed inset-0 bg-black/50" onClick={() => !updating && setShowUpdateModal(false)} />
                     <div data-modal-root="inventory-update" className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-lg">
-                            <div>
-                                <h3 className="text-xl font-semibold text-gray-900">Cập nhật phiếu kho</h3>
-                                <p className="text-sm text-gray-600 mt-1">Mã phiếu: {selectedSlip.slipCode}</p>
-                            </div>
+                        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-end items-center rounded-t-lg">
                             <button onClick={() => !updating && setShowUpdateModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full" title="Đóng">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>

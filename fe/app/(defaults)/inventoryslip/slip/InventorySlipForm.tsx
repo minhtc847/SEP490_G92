@@ -774,6 +774,14 @@ export default function InventorySlipForm({
 
     return (
         <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow">
+            <h2 className="text-2xl font-bold mb-2">{headerTitle}</h2>
+            <div className="mb-6 text-sm text-gray-600">
+                <div><strong>Thuộc lệnh sản xuất:</strong> {productionOrderInfo.id}</div>
+                <div><strong>Loại:</strong> Phiếu cắt kính</div>
+                {productionOrderInfo.description && (
+                    <div><strong>Mô tả:</strong> {productionOrderInfo.description}</div>
+                )}
+            </div>
             <form onSubmit={handleSubmit}>
                 {/* Production Order Info (simplified) */}
                 <div className="grid grid-cols-1 gap-4 mb-6">
