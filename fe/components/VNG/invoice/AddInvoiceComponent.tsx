@@ -461,22 +461,22 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                                             </div>
                                         </td>
                                        
-                                        <td>
+                                        {/* <td>
                                             <button type="button" onClick={() => removeItem(item.id)}>
                                                 <IconX className="h-5 w-5" />
                                             </button>
-                                        </td>
+                                        </td> */}
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
                     <div className="mt-6 flex flex-col justify-between px-4 sm:flex-row">
-                        <div className="mb-6 sm:mb-0">
+                        {/* <div className="mb-6 sm:mb-0">
                             <button type="button" className="btn btn-primary" onClick={addItem}>
                                 Thêm sản phẩm
                             </button>
-                        </div>
+                        </div> */}
                         <div className="space-y-2 text-right">
                             <div className="text-lg">
                                 Tổng tiền hàng: {subtotal.toLocaleString()}₫
@@ -514,15 +514,7 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                             {isSubmitting ? 'Đang tạo...' : 'Tạo hóa đơn'}
                         </button>
 
-                        <button type="button" className="btn btn-primary w-full gap-2">
-                            <IconEye className="shrink-0 ltr:mr-2 rtl:ml-2" />
-                            Xem trước
-                        </button>
-
-                        <button type="button" className="btn btn-secondary w-full gap-2">
-                            <IconDownload className="shrink-0 ltr:mr-2 rtl:ml-2" />
-                            Tải xuống
-                        </button>
+                       
 
                         <button 
                             type="button" 

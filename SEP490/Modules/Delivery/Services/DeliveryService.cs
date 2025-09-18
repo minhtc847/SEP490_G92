@@ -150,7 +150,7 @@ namespace SEP490.Modules.Delivery.Services
             // Update delivery status
             delivery.Status = (DeliveryStatus)newStatus;
 
-            // If status is "Hoàn thành" (2), update DaGiao field in ProductionPlanDetail
+            // If status is "Hoàn thành" (2), update DaGiao field in ProductionPlanDetail and check sales order delivery status
             if (newStatus == 2)
             {
                 var productionPlan = await _context.ProductionPlans
@@ -173,6 +173,24 @@ namespace SEP490.Modules.Delivery.Services
                         if (planDetail != null)
                         {
                             planDetail.DaGiao += detail.Quantity;
+                        }
+                    }
+
+                    // Check if all products in the production plan are fully delivered
+                    bool allProductsDelivered = productionPlan.ProductionPlanDetails.All(pd => pd.DaGiao >= pd.Quantity);
+
+                    // Update sales order delivery status
+                    if (delivery.SalesOrder != null)
+                    {
+                        if (allProductsDelivered)
+                        {
+                            // All products are delivered, set sales order to fully delivered
+                            delivery.SalesOrder.DeliveryStatus = DeliveryStatus.FullyDelivered;
+                        }
+                        else
+                        {
+                            // Some products are still being delivered, set sales order to delivering
+                            delivery.SalesOrder.DeliveryStatus = DeliveryStatus.Delivering;
                         }
                     }
                 }
