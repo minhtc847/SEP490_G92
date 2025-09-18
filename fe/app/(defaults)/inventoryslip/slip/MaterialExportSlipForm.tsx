@@ -298,7 +298,7 @@ export default function MaterialExportSlipForm({
 
 
         let overUsageWarnings: string[] = [];
-        if (isChemicalExportSlip) {
+        if (isChemicalExportSlip || isButylGlueSlip) {
             // Index targets by id for quick lookup
             const targetById = new Map<number, TargetProduct>();
             targetProducts.forEach(tp => targetById.set(tp.id, tp));
