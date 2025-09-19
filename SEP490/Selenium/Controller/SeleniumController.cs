@@ -1,6 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using SEP490.Background;
 using SEP490.DB;
+using SEP490.Hubs;
 using SEP490.Modules.InventorySlipModule.Service;
 using SEP490.Selenium.ImportExportInvoice;
 using SEP490.Selenium.ImportExportInvoice.DTO;
@@ -19,82 +24,328 @@ namespace SEP490.Selenium.Controller
     [ApiController]
     public class SeleniumController : ControllerBase
     {
-        private readonly IMisaProductService _misaProductService;
-        private readonly ISeleniumSaleOrderServices _saleOrderServices;
-        private readonly ISeleniumProductionOrderServices _seleniumProductionOrderServices;
-        private readonly IImportExportInvoiceServices _importExportInvoiceServices;
-        private readonly IInventorySlipService _inventoryServices;
-        private readonly IMisaPOService _misaPOService;
-        private readonly SEP490DbContext _context;
-        public SeleniumController(IMisaProductService misaProductService, 
-            ISeleniumSaleOrderServices saleOrderServices, 
-            IImportExportInvoiceServices importExportInvoiceServices,
-            IInventorySlipService inventorySlipService,
-            ISeleniumProductionOrderServices seleniumProductionOrderServices,
-            IMisaPOService misaPOService,
-            SEP490DbContext context
-            )
+        private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly IBackgroundTaskQueue _taskQueue;
+
+        public SeleniumController(IServiceScopeFactory serviceScopeFactory, IBackgroundTaskQueue taskQueue)
         {
-            _context = context;
-            _misaProductService = misaProductService;
-            _saleOrderServices = saleOrderServices;
-            _importExportInvoiceServices = importExportInvoiceServices;
-            _inventoryServices = inventorySlipService;
-            _seleniumProductionOrderServices = seleniumProductionOrderServices;
-            _misaPOService = misaPOService;
+            _serviceScopeFactory = serviceScopeFactory;
+            _taskQueue = taskQueue;
         }
+
         [HttpPost("product")]
-        public IActionResult addProduct(InputSingleProduct product)
+        public IActionResult AddProductAsync(InputSingleProduct product)
         {
-            string productCode = _misaProductService.AddProduct(product);
-            var newProduct = _context.Products.FirstOrDefault(p=>p.Id == product.ProductId);
-            if (newProduct != null) {
-                newProduct.ProductCode = productCode;
-                _context.Products.Update(newProduct);
-                _context.SaveChanges();
-            }
-            return Ok("Add Product successfully: " + productCode);
+            _taskQueue.Enqueue(async token =>
+            {
+                try
+                {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var dbContext = scope.ServiceProvider.GetRequiredService<SEP490DbContext>();
+                    var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<SaleOrderHub>>();
+                    var misaProductService = scope.ServiceProvider.GetRequiredService<IMisaProductService>();
+
+                    string productCode = misaProductService.AddProduct(product);
+
+                    var newProduct = await dbContext.Products
+                        .FirstOrDefaultAsync(p => p.Id == product.ProductId, token);
+
+                    if (newProduct != null)
+                    {
+                        newProduct.ProductCode = productCode;
+                        dbContext.Products.Update(newProduct);
+                        await dbContext.SaveChangesAsync(token);
+                    }
+
+                    await hubContext.Clients.All.SendAsync("MisaUpdate", new
+                    {
+                        message = "Đã đồng bộ với Misa thành công",
+                        type = "Sản Phẩm",
+                        codeText = productCode,
+                        createAt = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy")
+                    }, token);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Background error] AddProductAsync: {ex}");
+                }
+            });
+
+            return Ok("Add Product successfully");
         }
 
         [HttpPut("product")]
-        public IActionResult updateProduct(InputUpdateProduct product)
+        public IActionResult UpdateProduct(InputUpdateProduct product)
         {
-            _misaProductService.updateProduct(product);
+            _taskQueue.Enqueue(async token =>
+            {
+                try
+                {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var misaProductService = scope.ServiceProvider.GetRequiredService<IMisaProductService>();
+                    var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<SaleOrderHub>>();
+
+                    misaProductService.updateProduct(product);
+
+                    await hubContext.Clients.All.SendAsync("MisaUpdate", new
+                    {
+                        message = "Đã đồng bộ với Misa thành công",
+                        type = "Sản Phẩm",
+                        codeText = product.ProductCode,
+                        createAt = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy")
+                    }, token);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Background error] UpdateProduct: {ex}");
+                }
+            });
+
             return Ok("Update Product successfully");
         }
-        [HttpPost("sale-order")]
-        public IActionResult addSaleOrder([FromBody]SaleOrderInput saleOrder)
+
+        [HttpPost("products/add-many")]
+        public IActionResult AddManyProducts([FromBody] List<InputSingleProduct> products)
         {
-            string orderId = _saleOrderServices.OpenSaleOrderPage(saleOrder);
-            return Ok("Add Sale Order Successfully: " + orderId);
+            _taskQueue.Enqueue(async token =>
+            {
+                try
+                {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var dbContext = scope.ServiceProvider.GetRequiredService<SEP490DbContext>();
+                    var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<SaleOrderHub>>();
+                    var misaProductService = scope.ServiceProvider.GetRequiredService<IMisaProductService>();
+
+                    List<string> productCodes = new();
+
+                    foreach (var product in products)
+                    {
+                        string productCode = misaProductService.AddProduct(product);
+                        var newProduct = await dbContext.Products.FirstOrDefaultAsync(p => p.Id == product.ProductId, token);
+
+                        if (newProduct != null)
+                        {
+                            newProduct.ProductCode = productCode;
+                            dbContext.Products.Update(newProduct);
+                            await dbContext.SaveChangesAsync(token);
+                        }
+
+                        productCodes.Add(productCode);
+                    }
+
+                    string codeText = string.Join(", ", productCodes);
+
+                    await hubContext.Clients.All.SendAsync("MisaUpdate", new
+                    {
+                        message = "Đã đồng bộ với Misa thành công",
+                        type = "Sản Phẩm",
+                        codeText,
+                        createAt = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy")
+                    }, token);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Background error] AddManyProducts: {ex}");
+                }
+            });
+
+            return Ok("Add Many Products successfully");
         }
-        [HttpPost("production-order")]
-        public IActionResult addProductionOrder([FromBody] ProductionOrderInput productionOrder)
+
+        [HttpPost("sale-order")]
+        public IActionResult AddSaleOrder([FromBody] SaleOrderInput saleOrder)
         {
-            _seleniumProductionOrderServices.OpenProductionOrderPage(productionOrder);
+            _taskQueue.Enqueue(async token =>
+            {
+                try
+                {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var saleOrderService = scope.ServiceProvider.GetRequiredService<ISeleniumSaleOrderServices>();
+                    var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<SaleOrderHub>>();
+
+                    string saleOrderCode = saleOrderService.OpenSaleOrderPage(saleOrder);
+
+                    await hubContext.Clients.All.SendAsync("MisaUpdate", new
+                    {
+                        message = "Đã đồng bộ với Misa thành công",
+                        type = "Đơn Bán Hàng",
+                        codeText = saleOrderCode,
+                        createAt = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy")
+                    }, token);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Background error] AddSaleOrder: {ex}");
+                }
+            });
+
+            return Ok("Add Sale Order Successfully");
+        }
+
+        [HttpPost("sale-order/add-many")]
+        public IActionResult AddManySaleOrders([FromBody] List<SaleOrderInput> saleOrders)
+        {
+            _taskQueue.Enqueue(async token =>
+            {
+                try
+                {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var saleOrderService = scope.ServiceProvider.GetRequiredService<ISeleniumSaleOrderServices>();
+                    var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<SaleOrderHub>>();
+
+                    List<string> codes = new();
+
+                    foreach (var saleOrder in saleOrders)
+                    {
+                        string code = saleOrderService.OpenSaleOrderPage(saleOrder);
+                        codes.Add(code);
+                    }
+
+                    string codeText = string.Join(", ", codes);
+
+                    await hubContext.Clients.All.SendAsync("MisaUpdate", new
+                    {
+                        message = "Đã đồng bộ với Misa thành công",
+                        type = "Đơn Bán Hàng",
+                        codeText,
+                        createAt = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy")
+                    }, token);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Background error] AddManySaleOrders: {ex}");
+                }
+            });
+
+            return Ok("Add Many Sale Orders Successfully");
+        }
+
+        [HttpPost("production-order")]
+        public IActionResult AddProductionOrder([FromBody] ProductionOrderInput productionOrder)
+        {
+            _taskQueue.Enqueue(token =>
+            {
+                try
+                {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var service = scope.ServiceProvider.GetRequiredService<ISeleniumProductionOrderServices>();
+                    service.OpenProductionOrderPage(productionOrder);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Background error] AddProductionOrder: {ex}");
+                }
+                return Task.CompletedTask;
+            });
+
             return Ok("Add Production Order Successfully");
         }
 
         [HttpPost("import-export-invoice-test")]
-        public IActionResult addImportExportInvoiceTest([FromBody] ExportDTO input)
+        public IActionResult AddImportExportInvoiceTest([FromBody] ExportDTO input)
         {
-            Task.Run(() => _importExportInvoiceServices.OpenImportPage(input));
-            return Ok("Processing import page...");
+            _taskQueue.Enqueue(token =>
+            {
+                try
+                {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var service = scope.ServiceProvider.GetRequiredService<IImportExportInvoiceServices>();
+                    service.OpenImportPage(input);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Background error] AddImportExportInvoiceTest: {ex}");
+                }
+                return Task.CompletedTask;
+            });
+
+            return Ok("Import page executed.");
         }
 
         [HttpPost("import-export-invoice")]
-        public async Task<IActionResult> addImportExportInvoice([FromBody] int slipId)
+        public IActionResult AddImportExportInvoice([FromBody] int slipId)
         {
-            ExportDTO info = await _inventoryServices.GetExportInfoBySlipIdAsync(slipId);
-            Task.Run(() => _importExportInvoiceServices.OpenImportPage(info));
-            return Ok("Processing import page...");
+            _taskQueue.Enqueue(async token =>
+            {
+                try
+                {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var inventoryService = scope.ServiceProvider.GetRequiredService<IInventorySlipService>();
+                    var service = scope.ServiceProvider.GetRequiredService<IImportExportInvoiceServices>();
+
+                    ExportDTO info = await inventoryService.GetExportInfoBySlipIdAsync(slipId);
+                    service.OpenImportPage(info);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Background error] AddImportExportInvoice: {ex}");
+                }
+            });
+
+            return Ok("Import page executed.");
         }
 
         [HttpPost("purchasing-order")]
-        public IActionResult addPurchaseOrder([FromBody] InputPO input)
+        public IActionResult AddPurchaseOrder([FromBody] InputPO input)
         {
-            _misaPOService.Add(input);
-            return Ok(" Success");
+            _taskQueue.Enqueue(async token =>
+            {
+                try
+                {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var service = scope.ServiceProvider.GetRequiredService<IMisaPOService>();
+                    var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<SaleOrderHub>>();
+
+                    service.Add(input);
+
+                    await hubContext.Clients.All.SendAsync("MisaUpdate", new
+                    {
+                        message = "Đã đồng bộ với Misa thành công",
+                        type = "Đơn Đặt Hàng",
+                        codeText = "",
+                        createAt = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy")
+                    }, token);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Background error] AddPurchaseOrder: {ex}");
+                }
+            });
+
+            return Ok("Add Purchase Order Successfully");
+        }
+
+        [HttpPost("purchasing-order/add-many")]
+        public IActionResult AddManyPurchaseOrders([FromBody] List<InputPO> inputs)
+        {
+            _taskQueue.Enqueue(async token =>
+            {
+                try
+                {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var service = scope.ServiceProvider.GetRequiredService<IMisaPOService>();
+                    var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<SaleOrderHub>>();
+
+                    foreach (var input in inputs)
+                    {
+                        service.Add(input);
+                    }
+
+                    await hubContext.Clients.All.SendAsync("MisaUpdate", new
+                    {
+                        message = "Đã đồng bộ với Misa thành công",
+                        type = "Đơn Đặt Hàng",
+                        codeText = "",
+                        createAt = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy")
+                    }, token);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Background error] AddManyPurchaseOrders: {ex}");
+                }
+            });
+
+            return Ok("Add Many Purchase Orders Successfully");
         }
     }
 }

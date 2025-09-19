@@ -15,6 +15,7 @@ using System.Reflection;
 using System.Text;
 using SEP490.Modules.InventorySlipModule.Service;
 using Microsoft.AspNetCore.Diagnostics;
+using SEP490.Background;
 
 var builder = WebApplication.CreateBuilder(args);
 //builder.WebHost.UseUrls("http://0.0.0.0:5000");
@@ -74,6 +75,8 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+builder.Services.AddHostedService<QueuedHostedService>();
 
 // Register all services that inherit from BaseService (legacy)
 var baseType = typeof(BaseService);

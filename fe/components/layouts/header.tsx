@@ -15,6 +15,8 @@ import { usePathname, useRouter } from "next/navigation"
 import { getTranslation } from "@/i18n"
 import { logout, selectUser } from "@/store/authSlice"
 import * as signalR from "@microsoft/signalr"
+import Swal from 'sweetalert2'
+import withReactContent from 'sweetalert2-react-content'
 
 type NotificationItem = {
   id: number
@@ -30,13 +32,33 @@ const Header = () => {
   const { t, i18n } = getTranslation()
   const user = useSelector(selectUser)
 
+  // Initialize SweetAlert2 with React content
+  // Add this after the MySwal initialization
+  const MySwal = withReactContent(Swal)
+
+  // Test function to verify SweetAlert2 is working
+  const testToast = (color: string) => {
+    MySwal.fire({
+      text: 'This is a test notification',
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000,
+      showCloseButton: true,
+      icon: 'info',
+      customClass: {
+                popup: `color-${color}`,
+            },
+    });
+  };
+
   useEffect(() => {
   console.log("Attempting to establish SignalR connection...");
 
   const connection = new signalR.HubConnectionBuilder()
-    .withUrl("https://localhost:7075/saleOrderHub")
-    .withAutomaticReconnect()
-    .build();
+      .withUrl(`${process.env.NEXT_PUBLIC_BASE_URL}/saleOrderHub`)
+      .withAutomaticReconnect()
+      .build();
 
   connection.on("SaleOrderCreated", (data) => {
     console.log("📦 SaleOrderCreated event received:", data);
@@ -48,10 +70,83 @@ const Header = () => {
       time: data.createAt || "Vừa xong",
     };
 
-    addNotification(newNotification); // ✅ Dùng hàm addNotification đã có
-  });
+    addNotification(newNotification);
+      // Debug: Test if this code block is reached
+      console.log("🔔 About to show toast notification");
 
-  connection
+      // Show toast notification with error handling
+      try {
+        MySwal.fire({
+          text: `Đã tạo thành công đơn bán hàng`,
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 5000,
+          showCloseButton: true,
+          icon: 'success',
+          timerProgressBar: true,
+          customClass: {
+                popup: `color-info`,
+            },
+          didOpen: (toast) => {
+            console.log("🎯 Toast opened successfully");
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
+          }
+        }).then(() => {
+        }).catch((error) => {
+          console.error("❌ Toast notification error:", error);
+        });
+      } catch (error) {
+        console.error("❌ Error showing toast:", error);
+        // Fallback: simple alert
+        alert(`Đơn hàng mới: ${data.message} - mã: ${data.orderCode}`);
+      }
+
+    });
+
+    connection.on("MisaUpdate", (data) => {
+      const newNotification = {
+      id: Date.now(),
+      profile: "user-profile.jpeg",
+      message: `<strong>${data.message}</strong> với <strong>${data.type}</strong> <strong>${data.codeText}</strong>`,
+      time: data.createAt || "Vừa xong",
+    };
+
+    addNotification(newNotification);
+      // Debug: Test if this code block is reached
+      console.log("🔔 About to show toast notification");
+
+      // Show toast notification with error handling
+      try {
+        MySwal.fire({
+          text: `${data.message} với ${data.type}: ${data.codeText}`,
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 5000,
+          showCloseButton: true,
+          icon: 'success',
+          timerProgressBar: true,
+          customClass: {
+                popup: `color-info`,
+            },
+          didOpen: (toast) => {
+            console.log("🎯 Toast opened successfully");
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
+          }
+        }).then(() => {
+        }).catch((error) => {
+          console.error("❌ Toast notification error:", error);
+        });
+      } catch (error) {
+        console.error("❌ Error showing toast:", error);
+        // Fallback: simple alert
+        alert(`${data.type} mới: ${data.message} - mã: ${data.codeText}`);
+      }
+    });
+    connection
     .start()
     .then(() => console.log("✅ Connected to SaleOrder SignalR Hub"))
     .catch((err) => console.error("❌ SaleOrder SignalR Connection Error:", err));
@@ -59,7 +154,7 @@ const Header = () => {
   return () => {
     connection.stop();
   };
-}, []);
+  }, []);
 
 
   const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass) === "rtl"
@@ -127,7 +222,7 @@ const Header = () => {
 
   const addNotification = (notification: NotificationItem) => {
   setNotifications((prev) => {
-    const updated = [notification, ...prev].slice(0, 10); 
+    const updated = [notification, ...prev].slice(0, 10);
     localStorage.setItem("notifications", JSON.stringify(updated));
     return updated;
   });
@@ -330,4 +425,4 @@ const Header = () => {
   )
 }
 
-export default Header
+export default Header;
