@@ -1584,7 +1584,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
 
                         productsWithMisaStatus.Add(productInfo);
 
-                        if (!product.isupdatemisa)
+                        if (product.isupdatemisa==0)
                         {
                             notUpdatedProducts.Add(productInfo);
                         }

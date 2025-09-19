@@ -115,7 +115,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                 ProductName = dto.ProductName,
                 ProductType = "Thành phẩm",
                 UOM = dto.UOM,
-                isupdatemisa = false
+                isupdatemisa = 0
             };
             _context.Products.Add(product);
             await _context.SaveChangesAsync();

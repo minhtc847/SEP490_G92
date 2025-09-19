@@ -261,7 +261,7 @@ namespace SEP490.Modules.ZaloOrderModule.Services
                             Thickness = decimal.TryParse(detail.Thickness, out var thickness) ? thickness : null,
                             UnitPrice = unitPrice,
                             GlassStructureId = glassStructureId,
-                            isupdatemisa = false
+                            isupdatemisa = 0
                         };
 
                         _context.Products.Add(product);

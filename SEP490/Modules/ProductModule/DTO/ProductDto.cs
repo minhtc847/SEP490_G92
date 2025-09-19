@@ -13,7 +13,7 @@
     public int? GlassStructureId { get; set; }
     public string GlassStructureProductName { get; set; } = string.Empty;
     public double Quantity { get; set; }
-    public int isupdatemisa { get; set; } // 0 = chưa cập nhật, 1 = đã cập nhật
+    public int? isupdatemisa { get; set; } = 0; // 0 = chưa cập nhật, 1 = đã cập nhật
 }
 
 public class ProductDetailDto
@@ -31,5 +31,5 @@ public class ProductDetailDto
     public int? GlassStructureId { get; set; }
     public string? GlassStructureProductName { get; set; }
     public double Quantity { get; set; }
-    public int isupdatemisa { get; set; } // 0 = chưa cập nhật, 1 = đã cập nhật
+    public int? isupdatemisa { get; set; } = 0; // 0 = chưa cập nhật, 1 = đã cập nhật
 }

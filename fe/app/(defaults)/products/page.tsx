@@ -80,7 +80,7 @@ const ProductListPage = () => {
         try {
             await deleteProduct(id);
             alert(`Xoá sản phẩm ${name ?? ''} thành công!`);
-            router.refresh(); 
+            router.refresh();
         } catch (err) {
             console.error('Lỗi khi xoá sản phẩm:', err);
             alert('Xoá sản phẩm thất bại!');
@@ -276,10 +276,14 @@ const ProductListPage = () => {
                                     <td>
                                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                             product.isupdatemisa === 1
-                                                ? 'bg-green-100 text-green-800' 
+                                                ? 'bg-green-100 text-green-800'
                                                 : 'bg-gray-100 text-gray-800'
                                         }`}>
-                                            {product.isupdatemisa === 1 ? 'Đã cập nhật' : 'Chưa cập nhật'}
+                                            {product.isupdatemisa === 1
+                                                ? 'Đã cập nhật'
+                                                : product.isupdatemisa === 2
+                                                    ? 'Đang cập nhật'
+                                                    : 'Chưa cập nhật'}
                                         </span>
                                     </td>
                                     <td className="flex gap-2">

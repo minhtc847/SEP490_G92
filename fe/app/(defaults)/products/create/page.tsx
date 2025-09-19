@@ -51,7 +51,7 @@ const ProductCreatePage = () => {
     // Hàm sinh tên tự động từ dữ liệu form
     function generateProductName(structure: GlassStructure | undefined, width: string, height: string, thickness: string, isTempered: boolean) {
         if (!width || !height || !thickness) return '';
-        
+
         if (structure) {
             return `Kính ${structure.productCode} phút, KT: ${width}*${height}*${thickness} mm`;
         } else {
@@ -96,8 +96,8 @@ const ProductCreatePage = () => {
     useEffect(() => {
         if (!form.glassStructureId && form.width && form.height && form.thickness) {
             const productName = generateProductName(undefined, form.width, form.height, form.thickness, form.isTempered);
-            setForm(prev => ({ 
-                ...prev, 
+            setForm(prev => ({
+                ...prev,
                 productName,
                 unitPrice: 0 // Reset giá về 0 khi không có cấu trúc kính
             }));
@@ -128,7 +128,7 @@ const ProductCreatePage = () => {
 
     const handleOtherProductNameChange = async (val: string) => {
         setOtherProductForm((prev) => ({ ...prev, productName: val }));
-        
+
         // Only check for duplicates if the value is not empty
         if (val.trim()) {
             const exists = await checkProductNameExists(val.trim());
@@ -186,7 +186,7 @@ const ProductCreatePage = () => {
                 ProductType: form.glassStructureId ? 'Thành phẩm' : 'NVL',
                 UnitPrice: form.unitPrice,
                 GlassStructureId: form.glassStructureId || null,
-                Isupdatemisa: form.isupdatemisa === 1,
+                Isupdatemisa: 0,
             };
 
             const res = await createProduct(payload);
@@ -236,7 +236,7 @@ const ProductCreatePage = () => {
                 UnitPrice: null,
                 GlassStructureId: null,
                 Weight: null,
-                Isupdatemisa: otherProductForm.isupdatemisa === 1,
+                Isupdatemisa: otherProductForm.isupdatemisa,
             };
 
             const res = await createOtherProduct(payload);
@@ -327,25 +327,25 @@ const ProductCreatePage = () => {
                             </label>
                         </div>
                     )}
-                    
+
                     {isLoadingStructures && (
                         <div className="flex items-center space-x-2 text-gray-600">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                             <span>Đang tải danh sách cấu trúc kính...</span>
                         </div>
                     )}
-                    
+
                     {structureError && (
                         <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-3">
                             <p className="text-red-600 text-sm">{structureError}</p>
                             <div className="flex gap-2 mt-2">
-                                <button 
+                                <button
                                     className="text-blue-600 text-sm underline"
                                     onClick={() => window.location.reload()}
                                 >
                                     Thử lại
                                 </button>
-                                <button 
+                                <button
                                     className="text-green-600 text-sm underline"
                                     onClick={async () => {
                                         try {
@@ -365,7 +365,7 @@ const ProductCreatePage = () => {
                             </div>
                         </div>
                     )}
-                    
+
                     {!isLoadingStructures && !structureError && glassStructures.length > 0 && (
                         <div className="flex gap-2">
                             <div className="flex-1">
@@ -376,24 +376,24 @@ const ProductCreatePage = () => {
                                     classNamePrefix="select"
                                     loadOptions={(input, cb) => {
                                         const filteredOptions = glassStructures
-                                            .filter((g) => 
+                                            .filter((g) =>
                                                 g.productCode?.toLowerCase().includes(input.toLowerCase())
                                             )
-                                            .map((g) => ({ 
-                                                label: g.productCode, 
-                                                value: g.id 
+                                            .map((g) => ({
+                                                label: g.productCode,
+                                                value: g.id
                                             }));
-                                        
+
                                         cb(filteredOptions);
                                     }}
                                     onChange={(opt) => setForm((p) => ({ ...p, glassStructureId: opt && opt.value !== null ? opt.value : undefined }))}
                                     value={
-                                        form.glassStructureId 
+                                        form.glassStructureId
                                             ? glassStructures
                                                 .filter((g) => g.id === form.glassStructureId)
-                                                .map((g) => ({ 
-                                                    label: g.productCode, 
-                                                    value: g.id 
+                                                .map((g) => ({
+                                                    label: g.productCode,
+                                                    value: g.id
                                                 }))[0] || null
                                             : null
                                     }
@@ -436,30 +436,30 @@ const ProductCreatePage = () => {
                 </div>
             </div>
 
-            <div className="mb-6">
-                <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                        type="checkbox"
-                        className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                        checked={form.isupdatemisa === 1}
-                        onChange={(e) => setForm((p) => ({ ...p, isupdatemisa: e.target.checked ? 1 : 0 }))}
-                    />
-                    <div>
-                        <span className="font-medium text-gray-700">Cập nhật MISA</span>
-                    </div>
-                </label>
-            </div>
+            {/*<div className="mb-6">*/}
+            {/*    <label className="flex items-center space-x-3 cursor-pointer">*/}
+            {/*        <input*/}
+            {/*            type="checkbox"*/}
+            {/*            className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"*/}
+            {/*            checked={form.isupdatemisa === 1}*/}
+            {/*            onChange={(e) => setForm((p) => ({ ...p, isupdatemisa: e.target.checked ? 1 : 0 }))}*/}
+            {/*        />*/}
+            {/*        <div>*/}
+            {/*            <span className="font-medium text-gray-700">Cập nhật MISA</span>*/}
+            {/*        </div>*/}
+            {/*    </label>*/}
+            {/*</div>*/}
 
             <div className="flex gap-4">
-                <button 
-                    className="btn btn-primary px-6 py-2" 
+                <button
+                    className="btn btn-primary px-6 py-2"
                     onClick={handleSave}
                     disabled={!form.width || !form.height || !form.thickness || isLoadingStructures || !!structureError}
                 >
                     {isLoadingStructures ? 'Đang tải...' : 'Lưu sản phẩm'}
                 </button>
-                <button 
-                    className="btn btn-outline px-6 py-2" 
+                <button
+                    className="btn btn-outline px-6 py-2"
                     onClick={() => router.push('/products')}
                 >
                     Hủy
@@ -519,33 +519,33 @@ const ProductCreatePage = () => {
                     </select>
                 </div>
 
-                
+
             </div>
 
-            <div className="mb-6">
-                <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                        type="checkbox"
-                        className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                        checked={otherProductForm.isupdatemisa === 1}
-                        onChange={(e) => setOtherProductForm(prev => ({ ...prev, isupdatemisa: e.target.checked ? 1 : 0 }))}
-                    />
-                    <div>
-                        <span className="font-medium text-gray-700">Cập nhật MISA</span>
-                    </div>
-                </label>
-            </div>
+            {/*<div className="mb-6">*/}
+            {/*    <label className="flex items-center space-x-3 cursor-pointer">*/}
+            {/*        <input*/}
+            {/*            type="checkbox"*/}
+            {/*            className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"*/}
+            {/*            checked={otherProductForm.isupdatemisa === 1}*/}
+            {/*            onChange={(e) => setOtherProductForm(prev => ({ ...prev, isupdatemisa: e.target.checked ? 1 : 0 }))}*/}
+            {/*        />*/}
+            {/*        <div>*/}
+            {/*            <span className="font-medium text-gray-700">Cập nhật MISA</span>*/}
+            {/*        </div>*/}
+            {/*    </label>*/}
+            {/*</div>*/}
 
             <div className="flex gap-4">
-                <button 
-                    className="btn btn-primary px-6 py-2" 
+                <button
+                    className="btn btn-primary px-6 py-2"
                     onClick={handleSaveOtherProduct}
                     disabled={!otherProductForm.productName.trim() || !otherProductForm.productType || !otherProductForm.uom}
                 >
                     Lưu sản phẩm
                 </button>
-                <button 
-                    className="btn btn-outline px-6 py-2" 
+                <button
+                    className="btn btn-outline px-6 py-2"
                     onClick={() => router.push('/products')}
                 >
                     Hủy
