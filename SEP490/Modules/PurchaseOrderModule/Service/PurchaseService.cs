@@ -235,6 +235,10 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                     await _context.SaveChangesAsync();
                 }
 
+                // Calculate TotalPrice if not provided or is zero
+                decimal calculatedTotalPrice = p.TotalPrice > 0 ? p.TotalPrice : p.UnitPrice * p.Quantity;
+                decimal calculatedUnitPrice = p.UnitPrice > 0 ? p.UnitPrice : 0;
+
                 var detail = new PurchaseOrderDetail
                 {
                     PurchaseOrderId = order.Id,
@@ -242,12 +246,12 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                     ProductName = p.ProductName,
                     Unit = p.UOM ?? "Tấm",
                     Quantity = p.Quantity,
-                    UnitPrice = p.UnitPrice,
-                    TotalPrice = p.TotalPrice
+                    UnitPrice = calculatedUnitPrice,
+                    TotalPrice = calculatedTotalPrice
                 };
                 _context.PurchaseOrderDetails.Add(detail);
 
-                updatedTotalValue += p.TotalPrice;
+                updatedTotalValue += calculatedTotalPrice;
             }
 
             order.TotalValue = updatedTotalValue;

@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSelector } from 'react-redux';
+import { IRootState } from '@/store';
 import { getPurchaseOrders, PurchaseOrderDto } from './service';
 import { FiSearch } from 'react-icons/fi';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -76,6 +78,7 @@ const getStatusText = (status: string) => {
 };
 
 const PurchaseOrderPage = () => {
+    const roleId = useSelector((state: IRootState) => state.auth.user?.roleId);
     const [orders, setOrders] = useState<PurchaseOrderDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -271,9 +274,12 @@ const PurchaseOrderPage = () => {
                     <button className="px-4 py-2 text-sm text-white bg-gray-600 rounded hover:bg-gray-700" onClick={handleExportToExcel}>
                         Xuất Excel
                     </button>
-                    <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800" onClick={() => router.push('/purchase-order/create')}>
-                        + Thêm đơn hàng mua
-                    </button>
+                    {/* Chỉ hiển thị button "Thêm đơn hàng mua" cho role Chủ xưởng (roleId = 1) */}
+                    {roleId === 1 && (
+                        <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800" onClick={() => router.push('/purchase-order/create')}>
+                            + Thêm đơn hàng mua
+                        </button>
+                    )}
                 </div>
             </div>
 
