@@ -113,6 +113,8 @@ const PurchaseOrderEditPage = () => {
                         height: d.height ? Number(d.height) : null,
                         thickness: d.thickness ? Number(d.thickness) : null,
                         quantity: d.quantity ?? 1,
+                        unitPrice: d.unitPrice ?? 0,
+                        uom: d.unit ?? 'Tấm',
                         isFromDatabase: !!d.productId,
                     })),
                 });
@@ -212,6 +214,9 @@ const PurchaseOrderEditPage = () => {
                 height: toPositiveNumber(it.height),
                 thickness: toPositiveNumber(it.thickness),
                 quantity: toPositiveInt(it.quantity) ?? 1,
+                unitPrice: it.unitPrice ?? 0,
+                totalPrice: (it.unitPrice ?? 0) * (toPositiveInt(it.quantity) ?? 1),
+                uom: it.uom ?? 'Tấm',
             }));
 
             const dto: UpdatePurchaseOrderDto = {
@@ -279,6 +284,7 @@ const PurchaseOrderEditPage = () => {
                             <th>STT</th>
                             <th>Tên sản phẩm</th>
                             <th>Số lượng</th>
+                            <th>Đơn giá (₫)</th>
                             <th>Đơn vị tính</th>
                             <th></th>
                         </tr>
@@ -291,6 +297,15 @@ const PurchaseOrderEditPage = () => {
                                     <td>{it.productName}</td>
                                     <td>
                                         <input type="number" className="input input-sm" value={it.quantity} min={1} onChange={(e) => handleItemChange(idx, 'quantity', +e.target.value)} />
+                                    </td>
+                                    <td>
+                                        <input 
+                                            type="number" 
+                                            className="input input-sm" 
+                                            value={it.unitPrice || 0} 
+                                            min={0} 
+                                            onChange={(e) => handleItemChange(idx, 'unitPrice', +e.target.value)} 
+                                        />
                                     </td>
                                     <td>{it.uom || 'Tấm'}</td>
                                     <td>
@@ -393,6 +408,9 @@ const PurchaseOrderEditPage = () => {
             <div className="text-end text-sm space-y-1">
                 <p>
                     <strong>Tổng số lượng:</strong> {form.items.reduce((sum, item) => sum + item.quantity, 0)}
+                </p>
+                <p>
+                    <strong>Tổng tiền hàng:</strong> {form.items.reduce((sum, item) => sum + ((item.unitPrice || 0) * item.quantity), 0).toLocaleString()} ₫
                 </p>
             </div>
 

@@ -261,36 +261,68 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
             return order.Id;
         }
 
-        public bool UpdateOrderDetailById(int orderId, UpdateOrderDetailDto dto)
+        public async Task<bool> UpdateOrderDetailById(int orderId, UpdateOrderDetailDto dto)
         {
-            var order = _context.SaleOrders
-                .Include(o => o.Customer)
-                .Include(o => o.OrderDetails)
-                    .ThenInclude(od => od.OrderDetailProducts)
-                .FirstOrDefault(o => o.Id == orderId);
-
-            if (order == null) return false;
-
-            if (order.Customer != null)
+            try
             {
-                order.Customer.CustomerName = dto.CustomerName;
-                order.Customer.Address = dto.Address;
-                order.Customer.Phone = dto.Phone;
-                order.Customer.Discount = dto.Discount;
-            }
+                var order = _context.SaleOrders
+                    .Include(o => o.Customer)
+                    .Include(o => o.OrderDetails)
+                        .ThenInclude(od => od.OrderDetailProducts)
+                    .FirstOrDefault(o => o.Id == orderId);
 
-            if (!string.IsNullOrWhiteSpace(dto.Status) && Enum.TryParse<Status>(dto.Status, ignoreCase: true, out var parsedStatus))
+                if (order == null) return false;
+
+                if (order.Customer != null)
+                {
+                    order.Customer.CustomerName = dto.CustomerName;
+                    order.Customer.Address = dto.Address;
+                    order.Customer.Phone = dto.Phone;
+                    order.Customer.Discount = dto.Discount;
+                }
+
+                if (!string.IsNullOrWhiteSpace(dto.Status) && Enum.TryParse<Status>(dto.Status, ignoreCase: true, out var parsedStatus))
+                {
+                    order.Status = parsedStatus;
+                }
+
+                if (!string.IsNullOrWhiteSpace(dto.DeliveryStatus) && Enum.TryParse<DeliveryStatus>(dto.DeliveryStatus, ignoreCase: true, out var parsedDeliveryStatus))
+                {
+                    order.DeliveryStatus = parsedDeliveryStatus;
+                }
+
+                order.IsUpdateMisa = dto.IsUpdateMisa;
+
+                // Update product quantities if provided
+                if (dto.Products != null && dto.Products.Count > 0)
+                {
+                    foreach (var productDto in dto.Products)
+                    {
+                        var orderDetailProduct = order.OrderDetails
+                            .SelectMany(od => od.OrderDetailProducts)
+                            .FirstOrDefault(odp => odp.ProductId == productDto.ProductId);
+                        
+                        if (orderDetailProduct != null)
+                        {
+                            orderDetailProduct.Quantity = productDto.Quantity;
+                        }
+                    }
+                }
+
+                // Force Entity Framework to detect changes
+                _context.Entry(order).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                if (order.Customer != null)
+                {
+                    _context.Entry(order.Customer).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
             {
-                order.Status = parsedStatus;
+                return false;
             }
-
-            if (!string.IsNullOrWhiteSpace(dto.DeliveryStatus) && Enum.TryParse<DeliveryStatus>(dto.DeliveryStatus, ignoreCase: true, out var parsedDeliveryStatus))
-            {
-                order.DeliveryStatus = parsedDeliveryStatus;
-            }
-
-            _context.SaveChanges();
-            return true;
         }
 
         public bool UpdateOrderMisaStatus(int orderId)

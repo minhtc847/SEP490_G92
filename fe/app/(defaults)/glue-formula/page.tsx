@@ -147,6 +147,21 @@ export default function GlueFormulaPage() {
     try {
       setSaving(true);
 
+      // Calculate total ratio
+      const totalRatio = editRows.reduce((sum, r) => sum + (Number.isFinite(r.ratio as number) ? Number(r.ratio) : 0), 0);
+      
+      // Check if total ratio equals 100%
+      if (Math.abs(totalRatio - 100) > 0.01) { // Allow small floating point differences
+        await Swal.fire({
+          icon: 'warning',
+          title: 'Tỉ lệ không hợp lệ!',
+          text: `Tổng tỉ lệ hiện tại là ${totalRatio.toFixed(2)}%. Tổng tỉ lệ phải bằng 100% để có thể lưu công thức.`,
+          padding: '2em',
+          customClass: { popup: 'sweet-alerts' }
+        });
+        return;
+      }
+
       // Basic validation
       for (let idx = 0; idx < editRows.length; idx++) {
         const row = editRows[idx];
@@ -235,60 +250,71 @@ export default function GlueFormulaPage() {
             {(() => {
               const totalRatio = editRows.reduce((sum, r) => sum + (Number.isFinite(r.ratio as number) ? Number(r.ratio) : 0), 0);
               const hasValidationError = editRows.some(r => !r.productId || r.ratio === undefined || r.ratio === null || r.ratio < 0);
+              const isRatioValid = Math.abs(totalRatio - 100) <= 0.01; // Allow small floating point differences
               return (
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                     <div style={{ fontSize: 13, color: '#6b7280' }}>Hãy thêm các hàng hoá chất kèm tỉ lệ phần trăm.</div>
-                    <div style={{ fontWeight: 700, color: totalRatio === 100 ? '#10b981' : '#f59e0b' }}>Tổng tỉ lệ: {Number(totalRatio.toFixed(2))}%</div>
+                    <div style={{ fontWeight: 700, color: isRatioValid ? '#10b981' : '#f59e0b' }}>Tổng tỉ lệ: {Number(totalRatio.toFixed(2))}%</div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '60px 2fr 140px 1.5fr 100px', gap: 8, padding: '8px 0', fontWeight: 600, color: '#374151', borderBottom: '1px solid #f1f5f9' }}>
-                    <div>STT</div>
-                    <div>Sản phẩm</div>
-                    <div>Tỉ lệ (%)</div>
-                    <div>Mô tả</div>
-                    <div>Hành động</div>
-                  </div>
-                  <div>
-                    {editRows.map((row, idx) => (
-                      <div key={idx} style={{ display: 'grid', gridTemplateColumns: '60px 2fr 140px 1.5fr 100px', gap: 8, padding: '8px 0', alignItems: 'center', borderBottom: '1px solid #f8fafc' }}>
-                        <div style={{ color: '#6b7280' }}>{idx + 1}</div>
-                        <select
-                          aria-label={`Sản phẩm hàng ${idx + 1}`}
-                          value={row.productId ?? ''}
-                          onChange={(e) => updateEditRow(idx, { productId: e.target.value ? parseInt(e.target.value) : undefined })}
-                          style={{ padding: 8, border: '1px solid #e5e7eb', borderRadius: 6 }}
-                        >
-                          <option value="">-- Chọn sản phẩm --</option>
-                          {products.map((p) => (
-                            <option key={p.id} value={parseInt(p.id)}>{p.productName}</option>
-                          ))}
-                        </select>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <input
-                            aria-label={`Tỉ lệ hàng ${idx + 1}`}
-                            type="number"
-                            min={0}
-                            step={0.1}
-                            value={row.ratio}
-                            onChange={(e) => updateEditRow(idx, { ratio: Number(e.target.value) })}
-                            style={{ padding: 8, border: '1px solid #e5e7eb', borderRadius: 6, width: '100%' }}
-                          />
-                        </div>
-                        <input
-                          aria-label={`Mô tả hàng ${idx + 1}`}
-                          type="text"
-                          value={row.description ?? ''}
-                          onChange={(e) => updateEditRow(idx, { description: e.target.value })}
-                          style={{ padding: 8, border: '1px solid #e5e7eb', borderRadius: 6 }}
-                          placeholder="Mô tả..."
-                        />
-                        <button onClick={() => deleteEditRow(idx)} style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #ef4444', color: '#ef4444', background: '#fff' }}>Xoá</button>
-                      </div>
-                    ))}
-                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600, color: '#374151', width: '60px' }}>STT</th>
+                        <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600, color: '#374151' }}>Sản phẩm</th>
+                        <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600, color: '#374151', width: '120px' }}>Tỉ lệ (%)</th>
+                        <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600, color: '#374151' }}>Mô tả</th>
+                        <th style={{ textAlign: 'left', padding: '8px', fontWeight: 600, color: '#374151', width: '100px' }}>Hành động</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {editRows.map((row, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #f8fafc' }}>
+                          <td style={{ padding: '8px', color: '#6b7280' }}>{idx + 1}</td>
+                          <td style={{ padding: '8px' }}>
+                            <select
+                              aria-label={`Sản phẩm hàng ${idx + 1}`}
+                              value={row.productId ?? ''}
+                              onChange={(e) => updateEditRow(idx, { productId: e.target.value ? parseInt(e.target.value) : undefined })}
+                              style={{ padding: '8px', border: '1px solid #e5e7eb', borderRadius: '6px', boxSizing: 'border-box', width: '100%' }}
+                            >
+                              <option value="">-- Chọn sản phẩm --</option>
+                              {products.map((p) => (
+                                <option key={p.id} value={parseInt(p.id)}>{p.productName}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td style={{ padding: '8px' }}>
+                            <input
+                              aria-label={`Tỉ lệ hàng ${idx + 1}`}
+                              type="number"
+                              min={0}
+                              step={0.1}
+                              value={row.ratio}
+                              onChange={(e) => updateEditRow(idx, { ratio: Number(e.target.value) })}
+                              style={{ padding: '8px', border: '1px solid #e5e7eb', borderRadius: '6px', boxSizing: 'border-box', width: '100%' }}
+                            />
+                          </td>
+                          <td style={{ padding: '8px' }}>
+                            <input
+                              aria-label={`Mô tả hàng ${idx + 1}`}
+                              type="text"
+                              value={row.description ?? ''}
+                              onChange={(e) => updateEditRow(idx, { description: e.target.value })}
+                              style={{ padding: '8px', border: '1px solid #e5e7eb', borderRadius: '6px', boxSizing: 'border-box', width: '100%' }}
+                              placeholder="Mô tả..."
+                            />
+                          </td>
+                          <td style={{ padding: '8px' }}>
+                            <button onClick={() => deleteEditRow(idx)} style={{ padding: '8px 10px', borderRadius: '6px', border: '1px solid #ef4444', color: '#ef4444', background: '#fff', boxSizing: 'border-box' }}>Xoá</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12 }}>
                     <button onClick={addEditRow} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #e5e7eb', background: '#fff' }}>+ Thêm hàng</button>
-                    <button disabled={saving || hasValidationError} onClick={saveEdits} style={{ padding: '8px 16px', borderRadius: 6, border: 'none', background: saving || hasValidationError ? '#86efac' : '#10b981', color: '#fff', fontWeight: 600, opacity: saving ? 0.7 : 1 }}>{saving ? 'Đang lưu...' : 'Lưu'}</button>
+                    <button disabled={saving || hasValidationError || !isRatioValid} onClick={saveEdits} style={{ padding: '8px 16px', borderRadius: 6, border: 'none', background: (saving || hasValidationError || !isRatioValid) ? '#86efac' : '#10b981', color: '#fff', fontWeight: 600, opacity: (saving || !isRatioValid) ? 0.7 : 1 }}>{saving ? 'Đang lưu...' : 'Lưu'}</button>
                   </div>
                 </>
               );

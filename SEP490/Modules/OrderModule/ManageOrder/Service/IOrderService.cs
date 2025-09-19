@@ -7,7 +7,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
     {
         List<OrderDto> GetAllOrders();
         OrderDetailDto? GetOrderDetailById(int orderId);
-        bool UpdateOrderDetailById(int orderId, UpdateOrderDetailDto dto);
+        Task<bool> UpdateOrderDetailById(int orderId, UpdateOrderDetailDto dto);
         void DeleteOrder(int orderId);
         List<GlassStructureDto> GetAllGlassStructures();
         List<CustomerSearchResultDto> SearchCustomers(string keyword);

@@ -32,8 +32,6 @@ export interface OrderDetailDto {
 
 export const getOrderDetailById = async (id: number): Promise<OrderDetailDto> => {
   const response = await axios.get(`/api/orders/${id}`);
-  console.log('API Response:', response.data);
-  console.log('isUpdateMisa value:', response.data.isUpdateMisa);
   return response.data;
 };
 

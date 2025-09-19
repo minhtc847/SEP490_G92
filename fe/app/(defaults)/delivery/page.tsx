@@ -81,7 +81,6 @@ const DeliverySummary = () => {
 
     const [deliveries, setDeliveries] = useState<DeliveryDto[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortAmount, setSortAmount] = useState<'asc' | 'desc' | null>(null);
     const [statusFilter, setStatusFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -138,11 +137,6 @@ const DeliverySummary = () => {
             return true;
         })
         .filter((delivery) => (statusFilter ? delivery.status === parseInt(statusFilter) : true))
-        .sort((a, b) => {
-            if (sortAmount === 'asc') return a.totalAmount - b.totalAmount;
-            if (sortAmount === 'desc') return b.totalAmount - a.totalAmount;
-            return 0;
-        });
 
     const totalPages = Math.ceil(filteredDeliveries.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -210,19 +204,6 @@ const DeliverySummary = () => {
                         </div>
                     </div>
 
-                    <select
-                        onChange={(e) => {
-                            const val = e.target.value;
-                            setSortAmount(val === 'asc' ? 'asc' : val === 'desc' ? 'desc' : null);
-                            setCurrentPage(1);
-                        }}
-                        className="select select-bordered py-2 px-4 rounded-lg shadow-sm"
-                        defaultValue=""
-                    >
-                        <option value="">Thành tiền</option>
-                        <option value="asc">Thấp → Cao</option>
-                        <option value="desc">Cao → Thấp</option>
-                    </select>
 
                     <select
                         className="select select-bordered py-2 px-4 rounded-lg shadow-sm"
@@ -269,7 +250,6 @@ const DeliverySummary = () => {
                             <th>Tên Khách Hàng</th>
                             <th>Ngày xuất kho</th>
                             <th>Ngày Giao Hàng</th>
-                            <th>Tổng tiền</th>
                             <th>Trạng Thái</th>
                             <th>Ghi Chú</th>
                             <th>Hành Động</th>
@@ -282,7 +262,6 @@ const DeliverySummary = () => {
                                 <td>{delivery.customerName}</td>
                                 <td>{new Date(delivery.exportDate).toLocaleDateString('vi-VN')}</td>
                                 <td>{delivery.deliveryDate ? new Date(delivery.deliveryDate).toLocaleDateString('vi-VN') : 'Chưa giao'}</td>
-                                <td>{delivery.totalAmount.toLocaleString()}₫</td>
                                 <td>
                                     <span className={`badge ${getStatusClass(delivery.status)} whitespace-nowrap`}>
                                         {getStatusText(delivery.status)}
@@ -311,9 +290,22 @@ const DeliverySummary = () => {
                                             value=""
                                         >
                                             <option value="" disabled>Hành động</option>
-                                            <option value="1">Giao hàng</option>
-                                            <option value="2">Hoàn thành</option>
-                                            <option value="3">Hủy</option>
+                                            {delivery.status === 0 && (
+                                                
+                                                <>
+                                                <option value="1">Giao hàng</option>
+                                                <option value="3">Hủy</option>
+                                                </>
+                                            )}
+                                            {delivery.status === 1 && (
+                                                <>
+                                                    <option value="2">Hoàn thành</option>
+                                                    <option value="3">Hủy</option>
+                                                </>
+                                            )}
+                                            {(delivery.status === 2 || delivery.status === 3) && (
+                                                <option value="" disabled>Không có hành động</option>
+                                            )}
                                         </select>
                                     </div>
                                 </td>

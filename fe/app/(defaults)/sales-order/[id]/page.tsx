@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useSelector } from 'react-redux';
+import { IRootState } from '@/store';
 import { checkOrderProductsMisaStatus, getOrderDetailById, OrderDetailDto, updateMisaOrder, updateOrderMisaStatus, checkHasProductionPlan } from '@/app/(defaults)/sales-order/[id]/service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -12,6 +14,7 @@ const SalesOrderDetailPage = () => {
     const params = useParams();
     const id = params?.id as string;
     const router = useRouter();
+    const roleId = useSelector((state: IRootState) => state.auth.user?.roleId);
     const [order, setOrder] = useState<OrderDetailDto | null>(null);
     const [loading, setLoading] = useState(true);
     const [isUpdatingMisa, setIsUpdatingMisa] = useState<boolean>(false);
@@ -273,18 +276,21 @@ const SalesOrderDetailPage = () => {
                     <button onClick={handleExportToExcel} className="px-4 py-1 bg-gray-600 text-white rounded">
                         📊 Xuất Excel
                     </button>
-                    <button 
-                        onClick={() => router.push(`/production-plans/create?orderId=${id}`)} 
-                        disabled={hasProductionPlan}
-                        className={`px-4 py-1 rounded ${
-                            hasProductionPlan 
-                                ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
-                                : 'bg-yellow-500 text-black hover:bg-yellow-600'
-                        }`}
-                        title={hasProductionPlan ? 'Đơn hàng đã có kế hoạch sản xuất' : 'Tạo kế hoạch sản xuất'}
-                    >
-                        {hasProductionPlan ? '🏭 Đã có kế hoạch sản xuất' : '🏭 Tạo kế hoạch sản xuất'}
-                    </button>
+                    {/* Chỉ hiển thị button "Tạo kế hoạch sản xuất" cho role Chủ xưởng (roleId = 1) */}
+                    {roleId === 1 && (
+                        <button 
+                            onClick={() => router.push(`/production-plans/create?orderId=${id}`)} 
+                            disabled={hasProductionPlan}
+                            className={`px-4 py-1 rounded ${
+                                hasProductionPlan 
+                                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+                                    : 'bg-yellow-500 text-black hover:bg-yellow-600'
+                            }`}
+                            title={hasProductionPlan ? 'Đơn hàng đã có kế hoạch sản xuất' : 'Tạo kế hoạch sản xuất'}
+                        >
+                            {hasProductionPlan ? '🏭 Đã có kế hoạch sản xuất' : '🏭 Tạo kế hoạch sản xuất'}
+                        </button>
+                    )}
                 </div>
             </div>
 

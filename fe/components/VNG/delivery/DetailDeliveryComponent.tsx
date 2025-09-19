@@ -293,8 +293,9 @@ const DetailDeliveryComponent = () => {
                             ) : (
                                 <button 
                                     type="button" 
-                                    className="btn btn-primary" 
+                                    className={`btn ${delivery.status === 0 ? 'btn-primary' : 'btn-secondary'}`}
                                     onClick={handleEdit}
+                                    disabled={delivery.status !== 0}
                                 >
                                     <IconEdit className="mr-2" />
                                     Chỉnh sửa
@@ -328,15 +329,7 @@ const DetailDeliveryComponent = () => {
             <div className="mt-6 w-full xl:mt-0 xl:w-96">
                 <div className="panel">
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-1">
-                        <button type="button" className="btn btn-primary w-full gap-2">
-                            <IconEye className="shrink-0 ltr:mr-2 rtl:ml-2" />
-                            Xem trước
-                        </button>
-
-                        <button type="button" className="btn btn-secondary w-full gap-2">
-                            <IconDownload className="shrink-0 ltr:mr-2 rtl:ml-2" />
-                            Tải xuống
-                        </button>
+                        
 
                         <button 
                             type="button" 

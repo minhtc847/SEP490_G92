@@ -48,6 +48,8 @@ export interface PurchaseOrderDetailDto {
   height?: string;
   thickness?: number;
   quantity?: number;
+  unitPrice?: number;
+  unit?: string;
 }
 
 export interface PurchaseOrderWithDetailsDto {

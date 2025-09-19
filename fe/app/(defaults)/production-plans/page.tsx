@@ -1,5 +1,4 @@
 'use client';
-import IconEdit from '@/components/icon/icon-edit';
 import IconEye from '@/components/icon/icon-eye';
 import IconPlus from '@/components/icon/icon-plus';
 import IconTrashLines from '@/components/icon/icon-trash-lines';
@@ -205,9 +204,6 @@ const ProductionPlansPage = () => {
                                         width: 150,
                                         render: ({ id }) => (
                                             <div className="mx-auto flex w-max items-center gap-4">
-                                                <Link href="/production-plans/edit" className="flex hover:text-info">
-                                                    <IconEdit className="h-4.5 w-4.5" />
-                                                </Link>
                                                 <Link href={`/production-plans/${id}`} className="flex hover:text-primary">
                                                     <IconEye />
                                                 </Link>

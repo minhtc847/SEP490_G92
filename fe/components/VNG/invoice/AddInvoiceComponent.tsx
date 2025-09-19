@@ -123,8 +123,8 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                 productId: detail.productId || 0,
                 productName: detail.productName || '',
                 quantity: detail.quantity || 0,
-                unitPrice: 0, // User will input price
-                amount: 0, // User will input price
+                unitPrice: detail.unitPrice || 0, // Use actual unit price from purchase order
+                amount: detail.totalPrice || 0, // Use actual total price from purchase order
                 description: ''
             })));
         } catch (error) {
@@ -221,9 +221,9 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                 return false;
             }
         } else {
-            // For purchase invoices, user needs to input prices
-            if (items.some(item => !item.productName.trim() || item.quantity <= 0 || item.unitPrice <= 0)) {
-                alert('Vui lòng điền đầy đủ thông tin sản phẩm và đơn giá!');
+            // For purchase invoices, prices are pre-filled from purchase order
+            if (items.some(item => !item.productName.trim() || item.quantity <= 0)) {
+                alert('Dữ liệu sản phẩm không hợp lệ!');
                 return false;
             }
         }
@@ -451,7 +451,7 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                                                     placeholder="Đơn giá"
                                                     value={item.unitPrice}
                                                     min={0}
-                                                    onChange={(e) => handleItemChange(item.id, 'unitPrice', parseInt(e.target.value) || 0)}
+                                                    onChange={(e) => handleItemChange(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
                                                 />
                                             )}
                                         </td>
@@ -461,22 +461,22 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                                             </div>
                                         </td>
                                        
-                                        <td>
+                                        {/* <td>
                                             <button type="button" onClick={() => removeItem(item.id)}>
                                                 <IconX className="h-5 w-5" />
                                             </button>
-                                        </td>
+                                        </td> */}
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
                     <div className="mt-6 flex flex-col justify-between px-4 sm:flex-row">
-                        <div className="mb-6 sm:mb-0">
+                        {/* <div className="mb-6 sm:mb-0">
                             <button type="button" className="btn btn-primary" onClick={addItem}>
                                 Thêm sản phẩm
                             </button>
-                        </div>
+                        </div> */}
                         <div className="space-y-2 text-right">
                             <div className="text-lg">
                                 Tổng tiền hàng: {subtotal.toLocaleString()}₫
@@ -514,15 +514,7 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                             {isSubmitting ? 'Đang tạo...' : 'Tạo hóa đơn'}
                         </button>
 
-                        <button type="button" className="btn btn-primary w-full gap-2">
-                            <IconEye className="shrink-0 ltr:mr-2 rtl:ml-2" />
-                            Xem trước
-                        </button>
-
-                        <button type="button" className="btn btn-secondary w-full gap-2">
-                            <IconDownload className="shrink-0 ltr:mr-2 rtl:ml-2" />
-                            Tải xuống
-                        </button>
+                       
 
                         <button 
                             type="button" 

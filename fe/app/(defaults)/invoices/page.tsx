@@ -7,6 +7,7 @@ import { FiSearch } from 'react-icons/fi';
 import OrderSelectionModal from '@/components/invoices/OrderSelectionModal';
 import DeliverySelectionModal from '@/components/invoices/DeliverySelectionModal';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import ExcelJS from 'exceljs';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -81,6 +82,7 @@ const getStatusText = (status: number) => {
     }
 };
 
+
 const getStatusClass = (status: number) => {
     switch (status) {
         case 0:
@@ -149,6 +151,104 @@ const InvoiceSummary = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedInvoices = filteredInvoices.slice(startIndex, startIndex + itemsPerPage);
 
+    const handleExportToExcel = async () => {
+        const data = filteredInvoices.map((invoice) => ({
+            'STT': '',
+            'Mã Hóa Đơn': invoice.invoiceCode,
+            'Khách Hàng': invoice.customerName,
+            'Ngày Hóa Đơn': new Date(invoice.invoiceDate).toLocaleDateString('vi-VN'),
+            'Loại': getInvoiceTypeText(invoice.invoiceType),
+            'Tổng Tiền (₫)': invoice.totalAmount,
+            'Trạng Thái': getStatusText(invoice.status),
+        }));
+
+        // Thêm STT
+        // data.forEach((item, index) => {
+        //     item['STT'] = index + 1;
+        // });
+
+        const headers = ['STT', 'Mã Hóa Đơn', 'Khách Hàng', 'Ngày Hóa Đơn', 'Loại', 'Tổng Tiền (₫)', 'Trạng Thái'];
+
+        // Tạo workbook mới
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Hóa Đơn');
+
+        // Thêm tiêu đề
+        const titleRow = worksheet.addRow(['TỔNG HỢP HÓA ĐƠN']);
+        titleRow.height = 30;
+        worksheet.mergeCells('A1:G1');
+        
+        // Định dạng tiêu đề
+        const titleCell = worksheet.getCell('A1');
+        titleCell.font = { bold: true, size: 18 };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        titleCell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+
+        // Thêm header
+        const headerRow = worksheet.addRow(headers);
+        headerRow.height = 25;
+        
+        // Định dạng header
+        headerRow.eachCell((cell, colNumber) => {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFD3D3D3' }
+            };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+
+        // Thêm dữ liệu
+        // data.forEach((row) => {
+        //     const dataRow = worksheet.addRow(headers.map(header => row[header]));
+        //     dataRow.height = 20;
+            
+        //     dataRow.eachCell((cell, colNumber) => {
+        //         cell.border = {
+        //             top: { style: 'thin' },
+        //             left: { style: 'thin' },
+        //             bottom: { style: 'thin' },
+        //             right: { style: 'thin' }
+        //         };
+        //     });
+        // });
+
+
+        // Auto-size columns
+        // worksheet.columns.forEach(column => {
+        //     let maxLength = 0;
+        //     column.eachCell({ includeEmpty: true }, (cell) => {
+        //         const columnLength = cell.value ? cell.value.toString().length : 10;
+        //         if (columnLength > maxLength) {
+        //             maxLength = columnLength;
+        //         }
+        //     });
+        //     column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        // });
+
+        // Xuất file
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `HoaDon_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+    };
+
     const handleExportInvoice = () => {
         alert('Xuất hóa đơn thành công!');
     };
@@ -180,7 +280,12 @@ const InvoiceSummary = () => {
                         >
                             + Tạo từ đơn giao hàng
                         </button>
-                        
+                        <button 
+                            className="px-4 py-2 text-sm text-white bg-gray-600 rounded hover:bg-gray-700" 
+                            onClick={handleExportToExcel}
+                        >
+                            Xuất excel
+                        </button>
                     </div>
                 </div>
 

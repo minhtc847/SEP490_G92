@@ -57,7 +57,7 @@ const ProductDetailPage = () => {
             );
 
             // Sau khi cập nhật MISA thành công, cập nhật trạng thái isupdatemisa thành true
-            // await updateProductMisaSta3tus(product.id);
+             await updateProductMisaStatus(product.id);
 
             // Cập nhật trạng thái ngay lập tức trong state để UI phản hồi ngay
             setProduct(prev => prev ? { ...prev, isupdatemisa: 2 } : null);

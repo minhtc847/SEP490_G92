@@ -220,10 +220,10 @@ const DeliverySelectionModal: React.FC<DeliverySelectionModalProps> = ({ isOpen,
                                                                             <span className="font-medium">Ngày giao hàng:</span>
                                                                             <p>{new Date(delivery.deliveryDate).toLocaleDateString('vi-VN')}</p>
                                                                         </div>
-                                                                        <div>
+                                                                        {/* <div>
                                                                             <span className="font-medium">Tổng tiền:</span>
                                                                             <p className="font-semibold">{delivery.totalAmount.toLocaleString()}₫</p>
-                                                                        </div>
+                                                                        </div> */}
                                                                     </div>
                                                                     {delivery.note && (
                                                                         <div className="mt-2">

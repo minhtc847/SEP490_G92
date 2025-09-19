@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getOrders, OrderDto } from '@/app/(defaults)/sales-order/service';
+import { getOrders, OrderDto, getOrdersNotUpdated, updateManySaleOrders } from '@/app/(defaults)/sales-order/service';
 import { FiSearch } from 'react-icons/fi';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import ExcelJS from 'exceljs';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -72,6 +73,8 @@ const SalesOrderSummary = () => {
     const [loading, setLoading] = useState(true);
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [updateMessage, setUpdateMessage] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -140,6 +143,188 @@ const SalesOrderSummary = () => {
         alert('Đồng bộ thành công vào MISA!');
     };
 
+    const handleUpdateAllOrders = async () => {
+        try {
+            setIsUpdating(true);
+            setUpdateMessage('');
+            
+            // Lấy danh sách đơn hàng chưa cập nhật
+            const ordersNotUpdated = await getOrdersNotUpdated();
+            
+            if (ordersNotUpdated.length === 0) {
+                setUpdateMessage('Không có đơn hàng nào cần cập nhật!');
+                return;
+            }
+
+            const confirmed = confirm(`Bạn có chắc chắn muốn cập nhật ${ordersNotUpdated.length} đơn hàng chưa cập nhật lên MISA?`);
+            if (!confirmed) return;
+
+            // Gọi API update tất cả đơn hàng
+            await updateManySaleOrders(ordersNotUpdated);
+            
+            setUpdateMessage(`Đã gửi yêu cầu cập nhật ${ordersNotUpdated.length} đơn hàng lên MISA. Quá trình này sẽ chạy trong background.`);
+            
+            // Refresh danh sách đơn hàng sau 2 giây
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+            
+        } catch (err) {
+            console.error('Lỗi khi cập nhật đơn hàng:', err);
+            setUpdateMessage('Có lỗi xảy ra khi cập nhật đơn hàng!');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const getStatusText = (status: number) => {
+        switch (status) {
+            case 0:
+                return 'Chưa thực hiện';
+            case 1:
+                return 'Đang thực hiện';
+            case 2:
+                return 'Hoàn thành';
+            case 3:
+                return 'Đã huỷ';
+            default:
+                return 'Không xác định';
+        }
+    };
+
+    const handleExportToExcel = async () => {
+        const data = filteredOrders.map((order) => ({
+            'STT': '',
+            'Tên Khách Hàng': order.customerName,
+            'Ngày Đặt': new Date(order.orderDate).toLocaleDateString('vi-VN'),
+            'Mã Đơn Hàng': order.orderCode,
+            'Thành Tiền (₫)': order.totalAmount,
+            'Trạng Thái': getStatusText(order.status),
+            'Giao Hàng': getDeliveryStatusText(order.deliveryStatus),
+            'Cập nhật MISA': order.isUpdateMisa ? 'Đã cập nhật' : 'Chưa cập nhật',
+        }));
+
+        // Thêm STT
+        // data.forEach((item, index) => {
+        //     item['STT'] = index + 1;
+        // });
+
+        const headers = [
+            'STT',
+            'Tên Khách Hàng',
+            'Ngày Đặt',
+            'Mã Đơn Hàng',
+            'Thành Tiền (₫)',
+            'Trạng Thái',
+            'Giao Hàng',
+            'Cập nhật MISA',
+        ];
+
+        // Tạo workbook mới
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Đơn Hàng');
+
+        // Thêm tiêu đề
+        const titleRow = worksheet.addRow(['ĐƠN HÀNG BÁN']);
+        titleRow.height = 30;
+        worksheet.mergeCells('A1:H1');
+        
+        // Định dạng tiêu đề
+        const titleCell = worksheet.getCell('A1');
+        titleCell.font = { bold: true, size: 18 };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        titleCell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+
+        // Thêm header
+        const headerRow = worksheet.addRow(headers);
+        headerRow.height = 25;
+        
+        // Định dạng header
+        headerRow.eachCell((cell, colNumber) => {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFD3D3D3' }
+            };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+
+        // Thêm dữ liệu
+        // data.forEach((row) => {
+        //     const dataRow = worksheet.addRow(headers.map(header => row[header]));
+        //     dataRow.height = 20;
+            
+        //     dataRow.eachCell((cell, colNumber) => {
+        //         cell.border = {
+        //             top: { style: 'thin' },
+        //             left: { style: 'thin' },
+        //             bottom: { style: 'thin' },
+        //             right: { style: 'thin' }
+        //         };
+        //     });
+        // });
+
+        // Thêm dòng tổng
+        const totalRow = worksheet.addRow(['Tổng', '', '', '', '', '', '', '']);
+        totalRow.height = 25;
+        worksheet.mergeCells(`A${totalRow.number}:B${totalRow.number}`);
+        
+        // Tổng thành tiền
+        const totalAmount = data.reduce((sum, item) => sum + (item['Thành Tiền (₫)'] || 0), 0);
+        const totalAmountCell = worksheet.getCell(`E${totalRow.number}`);
+        totalAmountCell.value = totalAmount;
+        
+        // Định dạng dòng tổng
+        totalRow.eachCell((cell, colNumber) => {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFD3D3D3' }
+            };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+
+        // Auto-size columns
+        // worksheet.columns.forEach(column => {
+        //     let maxLength = 0;
+        //     column.eachCell({ includeEmpty: true }, (cell) => {
+        //         const columnLength = cell.value ? cell.value.toString().length : 10;
+        //         if (columnLength > maxLength) {
+        //             maxLength = columnLength;
+        //         }
+        //     });
+        //     column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        // });
+
+        // Xuất file
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `TongHopDonHang_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+    };
+
     if (loading) {
         return <div className="p-6">Đang tải đơn hàng...</div>;
     }
@@ -150,10 +335,32 @@ const SalesOrderSummary = () => {
         <div className="p-6 bg-white rounded-lg shadow">
             <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Tóm tắt đơn hàng</h2>
-                <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800" onClick={() => router.push('/sales-order/create')}>
-                    + Thêm đơn hàng
-                </button>
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={handleUpdateAllOrders} 
+                        disabled={isUpdating}
+                        className="px-4 py-2 text-sm text-white bg-orange-600 rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isUpdating ? 'Đang cập nhật...' : 'Cập nhật tất cả đơn hàng chưa cập nhật'}
+                    </button>
+                    <button className="px-4 py-2 text-sm text-white bg-gray-600 rounded hover:bg-gray-700" onClick={handleExportToExcel}>
+                         Xuất Excel
+                    </button>
+                    <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800" onClick={() => router.push('/sales-order/create')}>
+                        + Thêm đơn hàng
+                    </button>
+                </div>
             </div>
+
+            {updateMessage && (
+                <div className={`mb-4 p-3 rounded-xl border ${
+                    updateMessage.includes('lỗi') || updateMessage.includes('thất bại') 
+                        ? 'bg-red-100 text-red-800 border-red-300'
+                        : 'bg-blue-100 text-blue-800 border-blue-300'
+                }`}>
+                    {updateMessage.includes('lỗi') || updateMessage.includes('thất bại') ? '❌' : '🔄'} {updateMessage}
+                </div>
+            )}
 
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="relative w-full md:w-1/3">

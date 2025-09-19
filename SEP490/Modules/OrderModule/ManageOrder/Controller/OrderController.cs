@@ -313,9 +313,15 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Controllers
 
         [HttpPut("{id}")]
         [AuthorizeRoles( Roles.MANAGER, Roles.ACCOUNTANT)]
-        public IActionResult UpdateOrderDetail(int id, [FromBody] UpdateOrderDetailDto dto)
+        public async Task<IActionResult> UpdateOrderDetail(int id, [FromBody] UpdateOrderDetailDto dto)
         {
-            var success = _orderService.UpdateOrderDetailById(id, dto);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var success = await _orderService.UpdateOrderDetailById(id, dto);
+            
             if (!success)
                 return NotFound($"Không tìm thấy đơn hàng với ID {id}.");
 

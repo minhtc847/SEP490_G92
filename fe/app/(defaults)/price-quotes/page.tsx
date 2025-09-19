@@ -7,6 +7,7 @@ import IconEye from '@/components/icon/icon-eye';
 import IconEdit from '@/components/icon/icon-edit';
 import IconTrash from '@/components/icon/icon-trash-lines';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import ExcelJS from 'exceljs';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -57,9 +58,9 @@ const PriceQuotePage = () => {
     const router = useRouter();
     const [message, setMessage] = useState('');
     const searchParams = useSearchParams();
-    const deletedMessage = searchParams.get('deleted');
+    const deletedMessage = searchParams?.get('deleted');
     const [formData, setFormData] = useState<PriceQuoteDetail | null>(null);
-    const successMessage = searchParams.get('success');
+    const successMessage = searchParams?.get('success');
 
     useEffect(() => {
         const fetch = async () => {
@@ -108,14 +109,114 @@ const PriceQuotePage = () => {
         router.push('/price-quotes/create');
     };
 
+    const handleExportToExcel = async () => {
+        const data = filteredQuotes.map((q) => ({
+            'STT': '',
+            'Tên': q.productName,
+            'Mã SP': q.productCode,
+            'Đơn giá (₫)': q.unitPrice,
+        }));
+
+        // Thêm STT
+        // data.forEach((item, index) => {
+        //     item['STT'] = index + 1;
+        // });
+
+        const headers = ['STT', 'Tên', 'Mã SP', 'Đơn giá (₫)'];
+
+        // Tạo workbook mới
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Báo Giá');
+
+        // Thêm tiêu đề
+        const titleRow = worksheet.addRow(['DANH SÁCH BÁO GIÁ']);
+        titleRow.height = 30;
+        worksheet.mergeCells('A1:D1');
+        
+        // Định dạng tiêu đề
+        const titleCell = worksheet.getCell('A1');
+        titleCell.font = { bold: true, size: 18 };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        titleCell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+
+        // Thêm header
+        const headerRow = worksheet.addRow(headers);
+        headerRow.height = 25;
+        
+        // Định dạng header
+        headerRow.eachCell((cell, colNumber) => {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFD3D3D3' }
+            };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+
+        // Thêm dữ liệu
+        // data.forEach((row) => {
+        //     const dataRow = worksheet.addRow(headers.map(header => row[header]));
+        //     dataRow.height = 20;
+            
+        //     dataRow.eachCell((cell, colNumber) => {
+        //         cell.border = {
+        //             top: { style: 'thin' },
+        //             left: { style: 'thin' },
+        //             bottom: { style: 'thin' },
+        //             right: { style: 'thin' }
+        //         };
+        //     });
+        // });
+
+
+        // Auto-size columns
+        // worksheet.columns.forEach(column => {
+        //     let maxLength = 0;
+        //     column.eachCell({ includeEmpty: true }, (cell) => {
+        //         const columnLength = cell.value ? cell.value.toString().length : 10;
+        //         if (columnLength > maxLength) {
+        //             maxLength = columnLength;
+        //         }
+        //     });
+        //     column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        // });
+
+        // Xuất file
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `BaoGia_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+    };
+
     return (
         <ProtectedRoute requiredRole={[1, 2]}>
             <div className="p-6 bg-white rounded-lg shadow">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold text-gray-800">Báo giá</h2>
-                    <button onClick={handleCreateNew} className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-xl shadow transition duration-200">
-                        + Thêm báo giá
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button onClick={handleExportToExcel} className="px-4 py-2 text-sm text-white bg-gray-600 rounded hover:bg-gray-700">
+                            Xuất excel
+                        </button>
+                        <button onClick={handleCreateNew} className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-xl shadow transition duration-200">
+                            + Thêm báo giá
+                        </button>
+                    </div>
                 </div>
 
                 {message && <div className="mb-4 p-3 rounded bg-green-100 text-green-800 border border-green-300">{message}</div>}
