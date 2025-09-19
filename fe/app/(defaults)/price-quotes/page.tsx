@@ -7,7 +7,7 @@ import IconEye from '@/components/icon/icon-eye';
 import IconEdit from '@/components/icon/icon-edit';
 import IconTrash from '@/components/icon/icon-trash-lines';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -109,18 +109,99 @@ const PriceQuotePage = () => {
         router.push('/price-quotes/create');
     };
 
-    const handleExportToExcel = () => {
+    const handleExportToExcel = async () => {
         const data = filteredQuotes.map((q) => ({
+            'STT': '',
             'Tên': q.productName,
             'Mã SP': q.productCode,
             'Đơn giá (₫)': q.unitPrice,
         }));
-        const headers = ['Tên', 'Mã SP', 'Đơn giá (₫)'];
-        const worksheet = XLSX.utils.json_to_sheet(data.length ? data : [{}], { header: headers });
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'BaoGia');
-        const fileName = `BaoGia_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
-        XLSX.writeFile(workbook, fileName);
+
+        // Thêm STT
+        data.forEach((item, index) => {
+            item['STT'] = index + 1;
+        });
+
+        const headers = ['STT', 'Tên', 'Mã SP', 'Đơn giá (₫)'];
+
+        // Tạo workbook mới
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Báo Giá');
+
+        // Thêm tiêu đề
+        const titleRow = worksheet.addRow(['DANH SÁCH BÁO GIÁ']);
+        titleRow.height = 30;
+        worksheet.mergeCells('A1:D1');
+        
+        // Định dạng tiêu đề
+        const titleCell = worksheet.getCell('A1');
+        titleCell.font = { bold: true, size: 18 };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        titleCell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+
+        // Thêm header
+        const headerRow = worksheet.addRow(headers);
+        headerRow.height = 25;
+        
+        // Định dạng header
+        headerRow.eachCell((cell, colNumber) => {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFD3D3D3' }
+            };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+
+        // Thêm dữ liệu
+        data.forEach((row) => {
+            const dataRow = worksheet.addRow(headers.map(header => row[header]));
+            dataRow.height = 20;
+            
+            dataRow.eachCell((cell, colNumber) => {
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+        });
+
+
+        // Auto-size columns
+        worksheet.columns.forEach(column => {
+            let maxLength = 0;
+            column.eachCell({ includeEmpty: true }, (cell) => {
+                const columnLength = cell.value ? cell.value.toString().length : 10;
+                if (columnLength > maxLength) {
+                    maxLength = columnLength;
+                }
+            });
+            column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        });
+
+        // Xuất file
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `BaoGia_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
+        link.click();
+        window.URL.revokeObjectURL(url);
     };
 
     return (

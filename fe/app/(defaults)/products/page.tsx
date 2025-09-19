@@ -8,7 +8,7 @@ import IconEdit from '@/components/icon/icon-edit';
 import IconTrash from '@/components/icon/icon-trash-lines';
 import { deleteProduct } from './service';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     return (
@@ -87,20 +87,100 @@ const ProductListPage = () => {
         }
     };
 
-    const handleExportToExcel = () => {
+    const handleExportToExcel = async () => {
         const data = filteredProducts.map((p) => ({
+            'STT': '',
             'Tên sản phẩm': p.productName || '-',
             'Loại SP': p.productType || '-',
             'Đơn vị tính': p.uom || '-',
             'Cập nhật MISA': p.isupdatemisa === 1 ? 'Đã cập nhật' : 'Chưa cập nhật',
         }));
 
-        const headers = ['Tên sản phẩm', 'Loại SP', 'Đơn vị tính', 'Cập nhật MISA'];
-        const worksheet = XLSX.utils.json_to_sheet(data.length ? data : [{}], { header: headers });
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'SanPham');
-        const fileName = `SanPham_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
-        XLSX.writeFile(workbook, fileName);
+        // Thêm STT
+        data.forEach((item, index) => {
+            item['STT'] = index + 1;
+        });
+
+        const headers = ['STT', 'Tên sản phẩm', 'Loại SP', 'Đơn vị tính', 'Cập nhật MISA'];
+
+        // Tạo workbook mới
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Sản Phẩm');
+
+        // Thêm tiêu đề
+        const titleRow = worksheet.addRow(['DANH SÁCH SẢN PHẨM']);
+        titleRow.height = 30;
+        worksheet.mergeCells('A1:E1');
+        
+        // Định dạng tiêu đề
+        const titleCell = worksheet.getCell('A1');
+        titleCell.font = { bold: true, size: 18 };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        titleCell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+
+        // Thêm header
+        const headerRow = worksheet.addRow(headers);
+        headerRow.height = 25;
+        
+        // Định dạng header
+        headerRow.eachCell((cell, colNumber) => {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFD3D3D3' }
+            };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+
+        // Thêm dữ liệu
+        data.forEach((row) => {
+            const dataRow = worksheet.addRow(headers.map(header => row[header]));
+            dataRow.height = 20;
+            
+            dataRow.eachCell((cell, colNumber) => {
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+        });
+
+
+        // Auto-size columns
+        worksheet.columns.forEach(column => {
+            let maxLength = 0;
+            column.eachCell({ includeEmpty: true }, (cell) => {
+                const columnLength = cell.value ? cell.value.toString().length : 10;
+                if (columnLength > maxLength) {
+                    maxLength = columnLength;
+                }
+            });
+            column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        });
+
+        // Xuất file
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `SanPham_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
+        link.click();
+        window.URL.revokeObjectURL(url);
     };
 
     return (

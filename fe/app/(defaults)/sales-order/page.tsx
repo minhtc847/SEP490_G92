@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getOrders, OrderDto } from '@/app/(defaults)/sales-order/service';
 import { FiSearch } from 'react-icons/fi';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -156,8 +156,9 @@ const SalesOrderSummary = () => {
         }
     };
 
-    const handleExportToExcel = () => {
+    const handleExportToExcel = async () => {
         const data = filteredOrders.map((order) => ({
+            'STT': '',
             'Tên Khách Hàng': order.customerName,
             'Ngày Đặt': new Date(order.orderDate).toLocaleDateString('vi-VN'),
             'Mã Đơn Hàng': order.orderCode,
@@ -167,8 +168,13 @@ const SalesOrderSummary = () => {
             'Cập nhật MISA': order.isUpdateMisa ? 'Đã cập nhật' : 'Chưa cập nhật',
         }));
 
-        // Nếu không có dữ liệu, vẫn xuất ra file với header
+        // Thêm STT
+        data.forEach((item, index) => {
+            item['STT'] = index + 1;
+        });
+
         const headers = [
+            'STT',
             'Tên Khách Hàng',
             'Ngày Đặt',
             'Mã Đơn Hàng',
@@ -178,25 +184,109 @@ const SalesOrderSummary = () => {
             'Cập nhật MISA',
         ];
 
-        const worksheet = XLSX.utils.json_to_sheet(data.length ? data : [{}], { header: headers });
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'DonHang');
+        // Tạo workbook mới
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Đơn Hàng');
 
-        // Định dạng số tiền thành kiểu số trong Excel (tùy chọn)
-        const amountCol = headers.indexOf('Thành Tiền (₫)');
-        if (amountCol >= 0) {
-            const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-            for (let R = 1; R <= range.e.r; R++) {
-                const cellAddress = XLSX.utils.encode_cell({ r: R, c: amountCol });
-                const cell = worksheet[cellAddress];
-                if (cell && typeof cell.v === 'number') {
-                    cell.t = 'n';
+        // Thêm tiêu đề
+        const titleRow = worksheet.addRow(['ĐƠN HÀNG BÁN']);
+        titleRow.height = 30;
+        worksheet.mergeCells('A1:H1');
+        
+        // Định dạng tiêu đề
+        const titleCell = worksheet.getCell('A1');
+        titleCell.font = { bold: true, size: 18 };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        titleCell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+
+        // Thêm header
+        const headerRow = worksheet.addRow(headers);
+        headerRow.height = 25;
+        
+        // Định dạng header
+        headerRow.eachCell((cell, colNumber) => {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFD3D3D3' }
+            };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+
+        // Thêm dữ liệu
+        data.forEach((row) => {
+            const dataRow = worksheet.addRow(headers.map(header => row[header]));
+            dataRow.height = 20;
+            
+            dataRow.eachCell((cell, colNumber) => {
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+        });
+
+        // Thêm dòng tổng
+        const totalRow = worksheet.addRow(['Tổng', '', '', '', '', '', '', '']);
+        totalRow.height = 25;
+        worksheet.mergeCells(`A${totalRow.number}:B${totalRow.number}`);
+        
+        // Tổng thành tiền
+        const totalAmount = data.reduce((sum, item) => sum + (item['Thành Tiền (₫)'] || 0), 0);
+        const totalAmountCell = worksheet.getCell(`E${totalRow.number}`);
+        totalAmountCell.value = totalAmount;
+        
+        // Định dạng dòng tổng
+        totalRow.eachCell((cell, colNumber) => {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFD3D3D3' }
+            };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+
+        // Auto-size columns
+        worksheet.columns.forEach(column => {
+            let maxLength = 0;
+            column.eachCell({ includeEmpty: true }, (cell) => {
+                const columnLength = cell.value ? cell.value.toString().length : 10;
+                if (columnLength > maxLength) {
+                    maxLength = columnLength;
                 }
-            }
-        }
+            });
+            column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        });
 
-        const fileName = `TongHopDonHang_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
-        XLSX.writeFile(workbook, fileName);
+        // Xuất file
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `TongHopDonHang_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
+        link.click();
+        window.URL.revokeObjectURL(url);
     };
 
     if (loading) {

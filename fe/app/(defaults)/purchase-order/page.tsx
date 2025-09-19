@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getPurchaseOrders, PurchaseOrderDto } from './service';
 import { FiSearch } from 'react-icons/fi';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -130,8 +130,9 @@ const PurchaseOrderPage = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
 
-    const handleExportToExcel = () => {
+    const handleExportToExcel = async () => {
         const data = filteredOrders.map((order) => ({
+            'STT': '',
             'Ngày tạo': order.date ? new Date(order.date).toLocaleDateString('vi-VN') : '-',
             'Mã đơn hàng': order.code || '-',
             'Tổng tiền (VNĐ)': order.totalValue || 0,
@@ -140,7 +141,13 @@ const PurchaseOrderPage = () => {
             'Nhà cung cấp': order.customerName || '-',
         }));
 
+        // Thêm STT
+        data.forEach((item, index) => {
+            item['STT'] = index + 1;
+        });
+
         const headers = [
+            'STT',
             'Ngày tạo',
             'Mã đơn hàng',
             'Tổng tiền (VNĐ)',
@@ -149,12 +156,105 @@ const PurchaseOrderPage = () => {
             'Nhà cung cấp',
         ];
 
-        const worksheet = XLSX.utils.json_to_sheet(data.length ? data : [{}], { header: headers });
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'DonHangMua');
+        // Tạo workbook mới
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Đơn Mua Hàng');
 
-        const fileName = `DonHangMua_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
-        XLSX.writeFile(workbook, fileName);
+        // Thêm tiêu đề
+        const titleRow = worksheet.addRow(['ĐƠN MUA HÀNG']);
+        titleRow.height = 30;
+        worksheet.mergeCells('A1:G1');
+        
+        // Định dạng tiêu đề
+        const titleCell = worksheet.getCell('A1');
+        titleCell.font = { bold: true, size: 18 };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        titleCell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+
+        // Thêm header
+        const headerRow = worksheet.addRow(headers);
+        headerRow.height = 25;
+        
+        // Định dạng header
+        headerRow.eachCell((cell, colNumber) => {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFD3D3D3' }
+            };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+
+        // Thêm dữ liệu
+        data.forEach((row) => {
+            const dataRow = worksheet.addRow(headers.map(header => row[header]));
+            dataRow.height = 20;
+            
+            dataRow.eachCell((cell, colNumber) => {
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+        });
+
+        // Thêm dòng tổng
+        const totalAmount = data.reduce((sum, item) => sum + (item['Tổng tiền (VNĐ)'] || 0), 0);
+        const totalRow = worksheet.addRow(['Tổng', '', '', totalAmount, '', '', '']);
+        totalRow.height = 25;
+        worksheet.mergeCells(`A${totalRow.number}:B${totalRow.number}`);
+        
+        // Định dạng dòng tổng
+        totalRow.eachCell((cell, colNumber) => {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFD3D3D3' }
+            };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+
+        // Auto-size columns
+        worksheet.columns.forEach(column => {
+            let maxLength = 0;
+            column.eachCell({ includeEmpty: true }, (cell) => {
+                const columnLength = cell.value ? cell.value.toString().length : 10;
+                if (columnLength > maxLength) {
+                    maxLength = columnLength;
+                }
+            });
+            column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        });
+
+        // Xuất file
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `DonHangMua_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
+        link.click();
+        window.URL.revokeObjectURL(url);
     };
 
     if (loading) {
