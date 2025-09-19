@@ -25,7 +25,8 @@ type GlassStructure = {
 };
 
 const SalesOrderEditPage = () => {
-    const { id } = useParams();
+    const params = useParams();
+    const id = params?.id as string;
     const router = useRouter();
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
     const [glassStructures, setGlassStructures] = useState<{ id: number; productName: string; unitPrice: number }[]>([]);
@@ -93,7 +94,7 @@ const SalesOrderEditPage = () => {
         orderCode: '',
         discount: 0,
         status: 'Pending',
-        deliveryStatus: 'NotShipped',
+        deliveryStatus: 'NotDelivered',
         orderItems: [],
         isUpdateMisa: false,
     });
@@ -109,7 +110,7 @@ const SalesOrderEditPage = () => {
                 orderDate: new Date(data.orderDate).toLocaleDateString(),
                 orderCode: data.orderCode,
                 discount: data.discount * 100,
-                status: data.status,
+                status: getStatusString(Number(data.status)),
                 deliveryStatus: data.deliveryStatus,
                 orderItems: data.products,
                 isUpdateMisa: data.isUpdateMisa,
@@ -126,6 +127,16 @@ const SalesOrderEditPage = () => {
         { value: 'Delivered', label: 'Hoàn thành' },
         { value: 'Cancelled', label: 'Đã hủy' },
     ];
+
+    const getStatusString = (statusNumber: number): string => {
+        switch (statusNumber) {
+            case 0: return 'Pending';
+            case 1: return 'Processing';
+            case 2: return 'Delivered';
+            case 3: return 'Cancelled';
+            default: return 'Pending';
+        }
+    };
 
     const DELIVERY_STATUS_OPTIONS = [
         { value: 'NotDelivered', label: 'Chưa giao' },
@@ -292,29 +303,31 @@ const SalesOrderEditPage = () => {
             }
 
             const payload = {
-                customerName: form.customer,
-                address: form.address,
-                phone: form.phone,
-                discount: form.discount / 100,
-                status: form.status,
-                deliveryStatus: form.deliveryStatus,
-                isUpdateMisa: form.isUpdateMisa,
-                products: form.orderItems.map((item) => ({
+                customerName: form.customer || '',
+                address: form.address || '',
+                phone: form.phone || '',
+                discount: Math.max(0, Math.min(1, (form.discount || 0) / 100)), // Ensure discount is between 0 and 1
+                status: form.status || 'Pending',
+                deliveryStatus: form.deliveryStatus || 'NotDelivered',
+                isUpdateMisa: form.isUpdateMisa || false,
+                products: form.orderItems.map(item => ({
                     productId: item.productId,
-                    productCode: item.productCode,
-                    productName: item.productName,
-                    height: item.height.toString(),
-                    width: item.width.toString(),
-                    thickness: item.thickness,
-                    unitPrice: item.unitPrice,
                     quantity: item.quantity,
-                    glassStructureId: item.glassStructureId,
-                })),
+                    unitPrice: item.unitPrice,
+                    productName: item.productName,
+                    productCode: item.productCode || '',
+                    height: item.height?.toString() || '',
+                    width: item.width?.toString() || '',
+                    thickness: item.thickness,
+                    glassStructureId: item.glassStructureId
+                }))
             };
 
             await updateOrderDetailById(Number(id), payload);
             alert('Cập nhật thành công!');
-            router.push(`/sales-order/${id}`);
+            
+            // Force reload the page to ensure updated data is shown
+            window.location.href = `/sales-order/${id}`;
         } catch (err: any) {
             console.error('Lỗi cập nhật:', err.response?.data || err.message);
             alert('Cập nhật thất bại! ' + (err.response?.data?.title || err.message));
@@ -359,7 +372,7 @@ const SalesOrderEditPage = () => {
                         style={{ height: '35px' }}
                         type="number"
                         value={form.discount}
-                        onChange={(e) => setForm((prev) => ({ ...prev, discount: parseFloat(e.target.value) }))}
+                        onChange={(e) => setForm((prev) => ({ ...prev, discount: parseFloat(e.target.value) || 0 }))}
                         className="input input-bordered w-full"
                         min={0}
                         max={100}
