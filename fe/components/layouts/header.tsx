@@ -56,9 +56,9 @@ const Header = () => {
   console.log("Attempting to establish SignalR connection...");
 
   const connection = new signalR.HubConnectionBuilder()
-    .withUrl("https://localhost:7075/saleOrderHub")
-    .withAutomaticReconnect()
-    .build();
+      .withUrl(`${process.env.NEXT_PUBLIC_BASE_URL}/saleOrderHub`)
+      .withAutomaticReconnect()
+      .build();
 
   connection.on("SaleOrderCreated", (data) => {
     console.log("📦 SaleOrderCreated event received:", data);
