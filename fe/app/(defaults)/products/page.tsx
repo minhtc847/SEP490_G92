@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getProducts, Product } from './service';
+import { getProducts, Product, getProductsNotUpdated, updateManyProducts } from './service';
 import IconEye from '@/components/icon/icon-eye';
 import IconEdit from '@/components/icon/icon-edit';
 import IconTrash from '@/components/icon/icon-trash-lines';
@@ -36,6 +36,8 @@ const ProductListPage = () => {
     const [uomFilter, setUomFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [updateMessage, setUpdateMessage] = useState('');
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -87,6 +89,40 @@ const ProductListPage = () => {
         }
     };
 
+    const handleUpdateAllProducts = async () => {
+        try {
+            setIsUpdating(true);
+            setUpdateMessage('');
+            
+            // Lấy danh sách sản phẩm chưa cập nhật
+            const productsNotUpdated = await getProductsNotUpdated();
+            
+            if (productsNotUpdated.length === 0) {
+                setUpdateMessage('Không có sản phẩm nào cần cập nhật!');
+                return;
+            }
+
+            const confirmed = confirm(`Bạn có chắc chắn muốn cập nhật ${productsNotUpdated.length} sản phẩm chưa cập nhật lên MISA?`);
+            if (!confirmed) return;
+
+            // Gọi API update tất cả sản phẩm
+            await updateManyProducts(productsNotUpdated);
+            
+            setUpdateMessage(`Đã gửi yêu cầu cập nhật ${productsNotUpdated.length} sản phẩm lên MISA. Quá trình này sẽ chạy trong background.`);
+            
+            // Refresh danh sách sản phẩm sau 2 giây
+            setTimeout(() => {
+                router.refresh();
+            }, 2000);
+            
+        } catch (err) {
+            console.error('Lỗi khi cập nhật sản phẩm:', err);
+            setUpdateMessage('Có lỗi xảy ra khi cập nhật sản phẩm!');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
     const handleExportToExcel = async () => {
         const data = filteredProducts.map((p) => ({
             'STT': '',
@@ -98,7 +134,7 @@ const ProductListPage = () => {
 
         // Thêm STT
         data.forEach((item, index) => {
-            item['STT'] = index + 1;
+            item['STT'] = (index + 1).toString();
         });
 
         const headers = ['STT', 'Tên sản phẩm', 'Loại SP', 'Đơn vị tính', 'Cập nhật MISA'];
@@ -145,32 +181,32 @@ const ProductListPage = () => {
         });
 
         // Thêm dữ liệu
-        data.forEach((row) => {
-            const dataRow = worksheet.addRow(headers.map(header => row[header]));
-            dataRow.height = 20;
+        // data.forEach((row) => {
+        //     const dataRow = worksheet.addRow(headers.map(header => row[header]));
+        //     dataRow.height = 20;
             
-            dataRow.eachCell((cell, colNumber) => {
-                cell.border = {
-                    top: { style: 'thin' },
-                    left: { style: 'thin' },
-                    bottom: { style: 'thin' },
-                    right: { style: 'thin' }
-                };
-            });
-        });
+        //     dataRow.eachCell((cell, colNumber) => {
+        //         cell.border = {
+        //             top: { style: 'thin' },
+        //             left: { style: 'thin' },
+        //             bottom: { style: 'thin' },
+        //             right: { style: 'thin' }
+        //         };
+        //     });
+        // });
 
 
         // Auto-size columns
-        worksheet.columns.forEach(column => {
-            let maxLength = 0;
-            column.eachCell({ includeEmpty: true }, (cell) => {
-                const columnLength = cell.value ? cell.value.toString().length : 10;
-                if (columnLength > maxLength) {
-                    maxLength = columnLength;
-                }
-            });
-            column.width = Math.min(Math.max(maxLength + 2, 10), 50);
-        });
+        // worksheet.columns.forEach(column => {
+        //     let maxLength = 0;
+        //     column.eachCell({ includeEmpty: true }, (cell) => {
+        //         const columnLength = cell.value != null ? cell.value.toString().length : 10;
+        //         if (columnLength > maxLength) {
+        //             maxLength = columnLength;
+        //         }
+        //     });
+        //     column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        // });
 
         // Xuất file
         const buffer = await workbook.xlsx.writeBuffer();
@@ -189,6 +225,13 @@ const ProductListPage = () => {
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold text-gray-800">Danh sách sản phẩm</h2>
                     <div className="flex items-center gap-2">
+                        <button 
+                            onClick={handleUpdateAllProducts} 
+                            disabled={isUpdating}
+                            className="px-4 py-2 text-sm text-white bg-orange-600 rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isUpdating ? 'Đang cập nhật...' : 'Cập nhật tất cả sản phẩm chưa cập nhật'}
+                        </button>
                         <button onClick={handleExportToExcel} className="px-4 py-2 text-sm text-white bg-gray-600 rounded hover:bg-gray-700">
                             Xuất excel
                         </button>
@@ -206,6 +249,15 @@ const ProductListPage = () => {
                 {deleted && (
                     <div className="mb-4 p-3 rounded-xl bg-red-100 text-red-800 border border-red-300">
                         🗑️ Đã xoá sản phẩm: <strong>{deleted}</strong>
+                    </div>
+                )}
+                {updateMessage && (
+                    <div className={`mb-4 p-3 rounded-xl border ${
+                        updateMessage.includes('lỗi') || updateMessage.includes('thất bại') 
+                            ? 'bg-red-100 text-red-800 border-red-300'
+                            : 'bg-blue-100 text-blue-800 border-blue-300'
+                    }`}>
+                        {updateMessage.includes('lỗi') || updateMessage.includes('thất bại') ? '❌' : '🔄'} {updateMessage}
                     </div>
                 )}
 

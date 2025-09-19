@@ -349,7 +349,7 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                                                         }
                                                         
                                                         Swal.fire({
-                                                            title: 'Cập nhật lên Misa thành công!',
+                                                            title: 'Đồng bộ lên Misa thành công!',
                                                             toast: true,
                                                             position: 'bottom-start',
                                                             showConfirmButton: false,
@@ -378,7 +378,7 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                                         }}
                                         disabled={isMisaUpdating}
                                         className={`px-3 py-1 text-sm border rounded-md transition-colors ${isMisaUpdating ? 'border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed' : 'border-purple-300 text-purple-700 bg-white hover:bg-purple-50'}`}
-                                        title="Cập nhật lên Misa"
+                                        title="Đồng bộ Misa"
                                     >
                                         {isMisaUpdating ? 'Đang cập nhật Misa...' : 'Cập nhật lên Misa'}
                                     </button>

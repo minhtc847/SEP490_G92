@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { IRootState } from '@/store';
-import { getPurchaseOrders, PurchaseOrderDto } from './service';
+import { getPurchaseOrders, PurchaseOrderDto, getPurchaseOrdersNotUpdated, updateManyPurchaseOrders } from './service';
 import { FiSearch } from 'react-icons/fi';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import ExcelJS from 'exceljs';
@@ -89,6 +89,8 @@ const PurchaseOrderPage = () => {
     const router = useRouter();
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [updateMessage, setUpdateMessage] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -133,6 +135,40 @@ const PurchaseOrderPage = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
 
+    const handleUpdateAllOrders = async () => {
+        try {
+            setIsUpdating(true);
+            setUpdateMessage('');
+            
+            // Lấy danh sách đơn hàng chưa cập nhật
+            const ordersNotUpdated = await getPurchaseOrdersNotUpdated();
+            
+            if (ordersNotUpdated.length === 0) {
+                setUpdateMessage('Không có đơn hàng nào cần cập nhật!');
+                return;
+            }
+
+            const confirmed = confirm(`Bạn có chắc chắn muốn cập nhật ${ordersNotUpdated.length} đơn hàng chưa cập nhật lên MISA?`);
+            if (!confirmed) return;
+
+            // Gọi API update tất cả đơn hàng
+            await updateManyPurchaseOrders(ordersNotUpdated);
+            
+            setUpdateMessage(`Đã gửi yêu cầu cập nhật ${ordersNotUpdated.length} đơn hàng lên MISA. Quá trình này sẽ chạy trong background.`);
+            
+            // Refresh danh sách đơn hàng sau 2 giây
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+            
+        } catch (err) {
+            console.error('Lỗi khi cập nhật đơn hàng:', err);
+            setUpdateMessage('Có lỗi xảy ra khi cập nhật đơn hàng!');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
     const handleExportToExcel = async () => {
         const data = filteredOrders.map((order) => ({
             'STT': '',
@@ -145,9 +181,9 @@ const PurchaseOrderPage = () => {
         }));
 
         // Thêm STT
-        data.forEach((item, index) => {
-            item['STT'] = index + 1;
-        });
+        // data.forEach((item, index) => {
+        //     item['STT'] = index + 1;
+        // });
 
         const headers = [
             'STT',
@@ -201,19 +237,19 @@ const PurchaseOrderPage = () => {
         });
 
         // Thêm dữ liệu
-        data.forEach((row) => {
-            const dataRow = worksheet.addRow(headers.map(header => row[header]));
-            dataRow.height = 20;
+        // data.forEach((row) => {
+        //     const dataRow = worksheet.addRow(headers.map(header => row[header]));
+        //     dataRow.height = 20;
             
-            dataRow.eachCell((cell, colNumber) => {
-                cell.border = {
-                    top: { style: 'thin' },
-                    left: { style: 'thin' },
-                    bottom: { style: 'thin' },
-                    right: { style: 'thin' }
-                };
-            });
-        });
+        //     dataRow.eachCell((cell, colNumber) => {
+        //         cell.border = {
+        //             top: { style: 'thin' },
+        //             left: { style: 'thin' },
+        //             bottom: { style: 'thin' },
+        //             right: { style: 'thin' }
+        //         };
+        //     });
+        // });
 
         // Thêm dòng tổng
         const totalAmount = data.reduce((sum, item) => sum + (item['Tổng tiền (VNĐ)'] || 0), 0);
@@ -238,16 +274,16 @@ const PurchaseOrderPage = () => {
         });
 
         // Auto-size columns
-        worksheet.columns.forEach(column => {
-            let maxLength = 0;
-            column.eachCell({ includeEmpty: true }, (cell) => {
-                const columnLength = cell.value ? cell.value.toString().length : 10;
-                if (columnLength > maxLength) {
-                    maxLength = columnLength;
-                }
-            });
-            column.width = Math.min(Math.max(maxLength + 2, 10), 50);
-        });
+        // worksheet.columns.forEach(column => {
+        //     let maxLength = 0;
+        //     column.eachCell({ includeEmpty: true }, (cell) => {
+        //         const columnLength = cell.value ? cell.value.toString().length : 10;
+        //         if (columnLength > maxLength) {
+        //             maxLength = columnLength;
+        //         }
+        //     });
+        //     column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        // });
 
         // Xuất file
         const buffer = await workbook.xlsx.writeBuffer();
@@ -271,6 +307,13 @@ const PurchaseOrderPage = () => {
             <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Danh sách đơn hàng mua</h2>
                 <div className="flex items-center gap-2">
+                    <button 
+                        onClick={handleUpdateAllOrders} 
+                        disabled={isUpdating}
+                        className="px-4 py-2 text-sm text-white bg-orange-600 rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isUpdating ? 'Đang cập nhật...' : 'Cập nhật tất cả đơn hàng chưa cập nhật'}
+                    </button>
                     <button className="px-4 py-2 text-sm text-white bg-gray-600 rounded hover:bg-gray-700" onClick={handleExportToExcel}>
                         Xuất Excel
                     </button>
@@ -282,6 +325,16 @@ const PurchaseOrderPage = () => {
                     )}
                 </div>
             </div>
+
+            {updateMessage && (
+                <div className={`mb-4 p-3 rounded-xl border ${
+                    updateMessage.includes('lỗi') || updateMessage.includes('thất bại') 
+                        ? 'bg-red-100 text-red-800 border-red-300'
+                        : 'bg-blue-100 text-blue-800 border-blue-300'
+                }`}>
+                    {updateMessage.includes('lỗi') || updateMessage.includes('thất bại') ? '❌' : '🔄'} {updateMessage}
+                </div>
+            )}
 
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="relative w-full md:w-1/3">

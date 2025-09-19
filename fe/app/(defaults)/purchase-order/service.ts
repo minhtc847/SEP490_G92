@@ -58,3 +58,39 @@ export const updateMisaPurchaseOrder = async (orderId: number): Promise<void> =>
         throw error;
     }
 };
+
+export const getPurchaseOrdersNotUpdated = async (): Promise<PurchaseOrderDto[]> => {
+    try {
+        const response = await axios.get<PurchaseOrderDto[]>("/api/PurchaseOrder");
+        return response.data.filter(order => !order.isUpdateMisa);
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const updateManyPurchaseOrders = async (orders: PurchaseOrderDto[]): Promise<void> => {
+    try {
+        // Lấy dữ liệu chi tiết cho từng đơn hàng
+        const ordersWithDetails = await Promise.all(
+            orders.map(async (order) => {
+                const orderDetail = await axios.get(`/api/PurchaseOrder/${order.id}`);
+                return orderDetail.data;
+            })
+        );
+        
+        // Chuyển đổi dữ liệu thành format InputPO
+        const inputPOs = ordersWithDetails.map(order => ({
+            supplierName: order.customerName || order.supplierName || "",
+            date: order.date ? new Date(order.date).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN'),
+            ProductsInput: order.purchaseOrderDetails?.map((detail: any) => ({
+                ProductCode: detail.productName || "",
+                ProductQuantity: (detail.quantity || 0).toString(),
+                Price: (detail.unitPrice || 0).toString()
+            })) || []
+        }));
+        
+        await axios.post('/api/selenium/purchasing-order/add-many', inputPOs);
+    } catch (error) {
+        throw error;
+    }
+};
