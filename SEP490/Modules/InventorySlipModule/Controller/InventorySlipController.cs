@@ -50,18 +50,11 @@ namespace SEP490.Modules.InventorySlipModule.Controller
                 var jsonElement = (System.Text.Json.JsonElement)requestData;
                 var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true, PropertyNamingPolicy = null };
 
-                CreateInventorySlipDto dto = null;
+                var dto = System.Text.Json.JsonSerializer.Deserialize<CreateInventorySlipDto>(jsonElement.GetRawText(), options);
+
+                if (dto == null) return BadRequest(new { message = "Dữ liệu không hợp lệ!" });
+
                 MappingInfoDto mappingInfo = null;
-
-                if (jsonElement.TryGetProperty("formData", out var formDataElement))
-                {
-                    dto = System.Text.Json.JsonSerializer.Deserialize<CreateInventorySlipDto>(formDataElement.GetRawText(), options);
-                }
-                else
-                {
-                    dto = System.Text.Json.JsonSerializer.Deserialize<CreateInventorySlipDto>(jsonElement.GetRawText(), options);
-                }
-
                 if (jsonElement.TryGetProperty("productClassifications", out var productClassificationsElement))
                 {
                     var productClassifications = System.Text.Json.JsonSerializer.Deserialize<List<ProductClassificationDto>>(productClassificationsElement.GetRawText(), options);
@@ -76,8 +69,6 @@ namespace SEP490.Modules.InventorySlipModule.Controller
                         TempMappings = tempMappings ?? new List<CreateMaterialOutputMappingDto>()
                     };
                 }
-
-                if (dto == null) return BadRequest(new { message = "Dữ liệu không hợp lệ!" });
 
                 var result = await _inventorySlipService.UpdateInventorySlipAsync(id, dto, mappingInfo);
                 return Ok(new { message = "Cập nhật phiếu kho thành công!", data = result });
@@ -208,78 +199,17 @@ namespace SEP490.Modules.InventorySlipModule.Controller
             {                
                 var jsonElement = (System.Text.Json.JsonElement)requestData;
                 
-                CreateInventorySlipDto dto;
-                if (jsonElement.TryGetProperty("formData", out var formDataElement))
+                var options = new System.Text.Json.JsonSerializerOptions
                 {
-                    var options = new System.Text.Json.JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true,
-                        PropertyNamingPolicy = null
-                    };
-                    
-                    dto = System.Text.Json.JsonSerializer.Deserialize<CreateInventorySlipDto>(formDataElement.GetRawText(), options);
-                    
-                    // If deserialization fails, fall back to manual construction
-                    if (dto == null || dto.ProductionOrderId == 0 || dto.Details?.Count == 0)
-                    {
-                        // Deserialize the formData element as a generic object
-                        var formDataRaw = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(formDataElement.GetRawText());
-                        if (formDataRaw != null)
-                        {
-                            dto = new CreateInventorySlipDto
-                            {
-                                ProductionOrderId = Convert.ToInt32(formDataRaw["productionOrderId"].ToString()),
-                                Description = formDataRaw["description"]?.ToString() ?? "",
-                                Details = System.Text.Json.JsonSerializer.Deserialize<List<CreateInventorySlipDetailDto>>(
-                                    formDataRaw["details"].ToString(), options),
-                                Mappings = formDataRaw.ContainsKey("mappings") && formDataRaw["mappings"] != null
-                                    ? System.Text.Json.JsonSerializer.Deserialize<List<CreateMaterialOutputMappingDto>>(
-                                        formDataRaw["mappings"].ToString(), options)
-                                    : new List<CreateMaterialOutputMappingDto>()
-                            };
-                        }
-                    }
-                }
-                else
-                {
-                    var rawData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(jsonElement.GetRawText());
-                    if (rawData != null)
-                    {
-                        var fullJson = jsonElement.GetRawText();
-                        
-                        var options = new System.Text.Json.JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true,
-                            PropertyNamingPolicy = null
-                        };
-                        
-                        dto = System.Text.Json.JsonSerializer.Deserialize<CreateInventorySlipDto>(fullJson, options);
-                        
-                        if (dto == null || dto.ProductionOrderId == 0 || dto.Details?.Count == 0)
-                        {
-                            // Fallback to manual construction if direct deserialization fails
-                            dto = new CreateInventorySlipDto
-                            {
-                                ProductionOrderId = Convert.ToInt32(rawData["productionOrderId"].ToString()),
-                                Description = rawData["description"]?.ToString() ?? "",
-                                Details = System.Text.Json.JsonSerializer.Deserialize<List<CreateInventorySlipDetailDto>>(
-                                    rawData["details"].ToString(), options),
-                                Mappings = rawData.ContainsKey("mappings") && rawData["mappings"] != null
-                                    ? System.Text.Json.JsonSerializer.Deserialize<List<CreateMaterialOutputMappingDto>>(
-                                        rawData["mappings"].ToString(), options)
-                                    : new List<CreateMaterialOutputMappingDto>()
-                            };
-                        }
-                    }
-                    else
-                    {
-                        dto = null;
-                    }
-                }
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = null
+                };
+                
+                var dto = System.Text.Json.JsonSerializer.Deserialize<CreateInventorySlipDto>(jsonElement.GetRawText(), options);
 
                 if (dto == null)
                 {
-                    return BadRequest(new { message = "Dữ liệu không hợp lệ - DTO null!" });
+                    return BadRequest(new { message = "Dữ liệu không hợp lệ!" });
                 }
 
                 if (!await _inventorySlipService.ValidateSlipCreationAsync(dto))

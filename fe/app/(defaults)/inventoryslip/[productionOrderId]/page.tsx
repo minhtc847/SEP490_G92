@@ -287,6 +287,7 @@ const ProductionOrderInventorySlipPage = () => {
                             Quản lý phiếu kho - Lệnh sản xuất {productionOrderInfo.productionOrderCode}
                         </h1>
                         <div className="text-gray-600">
+                            <p><strong>Thuộc lệnh sản xuất:</strong> {productionOrderInfo.id}</p>
                             <p><strong>Loại:</strong> {getSlipTypeText(productionOrderInfo.type)}</p>
                             <p><strong>Mô tả:</strong> {productionOrderInfo.description || 'Không có mô tả'}</p>
                         </div>
@@ -569,47 +570,14 @@ const ProductionOrderInventorySlipPage = () => {
                 </div>
             )}
 
-            {/* Material Export Form Modal */}
+            {/* Material Export Form Modal - inner component renders its own shell */}
             {showMaterialExportForm && (
-                <div 
-                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4"
-                    onClick={() => setShowMaterialExportForm(false)}
-                >
-                    <div 
-                        className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto relative"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Header */}
-                        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-lg">
-                            <div>
-                                <h3 className="text-xl font-semibold text-gray-900">
-                                    {productionOrderInfo?.type === 'Ghép kính' ? 'Tạo phiếu xuất keo butyl' : 'Tạo phiếu xuất hóa chất'}
-                                </h3>
-                                <p className="text-sm text-gray-600 mt-1">
-                                    Lệnh sản xuất: {productionOrderInfo?.productionOrderCode}
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => setShowMaterialExportForm(false)}
-                                className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full"
-                                title="Đóng"
-                            >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        
-                        {/* Content */}
-                        <div className="p-6">
-                            <MaterialExportSlipForm
-                                productionOrderInfo={productionOrderInfo!}
-                                onSlipCreated={handleMaterialExportSlipCreated}
-                                onCancel={() => setShowMaterialExportForm(false)}
-                            />
-                        </div>
-                    </div>
-                </div>
+                <MaterialExportSlipForm
+                    productionOrderInfo={productionOrderInfo!}
+                    onSlipCreated={handleMaterialExportSlipCreated}
+                    onCancel={() => setShowMaterialExportForm(false)}
+                    asModal
+                />
             )}
 
             <div className="bg-white border rounded-lg shadow-sm p-6">

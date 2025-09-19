@@ -39,6 +39,11 @@ const ProductionPlanDetailPage = () => {
     const [materialDetail, setMaterialDetail] = useState<ProductionPlanMaterialDetail | null>(null);
     const [completing, setCompleting] = useState(false);
     
+    // Derived conditions for completing plan
+    const allOrdersCompleted = productionOrders.length > 0 && productionOrders.every((o) => (o.productionStatus || '').toString() === 'Completed');
+    const allProductsDone = productDetails.length > 0 && productDetails.every((p) => (p.completed || 0) >= (p.totalQuantity || 0));
+    const canCompletePlan = allOrdersCompleted && allProductsDone;
+    
 
     
     const isRtl = useSelector((state: IRootState) => state.themeConfig.rtlClass === 'rtl');
@@ -554,8 +559,8 @@ const ProductionPlanDetailPage = () => {
                         <button
                             type="button"
                             onClick={handleCompleteProductionPlan}
-                            disabled={completing}
-                            className={`btn ${completing ? 'btn-warning' : 'btn-success'} ${completing ? 'opacity-75' : ''}`}
+                            disabled={completing || !canCompletePlan}
+                            className={`btn ${completing || !canCompletePlan ? 'btn-warning opacity-75' : 'btn-success'} ${completing ? 'opacity-75' : ''}`}
                         >
                             {completing ? (
                                 <>

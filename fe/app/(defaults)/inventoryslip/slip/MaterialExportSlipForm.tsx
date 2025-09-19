@@ -10,6 +10,7 @@ interface MaterialExportSlipFormProps {
     onSlipCreated: (slip: any) => void;
     onCancel: () => void;
     initialSlip?: InventorySlip | null; // Prefill for update
+    asModal?: boolean; // Render with its own modal shell
 }
 
 interface TargetProduct {
@@ -39,6 +40,7 @@ export default function MaterialExportSlipForm({
     onSlipCreated,
     onCancel,
     initialSlip,
+    asModal = false,
 }: MaterialExportSlipFormProps) {
     const MySwal = withReactContent(Swal);
     const [formData, setFormData] = useState<CreateInventorySlipDto>({
@@ -51,6 +53,7 @@ export default function MaterialExportSlipForm({
     const [targetProducts, setTargetProducts] = useState<TargetProduct[]>([]);
     const [selectedMaterials, setSelectedMaterials] = useState<MaterialForTarget[]>([]);
     const [loading, setLoading] = useState(false);
+    const [plannedMaterialsMap, setPlannedMaterialsMap] = useState<Record<number, Record<number, number>>>({});
 
     const isButylGlueSlip = productionOrderInfo.type === 'Ghép kính';
     const isChemicalExportSlip = ['Sản xuất keo', 'Đổ keo'].includes(productionOrderInfo.type);
@@ -83,7 +86,6 @@ export default function MaterialExportSlipForm({
             targetQuantity: 0,
         }));
 
-        // Derive selected targets and quantities from existing slip (target product details)
         const targetsFromSlip = (initialSlip.details || [])
             .filter(d => d.productId === null && d.productionOutputId)
             .map(d => ({ productionOutputId: d.productionOutputId!, targetQuantity: d.quantity }));
@@ -95,7 +97,8 @@ export default function MaterialExportSlipForm({
         }));
         setTargetProducts(mergedTargets);
 
-        // Prefill materials used for each target (details with productId not null)
+
+        // Prefill materials 
         const materials = (initialSlip.details || []).filter(d => d.productId !== null && d.productionOutputId);
         const prefillSelectedMaterials = materials.map(m => ({
             productionOutputId: m.productionOutputId!,
@@ -108,6 +111,29 @@ export default function MaterialExportSlipForm({
             note: m.note || '',
         }));
         setSelectedMaterials(prefillSelectedMaterials);
+
+        // Load planned materials for existing targets to enable over-usage check on update
+        (async () => {
+            try {
+                const targetIds = Array.from(new Set((targetsFromSlip || []).map(x => x.productionOutputId)));
+                if (targetIds.length === 0) return;
+                const results = await Promise.all(targetIds.map(id => fetchMaterialsByProductionOutput(id)));
+                const map: Record<number, Record<number, number>> = {};
+                results.forEach((arr, idx) => {
+                    const tId = targetIds[idx];
+                    map[tId] = {};
+                    (arr || []).forEach((pm: ProductionMaterial) => {
+                        map[tId][pm.productId] = Number(pm.amount || 0);
+                    });
+                });
+                setPlannedMaterialsMap(map);
+                
+                setSelectedMaterials(prev => prev.map(m => ({
+                    ...m,
+                    amount: map[m.productionOutputId]?.[m.productId] ?? m.amount ?? 0,
+                })));
+            } catch (e) {  }
+        })();
     }, [initialSlip, productionOrderInfo]);
 
     const loadTargetProducts = async () => {
@@ -149,7 +175,6 @@ export default function MaterialExportSlipForm({
             const materials = await fetchMaterialsByProductionOutput(target.id);
 
             if (materials && materials.length > 0) {
-                // Chuyển đổi ProductionMaterial thành MaterialForTarget
                 const targetMaterials: MaterialForTarget[] = materials.map(material => ({
                     productionOutputId: material.productionOutputId,
                     productId: material.productId,
@@ -270,6 +295,42 @@ export default function MaterialExportSlipForm({
             return;
         }
 
+
+
+        let overUsageWarnings: string[] = [];
+        if (isChemicalExportSlip || isButylGlueSlip) {
+            // Index targets by id for quick lookup
+            const targetById = new Map<number, TargetProduct>();
+            targetProducts.forEach(tp => targetById.set(tp.id, tp));
+
+            // Group entered materials by productionOutputId
+            const grouped: Record<number, MaterialForTarget[]> = {} as any;
+            validMaterials.forEach(m => {
+                if (!grouped[m.productionOutputId]) grouped[m.productionOutputId] = [] as MaterialForTarget[];
+                grouped[m.productionOutputId].push(m);
+            });
+
+            Object.keys(grouped).forEach(key => {
+                const productionOutputId = Number(key);
+                const t = targetById.get(productionOutputId);
+                if (!t) return;
+                const totalPlanned = Number(t.amount || 0);
+                const produceQty = Number(t.targetQuantity || 0);
+                if (totalPlanned <= 0 || produceQty <= 0) return;
+
+                grouped[productionOutputId].forEach(mat => {
+                    const plannedMat = Number((mat.amount || plannedMaterialsMap[productionOutputId]?.[mat.productId]) || 0);
+                    const entered = Number(mat.quantity || 0);
+                    if (plannedMat <= 0 || entered <= 0) return;
+                    const perUnit = plannedMat / totalPlanned;
+                    const expected = perUnit * produceQty;
+                    if (entered > expected + 1e-6) {
+                        overUsageWarnings.push(`• Nguyên liệu "${mat.productName}" nhập ${entered} > định mức ${expected.toFixed(2)} cho sản phẩm "${t.productName}" (${produceQty} ${t.uom || ''})`);
+                    }
+                });
+            });
+        }
+
         // convert selectedMaterials to formData.details
         const details: CreateInventorySlipDetailDto[] = validMaterials.map((material, index) => ({
             productId: material.productId,
@@ -305,15 +366,21 @@ export default function MaterialExportSlipForm({
             productionOutputTargets
         };
 
-        MySwal.fire({
+        const confirmOptions: any = {
             title: isUpdateMode ? 'Xác nhận cập nhật phiếu' : 'Xác nhận tạo phiếu',
-            text: isUpdateMode ? 'Bạn có chắc chắn muốn cập nhật phiếu xuất này?' : 'Bạn có chắc chắn muốn tạo phiếu xuất này?',
-            icon: 'question',
+            icon: overUsageWarnings.length > 0 ? 'warning' : 'question',
             showCancelButton: true,
             confirmButtonText: 'Xác nhận',
             cancelButtonText: 'Hủy',
             customClass: { popup: 'sweet-alerts' },
-        }).then((result) => {
+        };
+        if (overUsageWarnings.length > 0) {
+            confirmOptions.html = `<div class="text-left">${overUsageWarnings.map(w => `<div class=\"mb-1\">${w}</div>`).join('')}</div>`;
+        } else {
+            confirmOptions.text = isUpdateMode ? 'Bạn có chắc chắn muốn cập nhật phiếu xuất này?' : 'Bạn có chắc chắn muốn tạo phiếu xuất này?';
+        }
+
+        MySwal.fire(confirmOptions).then((result: any) => {
             if (result.isConfirmed) {
                 handleConfirmCreate(builtDto);
             }
@@ -383,11 +450,18 @@ export default function MaterialExportSlipForm({
         return true;
     };
 
-    return (
+    const content = (
         <div className="max-w-6xl mx-auto p-6 bg-white rounded-lg shadow">
-            <h2 className="text-2xl font-bold mb-6">
+            <h2 className="text-2xl font-bold mb-2">
                 {isUpdateMode ? `Cập nhật ${getSlipTypeText()}` : `Tạo ${getSlipTypeText()} mới`}
             </h2>
+            <div className="mb-6 text-sm text-gray-600">
+                <div><strong>Thuộc lệnh sản xuất:</strong> {productionOrderInfo.id}</div>
+                <div><strong>Loại:</strong> {getSlipTypeText()}</div>
+                {productionOrderInfo.description && (
+                    <div><strong>Mô tả:</strong> {productionOrderInfo.description}</div>
+                )}
+            </div>
 
             <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 gap-4 mb-6">
@@ -726,6 +800,24 @@ export default function MaterialExportSlipForm({
                     </div>
                 </div>
             </form>
+        </div>
+    );
+
+    if (!asModal) return content;
+
+    return (
+        <div className="fixed inset-0 z-[1000]">
+            <div className="fixed inset-0 bg-black/50" onClick={onCancel} />
+            <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-end items-center rounded-t-lg">
+                    <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full" title="Đóng">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                <div className="p-6">
+                    {content}
+                </div>
+            </div>
         </div>
     );
 }
