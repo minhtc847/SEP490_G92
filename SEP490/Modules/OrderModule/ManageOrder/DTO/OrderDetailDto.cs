@@ -26,7 +26,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.DTO
         public decimal? AdhesiveThickness { get; set; }
         public int? GlassUnitPrice { get; set; }
         public string? Composition { get; set; }
-        public bool IsUpdateMisa { get; set; }
+        public int? IsUpdateMisa { get; set; }
     }
 
     public class OrderDetailDto

@@ -229,7 +229,7 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                         Thickness = p.Thickness,
                         UOM = p.UOM ?? "Tấm",
                         ProductType = "NVL",
-                        isupdatemisa = false
+                        isupdatemisa = 0
                     };
                     _context.Products.Add(product);
                     await _context.SaveChangesAsync();
@@ -372,7 +372,7 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
                 return (false, "Purchase order has no products.");
 
             var productsNotUpdated = order.PurchaseOrderDetails
-                .Where(d => d.ProductId.HasValue && d.Product != null && !d.Product.isupdatemisa)
+                .Where(d => d.ProductId.HasValue && d.Product != null && d.Product.isupdatemisa==0)
                 .Select(d => d.Product?.ProductName ?? "Unknown Product")
                 .ToList();
 

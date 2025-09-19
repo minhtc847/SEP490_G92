@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using RTools_NTS.Util;
 using SEP490.Background;
 using SEP490.DB;
+using SEP490.DB.Models;
 using SEP490.Hubs;
 using SEP490.Modules.InventorySlipModule.Service;
 using SEP490.Selenium.ImportExportInvoice;
@@ -26,16 +28,33 @@ namespace SEP490.Selenium.Controller
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IBackgroundTaskQueue _taskQueue;
+        private readonly SEP490DbContext _sEP490DbContext;
 
-        public SeleniumController(IServiceScopeFactory serviceScopeFactory, IBackgroundTaskQueue taskQueue)
+        public SeleniumController(IServiceScopeFactory serviceScopeFactory, 
+            IBackgroundTaskQueue taskQueue,
+            SEP490DbContext sEP490DbContext
+            )
         {
             _serviceScopeFactory = serviceScopeFactory;
             _taskQueue = taskQueue;
+            _sEP490DbContext = sEP490DbContext;
         }
 
         [HttpPost("product")]
         public IActionResult AddProductAsync(InputSingleProduct product)
         {
+            var addproduct = _sEP490DbContext.Products.FirstOrDefault(p => p.Id == product.ProductId);
+            if (addproduct == null)
+            {
+                return NotFound("Product not found.");
+            }
+            else
+            {
+                addproduct.isupdatemisa = 2;
+                _sEP490DbContext.Products.Update(addproduct);
+                _sEP490DbContext.SaveChanges();
+            }
+
             _taskQueue.Enqueue(async token =>
             {
                 try
@@ -53,6 +72,7 @@ namespace SEP490.Selenium.Controller
                     if (newProduct != null)
                     {
                         newProduct.ProductCode = productCode;
+                        newProduct.isupdatemisa = 1;
                         dbContext.Products.Update(newProduct);
                         await dbContext.SaveChangesAsync(token);
                     }

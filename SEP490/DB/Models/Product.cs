@@ -14,5 +14,5 @@ public class Product
     public decimal? UnitPrice { get; set; }
     public int? GlassStructureId { get; set; }
     public GlassStructure? GlassStructure { get; set; }
-    public bool isupdatemisa { get; set; } = false;
+    public int? isupdatemisa { get; set; } = 0;
 }
