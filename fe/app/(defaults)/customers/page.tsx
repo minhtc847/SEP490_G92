@@ -13,6 +13,7 @@ import IconUsers from '@/components/icon/icon-users';
 import { CustomerListDto, getCustomerList, deleteCustomerById } from './service';
 import { FiSearch } from 'react-icons/fi';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import * as XLSX from 'xlsx';
 
 const CustomersListPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -56,6 +57,22 @@ const CustomersListPage = () => {
         return matchesSearch && matchesType;
     });
 
+    const handleExportToExcel = () => {
+        const data = filtered.map((c) => ({
+            'Tên': c.customerName || '-',
+            'SĐT': c.phone || '-',
+            'Địa chỉ': c.address || '-',
+            'Loại': c.isSupplier ? 'Nhà cung cấp' : 'Khách hàng',
+            'Chiết khấu (%)': (c.discount ?? 0) * 100,
+        }));
+        const headers = ['Tên', 'SĐT', 'Địa chỉ', 'Loại', 'Chiết khấu (%)'];
+        const worksheet = XLSX.utils.json_to_sheet(data.length ? data : [{}], { header: headers });
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'KhachHang');
+        const fileName = `KhachHang_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+    };
+
     if (loading) return <div className="panel">Đang tải dữ liệu...</div>;
 
     return (
@@ -82,12 +99,15 @@ const CustomersListPage = () => {
                             </select>
                         </div>
 
-                        <Link href="/customers/create">
-                            <button className="btn btn-success">
-                                <IconPlus className="mr-2" />
-                                Thêm khách hàng
-                            </button>
-                        </Link>
+                        <div className="flex items-center gap-2">
+                            <button className="btn btn-secondary" onClick={handleExportToExcel}>Xuất excel</button>
+                            <Link href="/customers/create">
+                                <button className="btn btn-success">
+                                    <IconPlus className="mr-2" />
+                                    Thêm khách hàng
+                                </button>
+                            </Link>
+                        </div>
                     </div>
                     <br />
 

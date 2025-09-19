@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getPurchaseOrders, PurchaseOrderDto } from './service';
 import { FiSearch } from 'react-icons/fi';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import * as XLSX from 'xlsx';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -129,6 +130,33 @@ const PurchaseOrderPage = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
 
+    const handleExportToExcel = () => {
+        const data = filteredOrders.map((order) => ({
+            'Ngày tạo': order.date ? new Date(order.date).toLocaleDateString('vi-VN') : '-',
+            'Mã đơn hàng': order.code || '-',
+            'Tổng tiền (VNĐ)': order.totalValue || 0,
+            'Trạng thái': getStatusText(order.status || ''),
+            'MISA': order.isUpdateMisa ? 'Đã cập nhật' : 'Chưa cập nhật',
+            'Nhà cung cấp': order.customerName || '-',
+        }));
+
+        const headers = [
+            'Ngày tạo',
+            'Mã đơn hàng',
+            'Tổng tiền (VNĐ)',
+            'Trạng thái',
+            'MISA',
+            'Nhà cung cấp',
+        ];
+
+        const worksheet = XLSX.utils.json_to_sheet(data.length ? data : [{}], { header: headers });
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'DonHangMua');
+
+        const fileName = `DonHangMua_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+    };
+
     if (loading) {
         return <div className="p-6">Đang tải đơn hàng mua...</div>;
     }
@@ -139,9 +167,14 @@ const PurchaseOrderPage = () => {
         <div className="p-6 bg-white rounded-lg shadow">
             <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Danh sách đơn hàng mua</h2>
-                <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800" onClick={() => router.push('/purchase-order/create')}>
-                    + Thêm đơn hàng mua
-                </button>
+                <div className="flex items-center gap-2">
+                    <button className="px-4 py-2 text-sm text-white bg-gray-600 rounded hover:bg-gray-700" onClick={handleExportToExcel}>
+                        Xuất Excel
+                    </button>
+                    <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800" onClick={() => router.push('/purchase-order/create')}>
+                        + Thêm đơn hàng mua
+                    </button>
+                </div>
             </div>
 
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

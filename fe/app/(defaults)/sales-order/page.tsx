@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getOrders, OrderDto } from '@/app/(defaults)/sales-order/service';
 import { FiSearch } from 'react-icons/fi';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import * as XLSX from 'xlsx';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -140,6 +141,64 @@ const SalesOrderSummary = () => {
         alert('Đồng bộ thành công vào MISA!');
     };
 
+    const getStatusText = (status: number) => {
+        switch (status) {
+            case 0:
+                return 'Chưa thực hiện';
+            case 1:
+                return 'Đang thực hiện';
+            case 2:
+                return 'Hoàn thành';
+            case 3:
+                return 'Đã huỷ';
+            default:
+                return 'Không xác định';
+        }
+    };
+
+    const handleExportToExcel = () => {
+        const data = filteredOrders.map((order) => ({
+            'Tên Khách Hàng': order.customerName,
+            'Ngày Đặt': new Date(order.orderDate).toLocaleDateString('vi-VN'),
+            'Mã Đơn Hàng': order.orderCode,
+            'Thành Tiền (₫)': order.totalAmount,
+            'Trạng Thái': getStatusText(order.status),
+            'Giao Hàng': getDeliveryStatusText(order.deliveryStatus),
+            'Cập nhật MISA': order.isUpdateMisa ? 'Đã cập nhật' : 'Chưa cập nhật',
+        }));
+
+        // Nếu không có dữ liệu, vẫn xuất ra file với header
+        const headers = [
+            'Tên Khách Hàng',
+            'Ngày Đặt',
+            'Mã Đơn Hàng',
+            'Thành Tiền (₫)',
+            'Trạng Thái',
+            'Giao Hàng',
+            'Cập nhật MISA',
+        ];
+
+        const worksheet = XLSX.utils.json_to_sheet(data.length ? data : [{}], { header: headers });
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'DonHang');
+
+        // Định dạng số tiền thành kiểu số trong Excel (tùy chọn)
+        const amountCol = headers.indexOf('Thành Tiền (₫)');
+        if (amountCol >= 0) {
+            const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+            for (let R = 1; R <= range.e.r; R++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: R, c: amountCol });
+                const cell = worksheet[cellAddress];
+                if (cell && typeof cell.v === 'number') {
+                    cell.t = 'n';
+                }
+            }
+        }
+
+        const fileName = `TongHopDonHang_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+    };
+
     if (loading) {
         return <div className="p-6">Đang tải đơn hàng...</div>;
     }
@@ -150,9 +209,14 @@ const SalesOrderSummary = () => {
         <div className="p-6 bg-white rounded-lg shadow">
             <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Tóm tắt đơn hàng</h2>
-                <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800" onClick={() => router.push('/sales-order/create')}>
-                    + Thêm đơn hàng
-                </button>
+                <div className="flex items-center gap-2">
+                    <button className="px-4 py-2 text-sm text-white bg-gray-600 rounded hover:bg-gray-700" onClick={handleExportToExcel}>
+                         Xuất Excel
+                    </button>
+                    <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800" onClick={() => router.push('/sales-order/create')}>
+                        + Thêm đơn hàng
+                    </button>
+                </div>
             </div>
 
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

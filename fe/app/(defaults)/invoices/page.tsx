@@ -7,6 +7,7 @@ import { FiSearch } from 'react-icons/fi';
 import OrderSelectionModal from '@/components/invoices/OrderSelectionModal';
 import DeliverySelectionModal from '@/components/invoices/DeliverySelectionModal';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import * as XLSX from 'xlsx';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -180,7 +181,27 @@ const InvoiceSummary = () => {
                         >
                             + Tạo từ đơn giao hàng
                         </button>
-                        
+                        <button 
+                            className="px-4 py-2 text-sm text-white bg-gray-600 rounded hover:bg-gray-700" 
+                            onClick={() => {
+                                const data = filteredInvoices.map((invoice) => ({
+                                    'Mã Hóa Đơn': invoice.invoiceCode,
+                                    'Khách Hàng': invoice.customerName,
+                                    'Ngày Hóa Đơn': new Date(invoice.invoiceDate).toLocaleDateString('vi-VN'),
+                                    'Loại': getInvoiceTypeText(invoice.invoiceType),
+                                    'Tổng Tiền (₫)': invoice.totalAmount,
+                                    'Trạng Thái': getStatusText(invoice.status),
+                                }));
+                                const headers = ['Mã Hóa Đơn', 'Khách Hàng', 'Ngày Hóa Đơn', 'Loại', 'Tổng Tiền (₫)', 'Trạng Thái'];
+                                const worksheet = XLSX.utils.json_to_sheet(data.length ? data : [{}], { header: headers });
+                                const workbook = XLSX.utils.book_new();
+                                XLSX.utils.book_append_sheet(workbook, worksheet, 'HoaDon');
+                                const fileName = `HoaDon_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
+                                XLSX.writeFile(workbook, fileName);
+                            }}
+                        >
+                            Xuất excel
+                        </button>
                     </div>
                 </div>
 

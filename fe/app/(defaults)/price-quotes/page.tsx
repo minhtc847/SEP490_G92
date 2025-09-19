@@ -7,6 +7,7 @@ import IconEye from '@/components/icon/icon-eye';
 import IconEdit from '@/components/icon/icon-edit';
 import IconTrash from '@/components/icon/icon-trash-lines';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import * as XLSX from 'xlsx';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -57,9 +58,9 @@ const PriceQuotePage = () => {
     const router = useRouter();
     const [message, setMessage] = useState('');
     const searchParams = useSearchParams();
-    const deletedMessage = searchParams.get('deleted');
+    const deletedMessage = searchParams?.get('deleted');
     const [formData, setFormData] = useState<PriceQuoteDetail | null>(null);
-    const successMessage = searchParams.get('success');
+    const successMessage = searchParams?.get('success');
 
     useEffect(() => {
         const fetch = async () => {
@@ -108,14 +109,33 @@ const PriceQuotePage = () => {
         router.push('/price-quotes/create');
     };
 
+    const handleExportToExcel = () => {
+        const data = filteredQuotes.map((q) => ({
+            'Tên': q.productName,
+            'Mã SP': q.productCode,
+            'Đơn giá (₫)': q.unitPrice,
+        }));
+        const headers = ['Tên', 'Mã SP', 'Đơn giá (₫)'];
+        const worksheet = XLSX.utils.json_to_sheet(data.length ? data : [{}], { header: headers });
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'BaoGia');
+        const fileName = `BaoGia_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+    };
+
     return (
         <ProtectedRoute requiredRole={[1, 2]}>
             <div className="p-6 bg-white rounded-lg shadow">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold text-gray-800">Báo giá</h2>
-                    <button onClick={handleCreateNew} className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-xl shadow transition duration-200">
-                        + Thêm báo giá
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button onClick={handleExportToExcel} className="px-4 py-2 text-sm text-white bg-gray-600 rounded hover:bg-gray-700">
+                            Xuất excel
+                        </button>
+                        <button onClick={handleCreateNew} className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-xl shadow transition duration-200">
+                            + Thêm báo giá
+                        </button>
+                    </div>
                 </div>
 
                 {message && <div className="mb-4 p-3 rounded bg-green-100 text-green-800 border border-green-300">{message}</div>}

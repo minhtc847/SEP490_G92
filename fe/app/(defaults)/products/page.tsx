@@ -8,6 +8,7 @@ import IconEdit from '@/components/icon/icon-edit';
 import IconTrash from '@/components/icon/icon-trash-lines';
 import { deleteProduct } from './service';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import * as XLSX from 'xlsx';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     return (
@@ -38,8 +39,8 @@ const ProductListPage = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    const success = searchParams.get('success');
-    const deleted = searchParams.get('deleted');
+    const success = searchParams?.get('success');
+    const deleted = searchParams?.get('deleted');
 
     useEffect(() => {
         getProducts()
@@ -86,14 +87,35 @@ const ProductListPage = () => {
         }
     };
 
+    const handleExportToExcel = () => {
+        const data = filteredProducts.map((p) => ({
+            'Tên sản phẩm': p.productName || '-',
+            'Loại SP': p.productType || '-',
+            'Đơn vị tính': p.uom || '-',
+            'Cập nhật MISA': p.isupdatemisa === 1 ? 'Đã cập nhật' : 'Chưa cập nhật',
+        }));
+
+        const headers = ['Tên sản phẩm', 'Loại SP', 'Đơn vị tính', 'Cập nhật MISA'];
+        const worksheet = XLSX.utils.json_to_sheet(data.length ? data : [{}], { header: headers });
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'SanPham');
+        const fileName = `SanPham_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+    };
+
     return (
         <ProtectedRoute requiredRole={[1, 2]}>
             <div className="p-6 bg-white rounded-lg shadow">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold text-gray-800">Danh sách sản phẩm</h2>
-                    <button onClick={() => router.push('/products/create')} className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-xl shadow">
-                        + Thêm sản phẩm
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button onClick={handleExportToExcel} className="px-4 py-2 text-sm text-white bg-gray-600 rounded hover:bg-gray-700">
+                            Xuất excel
+                        </button>
+                        <button onClick={() => router.push('/products/create')} className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-xl shadow">
+                            + Thêm sản phẩm
+                        </button>
+                    </div>
                 </div>
 
                 {success && (

@@ -13,6 +13,7 @@ import IconUsers from '@/components/icon/icon-users';
 import { EmployeeListDto, getEmployeeList, deleteEmployeeById } from './service';
 import { FiSearch } from 'react-icons/fi';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import * as XLSX from 'xlsx';
 
 const EmployeesListPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -60,6 +61,22 @@ const EmployeesListPage = () => {
         return matchesSearch && matchesAccount;
     });
 
+    const handleExportToExcel = () => {
+        const data = filtered.map((e) => ({
+            'Họ và tên': e.fullName || '-',
+            'Số điện thoại': e.phone || '-',
+            'Email': e.email || '-',
+            'Địa chỉ': e.address || '-',
+            'Tài khoản': e.hasAccount ? 'Có tài khoản' : 'Chưa có tài khoản',
+        }));
+        const headers = ['Họ và tên', 'Số điện thoại', 'Email', 'Địa chỉ', 'Tài khoản'];
+        const worksheet = XLSX.utils.json_to_sheet(data.length ? data : [{}], { header: headers });
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'NhanVien');
+        const fileName = `NhanVien_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+    };
+
     if (loading) return <div className="panel">Đang tải dữ liệu...</div>;
 
     return (
@@ -96,12 +113,17 @@ const EmployeesListPage = () => {
                             </select>
                         </div>
 
-                        <Link href="/employees/create">
-                            <button className="btn btn-success">
-                                <IconPlus className="mr-2" />
-                                Thêm nhân viên
+                        <div className="flex items-center gap-2">
+                            <button className="btn btn-secondary" onClick={handleExportToExcel}>
+                                Xuất excel
                             </button>
-                        </Link>
+                            <Link href="/employees/create">
+                                <button className="btn btn-success">
+                                    <IconPlus className="mr-2" />
+                                    Thêm nhân viên
+                                </button>
+                            </Link>
+                        </div>
                     </div>
                     <br />
 
