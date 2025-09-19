@@ -17,7 +17,7 @@ export interface CreateProductDto {
     Thickness?: number | null;
     UnitPrice: number;
     GlassStructureId?: number | null;
-    Isupdatemisa?: boolean; // true = đã cập nhật, false = chưa cập nhật
+    Isupdatemisa?: number; // true = đã cập nhật, false = chưa cập nhật
     UOM?: string;
     ProductType?: string;
     Weight?: number | null;
@@ -32,7 +32,7 @@ export interface CreateOtherProductDto {
     Thickness?: number | null;
     UnitPrice?: number | null;
     GlassStructureId?: number | null;
-    Isupdatemisa?: boolean;
+    Isupdatemisa?: number;
     Weight?: number | null;
 }
 

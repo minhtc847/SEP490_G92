@@ -126,7 +126,7 @@ namespace SEP490.Modules.ProductModule.Controller
                 if (product == null)
                     return NotFound(new { message = "Không tìm thấy sản phẩm." });
 
-                product.isupdatemisa = true; // This will be stored as 1 in the database
+                product.isupdatemisa = 1; // This will be stored as 1 in the database
                 _context.SaveChanges();
 
                 return Ok(new { message = "Cập nhật trạng thái MISA thành công!", isupdatemisa = 1 });

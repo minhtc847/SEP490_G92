@@ -443,13 +443,13 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                     ProductCode = odp.Product?.ProductCode ?? "",
                     ProductName = odp.Product?.ProductName ?? "",
                     Quantity = odp.Quantity ?? 0,
-                    IsUpdateMisa = odp.Product?.isupdatemisa ?? false
+                    IsUpdateMisa = odp.Product?.isupdatemisa ?? 0
                 })
                 .ToList();
 
             var totalProducts = products.Count;
-            var updatedProducts = products.Count(p => p.IsUpdateMisa);
-            var notUpdatedProducts = products.Where(p => !p.IsUpdateMisa).ToList();
+            var updatedProducts = products.Count(p => p.IsUpdateMisa==2);
+            var notUpdatedProducts = products.Where(p => p.IsUpdateMisa==0).ToList();
 
             var canUpdateMisa = totalProducts > 0 && updatedProducts == totalProducts;
 

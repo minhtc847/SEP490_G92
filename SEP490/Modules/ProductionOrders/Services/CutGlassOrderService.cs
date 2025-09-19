@@ -221,7 +221,7 @@ namespace SEP490.Modules.ProductionOrders.Services
                 Weight = null,
                 UnitPrice = null,
                 GlassStructureId = null,
-                isupdatemisa = false
+                isupdatemisa = 0
             };
         }
 
