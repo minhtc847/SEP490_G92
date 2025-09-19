@@ -1,5 +1,16 @@
 import axios from '@/setup/axios';
 
+export interface UpdateOrderPayload {
+    customerName: string;
+    address: string;
+    phone: string;
+    discount: number;
+    status: string;
+    deliveryStatus: string;
+    isUpdateMisa: boolean;
+    products: UpdateProductDto[];
+}
+
 export interface UpdateProductDto {
     productId: number;
     productCode?: string;
@@ -12,16 +23,6 @@ export interface UpdateProductDto {
     glassStructureId?: number;
 }
 
-export interface UpdateOrderPayload {
-    customerName: string;
-    address: string;
-    phone: string;
-    discount: number;
-    status: string;
-    deliveryStatus: string;
-    isUpdateMisa: boolean;
-    products: UpdateProductDto[];
-}
 
 export interface OrderItem {
     id: number;
@@ -103,16 +104,6 @@ export interface UpdateProductDto {
     glassStructureId?: number;
 }
 
-export interface UpdateOrderPayload {
-    customerName: string;
-    address: string;
-    phone: string;
-    discount: number;
-    status: string;
-    deliveryStatus: string;
-    isUpdateMisa: boolean;
-    products: UpdateProductDto[];
-}
 
 export interface OrderItem {
     id: number;
@@ -302,8 +293,9 @@ export const deleteOrderById = async (id: number) => {
     await axios.delete(`/api/orders/${id}`);
 };
 
-export const updateOrderDetailById = async (id: number, payload: UpdateOrderPayload): Promise<void> => {
-    await axios.put(`/api/orders/${id}`, payload);
+export const updateOrderDetailById = async (id: number, payload: UpdateOrderPayload): Promise<any> => {
+    const response = await axios.put(`/api/orders/${id}`, payload);
+    return response.data;
 };
 
 export const checkProductCodeExists = async (code: string): Promise<boolean> => {

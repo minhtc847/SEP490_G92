@@ -2,9 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSelector } from 'react-redux';
+import { IRootState } from '@/store';
 import { getPurchaseOrders, PurchaseOrderDto } from './service';
 import { FiSearch } from 'react-icons/fi';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import ExcelJS from 'exceljs';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -75,6 +78,7 @@ const getStatusText = (status: string) => {
 };
 
 const PurchaseOrderPage = () => {
+    const roleId = useSelector((state: IRootState) => state.auth.user?.roleId);
     const [orders, setOrders] = useState<PurchaseOrderDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -129,6 +133,133 @@ const PurchaseOrderPage = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
 
+    const handleExportToExcel = async () => {
+        const data = filteredOrders.map((order) => ({
+            'STT': '',
+            'Ngày tạo': order.date ? new Date(order.date).toLocaleDateString('vi-VN') : '-',
+            'Mã đơn hàng': order.code || '-',
+            'Tổng tiền (VNĐ)': order.totalValue || 0,
+            'Trạng thái': getStatusText(order.status || ''),
+            'MISA': order.isUpdateMisa ? 'Đã cập nhật' : 'Chưa cập nhật',
+            'Nhà cung cấp': order.customerName || '-',
+        }));
+
+        // Thêm STT
+        data.forEach((item, index) => {
+            item['STT'] = index + 1;
+        });
+
+        const headers = [
+            'STT',
+            'Ngày tạo',
+            'Mã đơn hàng',
+            'Tổng tiền (VNĐ)',
+            'Trạng thái',
+            'MISA',
+            'Nhà cung cấp',
+        ];
+
+        // Tạo workbook mới
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Đơn Mua Hàng');
+
+        // Thêm tiêu đề
+        const titleRow = worksheet.addRow(['ĐƠN MUA HÀNG']);
+        titleRow.height = 30;
+        worksheet.mergeCells('A1:G1');
+        
+        // Định dạng tiêu đề
+        const titleCell = worksheet.getCell('A1');
+        titleCell.font = { bold: true, size: 18 };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        titleCell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+
+        // Thêm header
+        const headerRow = worksheet.addRow(headers);
+        headerRow.height = 25;
+        
+        // Định dạng header
+        headerRow.eachCell((cell, colNumber) => {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFD3D3D3' }
+            };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+
+        // Thêm dữ liệu
+        data.forEach((row) => {
+            const dataRow = worksheet.addRow(headers.map(header => row[header]));
+            dataRow.height = 20;
+            
+            dataRow.eachCell((cell, colNumber) => {
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+        });
+
+        // Thêm dòng tổng
+        const totalAmount = data.reduce((sum, item) => sum + (item['Tổng tiền (VNĐ)'] || 0), 0);
+        const totalRow = worksheet.addRow(['Tổng', '', '', totalAmount, '', '', '']);
+        totalRow.height = 25;
+        worksheet.mergeCells(`A${totalRow.number}:B${totalRow.number}`);
+        
+        // Định dạng dòng tổng
+        totalRow.eachCell((cell, colNumber) => {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFD3D3D3' }
+            };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+
+        // Auto-size columns
+        worksheet.columns.forEach(column => {
+            let maxLength = 0;
+            column.eachCell({ includeEmpty: true }, (cell) => {
+                const columnLength = cell.value ? cell.value.toString().length : 10;
+                if (columnLength > maxLength) {
+                    maxLength = columnLength;
+                }
+            });
+            column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        });
+
+        // Xuất file
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `DonHangMua_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+    };
+
     if (loading) {
         return <div className="p-6">Đang tải đơn hàng mua...</div>;
     }
@@ -139,9 +270,17 @@ const PurchaseOrderPage = () => {
         <div className="p-6 bg-white rounded-lg shadow">
             <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Danh sách đơn hàng mua</h2>
-                <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800" onClick={() => router.push('/purchase-order/create')}>
-                    + Thêm đơn hàng mua
-                </button>
+                <div className="flex items-center gap-2">
+                    <button className="px-4 py-2 text-sm text-white bg-gray-600 rounded hover:bg-gray-700" onClick={handleExportToExcel}>
+                        Xuất Excel
+                    </button>
+                    {/* Chỉ hiển thị button "Thêm đơn hàng mua" cho role Chủ xưởng (roleId = 1) */}
+                    {roleId === 1 && (
+                        <button className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-800" onClick={() => router.push('/purchase-order/create')}>
+                            + Thêm đơn hàng mua
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

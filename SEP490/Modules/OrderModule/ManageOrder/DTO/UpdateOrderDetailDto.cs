@@ -2,13 +2,14 @@
 {
     public class UpdateOrderDetailDto
     {
-        public string CustomerName { get; set; }
-        public string Address { get; set; }
-        public string Phone { get; set; }
+        public string CustomerName { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
         public decimal Discount { get; set; }
         public string? Status { get; set; }
         public string? DeliveryStatus { get; set; }
-        public List<UpdateProductDto> Products { get; set; }
+        public bool IsUpdateMisa { get; set; }
+        public List<UpdateProductDto>? Products { get; set; }
     }
 
     public class UpdateProductDto

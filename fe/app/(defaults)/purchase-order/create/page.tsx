@@ -375,9 +375,9 @@ const PurchaseOrderCreatePage = () => {
                     />
                 </div>
                 <div>
-                    <button onClick={() => setShowAddProductForm(true)} className="btn btn-outline btn-sm mb-6">
+                    {/* <button onClick={() => setShowAddProductForm(true)} className="btn btn-outline btn-sm mb-6">
                         + Thêm sản phẩm
-                    </button>
+                    </button> */}
                     {showAddProductForm && (
                         <div className="border rounded-lg p-4 mb-6 bg-gray-50">
                             <h4 className="text-lg font-semibold mb-2">Thêm sản phẩm mới</h4>

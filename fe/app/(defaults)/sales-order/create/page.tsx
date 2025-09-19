@@ -500,9 +500,9 @@ const SalesOrderCreatePage = () => {
                     />
                 </div>
                 <div>
-                    <button onClick={() => setShowAddProductForm(true)} className="btn btn-outline btn-sm mb-6">
+                    {/* <button onClick={() => setShowAddProductForm(true)} className="btn btn-outline btn-sm mb-6">
                         + Thêm sản phẩm
-                    </button>
+                    </button> */}
                     {showAddProductForm && (
                         <div>
                             <div>

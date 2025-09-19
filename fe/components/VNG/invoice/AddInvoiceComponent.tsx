@@ -123,8 +123,8 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                 productId: detail.productId || 0,
                 productName: detail.productName || '',
                 quantity: detail.quantity || 0,
-                unitPrice: 0, // User will input price
-                amount: 0, // User will input price
+                unitPrice: detail.unitPrice || 0, // Use actual unit price from purchase order
+                amount: detail.totalPrice || 0, // Use actual total price from purchase order
                 description: ''
             })));
         } catch (error) {
@@ -221,9 +221,9 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                 return false;
             }
         } else {
-            // For purchase invoices, user needs to input prices
-            if (items.some(item => !item.productName.trim() || item.quantity <= 0 || item.unitPrice <= 0)) {
-                alert('Vui lòng điền đầy đủ thông tin sản phẩm và đơn giá!');
+            // For purchase invoices, prices are pre-filled from purchase order
+            if (items.some(item => !item.productName.trim() || item.quantity <= 0)) {
+                alert('Dữ liệu sản phẩm không hợp lệ!');
                 return false;
             }
         }
@@ -451,7 +451,7 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                                                     placeholder="Đơn giá"
                                                     value={item.unitPrice}
                                                     min={0}
-                                                    onChange={(e) => handleItemChange(item.id, 'unitPrice', parseInt(e.target.value) || 0)}
+                                                    onChange={(e) => handleItemChange(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
                                                 />
                                             )}
                                         </td>

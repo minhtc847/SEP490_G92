@@ -1,11 +1,33 @@
+'use client';
 import Link from 'next/link';
 import { Metadata } from 'next';
+import { useSelector } from 'react-redux';
+import { useState, useEffect } from 'react';
+import { IRootState } from '@/store';
 
-export const metadata: Metadata = {
-    title: 'Unauthorized',
-};
-
-const UnauthorizedPage = () => {
+export default function UnauthorizedPage() {
+    const roleId = useSelector((state: IRootState) => state.auth.user?.roleId);
+    const [isHydrated, setIsHydrated] = useState(false);
+    
+    useEffect(() => {
+        setIsHydrated(true);
+    }, []);
+    
+    const getHomePath = () => {
+        if (!isHydrated) return '/sales-order'; // Default while loading
+        
+        switch (roleId) {
+            case 1: // Chủ xưởng
+                return '/sales-order';
+            case 2: // Kế toán
+                return '/sales-order';
+            case 3: // Bộ phận sản xuất
+                return '/production-orders';
+            default:
+                return '/sales-order';
+        }
+    };
+    
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-dark">
             <div className="text-center">
@@ -25,7 +47,7 @@ const UnauthorizedPage = () => {
                 
                 <div className="space-x-4">
                     <Link 
-                        href="/" 
+                        href={getHomePath()} 
                         className="inline-flex items-center px-6 py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary-dark transition-colors"
                     >
                         Về trang chủ
@@ -40,6 +62,4 @@ const UnauthorizedPage = () => {
             </div>
         </div>
     );
-};
-
-export default UnauthorizedPage; 
+} 

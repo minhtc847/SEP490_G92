@@ -13,6 +13,7 @@ import IconUsers from '@/components/icon/icon-users';
 import { CustomerListDto, getCustomerList, deleteCustomerById } from './service';
 import { FiSearch } from 'react-icons/fi';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import ExcelJS from 'exceljs';
 
 const CustomersListPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -56,6 +57,103 @@ const CustomersListPage = () => {
         return matchesSearch && matchesType;
     });
 
+    const handleExportToExcel = async () => {
+        const data = filtered.map((c) => ({
+            'STT': '',
+            'Tên': c.customerName || '-',
+            'SĐT': c.phone || '-',
+            'Địa chỉ': c.address || '-',
+            'Loại': c.isSupplier ? 'Nhà cung cấp' : 'Khách hàng',
+            'Chiết khấu (%)': (c.discount ?? 0) * 100,
+        }));
+
+        // Thêm STT
+        data.forEach((item, index) => {
+            item['STT'] = index + 1;
+        });
+
+        const headers = ['STT', 'Tên', 'SĐT', 'Địa chỉ', 'Loại', 'Chiết khấu (%)'];
+
+        // Tạo workbook mới
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Khách Hàng');
+
+        // Thêm tiêu đề
+        const titleRow = worksheet.addRow(['DANH SÁCH KHÁCH HÀNG']);
+        titleRow.height = 30;
+        worksheet.mergeCells('A1:F1');
+        
+        // Định dạng tiêu đề
+        const titleCell = worksheet.getCell('A1');
+        titleCell.font = { bold: true, size: 18 };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        titleCell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+
+        // Thêm header
+        const headerRow = worksheet.addRow(headers);
+        headerRow.height = 25;
+        
+        // Định dạng header
+        headerRow.eachCell((cell, colNumber) => {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFD3D3D3' }
+            };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+
+        // Thêm dữ liệu
+        data.forEach((row) => {
+            const dataRow = worksheet.addRow(headers.map(header => row[header]));
+            dataRow.height = 20;
+            
+            dataRow.eachCell((cell, colNumber) => {
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+        });
+
+
+        // Auto-size columns
+        worksheet.columns.forEach(column => {
+            let maxLength = 0;
+            column.eachCell({ includeEmpty: true }, (cell) => {
+                const columnLength = cell.value ? cell.value.toString().length : 10;
+                if (columnLength > maxLength) {
+                    maxLength = columnLength;
+                }
+            });
+            column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        });
+
+        // Xuất file
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `KhachHang_${new Date().toLocaleDateString('vi-VN').replaceAll('/', '-')}.xlsx`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+    };
+
     if (loading) return <div className="panel">Đang tải dữ liệu...</div>;
 
     return (
@@ -82,12 +180,15 @@ const CustomersListPage = () => {
                             </select>
                         </div>
 
-                        <Link href="/customers/create">
-                            <button className="btn btn-success">
-                                <IconPlus className="mr-2" />
-                                Thêm khách hàng
-                            </button>
-                        </Link>
+                        <div className="flex items-center gap-2">
+                            <button className="btn btn-secondary" onClick={handleExportToExcel}>Xuất excel</button>
+                            <Link href="/customers/create">
+                                <button className="btn btn-success">
+                                    <IconPlus className="mr-2" />
+                                    Thêm khách hàng
+                                </button>
+                            </Link>
+                        </div>
                     </div>
                     <br />
 
