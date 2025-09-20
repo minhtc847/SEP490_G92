@@ -7,6 +7,7 @@ import MaterialExportSlipForm from './MaterialExportSlipForm';
 import Swal from 'sweetalert2';
 import IconEye from '@/components/icon/icon-eye';
 import IconArrowLeft from '@/components/icon/icon-arrow-left';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface InventorySlipListProps {
     slips: InventorySlip[];
@@ -25,6 +26,9 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
     const [updatePayload, setUpdatePayload] = useState<any>(null);
     const [updateType, setUpdateType] = useState<'cut-glass' | 'material-export' | 'other'>('other');
     const [isMisaUpdating, setIsMisaUpdating] = useState(false);
+
+    // Permissions
+    const { isProductionStaff } = usePermissions();
 
     const toggleExpanded = (slipId: number) => {
         const newExpanded = new Set(expandedSlips);
@@ -246,7 +250,7 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                                         Cập nhật
                                     </button>
                                 )}
-                                {!slip.isFinalized && (
+                                {!slip.isFinalized && !isProductionStaff() && (
                                     <button
                                         onClick={async () => {
                                             try {
@@ -292,7 +296,7 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                                         Cập nhật số lượng
                                     </button>
                                 )}
-                                {!slip.isUpdateMisa && (
+                                {!slip.isUpdateMisa && !isProductionStaff() && (
                                     <button
                                         onClick={async () => {
                                             try {

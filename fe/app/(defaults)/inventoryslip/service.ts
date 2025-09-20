@@ -12,6 +12,7 @@ export interface InventorySlipListItem {
     createdAt: string;
     updatedAt: string;
     isFinalized?: boolean;
+    isUpdateMisa?: boolean;
 }
 
 export interface InventorySlipDetail {
