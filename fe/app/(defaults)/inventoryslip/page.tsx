@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { fetchAllInventorySlips, InventorySlipListItem, finalizeInventorySlip, fetchInventorySlipById, InventorySlip } from './service';
+import { fetchAllInventorySlips, InventorySlipListItem, finalizeInventorySlip, fetchInventorySlipById, InventorySlip, getInventorySlipsNotUpdated, callManyImportExportInvoices, checkSlipProductsMisaStatus, testMisaStatus } from './service';
 import IconEye from '@/components/icon/icon-eye';
 import IconPlus from '@/components/icon/icon-plus';
 import { createPortal } from 'react-dom';
@@ -28,21 +28,29 @@ const InventorySlipPage = () => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedSlip, setSelectedSlip] = useState<InventorySlip | null>(null);
     const [detailLoading, setDetailLoading] = useState(false);
+    const [isUpdatingMany, setIsUpdatingMany] = useState(false);
+    const [updateMessage, setUpdateMessage] = useState<string>('');
     const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
 
-    useEffect(() => {
+    const fetchSlips = async () => {
         setLoading(true);
-        fetchAllInventorySlips()
-            .then((data: InventorySlipListItem[]) => {                
-                const sorted = [...data].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                setSlips(sorted);
-                setLoading(false);
-            })
-            .catch(() => setLoading(false));
+        try {
+            const data = await fetchAllInventorySlips();
+            const sorted = [...data].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setSlips(sorted);
+        } catch (error) {
+            console.error('Error fetching slips:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchSlips();
     }, []);
 
     useEffect(() => {
@@ -89,6 +97,96 @@ const InventorySlipPage = () => {
         setSelectedSlip(null);
     };
 
+    const handleUpdateManySlips = async () => {
+        try {
+            setIsUpdatingMany(true);
+            setUpdateMessage('Đang lấy danh sách phiếu chưa cập nhật...');
+            
+            // Lấy danh sách phiếu chưa cập nhật MISA
+            const slipsNotUpdated = await getInventorySlipsNotUpdated();
+            
+            if (slipsNotUpdated.length === 0) {
+                setUpdateMessage('Không có phiếu nào cần cập nhật MISA');
+                return;
+            }
+
+            setUpdateMessage(`Đang kiểm tra trạng thái sản phẩm trong ${slipsNotUpdated.length} phiếu...`);
+            
+            // Kiểm tra trạng thái MISA của sản phẩm trong từng phiếu
+            const slipsWithIssues = [];
+            const validSlips = [];
+            
+            for (const slip of slipsNotUpdated) {
+                try {
+                    // Sử dụng API test mới để debug
+                    const misaStatus = await testMisaStatus(slip.id);
+                    
+                    if (misaStatus.success && misaStatus.canUpdateMisa) {
+                        validSlips.push(slip);
+                    } else {
+                        slipsWithIssues.push({
+                            slip: slip,
+                            message: misaStatus.message || 'Có sản phẩm chưa cập nhật MISA'
+                        });
+                    }
+                } catch (error) {
+                    console.error(`Error checking slip ${slip.id}:`, error);
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    slipsWithIssues.push({
+                        slip: slip,
+                        message: `Lỗi khi kiểm tra trạng thái MISA: ${errorMessage}`
+                    });
+                }
+            }
+
+            // Nếu có phiếu có vấn đề, hiển thị lỗi và dừng
+            if (slipsWithIssues.length > 0) {
+                const errorMessage = `Không thể cập nhật vì có ${slipsWithIssues.length} phiếu chứa sản phẩm chưa cập nhật MISA:\n\n` +
+                    slipsWithIssues.map(issue => 
+                        `- Phiếu ${issue.slip.slipCode}: ${issue.message}`
+                    ).join('\n');
+                
+                setUpdateMessage(`❌ ${errorMessage}`);
+                return;
+            }
+
+            // Nếu không có phiếu nào hợp lệ
+            if (validSlips.length === 0) {
+                setUpdateMessage('Không có phiếu nào đủ điều kiện để cập nhật MISA');
+                return;
+            }
+
+            // Xác nhận với người dùng
+            const confirmed = window.confirm(
+                `Tất cả sản phẩm trong ${validSlips.length} phiếu đã được cập nhật MISA.\n\nBạn có chắc chắn muốn cập nhật ${validSlips.length} phiếu không?`
+            );
+
+            if (!confirmed) {
+                setUpdateMessage('Đã hủy cập nhật');
+                return;
+            }
+
+            setUpdateMessage(`Đang cập nhật ${validSlips.length} phiếu...`);
+            
+            // Gọi API cập nhật nhiều phiếu
+            const slipIds = validSlips.map(slip => slip.id);
+            const success = await callManyImportExportInvoices(slipIds);
+            
+            if (success) {
+                setUpdateMessage(`✅ Đã gửi yêu cầu cập nhật ${validSlips.length} phiếu thành công!`);
+                // Refresh danh sách phiếu
+                await fetchSlips();
+            } else {
+                setUpdateMessage('❌ Có lỗi xảy ra khi cập nhật phiếu');
+            }
+        } catch (error) {
+            console.error('Error updating many slips:', error);
+            setUpdateMessage('❌ Có lỗi xảy ra khi cập nhật phiếu');
+        } finally {
+            setIsUpdatingMany(false);
+        }
+    };
+
     const filteredSlips = slips.filter(slip => {
         if (filterType === 'all') return true;
         
@@ -109,7 +207,7 @@ const InventorySlipPage = () => {
 
             {/* Filters */}
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6">
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-4 items-end">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Loại phiếu:</label>
                         <select 
@@ -123,7 +221,39 @@ const InventorySlipPage = () => {
                             <option value="chemical">Phiếu xuất hóa chất</option>
                         </select>
                     </div>
+                    <div>
+                        <button
+                            onClick={handleUpdateManySlips}
+                            disabled={isUpdatingMany}
+                            className={`px-4 py-2 rounded-md font-medium ${
+                                isUpdatingMany 
+                                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                            }`}
+                        >
+                            {isUpdatingMany ? 'Đang cập nhật...' : 'Cập nhật tất cả phiếu chưa cập nhật MISA'}
+                        </button>
+                    </div>
                 </div>
+                
+                {/* Update Message */}
+                {updateMessage && (
+                    <div className={`mt-4 p-3 rounded-md ${
+                        updateMessage.includes('❌') 
+                            ? 'bg-red-50 border border-red-200' 
+                            : updateMessage.includes('✅')
+                            ? 'bg-green-50 border border-green-200'
+                            : 'bg-blue-50 border border-blue-200'
+                    }`}>
+                        <p className={`text-sm whitespace-pre-line ${
+                            updateMessage.includes('❌') 
+                                ? 'text-red-800' 
+                                : updateMessage.includes('✅')
+                                ? 'text-green-800'
+                                : 'text-blue-800'
+                        }`}>{updateMessage}</p>
+                    </div>
+                )}
             </div>
 
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mt-6">
