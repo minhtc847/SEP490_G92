@@ -23,6 +23,7 @@ import GlueGlassModal from '@/components/VNG/manager/production-orders/modals/Gl
 import PourGlueModal from '@/components/VNG/manager/production-orders/modals/PourGlueModal';
 import ListOutputsPP from '@/components/VNG/manager/production-plans/list-outputs-of-pp/list-outputs-pp-components';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const ProductionPlanDetailPage = () => {
     const params = useParams();
@@ -255,6 +256,9 @@ const ProductionPlanDetailPage = () => {
     const [tabs, setTabs] = useState<string>('plan');
     const toggleTabs = (tab: string) => setTabs(tab);
     const [materialLoading, setMaterialLoading] = useState(false);
+
+    // Permissions
+    const { isAccountant, isProductionStaff } = usePermissions();
 
     const statusBadgeMap: Record<string | number, string> = {
         0: 'badge-outline-warning', // Pending
@@ -519,7 +523,7 @@ const ProductionPlanDetailPage = () => {
             <div className="panel mt-6">
 
                 <div className="flex flex-wrap items-center justify-center gap-4 lg:justify-end">
-                    {detail?.status !== 'Hoàn thành' && (
+                    {detail?.status !== 'Hoàn thành' && !isAccountant() && !isProductionStaff() && (
                         <div className="dropdown">
                             <Dropdown
                                 placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`}
@@ -555,7 +559,7 @@ const ProductionPlanDetailPage = () => {
                         </div>
                     )}                    
 
-                    {detail?.status !== 'Hoàn thành' && (
+                    {detail?.status !== 'Hoàn thành' && !isProductionStaff() && (
                         <button
                             type="button"
                             onClick={handleCompleteProductionPlan}

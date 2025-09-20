@@ -144,17 +144,17 @@ const PurchaseOrderPage = () => {
             const ordersNotUpdated = await getPurchaseOrdersNotUpdated();
             
             if (ordersNotUpdated.length === 0) {
-                setUpdateMessage('Không có đơn hàng nào cần cập nhật!');
+                setUpdateMessage('Không có đơn hàng nào cần đồng bộ!');
                 return;
             }
 
-            const confirmed = confirm(`Bạn có chắc chắn muốn cập nhật ${ordersNotUpdated.length} đơn hàng chưa cập nhật lên MISA?`);
+            const confirmed = confirm(`Bạn có chắc chắn muốn đồng bộ ${ordersNotUpdated.length} đơn hàng chưa cập nhật lên MISA?`);
             if (!confirmed) return;
 
             // Gọi API update tất cả đơn hàng
             await updateManyPurchaseOrders(ordersNotUpdated);
             
-            setUpdateMessage(`Đã gửi yêu cầu cập nhật ${ordersNotUpdated.length} đơn hàng lên MISA. Quá trình này sẽ chạy trong background.`);
+            setUpdateMessage(`Đã gửi yêu cầu đồng bộ ${ordersNotUpdated.length} đơn hàng lên MISA. Quá trình này sẽ chạy trong background.`);
             
             // Refresh danh sách đơn hàng sau 2 giây
             setTimeout(() => {
@@ -162,8 +162,8 @@ const PurchaseOrderPage = () => {
             }, 2000);
             
         } catch (err) {
-            console.error('Lỗi khi cập nhật đơn hàng:', err);
-            setUpdateMessage('Có lỗi xảy ra khi cập nhật đơn hàng!');
+            console.error('Lỗi khi đồng bộ đơn hàng:', err);
+            setUpdateMessage('Có lỗi xảy ra khi đồng bộ đơn hàng!');
         } finally {
             setIsUpdating(false);
         }
@@ -176,14 +176,14 @@ const PurchaseOrderPage = () => {
             'Mã đơn hàng': order.code || '-',
             'Tổng tiền (VNĐ)': order.totalValue || 0,
             'Trạng thái': getStatusText(order.status || ''),
-            'MISA': order.isUpdateMisa ? 'Đã cập nhật' : 'Chưa cập nhật',
+            'MISA': order.isUpdateMisa ? 'Đã đồng bộ' : 'Chưa đồng bộ',
             'Nhà cung cấp': order.customerName || '-',
         }));
 
         // Thêm STT
-        // data.forEach((item, index) => {
-        //     item['STT'] = index + 1;
-        // });
+        data.forEach((item, index) => {
+            item['STT'] = (index + 1).toString();
+        });
 
         const headers = [
             'STT',
@@ -237,22 +237,22 @@ const PurchaseOrderPage = () => {
         });
 
         // Thêm dữ liệu
-        // data.forEach((row) => {
-        //     const dataRow = worksheet.addRow(headers.map(header => row[header]));
-        //     dataRow.height = 20;
+        data.forEach((row) => {
+            const dataRow = worksheet.addRow(headers.map(header => (row as any)[header]));
+            dataRow.height = 20;
             
-        //     dataRow.eachCell((cell, colNumber) => {
-        //         cell.border = {
-        //             top: { style: 'thin' },
-        //             left: { style: 'thin' },
-        //             bottom: { style: 'thin' },
-        //             right: { style: 'thin' }
-        //         };
-        //     });
-        // });
+            dataRow.eachCell((cell, colNumber) => {
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+        });
 
         // Thêm dòng tổng
-        const totalAmount = data.reduce((sum, item) => sum + (item['Tổng tiền (VNĐ)'] || 0), 0);
+        const totalAmount = data.reduce((sum, item) => sum + ((item as any)['Tổng tiền (VNĐ)'] || 0), 0);
         const totalRow = worksheet.addRow(['Tổng', '', '', totalAmount, '', '', '']);
         totalRow.height = 25;
         worksheet.mergeCells(`A${totalRow.number}:B${totalRow.number}`);
@@ -274,16 +274,18 @@ const PurchaseOrderPage = () => {
         });
 
         // Auto-size columns
-        // worksheet.columns.forEach(column => {
-        //     let maxLength = 0;
-        //     column.eachCell({ includeEmpty: true }, (cell) => {
-        //         const columnLength = cell.value ? cell.value.toString().length : 10;
-        //         if (columnLength > maxLength) {
-        //             maxLength = columnLength;
-        //         }
-        //     });
-        //     column.width = Math.min(Math.max(maxLength + 2, 10), 50);
-        // });
+        worksheet.columns.forEach(column => {
+            let maxLength = 0;
+            if (column.eachCell) {
+                column.eachCell({ includeEmpty: true }, (cell) => {
+                    const columnLength = cell.value?.toString()?.length || 10;
+                    if (columnLength > maxLength) {
+                        maxLength = columnLength;
+                    }
+                });
+            }
+            column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        });
 
         // Xuất file
         const buffer = await workbook.xlsx.writeBuffer();
@@ -312,7 +314,7 @@ const PurchaseOrderPage = () => {
                         disabled={isUpdating}
                         className="px-4 py-2 text-sm text-white bg-orange-600 rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isUpdating ? 'Đang cập nhật...' : 'Cập nhật tất cả đơn hàng chưa cập nhật'}
+                        {isUpdating ? 'Đang đồng bộ...' : 'Cập nhật tất cả đơn hàng chưa đồng bộ'}
                     </button>
                     <button className="px-4 py-2 text-sm text-white bg-gray-600 rounded hover:bg-gray-700" onClick={handleExportToExcel}>
                         Xuất Excel
@@ -463,7 +465,7 @@ const PurchaseOrderPage = () => {
                                 </td>
                                 <td>
                                     <span className={`badge ${order.isUpdateMisa ? 'badge-outline-success' : 'badge-outline-warning'}`}>
-                                        {order.isUpdateMisa ? 'Đã cập nhật' : 'Chưa cập nhật'}
+                                        {order.isUpdateMisa ? 'Đã đồng bộ' : 'Chưa đồng bộ'}
                                     </span>
                                 </td>
                                 <td>{order.customerName || '-'}</td>

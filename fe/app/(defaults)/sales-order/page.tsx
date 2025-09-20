@@ -152,17 +152,17 @@ const SalesOrderSummary = () => {
             const ordersNotUpdated = await getOrdersNotUpdated();
             
             if (ordersNotUpdated.length === 0) {
-                setUpdateMessage('Không có đơn hàng nào cần cập nhật!');
+                setUpdateMessage('Không có đơn hàng nào cần đồng bộ!');
                 return;
             }
 
-            const confirmed = confirm(`Bạn có chắc chắn muốn cập nhật ${ordersNotUpdated.length} đơn hàng chưa cập nhật lên MISA?`);
+            const confirmed = confirm(`Bạn có chắc chắn muốn đồng bộ ${ordersNotUpdated.length} đơn hàng chưa đồng bộ lên MISA?`);
             if (!confirmed) return;
 
             // Gọi API update tất cả đơn hàng
             await updateManySaleOrders(ordersNotUpdated);
             
-            setUpdateMessage(`Đã gửi yêu cầu cập nhật ${ordersNotUpdated.length} đơn hàng lên MISA. Quá trình này sẽ chạy trong background.`);
+            setUpdateMessage(`Đã gửi yêu cầu đồng bộ ${ordersNotUpdated.length} đơn hàng lên MISA. Quá trình này sẽ chạy trong background.`);
             
             // Refresh danh sách đơn hàng sau 2 giây
             setTimeout(() => {
@@ -170,8 +170,8 @@ const SalesOrderSummary = () => {
             }, 2000);
             
         } catch (err) {
-            console.error('Lỗi khi cập nhật đơn hàng:', err);
-            setUpdateMessage('Có lỗi xảy ra khi cập nhật đơn hàng!');
+            console.error('Lỗi khi đồng bộ đơn hàng:', err);
+            setUpdateMessage('Có lỗi xảy ra khi đồng bộ đơn hàng!');
         } finally {
             setIsUpdating(false);
         }
@@ -201,13 +201,13 @@ const SalesOrderSummary = () => {
             'Thành Tiền (₫)': order.totalAmount,
             'Trạng Thái': getStatusText(order.status),
             'Giao Hàng': getDeliveryStatusText(order.deliveryStatus),
-            'Cập nhật MISA': order.isUpdateMisa ? 'Đã cập nhật' : 'Chưa cập nhật',
+            'Cập nhật MISA': order.isUpdateMisa ? 'Đã đồng bộ' : 'Chưa đồng bộ',
         }));
 
         // Thêm STT
-        // data.forEach((item, index) => {
-        //     item['STT'] = index + 1;
-        // });
+        data.forEach((item, index) => {
+            item['STT'] = (index + 1).toString();
+        });
 
         const headers = [
             'STT',
@@ -261,20 +261,38 @@ const SalesOrderSummary = () => {
             };
         });
 
+        // Thêm border cho cột cuối cùng của header
+        const lastHeaderCell = headerRow.getCell(headers.length);
+        lastHeaderCell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+
         // Thêm dữ liệu
-        // data.forEach((row) => {
-        //     const dataRow = worksheet.addRow(headers.map(header => row[header]));
-        //     dataRow.height = 20;
+        data.forEach((row) => {
+            const dataRow = worksheet.addRow(headers.map(header => (row as any)[header]));
+            dataRow.height = 20;
             
-        //     dataRow.eachCell((cell, colNumber) => {
-        //         cell.border = {
-        //             top: { style: 'thin' },
-        //             left: { style: 'thin' },
-        //             bottom: { style: 'thin' },
-        //             right: { style: 'thin' }
-        //         };
-        //     });
-        // });
+            dataRow.eachCell((cell, colNumber) => {
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+
+            // Thêm border cho cột cuối cùng của data row
+            const lastDataCell = dataRow.getCell(headers.length);
+            lastDataCell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
 
         // Thêm dòng tổng
         const totalRow = worksheet.addRow(['Tổng', '', '', '', '', '', '', '']);
@@ -282,7 +300,7 @@ const SalesOrderSummary = () => {
         worksheet.mergeCells(`A${totalRow.number}:B${totalRow.number}`);
         
         // Tổng thành tiền
-        const totalAmount = data.reduce((sum, item) => sum + (item['Thành Tiền (₫)'] || 0), 0);
+        const totalAmount = data.reduce((sum, item) => sum + ((item as any)['Thành Tiền (₫)'] || 0), 0);
         const totalAmountCell = worksheet.getCell(`E${totalRow.number}`);
         totalAmountCell.value = totalAmount;
         
@@ -303,16 +321,18 @@ const SalesOrderSummary = () => {
         });
 
         // Auto-size columns
-        // worksheet.columns.forEach(column => {
-        //     let maxLength = 0;
-        //     column.eachCell({ includeEmpty: true }, (cell) => {
-        //         const columnLength = cell.value ? cell.value.toString().length : 10;
-        //         if (columnLength > maxLength) {
-        //             maxLength = columnLength;
-        //         }
-        //     });
-        //     column.width = Math.min(Math.max(maxLength + 2, 10), 50);
-        // });
+        worksheet.columns.forEach(column => {
+            let maxLength = 0;
+            if (column.eachCell) {
+                column.eachCell({ includeEmpty: true }, (cell) => {
+                    const columnLength = cell.value?.toString()?.length || 10;
+                    if (columnLength > maxLength) {
+                        maxLength = columnLength;
+                    }
+                });
+            }
+            column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        });
 
         // Xuất file
         const buffer = await workbook.xlsx.writeBuffer();
@@ -341,7 +361,7 @@ const SalesOrderSummary = () => {
                         disabled={isUpdating}
                         className="px-4 py-2 text-sm text-white bg-orange-600 rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isUpdating ? 'Đang cập nhật...' : 'Cập nhật tất cả đơn hàng chưa cập nhật'}
+                        {isUpdating ? 'Đang đồng bộ...' : 'Cập nhật tất cả đơn hàng chưa đồng bộ'}
                     </button>
                     <button className="px-4 py-2 text-sm text-white bg-gray-600 rounded hover:bg-gray-700" onClick={handleExportToExcel}>
                          Xuất Excel
@@ -510,7 +530,7 @@ const SalesOrderSummary = () => {
                                             ? 'bg-green-100 text-green-800' 
                                             : 'bg-gray-100 text-gray-800'
                                     }`}>
-                                        {order.isUpdateMisa ? 'Đã cập nhật' : 'Chưa cập nhật'}
+                                        {order.isUpdateMisa ? 'Đã đồng bộ' : 'Chưa đồng bộ'}
                                     </span>
                                 </td>
                                 <td className="flex gap-2">

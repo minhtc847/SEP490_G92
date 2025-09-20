@@ -158,39 +158,9 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
         }
     };
 
-    const addItem = () => {
-        const maxId = items.length > 0 ? Math.max(...items.map(item => item.id)) : 0;
-        setItems([
-            ...items,
-            {
-                id: maxId + 1,
-                productId: 0,
-                productName: '',
-                quantity: 0,
-                unitPrice: 0,
-                amount: 0,
-                description: '',
-            },
-        ]);
-    };
+    // addItem and removeItem removed as items are now read-only from source data
 
-    const removeItem = (itemId: number) => {
-        setItems(items.filter(item => item.id !== itemId));
-    };
-
-    const handleItemChange = (itemId: number, field: keyof InvoiceItem, value: any) => {
-        setItems(items.map(item => {
-            if (item.id === itemId) {
-                const updatedItem = { ...item, [field]: value };
-                // Recalculate amount if quantity or unitPrice changed
-                if (field === 'quantity' || field === 'unitPrice') {
-                    updatedItem.amount = updatedItem.quantity * updatedItem.unitPrice;
-                }
-                return updatedItem;
-            }
-            return item;
-        }));
-    };
+    // handleItemChange removed as all fields are now read-only
 
     const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
     const taxAmount = (subtotal * tax) / 100;
@@ -214,18 +184,10 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
             alert('Vui lòng thêm ít nhất một sản phẩm!');
             return false;
         }
-        if (sourceInfo.type === 'delivery') {
-            // For delivery invoices, all data is pre-filled and read-only
-            if (items.some(item => item.quantity <= 0 || item.unitPrice <= 0)) {
-                alert('Dữ liệu sản phẩm không hợp lệ!');
-                return false;
-            }
-        } else {
-            // For purchase invoices, prices are pre-filled from purchase order
-            if (items.some(item => !item.productName.trim() || item.quantity <= 0)) {
-                alert('Dữ liệu sản phẩm không hợp lệ!');
-                return false;
-            }
+        // All invoice data is now read-only, validate that all items have valid data
+        if (items.some(item => !item.productName.trim() || item.quantity <= 0 || item.unitPrice <= 0)) {
+            alert('Dữ liệu sản phẩm không hợp lệ!');
+            return false;
         }
         return true;
     };
@@ -409,51 +371,19 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                                 {items.map((item) => (
                                     <tr className="align-top" key={item.id}>
                                         <td>
-                                            {sourceInfo.type === 'delivery' ? (
-                                                <div className="form-input min-w-[200px] bg-gray-100">
-                                                    {item.productName}
-                                                </div>
-                                            ) : (
-                                                <input
-                                                    type="text"
-                                                    value={item.productName}
-                                                    onChange={(e) => handleItemChange(item.id, 'productName', e.target.value)}
-                                                    className="form-input min-w-[200px]"
-                                                    placeholder="Tên sản phẩm"
-                                                />
-                                            )}
+                                            <div className="form-input min-w-[200px] bg-gray-100">
+                                                {item.productName}
+                                            </div>
                                         </td>
                                         <td>
-                                            {sourceInfo.type === 'delivery' ? (
-                                                <div className="form-input w-32 bg-gray-100">
-                                                    {item.quantity}
-                                                </div>
-                                            ) : (
-                                                <input
-                                                    type="number"
-                                                    className="form-input w-32"
-                                                    placeholder="Số lượng"
-                                                    value={item.quantity}
-                                                    min={1}
-                                                    onChange={(e) => handleItemChange(item.id, 'quantity', parseInt(e.target.value) || 0)}
-                                                />
-                                            )}
+                                            <div className="form-input w-32 bg-gray-100">
+                                                {item.quantity}
+                                            </div>
                                         </td>
                                         <td>
-                                            {sourceInfo.type === 'delivery' ? (
-                                                <div className="form-input w-32 bg-gray-100">
-                                                    {item.unitPrice.toLocaleString()}₫
-                                                </div>
-                                            ) : (
-                                                <input
-                                                    type="number"
-                                                    className="form-input w-32"
-                                                    placeholder="Đơn giá"
-                                                    value={item.unitPrice}
-                                                    min={0}
-                                                    onChange={(e) => handleItemChange(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
-                                                />
-                                            )}
+                                            <div className="form-input w-32 bg-gray-100">
+                                                {item.unitPrice.toLocaleString()}₫
+                                            </div>
                                         </td>
                                         <td>
                                             <div className="form-input w-32 bg-gray-100">

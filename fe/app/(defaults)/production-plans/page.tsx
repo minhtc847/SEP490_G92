@@ -9,6 +9,7 @@ import React, { useEffect, useState } from 'react';
 import { fetchProductionPlanList, ProductionPlan, deleteProductionPlan } from './service';
 import { FiSearch } from 'react-icons/fi';
 import OrderSelectionModal from '@/components/production-plans/OrderSelectionModal';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const statusMap: Record<string, { tooltip: string; color: string }> = {
     'Đang sản xuất': { tooltip: 'Đang sản xuất', color: 'warning' },
@@ -33,6 +34,9 @@ const ProductionPlansPage = () => {
 
     // Modal state
     const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+
+    // Permissions
+    const { isAccountant } = usePermissions();
 
     useEffect(() => {
         async function loadData() {
@@ -115,15 +119,17 @@ const ProductionPlansPage = () => {
 
                     <div className="production-plans-table">
                         <div className="mb-4.5 flex flex-col gap-5 px-5 md:flex-row md:items-center">
-                            <div className="flex items-center gap-2">
-                                <button 
-                                    onClick={() => setIsOrderModalOpen(true)}
-                                    className="btn btn-primary gap-2"
-                                >
-                                    <IconPlus />
-                                    Thêm mới
-                                </button>
-                            </div>
+                            {!isAccountant() && (
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => setIsOrderModalOpen(true)}
+                                        className="btn btn-primary gap-2"
+                                    >
+                                        <IconPlus />
+                                        Thêm mới
+                                    </button>
+                                </div>
+                            )}
                             <div className="ltr:ml-auto rtl:mr-auto">
                                  <div className="relative w-fit">
                                     <input
@@ -206,14 +212,7 @@ const ProductionPlansPage = () => {
                                             <div className="mx-auto flex w-max items-center gap-4">
                                                 <Link href={`/production-plans/${id}`} className="flex hover:text-primary">
                                                     <IconEye />
-                                                </Link>
-                                                <button
-                                                    type="button"
-                                                    className="flex hover:text-danger"
-                                                    onClick={() => deleteRow(id)}
-                                                >
-                                                    <IconTrashLines />
-                                                </button>
+                                                </Link>                                                
                                             </div>
                                         ),
                                     },

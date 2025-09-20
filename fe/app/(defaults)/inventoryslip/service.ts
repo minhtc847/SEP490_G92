@@ -12,6 +12,7 @@ export interface InventorySlipListItem {
     createdAt: string;
     updatedAt: string;
     isFinalized?: boolean;
+    isUpdateMisa?: boolean;
 }
 
 export interface InventorySlipDetail {
@@ -413,6 +414,36 @@ export const callImportExportInvoice = async (slipId: number): Promise<boolean> 
     } catch (error) {
         console.error('Error calling import-export-invoice API:', error);
         return false;
+    }
+};
+
+export const callManyImportExportInvoices = async (slipIds: number[]): Promise<boolean> => {
+    try {
+        const response = await axios.post(`/api/Selenium/import-export-invoice/add-many`, slipIds);
+        return response.status === 200;
+    } catch (error) {
+        console.error('Error calling import-export-invoice/add-many API:', error);
+        return false;
+    }
+};
+
+export const getInventorySlipsNotUpdated = async (): Promise<InventorySlipListItem[]> => {
+    try {
+        const response = await axios.get<InventorySlipListItem[]>('/api/InventorySlip/all');
+        return response.data.filter(slip => !slip.isUpdateMisa);
+    } catch (error) {
+        console.error('Error fetching inventory slips not updated:', error);
+        return [];
+    }
+};
+
+export const testMisaStatus = async (slipId: number): Promise<any> => {
+    try {
+        const response = await axios.get(`/api/Selenium/test-misa-status/${slipId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error testing MISA status:', error);
+        throw error;
     }
 };
 

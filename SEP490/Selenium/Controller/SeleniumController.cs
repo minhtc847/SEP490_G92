@@ -325,6 +325,85 @@ namespace SEP490.Selenium.Controller
             return Ok("Import page executed.");
         }
 
+        [HttpGet("test-misa-status/{slipId}")]
+        public async Task<IActionResult> TestMisaStatus(int slipId)
+        {
+            try
+            {
+                using var scope = _serviceScopeFactory.CreateScope();
+                var inventoryService = scope.ServiceProvider.GetRequiredService<IInventorySlipService>();
+                
+                var misaStatus = await inventoryService.CheckSlipProductsMisaStatusAsync(slipId);
+                return Ok(misaStatus);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message, stackTrace = ex.StackTrace });
+            }
+        }
+
+        [HttpPost("import-export-invoice/add-many")]
+        public IActionResult AddManyImportExportInvoices([FromBody] List<int> slipIds)
+        {
+            _taskQueue.Enqueue(async token =>
+            {
+                try
+                {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var inventoryService = scope.ServiceProvider.GetRequiredService<IInventorySlipService>();
+                    var service = scope.ServiceProvider.GetRequiredService<IImportExportInvoiceServices>();
+                    var context = scope.ServiceProvider.GetRequiredService<SEP490DbContext>();
+
+                    foreach (var slipId in slipIds)
+                    {
+                        try
+                        {
+                            // Kiểm tra trạng thái MISA của sản phẩm trong phiếu trước khi xử lý
+                            var misaStatus = await inventoryService.CheckSlipProductsMisaStatusAsync(slipId);
+                            
+                            // Nếu có sản phẩm chưa cập nhật MISA, bỏ qua phiếu này
+                            var success = misaStatus.GetType().GetProperty("success")?.GetValue(misaStatus) as bool? ?? false;
+                            var canUpdateMisa = misaStatus.GetType().GetProperty("canUpdateMisa")?.GetValue(misaStatus) as bool? ?? false;
+                            
+                            if (success && !canUpdateMisa)
+                            {
+                                var message = misaStatus.GetType().GetProperty("message")?.GetValue(misaStatus)?.ToString() ?? "Unknown error";
+                                Console.WriteLine($"[Warning] Skipping slip {slipId}: {message}");
+                                continue;
+                            }
+
+                            // Lấy thông tin export cho từng phiếu
+                            ExportDTO info = await inventoryService.GetExportInfoBySlipIdAsync(slipId);
+                            
+                            // Thực hiện import/export
+                            service.OpenImportPage(info);
+                            
+                            // Cập nhật trạng thái update misa thành true
+                            var slip = await context.InventorySlips.FindAsync(slipId);
+                            if (slip != null)
+                            {
+                                slip.IsUpdateMisa = true;
+                                await context.SaveChangesAsync();
+                            }
+                            
+                            Console.WriteLine($"Successfully updated slip {slipId} with MISA");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[Error] Failed to update slip {slipId}: {ex.Message}");
+                            // Tiếp tục với phiếu tiếp theo thay vì dừng toàn bộ
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Background error] AddManyImportExportInvoices: {ex}");
+                }
+            });
+
+            return Ok("Add Many Import Export Invoices Successfully");
+        }
+
         [HttpPost("purchasing-order")]
         public IActionResult AddPurchaseOrder([FromBody] InputPO input)
         {

@@ -1579,7 +1579,7 @@ namespace SEP490.Modules.InventorySlipModule.Service
                         {
                             ProductName = productName,
                             ProductCode = product.ProductCode ?? "",
-                            IsUpdateMisa = product.isupdatemisa
+                            IsUpdateMisa = product.isupdatemisa == 1
                         };
 
                         productsWithMisaStatus.Add(productInfo);
@@ -1605,7 +1605,11 @@ namespace SEP490.Modules.InventorySlipModule.Service
                 }
 
                 var totalProducts = productsWithMisaStatus.Count;
-                var updatedProducts = productsWithMisaStatus.Count(p => (bool)p.GetType().GetProperty("IsUpdateMisa").GetValue(p));
+                var updatedProducts = productsWithMisaStatus.Count(p => 
+                {
+                    var isUpdateMisa = p.GetType().GetProperty("IsUpdateMisa")?.GetValue(p);
+                    return isUpdateMisa is bool boolValue && boolValue;
+                });
                 var canUpdateMisa = totalProducts > 0 && updatedProducts == totalProducts;
 
                 return new

@@ -75,7 +75,7 @@ const CreateEmployeePage = () => {
     };
 
     return (
-        <ProtectedRoute requiredRole={1}>
+        <ProtectedRoute requiredRole={[1, 2]}>
             <div className="panel">
                 <div className="mb-5">
                     <h2 className="text-xl font-semibold mb-4">Thêm nhân viên mới</h2>

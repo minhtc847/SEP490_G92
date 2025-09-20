@@ -62,7 +62,7 @@ namespace SEP490.Selenium.ImportExportInvoice
         {
             driver.Navigate().GoToUrl(importUrl);
 
-            Login();
+            //Login();
             AddField1(input);
             AddField2(input);
 

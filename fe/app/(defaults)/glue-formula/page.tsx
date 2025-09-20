@@ -4,13 +4,16 @@ import Swal from 'sweetalert2';
 import formularService, { FormularData, FormularGroup } from './formularService';
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { getProducts, Product } from '@/app/(defaults)/products/service';
+import { usePermissions } from '@/hooks/usePermissions';
 
-function GlueTable({ title, data, inputValue, onInputChange, onCalc, onEdit }: any) {
+function GlueTable({ title, data, inputValue, onInputChange, onCalc, onEdit, canEdit }: any) {
   return (
     <div style={{ marginBottom: 48, border: "1px solid #e5e7eb", borderRadius: 8, padding: 24, backgroundColor: "white" }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h2 style={{ fontWeight: 700, fontSize: 28 }}>{title}</h2>
-        <button onClick={onEdit} style={{ padding: '8px 12px', border: '1px solid #e5e7eb', background: '#fff', borderRadius: 6, cursor: 'pointer' }}>Chỉnh sửa công thức</button>
+        {canEdit && (
+          <button onClick={onEdit} style={{ padding: '8px 12px', border: '1px solid #e5e7eb', background: '#fff', borderRadius: 6, cursor: 'pointer' }}>Chỉnh sửa công thức</button>
+        )}
       </div>
       <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 16 }}>
         <thead>
@@ -56,6 +59,9 @@ export default function GlueFormulaPage() {
   const [editRows, setEditRows] = useState<Array<{ id?: number; productId?: number; ratio: number; description?: string }>>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [saving, setSaving] = useState(false);
+
+  // Permissions
+  const { isFactoryManager } = usePermissions();
 
   useEffect(() => {
     loadFormulars();
@@ -238,6 +244,7 @@ export default function GlueFormulaPage() {
           onInputChange={(e: any) => handleInputChange(group.type, e.target.value)}
           onCalc={() => handleCalc(group.type)}
           onEdit={() => openEditModal(group.type)}
+          canEdit={isFactoryManager()}
         />
       ))}
       {editingType && (

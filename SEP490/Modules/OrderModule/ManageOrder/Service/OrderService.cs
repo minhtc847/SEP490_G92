@@ -292,19 +292,42 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 }
 
                 order.IsUpdateMisa = dto.IsUpdateMisa;
+                
+                if (dto.Products != null)
+                {                    
+                    var existingOrderDetailProducts = order.OrderDetails
+                        .SelectMany(od => od.OrderDetailProducts)
+                        .ToList();
+                    
+                    _context.OrderDetailProducts.RemoveRange(existingOrderDetailProducts);
 
-                // Update product quantities if provided
-                if (dto.Products != null && dto.Products.Count > 0)
-                {
-                    foreach (var productDto in dto.Products)
-                    {
-                        var orderDetailProduct = order.OrderDetails
-                            .SelectMany(od => od.OrderDetailProducts)
-                            .FirstOrDefault(odp => odp.ProductId == productDto.ProductId);
-                        
-                        if (orderDetailProduct != null)
+                    // Add new products if any
+                    if (dto.Products.Count > 0)
+                    {                        
+                        var orderDetail = order.OrderDetails.FirstOrDefault();
+                        if (orderDetail == null)
                         {
-                            orderDetailProduct.Quantity = productDto.Quantity;
+                            orderDetail = new OrderDetail
+                            {
+                                SaleOrderId = orderId
+                            };
+                            _context.OrderDetails.Add(orderDetail);                            
+                            await _context.SaveChangesAsync();
+                        }
+
+                        foreach (var productDto in dto.Products)
+                        {                           
+                            if (productDto.ProductId <= 0) continue;
+
+                            // Create new order detail product
+                            var newOrderDetailProduct = new OrderDetailProduct
+                            {
+                                OrderDetailId = orderDetail.Id,
+                                ProductId = productDto.ProductId,
+                                Quantity = productDto.Quantity
+                            };
+
+                            _context.OrderDetailProducts.Add(newOrderDetailProduct);
                         }
                     }
                 }
@@ -358,6 +381,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
 
             return new
             {
+                Id = order.Id,
                 CustomerCode = order.Customer?.CustomerName ?? "",
                 ProductsInput = productsInput
             };
