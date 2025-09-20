@@ -205,9 +205,9 @@ const SalesOrderSummary = () => {
         }));
 
         // Thêm STT
-        // data.forEach((item, index) => {
-        //     item['STT'] = index + 1;
-        // });
+        data.forEach((item, index) => {
+            item['STT'] = (index + 1).toString();
+        });
 
         const headers = [
             'STT',
@@ -261,20 +261,38 @@ const SalesOrderSummary = () => {
             };
         });
 
+        // Thêm border cho cột cuối cùng của header
+        const lastHeaderCell = headerRow.getCell(headers.length);
+        lastHeaderCell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+        };
+
         // Thêm dữ liệu
-        // data.forEach((row) => {
-        //     const dataRow = worksheet.addRow(headers.map(header => row[header]));
-        //     dataRow.height = 20;
+        data.forEach((row) => {
+            const dataRow = worksheet.addRow(headers.map(header => (row as any)[header]));
+            dataRow.height = 20;
             
-        //     dataRow.eachCell((cell, colNumber) => {
-        //         cell.border = {
-        //             top: { style: 'thin' },
-        //             left: { style: 'thin' },
-        //             bottom: { style: 'thin' },
-        //             right: { style: 'thin' }
-        //         };
-        //     });
-        // });
+            dataRow.eachCell((cell, colNumber) => {
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+
+            // Thêm border cho cột cuối cùng của data row
+            const lastDataCell = dataRow.getCell(headers.length);
+            lastDataCell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
 
         // Thêm dòng tổng
         const totalRow = worksheet.addRow(['Tổng', '', '', '', '', '', '', '']);
@@ -282,7 +300,7 @@ const SalesOrderSummary = () => {
         worksheet.mergeCells(`A${totalRow.number}:B${totalRow.number}`);
         
         // Tổng thành tiền
-        const totalAmount = data.reduce((sum, item) => sum + (item['Thành Tiền (₫)'] || 0), 0);
+        const totalAmount = data.reduce((sum, item) => sum + ((item as any)['Thành Tiền (₫)'] || 0), 0);
         const totalAmountCell = worksheet.getCell(`E${totalRow.number}`);
         totalAmountCell.value = totalAmount;
         
@@ -303,16 +321,18 @@ const SalesOrderSummary = () => {
         });
 
         // Auto-size columns
-        // worksheet.columns.forEach(column => {
-        //     let maxLength = 0;
-        //     column.eachCell({ includeEmpty: true }, (cell) => {
-        //         const columnLength = cell.value ? cell.value.toString().length : 10;
-        //         if (columnLength > maxLength) {
-        //             maxLength = columnLength;
-        //         }
-        //     });
-        //     column.width = Math.min(Math.max(maxLength + 2, 10), 50);
-        // });
+        worksheet.columns.forEach(column => {
+            let maxLength = 0;
+            if (column.eachCell) {
+                column.eachCell({ includeEmpty: true }, (cell) => {
+                    const columnLength = cell.value?.toString()?.length || 10;
+                    if (columnLength > maxLength) {
+                        maxLength = columnLength;
+                    }
+                });
+            }
+            column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        });
 
         // Xuất file
         const buffer = await workbook.xlsx.writeBuffer();

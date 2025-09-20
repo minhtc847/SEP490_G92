@@ -181,32 +181,34 @@ const ProductListPage = () => {
         });
 
         // Thêm dữ liệu
-        // data.forEach((row) => {
-        //     const dataRow = worksheet.addRow(headers.map(header => row[header]));
-        //     dataRow.height = 20;
+        data.forEach((row) => {
+            const dataRow = worksheet.addRow(headers.map(header => (row as any)[header]));
+            dataRow.height = 20;
             
-        //     dataRow.eachCell((cell, colNumber) => {
-        //         cell.border = {
-        //             top: { style: 'thin' },
-        //             left: { style: 'thin' },
-        //             bottom: { style: 'thin' },
-        //             right: { style: 'thin' }
-        //         };
-        //     });
-        // });
+            dataRow.eachCell((cell, colNumber) => {
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+        });
 
 
         // Auto-size columns
-        // worksheet.columns.forEach(column => {
-        //     let maxLength = 0;
-        //     column.eachCell({ includeEmpty: true }, (cell) => {
-        //         const columnLength = cell.value != null ? cell.value.toString().length : 10;
-        //         if (columnLength > maxLength) {
-        //             maxLength = columnLength;
-        //         }
-        //     });
-        //     column.width = Math.min(Math.max(maxLength + 2, 10), 50);
-        // });
+        worksheet.columns.forEach(column => {
+            let maxLength = 0;
+            if (column.eachCell) {
+                column.eachCell({ includeEmpty: true }, (cell) => {
+                    const columnLength = cell.value?.toString()?.length || 10;
+                    if (columnLength > maxLength) {
+                        maxLength = columnLength;
+                    }
+                });
+            }
+            column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        });
 
         // Xuất file
         const buffer = await workbook.xlsx.writeBuffer();

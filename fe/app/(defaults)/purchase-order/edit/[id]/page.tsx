@@ -18,6 +18,7 @@ import {
     UpdatePurchaseOrderDto,
 } from './service';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const toPositiveInt = (v: string | number | null): number | null => {
     if (v === null || v === '') return null;
@@ -48,6 +49,14 @@ const PurchaseOrderEditPage = () => {
     const router = useRouter();
     const { id } = useParams<{ id: string }>();
     const orderId = Number(id);
+    const { isAccountant } = usePermissions();
+
+    // Redirect kế toán về trang unauthorized
+    useEffect(() => {
+        if (isAccountant()) {
+            router.push('/unauthorized');
+        }
+    }, [isAccountant, router]);
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
