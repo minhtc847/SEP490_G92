@@ -69,7 +69,7 @@ const CustomersListPage = () => {
 
         // Thêm STT
         data.forEach((item, index) => {
-            item['STT'] = index + 1;
+            item['STT'] = (index + 1).toString();
         });
 
         const headers = ['STT', 'Tên', 'SĐT', 'Địa chỉ', 'Loại', 'Chiết khấu (%)'];
@@ -117,7 +117,7 @@ const CustomersListPage = () => {
 
         // Thêm dữ liệu
         data.forEach((row) => {
-            const dataRow = worksheet.addRow(headers.map(header => row[header]));
+            const dataRow = worksheet.addRow(headers.map(header => (row as any)[header]));
             dataRow.height = 20;
             
             dataRow.eachCell((cell, colNumber) => {
@@ -134,12 +134,14 @@ const CustomersListPage = () => {
         // Auto-size columns
         worksheet.columns.forEach(column => {
             let maxLength = 0;
-            column.eachCell({ includeEmpty: true }, (cell) => {
-                const columnLength = cell.value ? cell.value.toString().length : 10;
-                if (columnLength > maxLength) {
-                    maxLength = columnLength;
-                }
-            });
+            if (column.eachCell) {
+                column.eachCell({ includeEmpty: true }, (cell) => {
+                    const columnLength = cell.value?.toString()?.length || 10;
+                    if (columnLength > maxLength) {
+                        maxLength = columnLength;
+                    }
+                });
+            }
             column.width = Math.min(Math.max(maxLength + 2, 10), 50);
         });
 

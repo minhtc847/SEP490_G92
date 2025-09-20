@@ -146,7 +146,7 @@ const PurchaseOrderPage = () => {
 
         // Thêm STT
         data.forEach((item, index) => {
-            item['STT'] = index + 1;
+            item['STT'] = (index + 1).toString();
         });
 
         const headers = [
@@ -202,7 +202,7 @@ const PurchaseOrderPage = () => {
 
         // Thêm dữ liệu
         data.forEach((row) => {
-            const dataRow = worksheet.addRow(headers.map(header => row[header]));
+            const dataRow = worksheet.addRow(headers.map(header => (row as any)[header]));
             dataRow.height = 20;
             
             dataRow.eachCell((cell, colNumber) => {
@@ -216,7 +216,7 @@ const PurchaseOrderPage = () => {
         });
 
         // Thêm dòng tổng
-        const totalAmount = data.reduce((sum, item) => sum + (item['Tổng tiền (VNĐ)'] || 0), 0);
+        const totalAmount = data.reduce((sum, item) => sum + ((item as any)['Tổng tiền (VNĐ)'] || 0), 0);
         const totalRow = worksheet.addRow(['Tổng', '', '', totalAmount, '', '', '']);
         totalRow.height = 25;
         worksheet.mergeCells(`A${totalRow.number}:B${totalRow.number}`);
@@ -240,12 +240,14 @@ const PurchaseOrderPage = () => {
         // Auto-size columns
         worksheet.columns.forEach(column => {
             let maxLength = 0;
-            column.eachCell({ includeEmpty: true }, (cell) => {
-                const columnLength = cell.value ? cell.value.toString().length : 10;
-                if (columnLength > maxLength) {
-                    maxLength = columnLength;
-                }
-            });
+            if (column.eachCell) {
+                column.eachCell({ includeEmpty: true }, (cell) => {
+                    const columnLength = cell.value?.toString()?.length || 10;
+                    if (columnLength > maxLength) {
+                        maxLength = columnLength;
+                    }
+                });
+            }
             column.width = Math.min(Math.max(maxLength + 2, 10), 50);
         });
 
