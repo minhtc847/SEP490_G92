@@ -182,9 +182,19 @@ namespace SEP490.Selenium.Controller
                     using var scope = _serviceScopeFactory.CreateScope();
                     var saleOrderService = scope.ServiceProvider.GetRequiredService<ISeleniumSaleOrderServices>();
                     var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<SaleOrderHub>>();
+                    var dbContext = scope.ServiceProvider.GetRequiredService<SEP490DbContext>();
 
                     string saleOrderCode = saleOrderService.OpenSaleOrderPage(saleOrder);
 
+                    var order = await dbContext.SaleOrders
+                        .FirstOrDefaultAsync(so => so.Id == saleOrder.Id, token);
+                    if (order != null)
+                    {
+                        order.OrderCode = saleOrderCode;
+                        order.IsUpdateMisa = true;
+                        dbContext.SaleOrders.Update(order);
+                        await dbContext.SaveChangesAsync(token);
+                    }
                     await hubContext.Clients.All.SendAsync("MisaUpdate", new
                     {
                         message = "Đã đồng bộ với Misa thành công",
@@ -212,6 +222,7 @@ namespace SEP490.Selenium.Controller
                     using var scope = _serviceScopeFactory.CreateScope();
                     var saleOrderService = scope.ServiceProvider.GetRequiredService<ISeleniumSaleOrderServices>();
                     var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<SaleOrderHub>>();
+                    var dbContext = scope.ServiceProvider.GetRequiredService<SEP490DbContext>();
 
                     List<string> codes = new();
 
@@ -219,6 +230,15 @@ namespace SEP490.Selenium.Controller
                     {
                         string code = saleOrderService.OpenSaleOrderPage(saleOrder);
                         codes.Add(code);
+                        var order = await dbContext.SaleOrders
+                            .FirstOrDefaultAsync(so => so.Id == saleOrder.Id, token);
+                        if (order != null)
+                        {
+                            order.OrderCode = code;
+                            order.IsUpdateMisa = true;
+                            dbContext.SaleOrders.Update(order);
+                            await dbContext.SaveChangesAsync(token);
+                        }
                     }
 
                     string codeText = string.Join(", ", codes);
