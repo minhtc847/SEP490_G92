@@ -7,6 +7,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import ExcelJS from 'exceljs';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const getStatusText = (status: string) => {
     switch (status) {
@@ -42,6 +43,7 @@ const PurchaseOrderDetailPage = () => {
     const params = useParams();
     const id = Number(params?.id);
     const router = useRouter();
+    const { isAccountant } = usePermissions();
 
     const [order, setOrder] = useState<PurchaseOrderWithDetailsDto | null>(null);
     const [loading, setLoading] = useState(true);
@@ -239,9 +241,11 @@ const PurchaseOrderDetailPage = () => {
                         {isUpdatingMisa ? 'Đang cập nhật MISA...' : '🔄 Cập nhật MISA'}
                     </button>
                     
-                    <button onClick={() => router.push(`/purchase-order/edit/${id}`)} className="px-4 py-1 bg-blue-500 text-white rounded">
-                        📝 Sửa
-                    </button>
+                    {!isAccountant() && (
+                        <button onClick={() => router.push(`/purchase-order/edit/${id}`)} className="px-4 py-1 bg-blue-500 text-white rounded">
+                            📝 Sửa
+                        </button>
+                    )}
                     <button onClick={handleExportToExcel} className="px-4 py-1 bg-gray-600 text-white rounded">
                         📊 Xuất Excel
                     </button>
