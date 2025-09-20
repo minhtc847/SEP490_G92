@@ -381,6 +381,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
 
             return new
             {
+                Id = order.Id,
                 CustomerCode = order.Customer?.CustomerName ?? "",
                 ProductsInput = productsInput
             };
