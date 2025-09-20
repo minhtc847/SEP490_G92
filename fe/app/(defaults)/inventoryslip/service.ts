@@ -447,6 +447,16 @@ export const testMisaStatus = async (slipId: number): Promise<any> => {
     }
 };
 
+export const testProcessManySlips = async (slipIds: number[]): Promise<any> => {
+    try {
+        const response = await axios.post('/api/Selenium/test-process-many-slips', slipIds);
+        return response.data;
+    } catch (error) {
+        console.error('Error testing process many slips:', error);
+        throw error;
+    }
+};
+
 export const checkSlipProductsMisaStatus = async (slipId: number): Promise<any> => {
     try {
         const response = await axios.get(`/api/InventorySlip/${slipId}/check-products-misa`);
