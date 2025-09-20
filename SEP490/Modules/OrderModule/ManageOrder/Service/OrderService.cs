@@ -504,7 +504,7 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 .ToList();
 
             var totalProducts = products.Count;
-            var updatedProducts = products.Count(p => p.IsUpdateMisa==2);
+            var updatedProducts = products.Count(p => p.IsUpdateMisa==1);
             var notUpdatedProducts = products.Where(p => p.IsUpdateMisa==0).ToList();
 
             var canUpdateMisa = totalProducts > 0 && updatedProducts == totalProducts;
