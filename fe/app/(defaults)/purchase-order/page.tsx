@@ -314,7 +314,7 @@ const PurchaseOrderPage = () => {
                         disabled={isUpdating}
                         className="px-4 py-2 text-sm text-white bg-orange-600 rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isUpdating ? 'Đang đồng bộ...' : 'Cập nhật tất cả đơn hàng chưa đồng bộ'}
+                        {isUpdating ? 'Đang đồng bộ...' : 'Đồng bộ tất cả đơn hàng '}
                     </button>
                     <button className="px-4 py-2 text-sm text-white bg-gray-600 rounded hover:bg-gray-700" onClick={handleExportToExcel}>
                         Xuất Excel

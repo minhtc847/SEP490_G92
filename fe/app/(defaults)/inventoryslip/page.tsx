@@ -231,7 +231,7 @@ const InventorySlipPage = () => {
                                     : 'bg-blue-600 text-white hover:bg-blue-700'
                             }`}
                         >
-                            {isUpdatingMany ? 'Đang cập nhật...' : 'Cập nhật tất cả phiếu chưa cập nhật MISA'}
+                            {isUpdatingMany ? 'Đang cập nhật...' : 'Đồng bộ tất cả phiếu'}
                         </button>
                     </div>
                 </div>
