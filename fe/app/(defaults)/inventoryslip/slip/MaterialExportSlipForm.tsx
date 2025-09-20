@@ -162,6 +162,23 @@ export default function MaterialExportSlipForm({
     };
 
     const handleTargetQuantityChange = (targetId: number, quantity: number) => {
+        // Find the target product to get the planned amount
+        const target = targetProducts.find(t => t.id === targetId);
+        
+        // Validate if quantity exceeds planned amount
+        if (target && quantity > target.amount) {
+            Swal.fire({
+                title: 'Cảnh báo',
+                text: `Số lượng cần sản xuất (${quantity}) vượt quá số lượng mục tiêu (${target.amount}) cho sản phẩm "${target.productName}"`,
+                icon: 'warning',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 4000,
+                showCloseButton: true,
+            });
+        }
+        
         setTargetProducts(prev => prev.map(target =>
             target.id === targetId ? { ...target, targetQuantity: quantity } : target
         ));
@@ -259,15 +276,22 @@ export default function MaterialExportSlipForm({
             return;
         }
 
-        // validate
+        // validate - require ALL materials to have quantities filled
         const validationErrors: string[] = [];
         
         for (const target of selectedTargets) {
             const targetMaterials = selectedMaterials.filter(m => m.productionOutputId === target.id);
-            const hasValidMaterial = targetMaterials.some(m => m.quantity > 0);
             
-            if (!hasValidMaterial) {
-                validationErrors.push(`Sản phẩm "${target.productName}" chưa có nguyên liệu nào được điền số lượng > 0`);
+            if (targetMaterials.length === 0) {
+                validationErrors.push(`Sản phẩm "${target.productName}" chưa có nguyên liệu nào được tải`);
+                continue;
+            }
+            
+            // Check if ALL materials have quantities > 0
+            const materialsWithoutQuantity = targetMaterials.filter(m => m.quantity <= 0);
+            if (materialsWithoutQuantity.length > 0) {
+                const materialNames = materialsWithoutQuantity.map(m => m.productName).join(', ');
+                validationErrors.push(`Sản phẩm "${target.productName}": Vui lòng nhập số lượng cho tất cả nguyên liệu (${materialNames})`);
             }
         }
         
@@ -440,9 +464,14 @@ export default function MaterialExportSlipForm({
         
         for (const target of selectedTargets) {
             const targetMaterials = selectedMaterials.filter(m => m.productionOutputId === target.id);
-            const hasValidMaterial = targetMaterials.some(m => m.quantity > 0);
             
-            if (!hasValidMaterial) {
+            if (targetMaterials.length === 0) {
+                return false;
+            }
+            
+            // Check if ALL materials have quantities > 0
+            const materialsWithoutQuantity = targetMaterials.filter(m => m.quantity <= 0);
+            if (materialsWithoutQuantity.length > 0) {
                 return false;
             }
         }
@@ -587,8 +616,9 @@ export default function MaterialExportSlipForm({
                                             {/* Validation indicator */}
                                             {(() => {
                                                 const targetMaterials = selectedMaterials.filter(m => m.productionOutputId === target.id);
-                                                const hasValidMaterial = targetMaterials.some(m => m.quantity > 0);
                                                 const hasMaterials = targetMaterials.length > 0;
+                                                const materialsWithoutQuantity = targetMaterials.filter(m => m.quantity <= 0);
+                                                const allMaterialsHaveQuantity = materialsWithoutQuantity.length === 0;
                                                 
                                                 if (!hasMaterials) {
                                                     return (
@@ -598,13 +628,13 @@ export default function MaterialExportSlipForm({
                                                     );
                                                 }
                                                 
-                                                if (!hasValidMaterial) {
+                                                if (!allMaterialsHaveQuantity) {
                                                     return (
                                                         <div className="text-xs text-red-500 text-center flex items-center justify-center">
                                                             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                                                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                                             </svg>
-                                                            Cần điền số lượng &gt; 0 cho ít nhất 1 nguyên liệu
+                                                            Thiếu số lượng ({materialsWithoutQuantity.length})
                                                         </div>
                                                     );
                                                 }
@@ -724,7 +754,7 @@ export default function MaterialExportSlipForm({
                                                                 placeholder={(material.uom || '').toLowerCase() === 'tấm' ? '0' : '0.00'}
                                                             />
                                                             <p className="text-gray-500 text-xs mt-1">
-                                                                {material.quantity > 0 ? 'Sẽ được thêm vào phiếu' : 'Để trống nếu không sử dụng'}
+                                                                {material.quantity > 0 ? 'Sẽ được thêm vào phiếu' : 'Bắt buộc nhập số lượng'}
                                                             </p>
                                                         </div>
                                                         <div>

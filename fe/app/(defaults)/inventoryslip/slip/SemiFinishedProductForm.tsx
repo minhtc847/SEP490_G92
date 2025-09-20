@@ -162,7 +162,30 @@ export default function SemiFinishedProductForm({
                             </label>
                             <select
                                 value={formData.productId}
-                                onChange={(e) => handleInputChange('productId', parseInt(e.target.value))}
+                                onChange={(e) => {
+                                    const newProductId = parseInt(e.target.value);
+                                    handleInputChange('productId', newProductId);
+                                    
+                                    // Check if current quantity exceeds the new product's requirement
+                                    if (newProductId > 0 && formData.quantity) {
+                                        const intQuantity = parseInt(formData.quantity);
+                                        if (intQuantity > 0) {
+                                            const productionOutput = productionOrderInfo.productionOutputs?.find((po: any) => po.productId === newProductId);
+                                            if (productionOutput && intQuantity > productionOutput.amount) {
+                                                Swal.fire({
+                                                    title: 'Cảnh báo',
+                                                    text: `Số lượng bán thành phẩm (${intQuantity}) vượt quá số lượng yêu cầu của lệnh sản xuất (${productionOutput.amount}) cho sản phẩm "${productionOutput.productName}"`,
+                                                    icon: 'warning',
+                                                    toast: true,
+                                                    position: 'bottom-start',
+                                                    showConfirmButton: false,
+                                                    timer: 4000,
+                                                    showCloseButton: true,
+                                                });
+                                            }
+                                        }
+                                    }
+                                }}
                                 className={`w-full px-3 py-2 border rounded-md ${errors.productId ? 'border-red-500 bg-red-50' : 'border-green-300'
                                     }`}
                             >
@@ -218,6 +241,20 @@ export default function SemiFinishedProductForm({
                                         } else if (intValue < 1) {
                                             handleInputChange('quantity', '1');
                                         } else {
+                                            // Check if quantity exceeds production order requirement
+                                            const productionOutput = productionOrderInfo.productionOutputs?.find((po: any) => po.productId === formData.productId);
+                                            if (productionOutput && intValue > productionOutput.amount) {
+                                                Swal.fire({
+                                                    title: 'Cảnh báo',
+                                                    text: `Số lượng bán thành phẩm (${intValue}) vượt quá số lượng yêu cầu của lệnh sản xuất (${productionOutput.amount}) cho sản phẩm "${productionOutput.productName}"`,
+                                                    icon: 'warning',
+                                                    toast: true,
+                                                    position: 'bottom-start',
+                                                    showConfirmButton: false,
+                                                    timer: 4000,
+                                                    showCloseButton: true,
+                                                });
+                                            }
                                             handleInputChange('quantity', intValue.toString());
                                         }
                                     }}
