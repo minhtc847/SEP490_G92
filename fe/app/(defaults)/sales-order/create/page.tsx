@@ -18,6 +18,7 @@ import {
 } from '@/app/(defaults)/sales-order/create/service';
 import AsyncSelect from 'react-select/async';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import Swal from 'sweetalert2';
 
 const SalesOrderCreatePage = () => {
     const router = useRouter();
@@ -177,6 +178,37 @@ const SalesOrderCreatePage = () => {
 
         if (currentItem.isFromDatabase && ['productName', 'width', 'height', 'thickness', 'unitPrice'].includes(field)) return;
 
+        // Validate quantity limit
+        if (field === 'quantity') {
+            const numValue = +value;
+            if (numValue > 9999) {
+                Swal.fire({
+                    title: 'Cảnh báo',
+                    text: 'Số lượng không được vượt quá 9999',
+                    icon: 'warning',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
+                return;
+            }
+            if (numValue < 1) {
+                Swal.fire({
+                    title: 'Cảnh báo',
+                    text: 'Số lượng phải lớn hơn 0',
+                    icon: 'warning',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
+                return;
+            }
+        }
+
         updatedItems[index] = {
             ...currentItem,
             [field]: field === 'productName' ? value.toString() : +value,
@@ -194,29 +226,74 @@ const SalesOrderCreatePage = () => {
     const handleSaveProduct = async () => {
         try {
             if (isProductNameDuplicate) {
-                alert('Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.');
+                Swal.fire({
+                    title: 'Lỗi',
+                    text: 'Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.',
+                    icon: 'error',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
                 return;
             }
 
             // const regex = /^Kính .+ phút, KT: \d+\*\d+\*\d+ mm, .+$/;
             // if (!regex.test(newFinishedProductForm.productName)) {
-            //     alert('Tên sản phẩm sai định dạng.\n\nVí dụ đúng: Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng');
+            //     Swal.fire({
+            //         title: 'Lỗi',
+            //         text: 'Tên sản phẩm sai định dạng.\n\nVí dụ đúng: Kính EI60 phút, KT: 300*500*30 mm, VNG-MK cữ kính đứng',
+            //         icon: 'error',
+            //         toast: true,
+            //         position: 'bottom-start',
+            //         showConfirmButton: false,
+            //         timer: 5000,
+            //         showCloseButton: true,
+            //     });
             //     return;
             // }
 
             if (!newFinishedProductForm.productName.trim()) {
-                alert('Vui lòng nhập tên sản phẩm!');
+                Swal.fire({
+                    title: 'Lỗi',
+                    text: 'Vui lòng nhập tên sản phẩm!',
+                    icon: 'error',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
                 return;
             }
 
             const isExisted = await checkProductNameExists(newFinishedProductForm.productName);
             if (isExisted) {
-                alert('Tên sản phẩm đã tồn tại, vui lòng chọn tên khác!');
+                Swal.fire({
+                    title: 'Lỗi',
+                    text: 'Tên sản phẩm đã tồn tại, vui lòng chọn tên khác!',
+                    icon: 'error',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
                 return;
             }
 
             if (!newFinishedProductForm.glassStructureId) {
-                alert('Vui lòng chọn cấu trúc kính!');
+                Swal.fire({
+                    title: 'Lỗi',
+                    text: 'Vui lòng chọn cấu trúc kính!',
+                    icon: 'error',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
                 return;
             }
 
@@ -264,14 +341,32 @@ const SalesOrderCreatePage = () => {
             });
         } catch (err) {
             console.error('Lỗi thêm sản phẩm:', err);
-            alert('Thêm sản phẩm thất bại!');
+            Swal.fire({
+                title: 'Lỗi',
+                text: 'Thêm sản phẩm thất bại!',
+                icon: 'error',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
         }
     };
 
     const handleSave = async () => {
         try {
             if (isCustomerNameDuplicate) {
-                alert('Tên khách hàng đã tồn tại. Vui lòng nhập tên khác.');
+                Swal.fire({
+                    title: 'Lỗi',
+                    text: 'Tên khách hàng đã tồn tại. Vui lòng nhập tên khác.',
+                    icon: 'error',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
                 return;
             }
 
@@ -298,11 +393,29 @@ const SalesOrderCreatePage = () => {
             };
 
             const res = await createOrderDetail(payload);
-            alert('Tạo đơn hàng thành công!');
+            Swal.fire({
+                title: 'Thành công',
+                text: 'Tạo đơn hàng thành công!',
+                icon: 'success',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             router.push(`/sales-order/${res.id}`);
         } catch (err: any) {
             console.error('Response‑data:', err?.response?.data);
-            alert('Tạo đơn hàng thất bại!\n' + JSON.stringify(err?.response?.data?.errors ?? err?.response?.data, null, 2));
+            Swal.fire({
+                title: 'Lỗi',
+                text: 'Tạo đơn hàng thất bại!\n' + JSON.stringify(err?.response?.data?.errors ?? err?.response?.data, null, 2),
+                icon: 'error',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 5000,
+                showCloseButton: true,
+            });
         }
     };
 
@@ -448,7 +561,14 @@ const SalesOrderCreatePage = () => {
                                     <td className="text-right">{height.toLocaleString()}</td>
                                     <td className="text-right">{(item.thickness ?? 0).toLocaleString()}</td> */}
                                     <td>
-                                        <input type="number" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', +e.target.value)} className="input input-sm" />
+                                        <input 
+                                            type="number" 
+                                            value={item.quantity} 
+                                            onChange={(e) => handleItemChange(index, 'quantity', +e.target.value)} 
+                                            className="input input-sm" 
+                                            min="1"
+                                            max="9999"
+                                        />
                                     </td>
                                     <td>Tấm</td>
                                     <td className="text-right">{(item.unitPrice ?? 0).toLocaleString()}</td>

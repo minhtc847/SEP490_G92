@@ -584,12 +584,20 @@ const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
 
     const materialOutputMap = new Map<number, any[]>();
 
+    // Use the actual mappings from the backend
     rawMaterials.forEach(material => {
         if (material.outputMappings && material.outputMappings.length > 0) {
-            const outputs = material.outputMappings.map(mapping => {
+            // Remove duplicate mappings by outputDetailId
+            const uniqueMappings = material.outputMappings.filter((mapping, index, self) => 
+                index === self.findIndex(m => m.outputDetailId === mapping.outputDetailId)
+            );
+            
+            // Use actual mappings if available
+            const outputs = uniqueMappings.map(mapping => {
                 const outputDetail = [...semiFinishedProducts, ...wasteGlass].find(d => d.id === mapping.outputDetailId);
                 return outputDetail;
             }).filter(Boolean);
+            
             materialOutputMap.set(material.id, outputs);
         } else {
             materialOutputMap.set(material.id, []);

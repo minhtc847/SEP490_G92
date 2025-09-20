@@ -1086,6 +1086,20 @@ export default function InventorySlipForm({
                                                                     } else if (intValue < 1) {
                                                                         handleUpdateDetail(index, 'quantity', 1);
                                                                     } else {
+                                                                        // Check if this is a semi-finished product and validate against production order requirement
+                                                                        const productionOutput = productionOrderInfo.productionOutputs?.find(po => po.productId === detail.productId);
+                                                                        if (productionOutput && intValue > productionOutput.amount) {
+                                                                            Swal.fire({
+                                                                                title: 'Cảnh báo',
+                                                                                text: `Số lượng bán thành phẩm (${intValue}) vượt quá số lượng yêu cầu của lệnh sản xuất (${productionOutput.amount}) cho sản phẩm "${productionOutput.productName}"`,
+                                                                                icon: 'warning',
+                                                                                toast: true,
+                                                                                position: 'bottom-start',
+                                                                                showConfirmButton: false,
+                                                                                timer: 4000,
+                                                                                showCloseButton: true,
+                                                                            });
+                                                                        }
                                                                         handleUpdateDetail(index, 'quantity', intValue);
                                                                     }
                                                                 }}

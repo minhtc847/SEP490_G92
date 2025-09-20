@@ -16,6 +16,7 @@ import {
     deleteOrderById,
 } from '@/app/(defaults)/sales-order/edit/[id]/service';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import Swal from 'sweetalert2';
 
 type GlassStructure = {
     id: number;
@@ -146,6 +147,37 @@ const SalesOrderEditPage = () => {
     ];
 
     const handleItemChange = (index: number, field: keyof OrderItem, value: string | number) => {
+        // Validate quantity limit
+        if (field === 'quantity') {
+            const numValue = +value;
+            if (numValue > 9999) {
+                Swal.fire({
+                    title: 'Cảnh báo',
+                    text: 'Số lượng không được vượt quá 9999',
+                    icon: 'warning',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
+                return;
+            }
+            if (numValue < 1) {
+                Swal.fire({
+                    title: 'Cảnh báo',
+                    text: 'Số lượng phải lớn hơn 0',
+                    icon: 'warning',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
+                return;
+            }
+        }
+
         const updatedItems = [...form.orderItems];
         updatedItems[index] = {
             ...updatedItems[index],
@@ -157,18 +189,45 @@ const SalesOrderEditPage = () => {
     const handleSaveProduct = async () => {
         try {
             if (isProductNameDuplicate) {
-                alert('Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.');
+                Swal.fire({
+                    title: 'Lỗi',
+                    text: 'Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.',
+                    icon: 'error',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
                 return;
             }
 
             const isExisted = await checkProductNameExists(newProductForm.productName);
             if (isExisted) {
-                alert('Tên sản phẩm đã tồn tại, vui lòng chọn tên khác!');
+                Swal.fire({
+                    title: 'Lỗi',
+                    text: 'Tên sản phẩm đã tồn tại, vui lòng chọn tên khác!',
+                    icon: 'error',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
                 return;
             }
 
             if (!newProductForm.glassStructureId) {
-                alert('Vui lòng chọn cấu trúc kính!');
+                Swal.fire({
+                    title: 'Lỗi',
+                    text: 'Vui lòng chọn cấu trúc kính!',
+                    icon: 'error',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
                 return;
             }
 
@@ -217,7 +276,16 @@ const SalesOrderEditPage = () => {
             });
         } catch (err) {
             console.error('Lỗi thêm sản phẩm:', err);
-            alert('Thêm sản phẩm thất bại!');
+            Swal.fire({
+                title: 'Lỗi',
+                text: 'Thêm sản phẩm thất bại!',
+                icon: 'error',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
         }
     };
 
@@ -277,16 +345,44 @@ const SalesOrderEditPage = () => {
     const existingProductIds = new Set(form.orderItems.map((item) => item.productId));
 
     const handleDelete = async () => {
-        const confirmDelete = confirm('Bạn có chắc chắn muốn xoá đơn hàng này không?');
-        if (!confirmDelete) return;
+        const result = await Swal.fire({
+            title: 'Xác nhận xóa',
+            text: 'Bạn có chắc chắn muốn xoá đơn hàng này không?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy'
+        });
+
+        if (!result.isConfirmed) return;
 
         try {
             await deleteOrderById(Number(id));
-            alert('Đã xoá đơn hàng thành công!');
+            Swal.fire({
+                title: 'Thành công',
+                text: 'Đã xoá đơn hàng thành công!',
+                icon: 'success',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             router.push('/sales-order');
         } catch (err: any) {
             console.error('Lỗi khi xoá:', err.response?.data || err.message);
-            alert('Xoá thất bại! ' + (err.response?.data?.title || err.message));
+            Swal.fire({
+                title: 'Lỗi',
+                text: 'Xoá thất bại! ' + (err.response?.data?.title || err.message),
+                icon: 'error',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
         }
     };
 
@@ -296,7 +392,16 @@ const SalesOrderEditPage = () => {
                 if (item.productId === 0) {
                     const exists = await checkProductCodeExists(item.productCode);
                     if (exists) {
-                        alert(`Mã sản phẩm "${item.productCode}" đã tồn tại. Vui lòng sửa lại mã hoặc tạo mã tự động.`);
+                        Swal.fire({
+                            title: 'Lỗi',
+                            text: `Mã sản phẩm "${item.productCode}" đã tồn tại. Vui lòng sửa lại mã hoặc tạo mã tự động.`,
+                            icon: 'error',
+                            toast: true,
+                            position: 'bottom-start',
+                            showConfirmButton: false,
+                            timer: 3000,
+                            showCloseButton: true,
+                        });
                         return;
                     }
                 }
@@ -324,13 +429,31 @@ const SalesOrderEditPage = () => {
             };
 
             await updateOrderDetailById(Number(id), payload);
-            alert('Cập nhật thành công!');
+            Swal.fire({
+                title: 'Thành công',
+                text: 'Cập nhật thành công!',
+                icon: 'success',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             
             // Force reload the page to ensure updated data is shown
             window.location.href = `/sales-order/${id}`;
         } catch (err: any) {
             console.error('Lỗi cập nhật:', err.response?.data || err.message);
-            alert('Cập nhật thất bại! ' + (err.response?.data?.title || err.message));
+            Swal.fire({
+                title: 'Lỗi',
+                text: 'Cập nhật thất bại! ' + (err.response?.data?.title || err.message),
+                icon: 'error',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
         }
     };
 
@@ -447,7 +570,14 @@ const SalesOrderEditPage = () => {
                                     <td className="text-right">{height.toLocaleString()}</td>
                                     <td className="text-right">{(item.thickness ?? 0).toLocaleString()}</td>
                                     <td>
-                                        <input type="number" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', +e.target.value)} className="input input-sm" />
+                                        <input 
+                                            type="number" 
+                                            value={item.quantity} 
+                                            onChange={(e) => handleItemChange(index, 'quantity', +e.target.value)} 
+                                            className="input input-sm" 
+                                            min="1"
+                                            max="9999"
+                                        />
                                     </td>
                                     <td className="text-right">{(item.unitPrice ?? 0).toLocaleString()}</td>
                                     <td className="text-right">{area.toFixed(2)}</td>

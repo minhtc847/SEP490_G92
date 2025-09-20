@@ -3,6 +3,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import { Fragment, useState, useEffect } from 'react';
 import { ProductionPlanProductDetail, ProductionPlanMaterialProduct, fetchProductionPlanMaterialDetail } from '@/app/(defaults)/production-plans/service';
 import { createGelOrder, CreateGelOrderDto } from '@/app/(defaults)/production-plans/create/service';
+import Swal from 'sweetalert2';
 
 interface PourGlueModalProps {
     isOpen: boolean;
@@ -69,9 +70,26 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
 
     // Handler for changing quantity in product table
     const handleProductQuantityChange = (productId: number, value: string) => {
+        const numValue = Number(value) || 0;
+        
+        // Validate quantity limit for "Số lượng cần đổ"
+        if (numValue > 99999) {
+            Swal.fire({
+                title: 'Cảnh báo',
+                text: 'Số lượng cần đổ không được vượt quá 99999',
+                icon: 'warning',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
+            return;
+        }
+        
         const newQuantities = {
             ...productQuantities,
-            [productId]: Number(value),
+            [productId]: numValue,
         };
         setProductQuantities(newQuantities);
         if (errors.productQuantities) {
@@ -227,7 +245,7 @@ const PourGlueModal = ({ isOpen, onClose, products, productionPlanId, onSave }: 
                                                                     <input
                                                                         type="number"
                                                                         min={0}
-                                                                        //max={remainingQuantity}
+                                                                        max={99999}
                                                                         className="form-input w-24"
                                                                         value={productQuantities[product.id] ?? 0}
                                                                         onChange={e => handleProductQuantityChange(product.id, e.target.value)}
