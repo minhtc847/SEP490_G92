@@ -109,6 +109,7 @@ const InventorySlipPage = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID lệnh sản xuất</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Người tạo</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">MISA</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mô tả</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
                             </tr>
@@ -116,13 +117,13 @@ const InventorySlipPage = () => {
                         <tbody>
                                                         {loading ? (
                                 <tr>
-                                    <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">
+                                    <td colSpan={10} className="px-6 py-4 text-center text-sm text-gray-500">
                                         Đang tải dữ liệu...
                                     </td>
                                 </tr>
                             ) : records.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">
+                                    <td colSpan={10} className="px-6 py-4 text-center text-sm text-gray-500">
                                         Không có dữ liệu phiếu kho
                                     </td>
                                 </tr>
@@ -151,6 +152,17 @@ const InventorySlipPage = () => {
                                             ) : (
                                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                                      Chưa cập nhật
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {item.isUpdateMisa ? (
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                     Đã cập nhật MISA
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                     Chưa cập nhật MISA
                                                 </span>
                                             )}
                                         </td>
