@@ -76,7 +76,7 @@ const SalesOrderDetailPage = () => {
                     return `${productName} (${productCode})`;
                 }).join(', ');
                 
-                setErrorMessage(`Không thể cập nhật MISA. Các sản phẩm sau chưa được cập nhật MISA: ${productList}`);
+                setErrorMessage(`Không thể đồng bộ MISA. Các sản phẩm sau chưa được đồng bộ MISA: ${productList}`);
                 setShowErrorMessage(true);
                 setTimeout(() => {
                     setShowErrorMessage(false);
@@ -107,8 +107,8 @@ const SalesOrderDetailPage = () => {
             }, 3000);
             
         } catch (error: any) {
-            console.error('Lỗi khi cập nhật MISA:', error);
-            setErrorMessage(error.response?.data?.message || error.message || 'Có lỗi xảy ra khi cập nhật MISA.');
+            console.error('Lỗi khi đồng bộ MISA:', error);
+            setErrorMessage(error.response?.data?.message || error.message || 'Có lỗi xảy ra khi đồng bộ MISA.');
             setShowErrorMessage(true);
             setTimeout(() => {
                 setShowErrorMessage(false);
@@ -243,7 +243,7 @@ const SalesOrderDetailPage = () => {
                 <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
                     <div className="bg-white rounded shadow p-4 text-center">
                         <div className="animate-spin inline-block w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full mr-2"></div>
-                        <span>Đang cập nhật MISA, vui lòng không thao tác...</span>
+                        <span>Đang đồng bộ MISA, vui lòng không thao tác...</span>
                     </div>
                 </div>
             )}
@@ -256,7 +256,7 @@ const SalesOrderDetailPage = () => {
                     <button 
                         onClick={handleUpdateMisa} 
                         disabled={isUpdatingMisa || order.isUpdateMisa}
-                        title={order.isUpdateMisa ? 'Đơn hàng đã được cập nhật MISA' : ''}
+                        title={order.isUpdateMisa ? 'Đơn hàng đã được đồng bộMISA' : ''}
                         aria-busy={isUpdatingMisa}
                         className={`px-4 py-1 rounded transition ${
                             isUpdatingMisa || order.isUpdateMisa
@@ -267,10 +267,10 @@ const SalesOrderDetailPage = () => {
                         {isUpdatingMisa ? (
                             <>
                                 <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
-                                Đang cập nhật MISA...
+                                Đang đồng bộ MISA...
                             </>
                         ) : (
-                            '🔄 Update MISA'
+                            '🔄 Đồng bộ MISA'
                         )}
                     </button>
                     <button onClick={handleExportToExcel} className="px-4 py-1 bg-gray-600 text-white rounded">
@@ -334,13 +334,13 @@ const SalesOrderDetailPage = () => {
                     <strong>Giao hàng:</strong> {getDeliveryStatusText(order.deliveryStatus)}
                 </div>
                 <div>
-                    <strong>Trạng thái cập nhật MISA:</strong>
+                    <strong>Trạng thái đồng bộ MISA:</strong>
                     <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
                         order.isUpdateMisa 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-gray-100 text-gray-800'
                     }`}>
-                        {order.isUpdateMisa ? 'Đã cập nhật' : 'Chưa cập nhật'}
+                        {order.isUpdateMisa ? 'Đã đồng bộ' : 'Chưa đồng bộ'}
                     </span>
                 </div>
             </div>

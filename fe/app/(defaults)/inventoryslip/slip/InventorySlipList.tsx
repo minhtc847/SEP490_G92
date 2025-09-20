@@ -180,7 +180,7 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                 <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
                     <div className="bg-white rounded shadow p-4 text-center">
                         <div className="animate-spin inline-block w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full mr-2"></div>
-                        <span>Đang cập nhật MISA, vui lòng không thao tác...</span>
+                        <span>Đang đồng bộ MISA, vui lòng không thao tác...</span>
                     </div>
                 </div>
             )}
@@ -215,11 +215,11 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                                     <p><strong>Misa:</strong> 
                                         {slip.isUpdateMisa ? (
                                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 ml-2">
-                                                Đã cập nhật lên Misa
+                                                Đã đồng bộ lên Misa
                                             </span>
                                         ) : (
                                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 ml-2">
-                                                Chưa cập nhật lên Misa
+                                                Chưa đồng bộ lên Misa
                                             </span>
                                         )}
                                     </p>
@@ -298,8 +298,8 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                                             try {
                                                 const { default: Swal } = await import('sweetalert2');
                                                 const result = await Swal.fire({
-                                                    title: 'Xác nhận cập nhật lên Misa',
-                                                    text: 'Bạn có chắc chắn muốn cập nhật phiếu này lên phần mềm Misa?',
+                                                    title: 'Xác nhận đồng bộ lên Misa',
+                                                    text: 'Bạn có chắc chắn muốn đồng bộ phiếu này lên phần mềm Misa?',
                                                     icon: 'question',
                                                     showCancelButton: true,
                                                     confirmButtonText: 'Cập nhật',
@@ -327,8 +327,8 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                                                             }).join(', ');
                                                             
                                                             Swal.fire({
-                                                                title: 'Không thể cập nhật MISA',
-                                                                text: `Các sản phẩm sau chưa được cập nhật MISA: ${productList}`,
+                                                                title: 'Không thể đồng bộ MISA',
+                                                                text: `Các sản phẩm sau chưa được đồng bộ MISA: ${productList}`,
                                                                 icon: 'error',
                                                                 confirmButtonText: 'Đã hiểu',
                                                             });
@@ -363,7 +363,7 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                                                         console.error('Error updating Misa:', error);
                                                         Swal.fire({
                                                             title: 'Lỗi',
-                                                            text: 'Không thể cập nhật lên Misa. Vui lòng thử lại.',
+                                                            text: 'Không thể đồng bộ lên Misa. Vui lòng thử lại.',
                                                             icon: 'error',
                                                             confirmButtonText: 'Đã hiểu',
                                                         });
@@ -380,7 +380,7 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                                         className={`px-3 py-1 text-sm border rounded-md transition-colors ${isMisaUpdating ? 'border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed' : 'border-purple-300 text-purple-700 bg-white hover:bg-purple-50'}`}
                                         title="Đồng bộ Misa"
                                     >
-                                        {isMisaUpdating ? 'Đang cập nhật Misa...' : 'Cập nhật lên Misa'}
+                                        {isMisaUpdating ? 'Đang đồng bộ Misa...' : 'đồng bộ lên Misa'}
                                     </button>
                                 )}
                             </div>

@@ -144,17 +144,17 @@ const PurchaseOrderPage = () => {
             const ordersNotUpdated = await getPurchaseOrdersNotUpdated();
             
             if (ordersNotUpdated.length === 0) {
-                setUpdateMessage('Không có đơn hàng nào cần cập nhật!');
+                setUpdateMessage('Không có đơn hàng nào cần đồng bộ!');
                 return;
             }
 
-            const confirmed = confirm(`Bạn có chắc chắn muốn cập nhật ${ordersNotUpdated.length} đơn hàng chưa cập nhật lên MISA?`);
+            const confirmed = confirm(`Bạn có chắc chắn muốn đồng bộ ${ordersNotUpdated.length} đơn hàng chưa cập nhật lên MISA?`);
             if (!confirmed) return;
 
             // Gọi API update tất cả đơn hàng
             await updateManyPurchaseOrders(ordersNotUpdated);
             
-            setUpdateMessage(`Đã gửi yêu cầu cập nhật ${ordersNotUpdated.length} đơn hàng lên MISA. Quá trình này sẽ chạy trong background.`);
+            setUpdateMessage(`Đã gửi yêu cầu đồng bộ ${ordersNotUpdated.length} đơn hàng lên MISA. Quá trình này sẽ chạy trong background.`);
             
             // Refresh danh sách đơn hàng sau 2 giây
             setTimeout(() => {
@@ -162,8 +162,8 @@ const PurchaseOrderPage = () => {
             }, 2000);
             
         } catch (err) {
-            console.error('Lỗi khi cập nhật đơn hàng:', err);
-            setUpdateMessage('Có lỗi xảy ra khi cập nhật đơn hàng!');
+            console.error('Lỗi khi đồng bộ đơn hàng:', err);
+            setUpdateMessage('Có lỗi xảy ra khi đồng bộ đơn hàng!');
         } finally {
             setIsUpdating(false);
         }
@@ -176,7 +176,7 @@ const PurchaseOrderPage = () => {
             'Mã đơn hàng': order.code || '-',
             'Tổng tiền (VNĐ)': order.totalValue || 0,
             'Trạng thái': getStatusText(order.status || ''),
-            'MISA': order.isUpdateMisa ? 'Đã cập nhật' : 'Chưa cập nhật',
+            'MISA': order.isUpdateMisa ? 'Đã đồng bộ' : 'Chưa đồng bộ',
             'Nhà cung cấp': order.customerName || '-',
         }));
 
@@ -314,7 +314,7 @@ const PurchaseOrderPage = () => {
                         disabled={isUpdating}
                         className="px-4 py-2 text-sm text-white bg-orange-600 rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isUpdating ? 'Đang cập nhật...' : 'Cập nhật tất cả đơn hàng chưa cập nhật'}
+                        {isUpdating ? 'Đang đồng bộ...' : 'Cập nhật tất cả đơn hàng chưa đồng bộ'}
                     </button>
                     <button className="px-4 py-2 text-sm text-white bg-gray-600 rounded hover:bg-gray-700" onClick={handleExportToExcel}>
                         Xuất Excel
@@ -465,7 +465,7 @@ const PurchaseOrderPage = () => {
                                 </td>
                                 <td>
                                     <span className={`badge ${order.isUpdateMisa ? 'badge-outline-success' : 'badge-outline-warning'}`}>
-                                        {order.isUpdateMisa ? 'Đã cập nhật' : 'Chưa cập nhật'}
+                                        {order.isUpdateMisa ? 'Đã đồng bộ' : 'Chưa đồng bộ'}
                                     </span>
                                 </td>
                                 <td>{order.customerName || '-'}</td>

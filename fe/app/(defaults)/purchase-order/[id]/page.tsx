@@ -151,7 +151,7 @@ const PurchaseOrderDetailPage = () => {
                 <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
                     <div className="bg-white rounded shadow p-4 text-center">
                         <div className="animate-spin inline-block w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full mr-2"></div>
-                        <span>Đang cập nhật MISA, vui lòng không thao tác...</span>
+                        <span>Đang đồng bộ MISA, vui lòng không thao tác...</span>
                     </div>
                 </div>
             )}
@@ -218,15 +218,15 @@ const PurchaseOrderDetailPage = () => {
                     <button
                         onClick={async () => {
                             if (order.isUpdateMisa) return;
-                            if (!confirm(`Bạn có chắc muốn cập nhật MISA cho đơn hàng "${order.description}" không?`)) return;
+                            if (!confirm(`Bạn có chắc muốn đồng bộ MISA cho đơn hàng "${order.description}" không?`)) return;
                             try {
                                 setIsUpdatingMisa(true);
                                 if (typeof document !== 'undefined') document.body.classList.add('pointer-events-none');
                                 await updateMisaPurchaseOrder(order.id);
                                 setOrder((prev) => (prev ? { ...prev, isUpdateMisa: true } : prev));
-                                alert('Đã cập nhật MISA thành công.');
+                                alert('Đã đồng bộ MISA thành công.');
                             } catch (error: any) {
-                                const errorMessage = error.response?.data?.message || 'Lỗi khi cập nhật MISA. Vui lòng thử lại.';
+                                const errorMessage = error.response?.data?.message || 'Lỗi khi đồng bộ MISA. Vui lòng thử lại.';
                                 alert(errorMessage);
                             } finally {
                                 setIsUpdatingMisa(false);
@@ -234,11 +234,11 @@ const PurchaseOrderDetailPage = () => {
                             }
                         }}
                         disabled={order.isUpdateMisa || isUpdatingMisa}
-                        title={order.isUpdateMisa ? 'Đơn hàng đã được cập nhật MISA' : ''}
+                        title={order.isUpdateMisa ? 'Đơn hàng đã được đồng bộ MISA' : ''}
                         aria-busy={isUpdatingMisa}
                         className={`px-4 py-1 rounded ${order.isUpdateMisa || isUpdatingMisa ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-purple-600 text-white hover:bg-purple-700'}`}
                     >
-                        {isUpdatingMisa ? 'Đang cập nhật MISA...' : '🔄 Cập nhật MISA'}
+                        {isUpdatingMisa ? 'Đang đồng bộ MISA...' : '🔄 Đồng bộ MISA'}
                     </button>
                     
                     {!isAccountant() && (
@@ -277,7 +277,7 @@ const PurchaseOrderDetailPage = () => {
                 <div>
                     <strong>MISA:</strong> 
                     <span className={`ml-2 badge ${order.isUpdateMisa ? 'badge-outline-success' : 'badge-outline-warning'}`}>
-                        {order.isUpdateMisa ? 'Đã cập nhật' : 'Chưa cập nhật'}
+                        {order.isUpdateMisa ? 'Đã đồng bộ' : 'Chưa đồng bộ'}
                     </span>
                 </div>
             </div>

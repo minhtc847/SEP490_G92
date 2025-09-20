@@ -33,6 +33,7 @@ import IconMenuDocumentation from '@/components/icon/menu/icon-menu-documentatio
 import { usePathname } from 'next/navigation';
 import { getTranslation } from '@/i18n';
 import { usePermissions } from '@/hooks/usePermissions';
+import IconMenuDashboard from '../icon/menu/icon-menu-dashboard';
 
 const Sidebar = () => {
     const dispatch = useDispatch();
@@ -89,7 +90,19 @@ const Sidebar = () => {
         const items = [];
 
         // Dashboard menu removed
-
+        // Dashboard - Factory Manager and Accountant
+        if (isFactoryManager() || isAccountant()) {
+            items.push(
+                <li key="dashboard" className="menu nav-item">
+                    <Link href="/dashboard" className="nav-link group">
+                        <div className="flex items-center">
+                            <IconMenuDashboard className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">Dashboard</span>
+                        </div>
+                    </Link>
+                </li>
+            );
+        }
         // Orders - Factory Manager and Accountant
         if (isFactoryManager() || isAccountant()) {
             items.push(
