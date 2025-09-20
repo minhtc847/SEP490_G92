@@ -146,6 +146,7 @@ namespace SEP490.Selenium.Controller
                         if (newProduct != null)
                         {
                             newProduct.ProductCode = productCode;
+                            newProduct.isupdatemisa = 1;
                             dbContext.Products.Update(newProduct);
                             await dbContext.SaveChangesAsync(token);
                         }
