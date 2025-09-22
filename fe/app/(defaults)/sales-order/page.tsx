@@ -201,7 +201,7 @@ const SalesOrderSummary = () => {
             'Thành Tiền (₫)': order.totalAmount,
             'Trạng Thái': getStatusText(order.status),
             'Giao Hàng': getDeliveryStatusText(order.deliveryStatus),
-            'Cập nhật MISA': order.isUpdateMisa ? 'Đã đồng bộ' : 'Chưa đồng bộ',
+            'Đồng bộ MISA': order.isUpdateMisa ? 'Đã đồng bộ' : 'Chưa đồng bộ',
         }));
 
         // Thêm STT
@@ -217,7 +217,7 @@ const SalesOrderSummary = () => {
             'Thành Tiền (₫)',
             'Trạng Thái',
             'Giao Hàng',
-            'Cập nhật MISA',
+            'Đồng bộ MISA',
         ];
 
         // Tạo workbook mới
@@ -361,7 +361,7 @@ const SalesOrderSummary = () => {
                         disabled={isUpdating}
                         className="px-4 py-2 text-sm text-white bg-orange-600 rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isUpdating ? 'Đang đồng bộ...' : 'Cập nhật tất cả đơn hàng chưa đồng bộ'}
+                        {isUpdating ? 'Đang đồng bộ...' : 'Đồng bộ tất cả đơn hàng'}
                     </button>
                     <button className="px-4 py-2 text-sm text-white bg-gray-600 rounded hover:bg-gray-700" onClick={handleExportToExcel}>
                          Xuất Excel

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { fetchAllInventorySlips, InventorySlipListItem, finalizeInventorySlip, fetchInventorySlipById, InventorySlip, getInventorySlipsNotUpdated, callManyImportExportInvoices, checkSlipProductsMisaStatus, testMisaStatus } from './service';
+import { fetchAllInventorySlips, InventorySlipListItem,testProcessManySlips, finalizeInventorySlip, fetchInventorySlipById, InventorySlip, getInventorySlipsNotUpdated, callManyImportExportInvoices, checkSlipProductsMisaStatus, testMisaStatus } from './service';
 import IconEye from '@/components/icon/icon-eye';
 import IconPlus from '@/components/icon/icon-plus';
 import { createPortal } from 'react-dom';
@@ -171,7 +171,7 @@ const InventorySlipPage = () => {
             // Gọi API cập nhật nhiều phiếu
             const slipIds = validSlips.map(slip => slip.id);
             const success = await callManyImportExportInvoices(slipIds);
-            
+            //const success = await testProcessManySlips(slipIds);
             if (success) {
                 setUpdateMessage(`✅ Đã gửi yêu cầu cập nhật ${validSlips.length} phiếu thành công!`);
                 // Refresh danh sách phiếu
@@ -231,7 +231,7 @@ const InventorySlipPage = () => {
                                     : 'bg-blue-600 text-white hover:bg-blue-700'
                             }`}
                         >
-                            {isUpdatingMany ? 'Đang cập nhật...' : 'Cập nhật tất cả phiếu chưa cập nhật MISA'}
+                            {isUpdatingMany ? 'Đang cập nhật...' : 'Đồng bộ tất cả phiếu'}
                         </button>
                     </div>
                 </div>

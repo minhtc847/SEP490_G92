@@ -346,25 +346,34 @@ namespace SEP490.Selenium.Controller
         [HttpPost("import-export-invoice/add-many")]
         public IActionResult AddManyImportExportInvoices([FromBody] List<int> slipIds)
         {
+            Console.WriteLine($"[INFO] Received {slipIds.Count} slip IDs: [{string.Join(", ", slipIds)}]");
+            
             _taskQueue.Enqueue(async token =>
             {
                 try
                 {
                     using var scope = _serviceScopeFactory.CreateScope();
                     var inventoryService = scope.ServiceProvider.GetRequiredService<IInventorySlipService>();
-                    var service = scope.ServiceProvider.GetRequiredService<IImportExportInvoiceServices>();
                     var context = scope.ServiceProvider.GetRequiredService<SEP490DbContext>();
 
-                    foreach (var slipId in slipIds)
+                    Console.WriteLine($"[INFO] Starting processing {slipIds.Count} slips");
+                    
+                    for (int i = 0; i < slipIds.Count; i++)
                     {
+                        var slipId = slipIds[i];
+                        Console.WriteLine($"[INFO] Processing slip {i + 1}/{slipIds.Count}: {slipId}");
+                        
                         try
                         {
                             // Kiểm tra trạng thái MISA của sản phẩm trong phiếu trước khi xử lý
+                            Console.WriteLine($"[INFO] Checking MISA status for slip {slipId}");
                             var misaStatus = await inventoryService.CheckSlipProductsMisaStatusAsync(slipId);
                             
                             // Nếu có sản phẩm chưa cập nhật MISA, bỏ qua phiếu này
                             var success = misaStatus.GetType().GetProperty("success")?.GetValue(misaStatus) as bool? ?? false;
                             var canUpdateMisa = misaStatus.GetType().GetProperty("canUpdateMisa")?.GetValue(misaStatus) as bool? ?? false;
+                            
+                            Console.WriteLine($"[INFO] Slip {slipId} - Success: {success}, CanUpdateMisa: {canUpdateMisa}");
                             
                             if (success && !canUpdateMisa)
                             {
@@ -374,31 +383,54 @@ namespace SEP490.Selenium.Controller
                             }
 
                             // Lấy thông tin export cho từng phiếu
+                            Console.WriteLine($"[INFO] Getting export info for slip {slipId}");
                             ExportDTO info = await inventoryService.GetExportInfoBySlipIdAsync(slipId);
                             
+                            // Tạo service mới cho mỗi phiếu để tránh disposed object
+                            Console.WriteLine($"[INFO] Creating new Selenium service for slip {slipId}");
+                            using var slipScope = _serviceScopeFactory.CreateScope();
+                            var slipService = slipScope.ServiceProvider.GetRequiredService<IImportExportInvoiceServices>();
+                            
                             // Thực hiện import/export
-                            service.OpenImportPage(info);
+                            Console.WriteLine($"[INFO] Opening import page for slip {slipId}");
+                            slipService.OpenImportPage(info);
+                            Console.WriteLine($"[INFO] Import page completed for slip {slipId}");
+                            
+                            // Thêm delay giữa các phiếu để tránh conflict
+                            if (i < slipIds.Count - 1)
+                            {
+                                Console.WriteLine($"[INFO] Waiting 3 seconds before processing next slip...");
+                                await Task.Delay(3000, token);
+                            }
                             
                             // Cập nhật trạng thái update misa thành true
+                            Console.WriteLine($"[INFO] Updating MISA status for slip {slipId}");
                             var slip = await context.InventorySlips.FindAsync(slipId);
                             if (slip != null)
                             {
                                 slip.IsUpdateMisa = true;
                                 await context.SaveChangesAsync();
+                                Console.WriteLine($"[INFO] Successfully updated slip {slipId} with MISA");
                             }
-                            
-                            Console.WriteLine($"Successfully updated slip {slipId} with MISA");
+                            else
+                            {
+                                Console.WriteLine($"[Warning] Slip {slipId} not found in database");
+                            }
                         }
                         catch (Exception ex)
                         {
                             Console.WriteLine($"[Error] Failed to update slip {slipId}: {ex.Message}");
+                            Console.WriteLine($"[Error] Stack trace: {ex.StackTrace}");
                             // Tiếp tục với phiếu tiếp theo thay vì dừng toàn bộ
                         }
                     }
+                    
+                    Console.WriteLine($"[INFO] Completed processing all {slipIds.Count} slips");
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"[Background error] AddManyImportExportInvoices: {ex}");
+                    Console.WriteLine($"[Background error] Stack trace: {ex.StackTrace}");
                 }
             });
 
