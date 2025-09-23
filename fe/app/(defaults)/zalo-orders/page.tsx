@@ -10,6 +10,8 @@ const ZaloOrders = () => {
     const router = useRouter();
     const [zaloOrders, setZaloOrders] = useState<ZaloOrder[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     useEffect(() => {
         fetchZaloOrders();
@@ -74,11 +76,49 @@ const ZaloOrders = () => {
         );
     }
 
+  
+    const totalPages = Math.ceil(zaloOrders.length / itemsPerPage) || 1;
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedOrders = zaloOrders.slice(startIndex, startIndex + itemsPerPage);
+
     return (
         <div>
             <div className="panel mt-6">
                 <div className="flex items-center justify-between mb-5">
                     <h5 className="font-semibold text-lg dark:text-white-light">Danh Sách Đơn Hàng Zalo</h5>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 mb-4 text-sm text-gray-600">
+                    <span>
+                        Hiển thị {zaloOrders.length === 0 ? 0 : startIndex + 1} đến {Math.min(startIndex + itemsPerPage, zaloOrders.length)} trong tổng {zaloOrders.length} đơn hàng.
+                    </span>
+                        <div className="flex items-center gap-2 ml-auto">
+                        <select
+                            className="form-select w-24"
+                            value={itemsPerPage}
+                            onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                        >
+                            <option value={5}>5</option>
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                            <option value={50}>50</option>
+                        </select>
+                            <div className="flex items-center gap-2">
+                            <button className="btn btn-sm" disabled={currentPage===1} onClick={()=>setCurrentPage((p)=>Math.max(1, p-1))}>&lt;</button>
+                            <div className="flex items-center gap-1">
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                    <button
+                                        key={page}
+                                        onClick={() => setCurrentPage(page)}
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center transition ${currentPage === page ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-300'}`}
+                                    >
+                                        {page}
+                                    </button>
+                                ))}
+                            </div>
+                            <button className="btn btn-sm" disabled={currentPage===(totalPages||1)} onClick={()=>setCurrentPage((p)=>Math.min(totalPages||1, p+1))}>&gt;</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="table-responsive">
@@ -95,7 +135,7 @@ const ZaloOrders = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {zaloOrders.map((order) => (
+                            {paginatedOrders.map((order) => (
                                 <tr key={order.id}>
                                     <td>
                                         <div className="font-semibold">{order.orderCode}</div>
@@ -140,7 +180,6 @@ const ZaloOrders = () => {
                         </tbody>
                     </table>
                 </div>
-
                 {zaloOrders.length === 0 && (
                     <div className="text-center py-8">
                         <div className="text-gray-500 text-lg">Không có đơn hàng nào</div>

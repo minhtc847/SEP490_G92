@@ -376,7 +376,7 @@ const SalesOrderCreatePage = () => {
                 phone: form.phone,
                 orderCode: form.orderCode,
                 orderDate: form.orderDate,
-                discount: form.discount / 100,
+                discount: 0,
                 status: form.status,
                 isUpdateMisa: form.isUpdateMisa,
                 products: form.orderItems.map((item) => ({
@@ -420,9 +420,12 @@ const SalesOrderCreatePage = () => {
     };
 
     const totalQuantity = form.orderItems.reduce((sum, item) => sum + item.quantity, 0);
-    const totalAmount = form.orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-    const discountAmount = (form.discount / 100) * totalAmount;
-    const finalAmount = totalAmount - discountAmount;
+    const totalAmount = form.orderItems.reduce((sum, item) => {
+        const width = Number(item.width) || 0;
+        const height = Number(item.height) || 0;
+        const areaM2 = (width * height) / 1_000_000;
+        return sum + (item.quantity * item.unitPrice * areaM2);
+    }, 0);
 
     return (
         <ProtectedRoute requiredRole={[1, 2]}>
@@ -452,17 +455,7 @@ const SalesOrderCreatePage = () => {
                     <label className="block mb-1 font-medium">Mã đơn hàng</label>
                     <input disabled className="input input-bordered w-full" value={form.orderCode} />
                 </div>
-                <div>
-                    <label className="block mb-1 font-medium">Chiết khấu (%)</label>
-                    <input
-                        type="number"
-                        className="input input-bordered w-full"
-                        min={0}
-                        max={100}
-                        value={form.discount}
-                        onChange={(e) => setForm((prev) => ({ ...prev, discount: parseFloat(e.target.value) }))}
-                    />
-                </div>
+                
                 <div>
                     <label className="block mb-1 font-medium">Trạng thái</label>
                     <select className="select select-bordered w-full" value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}>
@@ -500,7 +493,6 @@ const SalesOrderCreatePage = () => {
                                     customer: c.customerName,
                                     address: c.address,
                                     phone: c.phone,
-                                    discount: c.discount * 100,
                                 }));
                                 setIsCustomerLocked(true);
                             }}
@@ -514,7 +506,6 @@ const SalesOrderCreatePage = () => {
                                         customer: '',
                                         address: '',
                                         phone: '',
-                                        discount: 0,
                                     }));
                                     setIsCustomerLocked(false);
                                 }}
@@ -551,7 +542,7 @@ const SalesOrderCreatePage = () => {
                             const width = Number(item.width) || 0;
                             const height = Number(item.height) || 0;
                             const area = (width * height) / 1_000_000;
-                            const total = (item.quantity ?? 0) * (item.unitPrice ?? 0);
+                            const total = (item.quantity ?? 0) * (item.unitPrice ?? 0) * area;
 
                             return (
                                 <tr key={index}>
@@ -778,12 +769,7 @@ const SalesOrderCreatePage = () => {
                 <p>
                     <strong>Tổng tiền hàng:</strong> {totalAmount.toLocaleString()} ₫
                 </p>
-                <p>
-                    <strong>Chiết khấu:</strong> {discountAmount.toLocaleString()} ₫ ({form.discount}%)
-                </p>
-                <p className="text-base font-bold">
-                    Thành tiền sau chiết khấu: <span className="text-green-600">{finalAmount.toLocaleString()} ₫</span>
-                </p>
+                
             </div>
 
             <div className="flex items-center gap-4 mt-4">

@@ -369,7 +369,7 @@ export default function ConversationsPage() {
                 )}
 
                 {/* Pagination */}
-                {pagination.totalPages > 1 && (
+                {conversations.length > 0 && (
                     <div className="px-6 py-3 border-t border-gray-200">
                         <div className="flex items-center justify-between">
                             <div className="text-sm text-gray-700">
@@ -385,12 +385,20 @@ export default function ConversationsPage() {
                                 >
                                     Trước
                                 </button>
-                                <span className="px-3 py-1 text-sm text-gray-700">
-                                    Trang {pagination.currentPage} / {pagination.totalPages}
-                                </span>
+                                <div className="flex items-center gap-1">
+                                    {Array.from({ length: pagination.totalPages || 1 }, (_, i) => i + 1).map((page) => (
+                                        <button
+                                            key={page}
+                                            onClick={() => handlePageChange(page)}
+                                            className={`w-8 h-8 rounded-full flex items-center justify-center transition ${pagination.currentPage === page ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-300'}`}
+                                        >
+                                            {page}
+                                        </button>
+                                    ))}
+                                </div>
                                 <button
                                     onClick={() => handlePageChange(pagination.currentPage + 1)}
-                                    disabled={pagination.currentPage === pagination.totalPages}
+                                    disabled={pagination.currentPage === (pagination.totalPages || 1)}
                                     className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                                 >
                                     Sau
