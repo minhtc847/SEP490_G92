@@ -146,6 +146,7 @@ namespace SEP490.Selenium.Controller
                         if (newProduct != null)
                         {
                             newProduct.ProductCode = productCode;
+                            newProduct.isupdatemisa = 1;
                             dbContext.Products.Update(newProduct);
                             await dbContext.SaveChangesAsync(token);
                         }
@@ -439,6 +440,7 @@ namespace SEP490.Selenium.Controller
         [HttpPost("purchasing-order")]
         public IActionResult AddPurchaseOrder([FromBody] InputPO input)
         {
+
             _taskQueue.Enqueue(async token =>
             {
                 try
@@ -446,9 +448,18 @@ namespace SEP490.Selenium.Controller
                     using var scope = _serviceScopeFactory.CreateScope();
                     var service = scope.ServiceProvider.GetRequiredService<IMisaPOService>();
                     var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<SaleOrderHub>>();
+                    var dbContext = scope.ServiceProvider.GetRequiredService<SEP490DbContext>();
 
                     service.Add(input);
 
+                    var po = await dbContext.PurchaseOrders
+                        .FirstOrDefaultAsync(po => po.Id == input.Id, token);
+                    if (po != null)
+                    {
+                        po.IsUpdateMisa = true;
+                        dbContext.PurchaseOrders.Update(po);
+                        await dbContext.SaveChangesAsync(token);
+                    }
                     await hubContext.Clients.All.SendAsync("MisaUpdate", new
                     {
                         message = "Đã đồng bộ với Misa thành công",
@@ -476,10 +487,19 @@ namespace SEP490.Selenium.Controller
                     using var scope = _serviceScopeFactory.CreateScope();
                     var service = scope.ServiceProvider.GetRequiredService<IMisaPOService>();
                     var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<SaleOrderHub>>();
+                    var dbContext = scope.ServiceProvider.GetRequiredService<SEP490DbContext>();
 
                     foreach (var input in inputs)
                     {
                         service.Add(input);
+                        var po = await dbContext.PurchaseOrders
+                            .FirstOrDefaultAsync(po => po.Id == input.Id, token);
+                        if (po != null)
+                        {
+                            po.IsUpdateMisa = true;
+                            dbContext.PurchaseOrders.Update(po);
+                            await dbContext.SaveChangesAsync(token);
+                        }
                     }
 
                     await hubContext.Clients.All.SendAsync("MisaUpdate", new
