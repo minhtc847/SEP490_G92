@@ -208,7 +208,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
   const handleMaterialSelect = (material: MaterialItem) => setSelectedMaterial(material)
 
-  const handleGoBack = () => router.push("/production-orders/")
+  const handleGoBack = () => router.back()
 
   // removed unused handleOperationChange
 
@@ -492,7 +492,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
   const calculateQuantityPer = (totalQuantity: number, productQuantity: number): number => {
     if (productQuantity === 0) return 0
-    return Number((totalQuantity / productQuantity).toFixed(4))
+    return totalQuantity / productQuantity
   }
 
   const getSelectedProductQuantity = (): number => {
@@ -610,7 +610,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                           <div className="truncate">{item.productName}</div>
                         </td>
                         <td className="border p-2 text-center">{item.uom}</td>
-                        <td className="border p-2 text-right">{Number(item.quantity).toFixed(2)}</td>
+                        <td className="border p-2 text-right">{item.quantity}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -917,13 +917,19 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                         showCloseButton: true,
                       })
                     }
-                    if (val < 0) val = 0
+
+                    if ((productForm.uom || '').toString().toLowerCase() === 'tấm') {
+                      val = Math.floor(val)
+                      if (val < 1) val = 1
+                    } else {
+                      if (val < 0) val = 0
+                    }
                     setProductForm({ ...productForm, quantity: val })
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
                   required
                   min="0"
-                  step="0.01"
+                  step={(productForm.uom || '').toString().toLowerCase() === 'tấm' ? 1 : 0.01}
                   placeholder="Nhập số lượng"
                 />
               </div>
@@ -1021,7 +1027,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   step="0.01"
                   placeholder="Tổng số lượng cần thiết"
                 />
-                <div className="text-xs text-gray-500 mt-1">SL/1SP: {addMaterialForm.quantityPer?.toFixed(4)} (tự động tính)</div>
+                    <div className="text-xs text-gray-500 mt-1">SL/1SP: {addMaterialForm.quantityPer} (tự động tính)</div>
               </div>
               <div className="flex gap-2 pt-4">
                 <button type="submit" className="flex-1 px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white rounded-md transition-colors font-medium">Thêm mới</button>
@@ -1094,14 +1100,14 @@ export default function ProductionOrderView({ params }: { params: { id: string }
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng / 1 SP</label>
                 <input
-                  type="number"
-                  value={Number(materialForm.quantityPer).toFixed(4)}
+                  type="text"
+                  value={materialForm.quantityPer}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-blue-50 text-blue-800 cursor-not-allowed"
                   readOnly
                   placeholder="Tự động tính toán"
                 />
                 <div className="text-xs text-blue-600 mt-1">
-                  Công thức: {materialForm.totalQuantity} ÷ {getSelectedProductQuantity()} = {Number(materialForm.quantityPer).toFixed(4)}
+                  Công thức: {materialForm.totalQuantity} ÷ {getSelectedProductQuantity()} = {materialForm.quantityPer}
                 </div>
               </div>
               <div>
@@ -1123,7 +1129,13 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                         showCloseButton: true,
                       })
                     }
-                    if (newTotalQuantity < 0) newTotalQuantity = 0
+              
+                    if ((materialForm.uom || '').toString().toLowerCase() === 'tấm') {
+                      newTotalQuantity = Math.floor(newTotalQuantity)
+                      if (newTotalQuantity < 1) newTotalQuantity = 1
+                    } else {
+                      if (newTotalQuantity < 0) newTotalQuantity = 0
+                    }
                     const selectedProductQuantity = getSelectedProductQuantity()
                     const newQuantityPer = calculateQuantityPer(newTotalQuantity, selectedProductQuantity)
                     setMaterialForm({
@@ -1134,11 +1146,11 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
                   required
-                  min="0"
-                  step="0.01"
+                  min={(materialForm.uom || '').toString().toLowerCase() === 'tấm' ? 1 : 0}
+                  step={(materialForm.uom || '').toString().toLowerCase() === 'tấm' ? 1 : 0.01}
                   placeholder="Tổng số lượng cần thiết"
                 />
-                <div className="text-xs text-gray-500 mt-1">SL/1SP sẽ được tính tự động: {Number(materialForm.quantityPer).toFixed(4)}</div>
+                <div className="text-xs text-gray-500 mt-1">SL/1SP sẽ được tính tự động: {materialForm.quantityPer}</div>
               </div>
               <div className="flex gap-2 pt-4">
                 <button type="submit" className="flex-1 px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white rounded-md transition-colors font-medium">Cập nhật</button>

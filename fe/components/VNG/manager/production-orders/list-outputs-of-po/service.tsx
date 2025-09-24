@@ -28,14 +28,14 @@ export interface CreateDefectReport {
   productId: number;
   quantity: number;
   defectType: string;
-  defectStage: string;
+  defectStage?: string;
   note?: string;
 }
 
 export interface UpdateDefectReport {
   quantity: number;
   defectType: string;
-  defectStage: string;
+  defectStage?: string;
   note?: string;
 }
 
