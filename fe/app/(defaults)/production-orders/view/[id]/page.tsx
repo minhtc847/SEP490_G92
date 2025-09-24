@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Swal from 'sweetalert2'
+import withReactContent from 'sweetalert2-react-content'
 import type React from "react"
 import { useRouter } from "next/navigation"
 import ListOutputsPO from "@/components/VNG/manager/production-orders/list-outputs-of-po/list-outputs-po-components"
@@ -60,6 +62,8 @@ const convertStringToUOMInt = (uomString: string): number => {
 
 export default function ProductionOrderView({ params }: { params: { id: string } }) {
   const router = useRouter()
+  const MySwal = withReactContent(Swal)
+  const MAX_LIMIT = 999999
   const [finishedProducts, setFinishedProducts] = useState<ProductItem[]>([])
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null)
   const [currentMaterials, setCurrentMaterials] = useState<MaterialItem[]>([])
@@ -899,7 +903,23 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                 <input
                   type="number"
                   value={productForm.quantity as number}
-                  onChange={(e) => setProductForm({ ...productForm, quantity: Number(e.target.value) })}
+                  onChange={(e) => {
+                    let val = Number(e.target.value)
+                    if (val > MAX_LIMIT) {
+                      val = MAX_LIMIT
+                      MySwal.fire({
+                        title: 'Số lượng tối đa là 999999',
+                        icon: 'warning',
+                        toast: true,
+                        position: 'bottom-start',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        showCloseButton: true,
+                      })
+                    }
+                    if (val < 0) val = 0
+                    setProductForm({ ...productForm, quantity: val })
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
                   required
                   min="0"
@@ -1090,7 +1110,20 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   type="number"
                   value={materialForm.totalQuantity as number}
                   onChange={(e) => {
-                    const newTotalQuantity = Number(e.target.value)
+                    let newTotalQuantity = Number(e.target.value)
+                    if (newTotalQuantity > MAX_LIMIT) {
+                      newTotalQuantity = MAX_LIMIT
+                      MySwal.fire({
+                        title: 'Tổng số lượng tối đa là 999999',
+                        icon: 'warning',
+                        toast: true,
+                        position: 'bottom-start',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        showCloseButton: true,
+                      })
+                    }
+                    if (newTotalQuantity < 0) newTotalQuantity = 0
                     const selectedProductQuantity = getSelectedProductQuantity()
                     const newQuantityPer = calculateQuantityPer(newTotalQuantity, selectedProductQuantity)
                     setMaterialForm({
