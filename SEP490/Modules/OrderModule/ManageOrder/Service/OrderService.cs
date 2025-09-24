@@ -34,28 +34,13 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                     ocd => ocd.detail.Id,
                     odp => odp.OrderDetailId,
                     (ocd, odp) => new { ocd.order, ocd.customer, odp })
-                .Join(_context.Products,
-                    temp => temp.odp.ProductId,
-                    product => product.Id,
-                    (temp, product) => new
-                    {
-                        temp.order.Id,
-                        temp.order.OrderCode,
-                        temp.order.OrderDate,
-                        temp.order.Status,
-                        temp.customer.CustomerName,
-                        temp.customer.Discount,
-                        UnitPrice = product.UnitPrice ?? 0,
-                        Quantity = temp.odp.Quantity ?? 0
-                    })
                 .GroupBy(x => new
                 {
-                    x.Id,
-                    x.OrderCode,
-                    x.OrderDate,
-                    x.Status,
-                    x.CustomerName,
-                    x.Discount
+                    x.order.Id,
+                    x.order.OrderCode,
+                    x.order.OrderDate,
+                    x.order.Status,
+                    x.customer.CustomerName
                 })
                 .Select(g => new OrderDto
                 {
@@ -65,9 +50,9 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                     OrderDate = g.Key.OrderDate.Date,
                     Status = g.Key.Status,
                     DeliveryStatus = _context.SaleOrders.First(o => o.Id == g.Key.Id).DeliveryStatus,
-                    Discount = g.Key.Discount ?? 0,
-                    OriginalTotalAmount = g.Sum(x => x.UnitPrice * x.Quantity),
-                    TotalAmount = g.Sum(x => x.UnitPrice * x.Quantity) - (g.Sum(x => x.UnitPrice * x.Quantity) * (g.Key.Discount ?? 0)),
+                    Discount = 0, 
+                    OriginalTotalAmount = g.Sum(x => x.odp.TotalAmount ?? 0),
+                    TotalAmount = g.Sum(x => x.odp.TotalAmount ?? 0),
                     isUpdateMisa = _context.SaleOrders.First(o => o.Id == g.Key.Id).IsUpdateMisa
                 });
 
@@ -110,11 +95,11 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                                    Width = decimal.TryParse(p.Width, out var width) ? width : 0,
                                    Thickness = p.Thickness ?? 0,
                                    AreaM2 = Math.Round(((decimal.TryParse(p.Height, out var h) ? h : 0) * (decimal.TryParse(p.Width, out var w) ? w : 0)) / 1_000_000, 4),
-                                   UnitPrice = g != null
-                                        ? Math.Round(((decimal.TryParse(p.Height, out var h1) ? h1 : 0) * (decimal.TryParse(p.Width, out var w1) ? w1 : 0)) / 1_000_000 * (g.UnitPrice ?? 0), 2) : 0,
+                                   
                                    Quantity = dp.Quantity ?? 0,
-                                   TotalAmount = g != null
-                                        ? Math.Round(((decimal.TryParse(p.Height, out var h2) ? h2 : 0) * (decimal.TryParse(p.Width, out var w2) ? w2 : 0)) / 1_000_000 * (g.UnitPrice ?? 0) * (dp.Quantity ?? 0), 2) : 0,
+                                   // Unit price displayed per m² for FE; use glass structure or product unit price
+                                   UnitPrice = g?.UnitPrice ?? (p.UnitPrice ?? 0),
+                                   TotalAmount = Math.Round(dp.TotalAmount ?? 0, 2),
 
                                    GlassStructureId = g?.Id,
                                    GlassStructureCode = g?.ProductCode,
@@ -131,8 +116,8 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
 
             var totalQuantity = productDtos.Sum(p => p.Quantity);
             var totalAmountRaw = detailProducts.Sum(dp => dp.TotalAmount ?? 0);
-            var discount = order.Customer?.Discount ?? 1;
-            var totalAmount = discount != 0 ? totalAmountRaw / discount : totalAmountRaw;
+            var discount = order.Customer?.Discount ?? 0; // stored as fraction (e.g., 0.05 for 5%)
+            var totalAmount = totalAmountRaw * (1 - discount);
 
             // Debug logging
             Console.WriteLine($"Order {order.Id} - IsUpdateMisa: {order.IsUpdateMisa}");
@@ -244,16 +229,21 @@ namespace SEP490.Modules.OrderModule.ManageOrder.Services
                 if (product == null)
                     throw new InvalidOperationException($"Product with ID {p.ProductId} not found");
 
+                var widthMm = decimal.TryParse(product.Width, out var wmm) ? wmm : 0;
+                var heightMm = decimal.TryParse(product.Height, out var hmm) ? hmm : 0;
+                var areaM2 = (widthMm * heightMm) / 1_000_000m;
+                var lineTotal = p.UnitPrice * areaM2 * p.Quantity;
+
                 var odp = new OrderDetailProduct
                 {
                     OrderDetailId = detail.Id,
                     ProductId = p.ProductId,
                     Quantity = p.Quantity,
-                    TotalAmount = p.Quantity * p.UnitPrice
+                    TotalAmount = lineTotal
                 };
                 _context.OrderDetailProducts.Add(odp);
 
-                orderValue += (p.Quantity * p.UnitPrice);
+                orderValue += lineTotal;
             }
 
             order.OrderValue = orderValue;

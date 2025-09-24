@@ -176,12 +176,8 @@ const SalesOrderDetailPage = () => {
 
         worksheet.addRow([]);
         const total = order.products.reduce((sum, item) => sum + item.totalAmount, 0);
-        const discountAmount = total * order.discount;
-        const finalAmount = total - discountAmount;
 
         worksheet.addRow(['Tổng giá trị đơn hàng:', '', '', '', '', '', '', '', '', total]);
-        worksheet.addRow(['Chiết khấu:', `${(order.discount * 100).toFixed(0)}%`, '', '', '', '', '', '', '', -discountAmount]);
-        worksheet.addRow(['Thành tiền sau chiết khấu:', '', '', '', '', '', '', '', '', finalAmount]);
 
         worksheet.addRow([]);
         worksheet.addRow(['Ghi chú:']);
@@ -233,7 +229,7 @@ const SalesOrderDetailPage = () => {
     if (loading) return <div className="p-6">Đang tải dữ liệu...</div>;
     if (!order) return <div className="p-6 text-red-600">Không tìm thấy đơn hàng với ID: {id}</div>;
 
-    const { customerName, address, phone, orderDate, orderCode, discount, products, totalAmount, totalQuantity } = order;
+    const { customerName, address, phone, orderDate, orderCode, products, totalAmount, totalQuantity } = order;
 
     return (
         <ProtectedRoute requiredRole={[1, 2]}>
@@ -324,9 +320,7 @@ const SalesOrderDetailPage = () => {
                 <div>
                     <strong>Mã đơn hàng:</strong> {orderCode}
                 </div>
-                <div>
-                    <strong>Chiết khấu:</strong> {discount * 100}%
-                </div>
+                
                 <div>
                     <strong>Trạng thái:</strong> {getStatusText(order.status)}
                 </div>
@@ -380,23 +374,14 @@ const SalesOrderDetailPage = () => {
 
             <div className="text-end text-sm space-y-1">
                 {(() => {
-                    const totalAmountRaw = products.reduce((sum, p) => sum + p.unitPrice * p.quantity, 0);
-                    const discountAmount = totalAmountRaw * discount;
-                    const finalAmount = totalAmountRaw - discountAmount;
-
+                    const totalQuantityCalc = products.reduce((sum, p) => sum + (p.quantity || 0), 0);
                     return (
                         <>
                             <p>
-                                <strong>Tổng số lượng:</strong> {totalQuantity}
+                                <strong>Tổng số lượng:</strong> {totalQuantityCalc}
                             </p>
                             <p>
-                                <strong>Tổng tiền hàng:</strong> {totalAmountRaw.toLocaleString()} ₫
-                            </p>
-                            <p>
-                                <strong>Chiết khấu:</strong> {discountAmount.toLocaleString()} ₫ ({(discount * 100).toFixed(2)}%)
-                            </p>
-                            <p className="text-base font-bold">
-                                Thành tiền sau chiết khấu: <span className="text-green-600">{finalAmount.toLocaleString()} ₫</span>
+                                <strong>Tổng tiền hàng:</strong> {totalAmount.toLocaleString()} ₫
                             </p>
                         </>
                     );

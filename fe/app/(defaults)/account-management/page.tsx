@@ -251,6 +251,15 @@ const AccountManagementPage = () => {
                     </div>
                     <br />
 
+         
+                    {accounts.length > 0 && (
+                        <div className="mb-3 flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                            <span>
+                                Hiển thị {((currentPage - 1) * pageSize) + 1} đến {Math.min(currentPage * pageSize, totalCount)} trong tổng {totalCount} tài khoản
+                            </span>
+                        </div>
+                    )}
+
                     {/* Bảng */}
                     <div className="table-responsive">
                         <table className="table-hover">
@@ -382,32 +391,27 @@ const AccountManagementPage = () => {
                     </div>
 
                     {/* Phân trang */}
-                    {totalPages > 1 && (
+                    {accounts.length > 0 && (
                         <div className="flex justify-center mt-4">
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                                     disabled={currentPage === 1}
-                                    className="px-3 py-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+                                    className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 text-gray-800 disabled:opacity-50"
                                 >
-                                    Trước
+                                    &lt;
                                 </button>
                                 {renderPagination()}
                                 <button
-                                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                                    disabled={currentPage === totalPages}
-                                    className="px-3 py-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+                                    onClick={() => setCurrentPage(Math.min(totalPages || 1, currentPage + 1))}
+                                    disabled={currentPage === (totalPages || 1)}
+                                    className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 text-gray-800 disabled:opacity-50"
                                 >
-                                    Sau
+                                    &gt;
                                 </button>
                             </div>
                         </div>
                     )}
-
-                    {/* Thống kê */}
-                    <div className="mt-4 text-sm text-gray-600">
-                        Hiển thị {filtered.length} trong tổng số {totalCount} tài khoản
-                    </div>
                 </div>
             </div>
         </ProtectedRoute>
