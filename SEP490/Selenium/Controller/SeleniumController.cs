@@ -123,6 +123,49 @@ namespace SEP490.Selenium.Controller
 
             return Ok("Update Product successfully");
         }
+        [HttpDelete("product/{productId}")]
+        public IActionResult DeleteProduct(int productId)
+        {
+            _taskQueue.Enqueue(async token =>
+            {
+                try
+                {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var misaProductService = scope.ServiceProvider.GetRequiredService<IMisaProductService>();
+                    var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<SaleOrderHub>>();
+                    var dbContext = scope.ServiceProvider.GetRequiredService<SEP490DbContext>();
+
+                    var product = await dbContext.Products.FirstOrDefaultAsync(p => p.Id == productId, token);
+                    if (product == null)
+                    {
+                        Console.WriteLine($"[Error] Product with ID {productId} not found.");
+                        return;
+                    }
+                    if (!string.IsNullOrEmpty(product.ProductCode)){
+                        misaProductService.deleteProduct(product.ProductCode);
+                        
+                        product.isupdatemisa=0;
+                        product.ProductCode = null;
+                        dbContext.Products.Update(product);
+                        await dbContext.SaveChangesAsync(token);
+                    }
+
+                    await hubContext.Clients.All.SendAsync("MisaUpdate", new
+                    {
+                        message = "Đã xoá trên hệ thống Misa",
+                        type = "Sản Phẩm",
+                        codeText = product.ProductName,
+                        createAt = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy")
+                    }, token);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Background error] DeleteProduct: {ex}");
+                }
+            });
+
+            return Ok("Delete Product successfully");
+        }
 
         [HttpPost("products/add-many")]
         public IActionResult AddManyProducts([FromBody] List<InputSingleProduct> products)

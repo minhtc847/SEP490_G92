@@ -6,5 +6,7 @@ namespace SEP490.Selenium.Product
     {
         string AddProduct(InputSingleProduct input);
         void updateProduct(InputUpdateProduct input);
+
+        void deleteProduct(string productCode);
     }
 }
