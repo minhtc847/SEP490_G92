@@ -152,10 +152,7 @@ const CreateProductionPlanManager = () => {
                             <div className="text-white-dark">Ngày đặt hàng :</div>
                             <div>{order.orderDate}</div>
                         </div>
-                        <div className="flex w-full items-center justify-between">
-                            <div className="text-white-dark">Tình trạng giao hàng :</div>
-                            <div>{order.status}</div>
-                        </div>
+                        
                     </div>
                 </div>
             </div>
