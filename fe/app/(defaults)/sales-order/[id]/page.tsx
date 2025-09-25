@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { IRootState } from '@/store';
-import { checkOrderProductsMisaStatus, getOrderDetailById, OrderDetailDto, updateMisaOrder, updateOrderMisaStatus, checkHasProductionPlan } from '@/app/(defaults)/sales-order/[id]/service';
+import { checkOrderProductsMisaStatus, getOrderDetailById, OrderDetailDto, updateMisaOrder, checkHasProductionPlan } from '@/app/(defaults)/sales-order/[id]/service';
+import * as signalR from '@microsoft/signalr';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import ExcelJS from 'exceljs';
@@ -18,6 +19,7 @@ const SalesOrderDetailPage = () => {
     const [order, setOrder] = useState<OrderDetailDto | null>(null);
     const [loading, setLoading] = useState(true);
     const [isUpdatingMisa, setIsUpdatingMisa] = useState<boolean>(false);
+    const [isWaitingMisaConfirm, setIsWaitingMisaConfirm] = useState<boolean>(false);
     const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
     const [showErrorMessage, setShowErrorMessage] = useState<boolean>(false);
     const [errorMessage, setErrorMessage] = useState<string>('');
@@ -44,6 +46,36 @@ const SalesOrderDetailPage = () => {
         };
 
         fetchData();
+    }, [id]);
+
+    // Listen to SignalR hub for MISA update confirmation
+    useEffect(() => {
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl(`${process.env.NEXT_PUBLIC_BASE_URL}/saleOrderHub`)
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on('MisaUpdate', async (data: any) => {
+            try {
+                // For sales order updates, refresh the detail and show success
+                if (data?.type === 'Đơn Bán Hàng') {
+                    const updated = await getOrderDetailById(Number(id));
+                    setOrder(updated);
+                    setShowSuccessMessage(true);
+                    setTimeout(() => setShowSuccessMessage(false), 3000);
+                }
+            } finally {
+                setIsWaitingMisaConfirm(false);
+            }
+        });
+
+        connection
+            .start()
+            .catch(() => {});
+
+        return () => {
+            connection.stop();
+        };
     }, [id]);
 
     const handleUpdateMisa = async () => {
@@ -84,27 +116,10 @@ const SalesOrderDetailPage = () => {
                 return;
             }
             
-            // Nếu tất cả sản phẩm đã update MISA, tiến hành cập nhật đơn hàng
-            // Gọi API cập nhật MISA
+            // Nếu tất cả sản phẩm đã update MISA, tiến hành gửi yêu cầu đồng bộ (background)
+            // Không cập nhật trạng thái ngay lập tức; đợi SignalR xác nhận
             await updateMisaOrder(Number(id));
-            
-            // Sau khi cập nhật MISA thành công, cập nhật trạng thái isUpdateMisa thành true
-            await updateOrderMisaStatus(Number(id));
-            
-            // Cập nhật trạng thái ngay lập tức trong state để UI phản hồi ngay
-            setOrder(prev => prev ? { ...prev, isUpdateMisa: true } : null);
-            
-            // Refresh lại dữ liệu đơn hàng từ server để đảm bảo đồng bộ
-            const updatedOrder = await getOrderDetailById(Number(id));
-            setOrder(updatedOrder);
-            
-            // Hiển thị thông báo thành công
-            setShowSuccessMessage(true);
-            
-            // Ẩn thông báo sau 3 giây
-            setTimeout(() => {
-                setShowSuccessMessage(false);
-            }, 3000);
+            setIsWaitingMisaConfirm(true);
             
         } catch (error: any) {
             console.error('Lỗi khi đồng bộ MISA:', error);
@@ -251,11 +266,11 @@ const SalesOrderDetailPage = () => {
                     </button>
                     <button 
                         onClick={handleUpdateMisa} 
-                        disabled={isUpdatingMisa || order.isUpdateMisa}
-                        title={order.isUpdateMisa ? 'Đơn hàng đã được đồng bộMISA' : ''}
+                        disabled={isUpdatingMisa || isWaitingMisaConfirm || order.isUpdateMisa}
+                        title={order.isUpdateMisa ? 'Đơn hàng đã được đồng bộ MISA' : ''}
                         aria-busy={isUpdatingMisa}
                         className={`px-4 py-1 rounded transition ${
-                            isUpdatingMisa || order.isUpdateMisa
+                            isUpdatingMisa || isWaitingMisaConfirm || order.isUpdateMisa
                                 ? 'bg-gray-400 text-white cursor-not-allowed' 
                                 : 'bg-orange-500 text-white hover:bg-orange-600'
                         }`}
@@ -265,6 +280,8 @@ const SalesOrderDetailPage = () => {
                                 <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
                                 Đang đồng bộ MISA...
                             </>
+                        ) : isWaitingMisaConfirm ? (
+                            '⏳ Đang chờ xác nhận MISA...'
                         ) : (
                             '🔄 Đồng bộ MISA'
                         )}

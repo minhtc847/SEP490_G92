@@ -531,7 +531,7 @@ const SalesOrderCreatePage = () => {
                             <th>Dày</th> */}
                             <th>Số lượng</th>
                             <th>Đơn vị tính</th>
-                            <th>Đơn giá</th>
+                            <th>Đơn giá/1m2</th>
                             <th>Diện tích (m²)</th>
                             <th>Thành tiền</th>
                             <th></th>

@@ -19,6 +19,7 @@ using SEP490.Selenium.ProductionOrder;
 using SEP490.Selenium.ProductionOrder.DTO;
 using SEP490.Selenium.SaleOrder;
 using SEP490.Selenium.SaleOrder.DTO;
+using SEP490.Modules.OrderModule.ManageOrder.Services;
 
 namespace SEP490.Selenium.Controller
 {
@@ -216,6 +217,49 @@ namespace SEP490.Selenium.Controller
         [HttpPost("sale-order/add-many")]
         public IActionResult AddManySaleOrders([FromBody] List<SaleOrderInput> saleOrders)
         {
+            // 1) Pre-validate all orders: ensure every order's products have been synced to MISA
+            try
+            {
+                using var validateScope = _serviceScopeFactory.CreateScope();
+                var orderService = validateScope.ServiceProvider.GetRequiredService<IOrderService>();
+
+                var invalidOrders = new List<object>();
+
+                foreach (var saleOrder in saleOrders)
+                {
+                    var result = orderService.CheckOrderProductsMisaStatus(saleOrder.Id);
+                    var success = result.GetType().GetProperty("success")?.GetValue(result) as bool? ?? false;
+                    var canUpdateMisa = result.GetType().GetProperty("canUpdateMisa")?.GetValue(result) as bool? ?? false;
+                    var notUpdatedProducts = result.GetType().GetProperty("notUpdatedProducts")?.GetValue(result);
+                    var message = result.GetType().GetProperty("message")?.GetValue(result)?.ToString() ?? string.Empty;
+
+                    if (success && !canUpdateMisa)
+                    {
+                        invalidOrders.Add(new
+                        {
+                            orderId = saleOrder.Id,
+                            message,
+                            notUpdatedProducts
+                        });
+                    }
+                }
+
+                if (invalidOrders.Count > 0)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Có đơn hàng chứa sản phẩm chưa đồng bộ MISA. Vui lòng đồng bộ sản phẩm trước khi đồng bộ đơn hàng.",
+                        invalidOrders
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Lỗi khi kiểm tra trạng thái MISA của sản phẩm.", detail = ex.Message });
+            }
+
+            // 2) If validation passes, enqueue background task to sync all orders
             _taskQueue.Enqueue(async token =>
             {
                 try

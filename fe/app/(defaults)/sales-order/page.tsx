@@ -169,9 +169,11 @@ const SalesOrderSummary = () => {
                 window.location.reload();
             }, 2000);
             
-        } catch (err) {
-            console.error('Lỗi khi đồng bộ đơn hàng:', err);
-            setUpdateMessage('Có lỗi xảy ra khi đồng bộ đơn hàng!');
+        } catch (err: any) {
+            const message = err?.response?.status === 400
+                ? (err?.response?.data?.message || 'Tồn tại đơn hàng có sản phẩm chưa được đồng bộ')
+                : 'Có lỗi xảy ra khi đồng bộ đơn hàng!';
+            setUpdateMessage(message);
         } finally {
             setIsUpdating(false);
         }
