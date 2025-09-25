@@ -80,6 +80,7 @@ export const updateManyPurchaseOrders = async (orders: PurchaseOrderDto[]): Prom
         
         // Chuyển đổi dữ liệu thành format InputPO
         const inputPOs = ordersWithDetails.map(order => ({
+            Id: order.id,
             supplierName: order.customerName || order.supplierName || "",
             date: order.date ? new Date(order.date).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN'),
             ProductsInput: order.purchaseOrderDetails?.map((detail: any) => ({

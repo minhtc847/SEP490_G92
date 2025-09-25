@@ -537,13 +537,14 @@ namespace SEP490.Selenium.Controller
                     var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<SaleOrderHub>>();
                     var dbContext = scope.ServiceProvider.GetRequiredService<SEP490DbContext>();
 
-                    service.Add(input);
+                    string code = service.Add(input);
 
                     var po = await dbContext.PurchaseOrders
                         .FirstOrDefaultAsync(po => po.Id == input.Id, token);
                     if (po != null)
                     {
                         po.IsUpdateMisa = true;
+                        po.Code = code;
                         dbContext.PurchaseOrders.Update(po);
                         await dbContext.SaveChangesAsync(token);
                     }
@@ -551,7 +552,7 @@ namespace SEP490.Selenium.Controller
                     {
                         message = "Đã đồng bộ với Misa thành công",
                         type = "Đơn Đặt Hàng",
-                        codeText = "",
+                        codeText = code,
                         createAt = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy")
                     }, token);
                 }
@@ -576,24 +577,30 @@ namespace SEP490.Selenium.Controller
                     var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<SaleOrderHub>>();
                     var dbContext = scope.ServiceProvider.GetRequiredService<SEP490DbContext>();
 
+                    List<string> codes = new();
+
                     foreach (var input in inputs)
                     {
-                        service.Add(input);
+                        string code = service.Add(input);
+                        codes.Add(code);
                         var po = await dbContext.PurchaseOrders
                             .FirstOrDefaultAsync(po => po.Id == input.Id, token);
                         if (po != null)
                         {
                             po.IsUpdateMisa = true;
+                            po.Code = code;
                             dbContext.PurchaseOrders.Update(po);
                             await dbContext.SaveChangesAsync(token);
                         }
                     }
 
+                    var codeText = string.Join(", ", codes);
+
                     await hubContext.Clients.All.SendAsync("MisaUpdate", new
                     {
                         message = "Đã đồng bộ với Misa thành công",
                         type = "Đơn Đặt Hàng",
-                        codeText = "",
+                        codeText = codeText,
                         createAt = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy")
                     }, token);
                 }
