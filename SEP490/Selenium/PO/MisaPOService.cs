@@ -21,6 +21,7 @@ namespace SEP490.Selenium.PO
                 driver,
                 wait
                 );
+            Thread.Sleep(1000);
             var orderIdInput = wait.Until(drv => drv.FindElement(By.XPath("//div[contains(text(),'Số đơn hàng')]/ancestor::div[contains(@class,'ms-input')]//input")));
 
             wait.Until(drv => !string.IsNullOrEmpty(orderIdInput.GetAttribute("value")));
