@@ -6,7 +6,7 @@ export interface CustomerDetail {
   customerName: string
   phone: string
   address: string
-  customerType: "customer" | "supplier"
+  isSupplier: boolean
   contactPerson?: string
   contactPhone?: string
   notes?: string

@@ -71,7 +71,6 @@ const CustomersListPage = () => {
             'SĐT': c.phone || '-',
             'Địa chỉ': c.address || '-',
             'Loại': c.isSupplier ? 'Nhà cung cấp' : 'Khách hàng',
-            'Chiết khấu (%)': (c.discount ?? 0) * 100,
         }));
 
         // Thêm STT
@@ -79,7 +78,7 @@ const CustomersListPage = () => {
             item['STT'] = (index + 1).toString();
         });
 
-        const headers = ['STT', 'Tên', 'SĐT', 'Địa chỉ', 'Loại', 'Chiết khấu (%)'];
+        const headers = ['STT', 'Tên', 'SĐT', 'Địa chỉ', 'Loại'];
 
         // Tạo workbook mới
         const workbook = new ExcelJS.Workbook();
@@ -88,7 +87,7 @@ const CustomersListPage = () => {
         // Thêm tiêu đề
         const titleRow = worksheet.addRow(['DANH SÁCH KHÁCH HÀNG']);
         titleRow.height = 30;
-        worksheet.mergeCells('A1:F1');
+        worksheet.mergeCells('A1:E1');
         
         // Định dạng tiêu đề
         const titleCell = worksheet.getCell('A1');
@@ -230,7 +229,6 @@ const CustomersListPage = () => {
                                     <th>SĐT</th>
                                     <th>Địa chỉ</th>
                                     <th>Loại</th>
-                                    <th>Chiết khấu</th>
                                     <th className="text-center">Hành động</th>
                                 </tr>
                             </thead>
@@ -243,7 +241,6 @@ const CustomersListPage = () => {
                                         <td>
                                             <span className={c.isSupplier ? 'text-orange-600' : 'text-blue-600'}>{c.isSupplier ? 'Nhà cung cấp' : 'Khách hàng'}</span>
                                         </td>
-                                        <td>{(c.discount ?? 0) * 100}%</td>
                                         <td className="text-center">
                                             <div className="flex justify-center gap-2">
                                                 <Tippy content="Xem">

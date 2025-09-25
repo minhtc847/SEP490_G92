@@ -31,7 +31,16 @@ export const getCustomerById = async (id: number) => {
 };
 
 export const updateCustomerById = async (id: number, data: any) => {
-    const response = await axios.put(`/api/customers/${id}`, data);
+    const payload: any = {
+        customerName: data.customerName,
+        phone: data.phone,
+        address: data.address,
+        discount: typeof data.discount === 'number' ? data.discount : undefined,
+        customerCode: data.customerCode,
+        contactPerson: data.contactPerson,
+        isSupplier: data.customerType === 'supplier',
+    };
+    const response = await axios.put(`/api/customers/${id}`, payload);
     return response.data;
 };
 
