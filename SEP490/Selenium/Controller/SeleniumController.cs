@@ -535,12 +535,13 @@ namespace SEP490.Selenium.Controller
 
                     foreach (var input in inputs)
                     {
-                        service.Add(input);
+                        string code = service.Add(input);
                         var po = await dbContext.PurchaseOrders
                             .FirstOrDefaultAsync(po => po.Id == input.Id, token);
                         if (po != null)
                         {
                             po.IsUpdateMisa = true;
+                            po.Code = code;
                             dbContext.PurchaseOrders.Update(po);
                             await dbContext.SaveChangesAsync(token);
                         }
