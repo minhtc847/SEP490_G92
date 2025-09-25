@@ -28,11 +28,11 @@ namespace SEP490.Modules.Accountant.Services
                 {
                     ProductionOrderId = po.Id,
                     ProductionOrderCode = po.ProductionOrderCode,
-                    OrderCode = po.ProductionPlan.SaleOrder.OrderCode,
-                    CustomerName = po.ProductionPlan.Customer.CustomerName,
+                    OrderCode = po.ProductionPlan != null && po.ProductionPlan.SaleOrder != null ? po.ProductionPlan.SaleOrder.OrderCode : null,
+                    CustomerName = po.ProductionPlan != null && po.ProductionPlan.Customer != null ? po.ProductionPlan.Customer.CustomerName : null,
                     TotalAmount = _context.ProductionOutputs
                         .Where(poOut => poOut.ProductionOrderId == po.Id)
-                        .Sum(poOut => Convert.ToInt32(poOut.Amount ?? 0)),
+                        .Sum(poOut => poOut.Amount ?? 0m),
                     //Status = po.Status,
                 })
                 .ToList();
@@ -48,7 +48,7 @@ namespace SEP490.Modules.Accountant.Services
                     OutputId = po.Id,
                     ProductName = po.ProductName,
                     Uom = ConvertStringUOMToInt(po.Product.UOM),
-                    Quantity = Convert.ToInt32(po.Amount ?? 0),
+                    Quantity = (decimal)(po.Amount ?? 0),
                     //Done = po.Done ?? 0
                 })
                 .ToList();
@@ -84,7 +84,7 @@ namespace SEP490.Modules.Accountant.Services
                 return null;
             }
 
-            var totalQuantity = output.Amount ?? 0;
+            var totalQuantity = output.Amount ?? 0m;
 
             var materials = await _context.ProductionMaterials
                 .Include(m => m.Product)
@@ -94,8 +94,8 @@ namespace SEP490.Modules.Accountant.Services
                     Id = m.Id,
                     ProductName = m.Product.ProductName,
                     Uom = ConvertStringUOMToInt(m.Product.UOM), // dung static method
-                    QuantityPer = Convert.ToInt32(m.Amount ?? 0),
-                    TotalQuantity = Convert.ToInt32(m.Amount ?? 0)
+                    QuantityPer = (decimal)(m.Amount ?? 0),
+                    TotalQuantity = (decimal)(m.Amount ?? 0)
                 })
                 .ToListAsync();
 
@@ -106,7 +106,7 @@ namespace SEP490.Modules.Accountant.Services
                     OutputId = output.Id,
                     ProductName = output.Product.ProductName,
                     Uom = ConvertStringUOMToInt(output.Product.UOM), // dung static method
-                    Quantity = Convert.ToInt32(totalQuantity)
+                    Quantity = totalQuantity
                 },
                 Materials = materials
             };

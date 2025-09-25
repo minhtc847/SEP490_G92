@@ -917,19 +917,13 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                         showCloseButton: true,
                       })
                     }
-
-                    if ((productForm.uom || '').toString().toLowerCase() === 'tấm') {
-                      val = Math.floor(val)
-                      if (val < 1) val = 1
-                    } else {
-                      if (val < 0) val = 0
-                    }
+                    if (val < 0) val = 0
                     setProductForm({ ...productForm, quantity: val })
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
                   required
                   min="0"
-                  step={(productForm.uom || '').toString().toLowerCase() === 'tấm' ? 1 : 0.01}
+                  step={0.01}
                   placeholder="Nhập số lượng"
                 />
               </div>
@@ -1129,13 +1123,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                         showCloseButton: true,
                       })
                     }
-              
-                    if ((materialForm.uom || '').toString().toLowerCase() === 'tấm') {
-                      newTotalQuantity = Math.floor(newTotalQuantity)
-                      if (newTotalQuantity < 1) newTotalQuantity = 1
-                    } else {
-                      if (newTotalQuantity < 0) newTotalQuantity = 0
-                    }
+                    if (newTotalQuantity < 0) newTotalQuantity = 0
                     const selectedProductQuantity = getSelectedProductQuantity()
                     const newQuantityPer = calculateQuantityPer(newTotalQuantity, selectedProductQuantity)
                     setMaterialForm({
@@ -1146,8 +1134,8 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
                   required
-                  min={(materialForm.uom || '').toString().toLowerCase() === 'tấm' ? 1 : 0}
-                  step={(materialForm.uom || '').toString().toLowerCase() === 'tấm' ? 1 : 0.01}
+                  min={0}
+                  step={0.01}
                   placeholder="Tổng số lượng cần thiết"
                 />
                 <div className="text-xs text-gray-500 mt-1">SL/1SP sẽ được tính tự động: {materialForm.quantityPer}</div>
