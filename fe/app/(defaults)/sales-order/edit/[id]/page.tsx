@@ -554,7 +554,7 @@ const SalesOrderEditPage = () => {
                             const width = Number(item.width) || 0;
                             const height = Number(item.height) || 0;
                             const area = (width * height) / 1_000_000;
-                            const total = (item.quantity ?? 0) * (item.unitPrice ?? 0);
+                            const total = (item.quantity ?? 0) * (item.unitPrice ?? 0) * area;
 
                             return (
                                 <tr key={index}>
