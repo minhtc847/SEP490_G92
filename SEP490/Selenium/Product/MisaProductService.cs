@@ -5,6 +5,7 @@ using OpenQA.Selenium.Chrome;
 using SEP490.Selenium.Product.DTO;
 using SEP490.Selenium.ProductionOrder.DTO;
 using OpenQA.Selenium.DevTools.V135.Autofill;
+using SEP490.Selenium.PO.DTO;
 
 namespace SEP490.Selenium.Product
 {
@@ -95,6 +96,40 @@ namespace SEP490.Selenium.Product
             var saveButton = wait.Until(d => d.FindElement(By.XPath("//div[text()='Cất']/ancestor::button")));
             saveButton.Click();
             Thread.Sleep(500); // Wait for the action to complete
+        }
+
+        public void deleteProduct(string productCode)
+        {
+            InitSelenium();
+            Login();
+            Thread.Sleep(1000);
+            deleteProductField(productCode);
+            CloseDriver();
+        }
+        private void deleteProductField(string productCode)
+        {
+            IWebElement searchInput = wait.Until(drv =>
+    drv.FindElement(By.XPath("(//input[@placeholder='Tìm kiếm'])[2]"))
+);
+            searchInput.SendKeys(productCode);
+            Thread.Sleep(500);
+            searchInput.SendKeys(Keys.Enter);
+            Thread.Sleep(500);
+            var row = wait.Until(drv => drv.FindElement(By.XPath("//tr[.//span[text()='"+productCode+"']]")));
+            var dropdown = row.FindElement(By.XPath(".//button[contains(@class,'expand-more-button')]"));
+            dropdown.Click();
+            Thread.Sleep(500);
+            var deleteButton = wait.Until(drv => drv.FindElement(
+    By.XPath("//ul[contains(@class,'ms-dropdown--menu')]//a[normalize-space(text())='Xóa']")
+));
+            deleteButton.Click();
+            Thread.Sleep(500);
+            var confirmYes = wait.Until(drv => drv.FindElement(
+    By.XPath("//button[div[normalize-space(text())='Có']]")
+));
+
+            // Click nút "Có"
+            confirmYes.Click();
         }
     }
 
