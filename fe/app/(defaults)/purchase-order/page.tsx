@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { IRootState } from '@/store';
-import { getPurchaseOrders, PurchaseOrderDto, getPurchaseOrdersNotUpdated, updateManyPurchaseOrders } from './service';
+import { getPurchaseOrders, PurchaseOrderDto, getPurchaseOrdersNotUpdated, updateManyPurchaseOrders, checkPurchaseOrderProductsMisaStatus } from './service';
 import { FiSearch } from 'react-icons/fi';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import ExcelJS from 'exceljs';
@@ -150,6 +150,20 @@ const PurchaseOrderPage = () => {
 
             const confirmed = confirm(`Bạn có chắc chắn muốn đồng bộ ${ordersNotUpdated.length} đơn hàng chưa cập nhật lên MISA?`);
             if (!confirmed) return;
+
+            // Pre-validate all selected orders
+            const validations = await Promise.all(
+                ordersNotUpdated.map(o => checkPurchaseOrderProductsMisaStatus(o.id))
+            );
+
+            const invalids = validations
+                .map((v, idx) => ({ v, order: ordersNotUpdated[idx] }))
+                .filter(x => !x.v?.canUpdateMisa);
+
+            if (invalids.length > 0) {
+                setUpdateMessage('Tồn tại đơn hàng có sản phẩm chưa được đồng bộ. Vui lòng đồng bộ sản phẩm trước.');
+                return;
+            }
 
             // Gọi API update tất cả đơn hàng
             await updateManyPurchaseOrders(ordersNotUpdated);

@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getPurchaseOrderById, PurchaseOrderWithDetailsDto, updatePurchaseOrderStatus, importPurchaseOrder, updateMisaPurchaseOrder } from './service';
+import { getPurchaseOrderById, PurchaseOrderWithDetailsDto, updatePurchaseOrderStatus, importPurchaseOrder, updateMisaPurchaseOrder, checkPurchaseOrderProductsMisaStatus } from './service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import ExcelJS from 'exceljs';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import * as signalR from '@microsoft/signalr';
 import { usePermissions } from '@/hooks/usePermissions';
 
 const getStatusText = (status: string) => {
@@ -48,6 +49,10 @@ const PurchaseOrderDetailPage = () => {
     const [order, setOrder] = useState<PurchaseOrderWithDetailsDto | null>(null);
     const [loading, setLoading] = useState(true);
     const [isUpdatingMisa, setIsUpdatingMisa] = useState(false);
+    const [isWaitingMisaConfirm, setIsWaitingMisaConfirm] = useState(false);
+    const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+    const [showErrorMessage, setShowErrorMessage] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
 
     useEffect(() => {
         if (!id || isNaN(id)) return;
@@ -64,6 +69,30 @@ const PurchaseOrderDetailPage = () => {
         };
 
         fetchData();
+    }, [id]);
+
+    // Listen to SignalR for purchase order MISA confirmation
+    useEffect(() => {
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl(`${process.env.NEXT_PUBLIC_BASE_URL}/saleOrderHub`)
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on('MisaUpdate', async (data: any) => {
+            try {
+                if (data?.type === 'Đơn Đặt Hàng') {
+                    const updated = await getPurchaseOrderById(id);
+                    setOrder(updated);
+                    setShowSuccessMessage(true);
+                    setTimeout(() => setShowSuccessMessage(false), 3000);
+                }
+            } finally {
+                setIsWaitingMisaConfirm(false);
+            }
+        });
+
+        connection.start().catch(() => {});
+        return () => { connection.stop(); };
     }, [id]);
 
     const handleExportToExcel = async () => {
@@ -218,27 +247,49 @@ const PurchaseOrderDetailPage = () => {
                     <button
                         onClick={async () => {
                             if (order.isUpdateMisa) return;
-                            if (!confirm(`Bạn có chắc muốn đồng bộ MISA cho đơn hàng "${order.description}" không?`)) return;
+                            if (!confirm(`Bạn có chắc muốn đồng bộ MISA cho đơn hàng này không?`)) return;
                             try {
                                 setIsUpdatingMisa(true);
                                 if (typeof document !== 'undefined') document.body.classList.add('pointer-events-none');
+                                setShowSuccessMessage(false);
+                                setShowErrorMessage(false);
+                                setErrorMessage('');
+                                // Pre-check MISA status for all products in this purchase order
+                                const misaCheck = await checkPurchaseOrderProductsMisaStatus(order.id);
+                                if (!misaCheck?.canUpdateMisa) {
+                                    const msg = misaCheck?.message || 'Tồn tại sản phẩm trong đơn hàng chưa được đồng bộ MISA.';
+                                    setErrorMessage(msg);
+                                    setShowErrorMessage(true);
+                                    setTimeout(() => setShowErrorMessage(false), 5000);
+                                    return;
+                                }
                                 await updateMisaPurchaseOrder(order.id);
-                                setOrder((prev) => (prev ? { ...prev, isUpdateMisa: true } : prev));
-                                alert('Đã đồng bộ MISA thành công.');
+                                setIsWaitingMisaConfirm(true);
                             } catch (error: any) {
                                 const errorMessage = error.response?.data?.message || 'Lỗi khi đồng bộ MISA. Vui lòng thử lại.';
-                                alert(errorMessage);
+                                setErrorMessage(errorMessage);
+                                setShowErrorMessage(true);
+                                setTimeout(() => setShowErrorMessage(false), 5000);
                             } finally {
                                 setIsUpdatingMisa(false);
                                 if (typeof document !== 'undefined') document.body.classList.remove('pointer-events-none');
                             }
                         }}
-                        disabled={order.isUpdateMisa || isUpdatingMisa}
+                        disabled={order.isUpdateMisa || isUpdatingMisa || isWaitingMisaConfirm}
                         title={order.isUpdateMisa ? 'Đơn hàng đã được đồng bộ MISA' : ''}
                         aria-busy={isUpdatingMisa}
-                        className={`px-4 py-1 rounded ${order.isUpdateMisa || isUpdatingMisa ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-purple-600 text-white hover:bg-purple-700'}`}
+                        className={`px-4 py-1 rounded transition ${order.isUpdateMisa || isUpdatingMisa || isWaitingMisaConfirm ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-purple-600 text-white hover:bg-purple-700'}`}
                     >
-                        {isUpdatingMisa ? 'Đang đồng bộ MISA...' : '🔄 Đồng bộ MISA'}
+                        {isUpdatingMisa ? (
+                            <>
+                                <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                                Đang đồng bộ MISA...
+                            </>
+                        ) : isWaitingMisaConfirm ? (
+                            '⏳ Đang chờ xác nhận MISA...'
+                        ) : (
+                            '🔄 Đồng bộ MISA'
+                        )}
                     </button>
                     
                     {!isAccountant() && (
@@ -251,6 +302,20 @@ const PurchaseOrderDetailPage = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Success Message */}
+            {showSuccessMessage && (
+                <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                    ✅ Cập nhật MISA thành công!
+                </div>
+            )}
+
+            {/* Error Message */}
+            {showErrorMessage && (
+                <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                    ❌ {errorMessage}
+                </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-sm">
                 <div>

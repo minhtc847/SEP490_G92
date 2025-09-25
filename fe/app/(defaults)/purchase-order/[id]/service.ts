@@ -59,3 +59,8 @@ export const updateMisaPurchaseOrder = async (orderId: number): Promise<void> =>
         throw error;
     }
 };
+
+export const checkPurchaseOrderProductsMisaStatus = async (orderId: number): Promise<any> => {
+    const res = await axios.get(`/api/PurchaseOrder/${orderId}/check-products-misa`);
+    return res.data;
+};

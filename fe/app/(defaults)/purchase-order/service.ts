@@ -94,3 +94,8 @@ export const updateManyPurchaseOrders = async (orders: PurchaseOrderDto[]): Prom
         throw error;
     }
 };
+
+export const checkPurchaseOrderProductsMisaStatus = async (orderId: number): Promise<any> => {
+    const res = await axios.get(`/api/PurchaseOrder/${orderId}/check-products-misa`);
+    return res.data;
+};
