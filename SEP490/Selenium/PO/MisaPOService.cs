@@ -34,9 +34,9 @@ namespace SEP490.Selenium.PO
         private void AddField(InputPO inputPO)
         {
             var userDropdownButton = wait.Until(drv => drv.FindElement(By.XPath(
-    "//div[div[contains(@class, 'combo-title__text') and text()='Nhà cung cấp']]//following::div[contains(@class, 'btn-dropdown')][1]"
+    "//*[@id=\"body-layout\"]/div[1]/div/div/div[1]/span/div/div[1]/div[1]/div[1]/div/div[1]/div[1]/div/span/div/div[2]/div/div[1]/input"
 )));
-            userDropdownButton.Click();
+            userDropdownButton.SendKeys(inputPO.supplierName);
             Thread.Sleep(1000);
             var option = wait.Until(drv => drv.FindElement(By.XPath(
     "//tr[contains(@class, 'combobox-item')]//td[div/div[text()='" + inputPO.supplierName + "']]"
