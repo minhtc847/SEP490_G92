@@ -10,20 +10,26 @@ namespace SEP490.Selenium.PO
             : base(configuration, "https://actapp.misa.vn/app/PU/PUOrder/PUOrderList")
         {
         }
-        public void Add(InputPO inputPO)
+        public string Add(InputPO inputPO)
         {
             InitSelenium();
             Login();
             Thread.Sleep(500); // Wait for the page to load
-
+            string orderCode = "";
             ClickIfExists(
                 By.XPath("//div[contains(@class, 'ms-button-text') and contains(text(), 'Thêm')]"),
                 driver,
                 wait
                 );
+            var orderIdInput = wait.Until(drv => drv.FindElement(By.XPath("//div[contains(text(),'Số đơn hàng')]/ancestor::div[contains(@class,'ms-input')]//input")));
+
+            wait.Until(drv => !string.IsNullOrEmpty(orderIdInput.GetAttribute("value")));
+
+            orderCode = orderIdInput.GetAttribute("value");
             AddField(inputPO);
             Thread.Sleep(500);
             CloseDriver();
+            return orderCode;
         }
         private void AddField(InputPO inputPO)
         {

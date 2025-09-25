@@ -22,7 +22,7 @@ namespace SEP490.Selenium.SaleOrder
             Login();
             var button = wait.Until(drv => drv.FindElement(By.XPath("//div[contains(@class, 'ms-button-text') and contains(text(), 'Thêm đơn đặt hàng')]//ancestor::button")));
             button.Click();
-            var orderIdInput = wait.Until(drv => drv.FindElement(By.XPath("//div[contains(text(),'Số đơn hàng')]/ancestor::div[contains(@class,'ms-input')]//input")));
+            var orderIdInput = wait.Until(drv => drv.FindElement(By.XPath("//*[@id=\"body-layout\"]/div[1]/div/div/div[1]/span/div/div[2]/div[2]/div/div[2]/div/span[1]/div/input")));
 
             wait.Until(drv => !string.IsNullOrEmpty(orderIdInput.GetAttribute("value")));
 
