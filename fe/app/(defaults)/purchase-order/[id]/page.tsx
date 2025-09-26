@@ -331,7 +331,7 @@ const PurchaseOrderDetailPage = () => {
                         )}
                     </button>
                     
-                    {!isAccountant() && (
+                    {!isAccountant() && !order.isUpdateMisa && (
                         <button onClick={() => router.push(`/purchase-order/edit/${id}`)} className="px-4 py-1 bg-blue-500 text-white rounded text-sm focus:outline-none focus:ring-0">
                             📝 Sửa
                         </button>

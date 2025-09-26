@@ -239,7 +239,7 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                                     <IconEye className="w-4 h-4" />
                                     {expandedSlips.has(slip.id) ? ' Thu gọn' : ' Chi tiết'}
                                 </button>
-                                {!slip.isFinalized && (
+                                {!slip.isFinalized && !slip.isUpdateMisa && (
                                     <button
                                         onClick={() => openUpdateModal(slip)}
                                         className="px-3 py-1 text-sm border border-amber-300 text-amber-700 bg-white hover:bg-amber-50 rounded-md transition-colors"
