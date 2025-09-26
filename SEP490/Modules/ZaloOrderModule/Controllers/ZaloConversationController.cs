@@ -244,14 +244,22 @@ namespace SEP490.Modules.ZaloOrderModule.Controllers
             try
             {
                 var conversation = await _context.ZaloConversationStates
-                    .FirstOrDefaultAsync(cs => cs.Id == id && cs.IsActive);
+                    .Include(cs => cs.MessageHistory)
+                    .Include(cs => cs.OrderItems)
+                    .FirstOrDefaultAsync(cs => cs.Id == id);
 
                 if (conversation == null)
                 {
                     return NotFound(new { message = "Conversation not found" });
                 }
 
-                conversation.IsActive = false;
+                // Remove related data first
+                _context.ZaloConversationMessages.RemoveRange(conversation.MessageHistory);
+                _context.ZaloConversationOrderItems.RemoveRange(conversation.OrderItems);
+                
+                // Remove the conversation itself
+                _context.ZaloConversationStates.Remove(conversation);
+                
                 await _context.SaveChangesAsync();
 
                 return Ok(new { message = "Conversation deleted successfully" });

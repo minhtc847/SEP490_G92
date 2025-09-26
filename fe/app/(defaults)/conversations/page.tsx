@@ -67,16 +67,18 @@ export default function ConversationsPage() {
     };
 
     const handleDeleteConversation = async (id: number) => {
-        if (!confirm('Bạn có chắc chắn muốn xóa cuộc hội thoại này?')) {
+        if (!confirm('Bạn có chắc chắn muốn xóa cuộc hội thoại này? Hành động này không thể hoàn tác.')) {
             return;
         }
 
         try {
             await conversationService.deleteConversation(id);
+            alert('Xóa cuộc hội thoại thành công!');
             await loadData(); // Reload data
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error deleting conversation:', error);
-            alert('Có lỗi xảy ra khi xóa cuộc hội thoại');
+            const errorMessage = error?.response?.data?.message || error?.message || 'Có lỗi xảy ra khi xóa cuộc hội thoại';
+            alert(`Lỗi: ${errorMessage}`);
         }
     };
 
