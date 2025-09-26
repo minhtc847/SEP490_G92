@@ -47,6 +47,14 @@ export const deleteProduct = async (id: string): Promise<void> => {
     }
 };
 
+export const deleteMisaProduct = async (id: string | number): Promise<void> => {
+    try {
+        await axios.delete(`/api/Selenium/product/${id}`);
+    } catch (error) {
+        throw error;
+    }
+};
+
 export const getProductsNotUpdated = async (): Promise<Product[]> => {
     try {
         const response = await axios.get<Product[]>('/api/Product');

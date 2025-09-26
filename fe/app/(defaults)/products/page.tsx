@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getProducts, Product, getProductsNotUpdated, updateManyProducts, createProductApi, getGlassStructureOptionsForProducts, GlassStructureOption, CreateProductProductDto } from './service';
+import { getProducts, Product, getProductsNotUpdated, updateManyProducts, createProductApi, getGlassStructureOptionsForProducts, GlassStructureOption, CreateProductProductDto, deleteMisaProduct } from './service';
 import IconEye from '@/components/icon/icon-eye';
 import IconEdit from '@/components/icon/icon-edit';
 import IconTrash from '@/components/icon/icon-trash-lines';
@@ -83,11 +83,21 @@ const ProductListPage = () => {
     const uniqueProductTypes = Array.from(new Set(products.map((p) => p.productType).filter(Boolean)));
     const uniqueUoms = Array.from(new Set(products.map((p) => p.uom).filter(Boolean)));
 
-    const handleDelete = async (id: string, name?: string) => {
-        const confirmed = confirm(`Bạn có chắc chắn muốn xoá sản phẩm: ${name ?? 'này'}?`);
+    const handleDelete = async (id: string, name?: string, isUpdatedMisa?: number, productCode?: string) => {
+        const baseMsg = `Bạn có chắc chắn muốn xoá sản phẩm: ${name ?? 'này'}?`;
+        const extra = isUpdatedMisa === 1 ? `\n\nHành động này sẽ xóa cả trên Misa.` : '';
+        const confirmed = confirm(baseMsg + extra);
         if (!confirmed) return;
 
         try {
+            // Nếu đã đồng bộ MISA, gọi API xoá trên MISA (SeleniumController: DELETE /api/Selenium/product/{productId})
+            if (isUpdatedMisa === 1) {
+                try {
+                    await deleteMisaProduct(id);
+                } catch (e) {
+                    console.warn('Xoá trên MISA thất bại (tiếp tục xoá nội bộ):', e);
+                }
+            }
             await deleteProduct(id);
             alert(`Xoá sản phẩm ${name ?? ''} thành công!`);
             router.refresh();
@@ -533,7 +543,7 @@ const ProductListPage = () => {
                                         <button onClick={() => router.push(`/products/edit/${product.id}`)} className="p-2 bg-blue-100 rounded-full hover:bg-blue-200 transition" title="Sửa">
                                             <IconEdit className="w-5 h-5 text-blue-700" />
                                         </button>
-                                        <button onClick={() => handleDelete(product.id, product.productName)} className="p-2 bg-red-100 rounded-full hover:bg-red-200 transition" title="Xoá">
+                                        <button onClick={() => handleDelete(product.id, product.productName, product.isupdatemisa, (product as any).ProductCode || product.productCode)} className="p-2 bg-red-100 rounded-full hover:bg-red-200 transition" title="Xoá">
                                             <IconTrash className="w-5 h-5 text-red-700" />
                                         </button>
                                     </td>
