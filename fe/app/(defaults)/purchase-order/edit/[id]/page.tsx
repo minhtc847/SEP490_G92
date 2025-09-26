@@ -151,6 +151,7 @@ const PurchaseOrderEditPage = () => {
     };
 
     const handleItemChange = (idx: number, field: keyof OrderItem, val: string | number | null) => {
+        if (val === null) return;
         // Validate quantity limit
         if (field === 'quantity') {
             const numValue = +val;
