@@ -1,4 +1,7 @@
+"use client";
 import { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { DataTable } from 'mantine-datatable';
 import { getOrderDetailById, OrderDetailDto, ProductInOrderDto } from '@/app/(defaults)/sales-order/[id]/service';
@@ -19,8 +22,8 @@ function calculateTotalGlue(width: number, height: number, thickness: number, gl
 const CreateProductionPlanManager = () => {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const orderId = searchParams.get('orderId');
-    const orderParam = searchParams.get('order');
+    const orderId = searchParams?.get('orderId');
+    const orderParam = searchParams?.get('order');
     const [order, setOrder] = useState<OrderDetailDto | null>(null);
     const [selectedOrder, setSelectedOrder] = useState<OrderDto | null>(null);
     const [products, setProducts] = useState<ProductionPlanProductInput[]>([]);
@@ -93,8 +96,44 @@ const CreateProductionPlanManager = () => {
     const totalKeoNano = products.filter(p => p.adhesiveType?.toLowerCase() === 'nano').reduce((sum, p) => sum + calculateTotalGlue(p.width, p.height, p.thickness, p.glass4mm, p.glass5mm, p.quantity), 0);
     const totalKeoMem = products.filter(p => p.adhesiveType?.toLowerCase() === 'mềm').reduce((sum, p) => sum + calculateTotalGlue(p.width, p.height, p.thickness, p.glass4mm, p.glass5mm, p.quantity), 0);
 
-    const handleChange = (idx: number, field: keyof ProductionPlanProductInput, value: any) => {
-        setProducts((prev) => prev.map((p, i) => i === idx ? { ...p, [field]: value } : p));
+    const MAX_QTY = 9999;
+    const MAX_VAL = 999999;
+
+    const MySwal = typeof window !== 'undefined' ? withReactContent(Swal) : null as any;
+    const warn = (msg: string) => {
+        if (!MySwal) return;
+        MySwal.fire({
+            title: msg,
+            icon: 'warning',
+            toast: true,
+            position: 'bottom-start',
+            showConfirmButton: false,
+            timer: 3000,
+            showCloseButton: true,
+        });
+    };
+
+    const handleChange = (idx: number, field: keyof ProductionPlanProductInput, rawValue: any) => {
+        setProducts((prev) => prev.map((p, i) => {
+            if (i !== idx) return p;
+            let value = rawValue;
+            if (['quantity'].includes(field)) {
+                value = Math.floor(Number(rawValue) || 0);
+                if (value < 1) value = 1;
+                if (value > MAX_QTY) {
+                    value = MAX_QTY;
+                    warn('Số lượng tối đa là 9999');
+                }
+            } else if (['thickness','glueLayers','glassLayers','glass4mm','glass5mm','butylType','width','height'].includes(field)) {
+                value = Number(rawValue) || 0;
+                if (value < 0) value = 0;
+                if (value > MAX_VAL) {
+                    value = MAX_VAL;
+                    warn('Giá trị tối đa là 999999');
+                }
+            }
+            return { ...p, [field]: value };
+        }));
     };
 
     const handleCreate = async () => {
@@ -163,13 +202,13 @@ const CreateProductionPlanManager = () => {
                     records={products.map((p, idx) => ({ id: p.productId ?? idx, ...p }))}
                     columns={[
                         { accessor: 'productCode', title: 'Tên sản phẩm', render: (r) => r.productName },
-                        { accessor: 'quantity', title: 'Số lượng', render: (r, idx) => <input type="number" min={1} value={r.quantity} onChange={e => handleChange(idx, 'quantity', Number(e.target.value))} className="input input-sm w-20" /> },
-                        { accessor: 'thickness', title: 'Dày', render: (r, idx) => <input type="number" value={r.thickness} onChange={e => handleChange(idx, 'thickness', Number(e.target.value))} className="input input-sm w-20" /> },
-                        { accessor: 'glueLayers', title: 'Lớp keo', render: (r, idx) => <input type="number" value={r.glueLayers} onChange={e => handleChange(idx, 'glueLayers', Number(e.target.value))} className="input input-sm w-20" /> },
-                        { accessor: 'glassLayers', title: 'Số kính', render: (r, idx) => <input type="number" value={r.glassLayers} onChange={e => handleChange(idx, 'glassLayers', Number(e.target.value))} className="input input-sm w-20" /> },
-                        { accessor: 'glass4mm', title: 'Kính 4', render: (r, idx) => <input type="number" value={r.glass4mm} onChange={e => handleChange(idx, 'glass4mm', Number(e.target.value))} className="input input-sm w-20" /> },
-                        { accessor: 'glass5mm', title: 'Kính 5', render: (r, idx) => <input type="number" value={r.glass5mm} onChange={e => handleChange(idx, 'glass5mm', Number(e.target.value))} className="input input-sm w-20" /> },
-                        { accessor: 'butylType', title: 'Loại butyl', render: (r, idx) => <input type="number" value={r.butylType} onChange={e => handleChange(idx, 'butylType', Number(e.target.value))} className="input input-sm w-20" /> },
+                        { accessor: 'quantity', title: 'Số lượng', render: (r, idx) => <input type="number" min={1} max={MAX_QTY} step={1} value={r.quantity} onChange={e => handleChange(idx, 'quantity', e.target.value)} className="input input-sm w-20" /> },
+                        { accessor: 'thickness', title: 'Dày', render: (r, idx) => <input type="number" min={0} max={MAX_VAL} step={1} value={r.thickness} onChange={e => handleChange(idx, 'thickness', e.target.value)} className="input input-sm w-20" /> },
+                        { accessor: 'glueLayers', title: 'Lớp keo', render: (r, idx) => <input type="number" min={0} max={MAX_VAL} step={1} value={r.glueLayers} onChange={e => handleChange(idx, 'glueLayers', e.target.value)} className="input input-sm w-20" /> },
+                        { accessor: 'glassLayers', title: 'Số kính', render: (r, idx) => <input type="number" min={0} max={MAX_VAL} step={1} value={r.glassLayers} onChange={e => handleChange(idx, 'glassLayers', e.target.value)} className="input input-sm w-20" /> },
+                        { accessor: 'glass4mm', title: 'Kính 4', render: (r, idx) => <input type="number" min={0} max={MAX_VAL} step={1} value={r.glass4mm} onChange={e => handleChange(idx, 'glass4mm', e.target.value)} className="input input-sm w-20" /> },
+                        { accessor: 'glass5mm', title: 'Kính 5', render: (r, idx) => <input type="number" min={0} max={MAX_VAL} step={1} value={r.glass5mm} onChange={e => handleChange(idx, 'glass5mm', e.target.value)} className="input input-sm w-20" /> },
+                        { accessor: 'butylType', title: 'Loại butyl', render: (r, idx) => <input type="number" min={0} max={MAX_VAL} step={1} value={r.butylType} onChange={e => handleChange(idx, 'butylType', e.target.value)} className="input input-sm w-20" /> },
                         { accessor: 'isCuongLuc', title: 'CL', render: (r, idx) => <input type="checkbox" checked={r.isCuongLuc} onChange={e => handleChange(idx, 'isCuongLuc', e.target.checked)} /> },
                         { accessor: 'totalGlue', title: 'Tổng keo(kg)', render: (r) => calculateTotalGlue(r.width, r.height, r.thickness, r.glass4mm, r.glass5mm, r.quantity).toFixed(2) },
                     ]}

@@ -65,7 +65,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        {/* <span className={`badge ${customer.customerType === 'customer' ? 'bg-info' : 'bg-warning'}`}>{customer.customerType === 'customer' ? 'Khách hàng' : 'Nhà cung cấp'}</span> */}
+                        
                         <Link href={`/customers/${customer.id}/edit`}>
                             <button className="btn btn-primary">
                                 <IconEdit className="mr-2" />
@@ -80,7 +80,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                     <div className="space-y-6">
                         <div>
                             <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center gap-2">
-                                {customer.customerType === 'customer' ? <IconUser className="w-5 h-5 text-blue-500" /> : <IconUsers className="w-5 h-5 text-orange-500" />}
+                                {!customer.isSupplier ? <IconUser className="w-5 h-5 text-blue-500" /> : <IconUsers className="w-5 h-5 text-orange-500" />}
                                 Thông tin cơ bản
                             </h3>
 
@@ -108,7 +108,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                                 <div className="grid grid-cols-3 gap-4 py-3">
                                     <span className="text-gray-600 font-medium">Loại:</span>
                                     <span className="col-span-2 flex items-center gap-2">
-                                        {customer.customerType === 'customer' ? (
+                                        {!customer.isSupplier ? (
                                             <>
                                                 <IconUser className="w-4 h-4 text-blue-500" />
                                                 <span className="text-blue-600 font-medium">Khách hàng</span>
@@ -130,10 +130,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                         <div>
                             <h3 className="text-lg font-semibold mb-4 text-gray-800">Thông tin bổ sung</h3>
                             <div className="space-y-4">
-                                <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
-                                    <span className="text-gray-600 font-medium">Chiết khấu:</span>
-                                    <span className="col-span-2 font-semibold text-green-600">{(customer.discount ?? 0) * 100}%</span>
-                                </div>
+                                
 
                                 {customer.notes && (
                                     <div className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">

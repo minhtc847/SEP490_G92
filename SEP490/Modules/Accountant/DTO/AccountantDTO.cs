@@ -6,7 +6,7 @@
         public string? ProductionOrderCode { get; set; }
         public string? OrderCode { get; set; }
         public string? CustomerName { get; set; }
-        public int TotalAmount { get; set; }
+        public decimal TotalAmount { get; set; }
         public string Status { get; set; }
     }
 }

@@ -559,7 +559,7 @@ const ProductionPlanDetailPage = () => {
                         </div>
                     )}                    
 
-                    {detail?.status !== 'Hoàn thành' && !isProductionStaff() && (
+                    {detail?.status !== 'Hoàn thành' && !isAccountant() && !isProductionStaff() && (
                         <button
                             type="button"
                             onClick={handleCompleteProductionPlan}

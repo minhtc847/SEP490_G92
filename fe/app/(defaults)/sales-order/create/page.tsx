@@ -310,6 +310,7 @@ const SalesOrderCreatePage = () => {
 
             const newProduct = await createProduct(payload);
 
+            const gs = glassStructures.find((g) => g.id === newFinishedProductForm.glassStructureId);
             setForm((prev) => ({
                 ...prev,
                 orderItems: [
@@ -322,7 +323,7 @@ const SalesOrderCreatePage = () => {
                         height: Number(newProduct.height),
                         thickness: Number(newProduct.thickness),
                         quantity: 1,
-                        unitPrice: Number(newProduct.unitPrice),
+                        unitPrice: Number(gs?.unitPrice ?? 0),
                         glassStructureId: newProduct.glassStructureId,
                         isFromDatabase: true,
                     },
@@ -531,7 +532,7 @@ const SalesOrderCreatePage = () => {
                             <th>Dày</th> */}
                             <th>Số lượng</th>
                             <th>Đơn vị tính</th>
-                            <th>Đơn giá/1m2</th>
+                            <th>Đơn giá / m²</th>
                             <th>Diện tích (m²)</th>
                             <th>Thành tiền</th>
                             <th></th>
@@ -593,6 +594,7 @@ const SalesOrderCreatePage = () => {
                         onChange={(option: ProductOption | null) => {
                             if (!option) return;
                             const p = option.product;
+                            const gs = glassStructures.find((g) => g.id === p.glassStructureId);
                             const newItem: OrderItem = {
                                 id: Date.now(),
                                 productId: p.id,
@@ -601,7 +603,7 @@ const SalesOrderCreatePage = () => {
                                 width: Number(p.width),
                                 thickness: Number(p.thickness),
                                 quantity: 1,
-                                unitPrice: Number(p.unitPrice),
+                                unitPrice: Number(gs?.unitPrice ?? 0),
                                 glassStructureId: p.glassStructureId,
                                 isFromDatabase: true,
                             };
@@ -738,12 +740,11 @@ const SalesOrderCreatePage = () => {
                                     <div className="input input-bordered bg-gray-100">{((newFinishedProductForm.width * newFinishedProductForm.height) / 1_000_000).toFixed(2)}</div>
                                 </div>
                                 <div>
-                                    <label className="block mb-1 font-medium">Đơn giá (₫)</label>
+                                    <label className="block mb-1 font-medium">Đơn giá (₫/m²)</label>
                                     <div className="input input-bordered bg-gray-100">
                                         {(() => {
-                                            const area = (newFinishedProductForm.width * newFinishedProductForm.height) / 1_000_000;
                                             const s = glassStructures.find((g) => g.id === newFinishedProductForm.glassStructureId);
-                                            return ((s?.unitPrice || 0) * area).toFixed(0);
+                                            return ((s?.unitPrice || 0)).toFixed(0);
                                         })()}
                                     </div>
                                 </div>

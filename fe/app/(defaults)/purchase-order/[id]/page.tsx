@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Swal from 'sweetalert2';
 import { useParams, useRouter } from 'next/navigation';
 import { getPurchaseOrderById, PurchaseOrderWithDetailsDto, updatePurchaseOrderStatus, importPurchaseOrder, updateMisaPurchaseOrder, checkPurchaseOrderProductsMisaStatus } from './service';
 import * as XLSX from 'xlsx';
@@ -53,6 +54,44 @@ const PurchaseOrderDetailPage = () => {
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
     const [showErrorMessage, setShowErrorMessage] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+
+    const confirmAction = async (title: string, text?: string) => {
+        const res = await Swal.fire({
+            title,
+            text,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Xác nhận',
+            cancelButtonText: 'Hủy',
+            reverseButtons: true,
+            focusCancel: true,
+        });
+        return res.isConfirmed;
+    };
+
+    const toastSuccess = (message: string) => {
+        Swal.fire({
+            title: message,
+            icon: 'success',
+            toast: true,
+            position: 'bottom-start',
+            showConfirmButton: false,
+            timer: 3000,
+            showCloseButton: true,
+        });
+    };
+
+    const toastError = (message: string) => {
+        Swal.fire({
+            title: message,
+            icon: 'error',
+            toast: true,
+            position: 'bottom-start',
+            showConfirmButton: false,
+            timer: 4000,
+            showCloseButton: true,
+        });
+    };
 
     useEffect(() => {
         if (!id || isNaN(id)) return;
@@ -186,19 +225,19 @@ const PurchaseOrderDetailPage = () => {
             )}
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl font-bold">Chi tiết đơn hàng mua: {order.code}</h1>
-                <div className="space-x-2">
+                <div className="flex flex-wrap items-center gap-2">
                     {order.status === 'Pending' && (
                         <div className="flex gap-2">
                             <button
                                 onClick={async () => {
-                                    if (confirm(`Bạn có chắc muốn đặt đơn hàng "${order.description}" không?`)) {
-                                        try {
-                                            await updatePurchaseOrderStatus(order.id, 1); // Ordered
-                                            setOrder((prev) => (prev ? { ...prev, status: 'Ordered' } : prev));
-                                            alert('Đơn hàng đã được đặt.');
-                                        } catch (error) {
-                                            alert('Có lỗi khi cập nhật trạng thái.');
-                                        }
+                                    const ok = await confirmAction('Xác nhận đặt hàng', `Bạn có chắc muốn đặt đơn hàng "${order.code || order.description || id}" không?`);
+                                    if (!ok) return;
+                                    try {
+                                        await updatePurchaseOrderStatus(order.id, 1); // Ordered
+                                        setOrder((prev) => (prev ? { ...prev, status: 'Ordered' } : prev));
+                                        toastSuccess('Đơn hàng đã được đặt.');
+                                    } catch (error) {
+                                        toastError('Có lỗi khi cập nhật trạng thái.');
                                     }
                                 }}
                                 className="px-4 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm focus:outline-none focus:ring-0"
@@ -208,14 +247,14 @@ const PurchaseOrderDetailPage = () => {
 
                             <button
                                 onClick={async () => {
-                                    if (confirm(`Bạn có chắc muốn huỷ đơn hàng "${order.description}" không?`)) {
-                                        try {
-                                            await updatePurchaseOrderStatus(order.id, 3); // Cancelled
-                                            setOrder((prev) => (prev ? { ...prev, status: 'Cancelled' } : prev));
-                                            alert('Đơn hàng đã bị huỷ.');
-                                        } catch (error) {
-                                            alert('Có lỗi khi huỷ đơn hàng.');
-                                        }
+                                    const ok = await confirmAction('Xác nhận huỷ đơn', `Bạn có chắc muốn huỷ đơn hàng "${order.code || order.description || id}" không?`);
+                                    if (!ok) return;
+                                    try {
+                                        await updatePurchaseOrderStatus(order.id, 3); // Cancelled
+                                        setOrder((prev) => (prev ? { ...prev, status: 'Cancelled' } : prev));
+                                        toastSuccess('Đơn hàng đã bị huỷ.');
+                                    } catch (error) {
+                                        toastError('Có lỗi khi huỷ đơn hàng.');
                                     }
                                 }}
                                 className="px-4 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm focus:outline-none focus:ring-0"
@@ -228,14 +267,14 @@ const PurchaseOrderDetailPage = () => {
                     {order.status !== 'Imported' && order.status !== 'Cancelled' && (
                         <button
                             onClick={async () => {
-                                if (confirm(`Bạn có chắc muốn nhập hàng cho đơn hàng "${order.description}" không?`)) {
-                                    try {
-                                        await importPurchaseOrder(order.id);
-                                        setOrder((prev) => (prev ? { ...prev, status: 'Imported' } : prev));
-                                        alert('Đã nhập hàng thành công.');
-                                    } catch {
-                                        alert('Lỗi khi nhập hàng. Vui lòng thử lại.');
-                                    }
+                                const ok = await confirmAction('Xác nhận nhập hàng', `Bạn có chắc muốn nhập hàng cho đơn hàng "${order.code || order.description || id}" không?`);
+                                if (!ok) return;
+                                try {
+                                    await importPurchaseOrder(order.id);
+                                    setOrder((prev) => (prev ? { ...prev, status: 'Imported' } : prev));
+                                    toastSuccess('Đã nhập hàng thành công.');
+                                } catch {
+                                    toastError('Lỗi khi nhập hàng. Vui lòng thử lại.');
                                 }
                             }}
                             className="px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700"
@@ -293,11 +332,11 @@ const PurchaseOrderDetailPage = () => {
                     </button>
                     
                     {!isAccountant() && (
-                        <button onClick={() => router.push(`/purchase-order/edit/${id}`)} className="px-4 py-1 bg-blue-500 text-white rounded">
+                        <button onClick={() => router.push(`/purchase-order/edit/${id}`)} className="px-4 py-1 bg-blue-500 text-white rounded text-sm focus:outline-none focus:ring-0">
                             📝 Sửa
                         </button>
                     )}
-                    <button onClick={handleExportToExcel} className="px-4 py-1 bg-gray-600 text-white rounded">
+                    <button onClick={handleExportToExcel} className="px-4 py-1 bg-gray-600 text-white rounded text-sm focus:outline-none focus:ring-0">
                         📊 Xuất Excel
                     </button>
                 </div>

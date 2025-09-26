@@ -178,7 +178,7 @@ const SalesOrderDetailPage = () => {
         });
 
         order.products.forEach((item, idx) => {
-            const row = worksheet.addRow([idx + 1, item.productCode, item.productName, 'Tấm', item.quantity, item.thickness, item.width, item.height, item.unitPrice, item.totalAmount]);
+            const row = worksheet.addRow([idx + 1, item.productCode, item.productName, 'Tấm', item.quantity, item.thickness, item.width, item.height, item.unitPrice, (item.totalAmount || (item.unitPrice * item.quantity * (item.width * item.height) / 1_000_000))]);
             row.eachCell((cell) => {
                 cell.border = {
                     top: { style: 'thin' },
@@ -366,7 +366,7 @@ const SalesOrderDetailPage = () => {
                         <th className="border p-2">Dày (mm)</th> */}
                         <th className="border p-2">Số lượng</th>
                         <th className="border p-2">Đơn vị tính</th>
-                        <th className="border p-2">Đơn giá (₫)</th>
+                        <th className="border p-2">Đơn giá / m² (₫)</th>
                         <th className="border p-2">Diện tích (m²)</th>
                         <th className="border p-2">Thành tiền (₫)</th>
                     </tr>
@@ -383,7 +383,7 @@ const SalesOrderDetailPage = () => {
                             <td className="border p-2">Tấm</td>
                             <td className="border p-2 text-right">{item.unitPrice.toLocaleString()}</td>
                             <td className="border p-2 text-right">{item.areaM2}</td>
-                            <td className="border p-2 text-right">{item.totalAmount.toLocaleString()}</td>
+                            <td className="border p-2 text-right">{(item.totalAmount || (item.unitPrice * item.quantity * (item.width * item.height) / 1_000_000)).toLocaleString()}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -392,13 +392,14 @@ const SalesOrderDetailPage = () => {
             <div className="text-end text-sm space-y-1">
                 {(() => {
                     const totalQuantityCalc = products.reduce((sum, p) => sum + (p.quantity || 0), 0);
+                    const totalAmountCalc = products.reduce((sum, p) => sum + ((p.totalAmount || (p.unitPrice * p.quantity * (p.width * p.height) / 1_000_000)) || 0), 0);
                     return (
                         <>
                             <p>
                                 <strong>Tổng số lượng:</strong> {totalQuantityCalc}
                             </p>
                             <p>
-                                <strong>Tổng tiền hàng:</strong> {totalAmount.toLocaleString()} ₫
+                                <strong>Tổng tiền hàng:</strong> {totalAmountCalc.toLocaleString()} ₫
                             </p>
                         </>
                     );
