@@ -312,7 +312,7 @@ const ProductListPage = () => {
                                             continue;
                                         }
 
-                                        let glassStructureId = 0;
+                                        let glassStructureId: number | null = null;
                                         if (structureIdStr) {
                                             const parsedId = Number(structureIdStr);
                                             if (!Number.isInteger(parsedId) || parsedId <= 0) {

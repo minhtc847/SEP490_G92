@@ -21,7 +21,7 @@ export interface CreateProductProductDto {
     Thickness?: number | null;
     Weight?: number | null;
     UnitPrice?: number | null;
-    GlassStructureId: number;
+    GlassStructureId?: number | null;
     isupdatemisa?: number; // 0 = chưa cập nhật, 1 = đã cập nhật
 }
 
