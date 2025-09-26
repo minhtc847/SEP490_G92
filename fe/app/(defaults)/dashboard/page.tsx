@@ -299,7 +299,7 @@ const ProductionDashboard: React.FC = () => {
 
 
                 {/* Tables */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <ProductionTable
                         data={overview?.productionPlans.recentPlans || []}
                         columns={productionPlanColumns}
@@ -312,10 +312,10 @@ const ProductionDashboard: React.FC = () => {
                         title="Phiếu Kho Gần Đây"
                         onRowClick={(row) => handleRowClick(row, 'inventory-slip')}
                     />
-                </div>
+                </div> */}
 
                 {/* Orders Section */}
-                <div className="mt-8">
+                {/* <div className="mt-8">
                     <h2 className="text-2xl font-bold text-gray-900 mb-6">Danh Sách Đơn Hàng</h2>
                     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                         <div className="overflow-x-auto">
@@ -381,10 +381,10 @@ const ProductionDashboard: React.FC = () => {
                             </table>
                         </div>
                     </div>
-                </div>
+                </div> */}
 
                 {/* Order Details Modal */}
-                {showOrderModal && selectedOrder && (
+                {/* {showOrderModal && selectedOrder && (
                     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
                         <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
                             <div className="flex justify-between items-center mb-4">
@@ -470,7 +470,7 @@ const ProductionDashboard: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                )}
+                )} */}
 
                 {/* Refresh Button */}
                 <div className="mt-8 flex justify-center">
