@@ -11,6 +11,25 @@ export interface Product {
     isupdatemisa: number; // 0 = chưa cập nhật, 1 = đã cập nhật
 }
 
+export interface CreateProductProductDto {
+    ProductCode?: string | null;
+    ProductName?: string | null;
+    ProductType?: string | null;
+    UOM?: string | null;
+    Height?: string | null;
+    Width?: string | null;
+    Thickness?: number | null;
+    Weight?: number | null;
+    UnitPrice?: number | null;
+    GlassStructureId: number;
+    isupdatemisa?: number; // 0 = chưa cập nhật, 1 = đã cập nhật
+}
+
+export interface GlassStructureOption {
+    id: number;
+    productName: string;
+}
+
 export const getProducts = async (): Promise<Product[]> => {
     try {
         const response = await axios.get<Product[]>('/api/Product');
@@ -61,6 +80,23 @@ export const updateManyProducts = async (products: Product[]): Promise<void> => 
         }));
         
         await axios.post('/api/selenium/products/add-many', productsToUpdate);
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const createProductApi = async (payload: CreateProductProductDto): Promise<void> => {
+    try {
+        await axios.post('/api/Product', payload);
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const getGlassStructureOptionsForProducts = async (): Promise<GlassStructureOption[]> => {
+    try {
+        const res = await axios.get<GlassStructureOption[]>('/api/Product/all');
+        return res.data;
     } catch (error) {
         throw error;
     }
