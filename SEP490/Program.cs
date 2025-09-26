@@ -192,6 +192,9 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -216,8 +219,10 @@ app.UseExceptionHandler(errorApp =>
         if (error != null)
         {
             var ex = error.Error;
+            var logger = app.Services.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "Unhandled exception occurred");
+
             await context.Response.WriteAsync("Something went wrong: " + ex.Message);
-            Console.WriteLine($"Error: {ex.Message}" + ex.StackTrace);
         }
     });
 });
