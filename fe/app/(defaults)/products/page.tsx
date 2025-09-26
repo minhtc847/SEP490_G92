@@ -126,10 +126,10 @@ const ProductListPage = () => {
     const handleExportToExcel = async () => {
         const data = filteredProducts.map((p) => ({
             'STT': '',
-            'Mã SP': p.productCode || (p as any).ProductCode || '-',
-            'Tên sản phẩm': p.productName || '-',
-            'Loại SP': p.productType || '-',
-            'Đơn vị tính': p.uom || '-',
+            'Mã': p.productCode || (p as any).ProductCode || '-',
+            'Tên': p.productName || '-',
+            'Tính chất': p.productType || '-',
+            'Đơn vị tính chính': p.uom || '-',
             'Cập nhật MISA': p.isupdatemisa === 1 ? 'Đã cập nhật' : 'Chưa cập nhật',
         }));
 
@@ -138,7 +138,7 @@ const ProductListPage = () => {
             item['STT'] = (index + 1).toString();
         });
 
-        const headers = ['STT', 'Mã SP', 'Tên sản phẩm', 'Loại SP', 'Đơn vị tính', 'Cập nhật MISA'];
+        const headers = ['STT', 'Mã', 'Tên', 'Tính chất', 'Đơn vị tính chính', 'Cập nhật MISA'];
 
         // Tạo workbook mới
         const workbook = new ExcelJS.Workbook();
