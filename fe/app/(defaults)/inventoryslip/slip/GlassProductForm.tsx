@@ -91,7 +91,7 @@ export default function GlassProductForm({
             newErrors.quantity = 'Số lượng phải lớn hơn 0';
         }
         if (!selectedRawMaterial) {
-            newErrors.rawMaterial = 'Vui lòng chọn nguyên vật liệu để mapping';
+            newErrors.rawMaterial = 'Vui lòng chọn nguyên vật liệu để liên kết';
         }
 
         // Validate upper bounds 0..99999
