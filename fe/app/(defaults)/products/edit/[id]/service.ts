@@ -23,8 +23,8 @@ export interface GlassStructureOption {
 }
 
 export const searchGlassStructures = async (inputValue: string): Promise<GlassStructureOption[]> => {
-    const res = await axios.get<GlassStructureOption[]>('/api/Product/search', {
-        params: { query: inputValue },
+    const res = await axios.get<GlassStructureOption[]>('/api/GlassStructure', {
+        params: { search: inputValue },
     });
     return res.data;
 };
