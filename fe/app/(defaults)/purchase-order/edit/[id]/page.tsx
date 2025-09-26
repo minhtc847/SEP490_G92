@@ -48,8 +48,9 @@ export type OrderItem = {
 
 const PurchaseOrderEditPage = () => {
     const router = useRouter();
-    const { id } = useParams<{ id: string }>();
-    const orderId = Number(id);
+    const params = useParams() as { id?: string };
+    const id = params?.id;
+    const orderId = id ? Number(id) : NaN;
     const { isAccountant } = usePermissions();
 
     // Redirect kế toán về trang unauthorized
@@ -102,6 +103,7 @@ const PurchaseOrderEditPage = () => {
         orderCode: '',
         status: '',
         createdDate: '',
+        isUpdateMisa: false,
         items: [] as OrderItem[],
     });
 
@@ -115,6 +117,7 @@ const PurchaseOrderEditPage = () => {
                     orderCode: po.code ?? '',
                     status: po.status ?? 'Pending',
                     createdDate: po.date ? new Date(po.date).toISOString().split('T')[0] : '',
+                    isUpdateMisa: po.isUpdateMisa ?? false,
                     items: po.purchaseOrderDetails.map((d, idx) => ({
                         id: Date.now() + idx,
                         productId: d.productId ?? null,
@@ -154,7 +157,8 @@ const PurchaseOrderEditPage = () => {
         if (val === null) return;
         // Validate quantity limit
         if (field === 'quantity') {
-            const numValue = +val;
+            if (val === null) return;
+            const numValue = Number(val);
             if (numValue > 9999) {
                 Swal.fire({
                     title: 'Cảnh báo',
@@ -185,7 +189,8 @@ const PurchaseOrderEditPage = () => {
 
         // Validate unit price limit
         if (field === 'unitPrice') {
-            const numValue = +val;
+            if (val === null) return;
+            const numValue = Number(val);
             if (numValue > 99999999) {
                 Swal.fire({
                     title: 'Cảnh báo',
@@ -542,9 +547,23 @@ const PurchaseOrderEditPage = () => {
                 <button
                     className="btn btn-danger"
                     onClick={async () => {
+                        if ( form.status !== 'Pending') {
+                            await Swal.fire({
+                                title: 'Lỗi',
+                                text: 'Không thể xóa đơn hàng đã có hóa đơn',
+                                icon: 'error',
+                                toast: true,
+                                position: 'bottom-start',
+                                showConfirmButton: false,
+                                timer: 3000,
+                                showCloseButton: true,
+                            });
+                            return;
+                        }
+
                         const result = await Swal.fire({
                             title: 'Xác nhận xóa',
-                            text: `Bạn có chắc muốn xoá đơn hàng "${form.description}" không?`,
+                            text: `Bạn có chắc muốn xoá đơn hàng "${form.orderCode}" không?`,
                             icon: 'warning',
                             showCancelButton: true,
                             confirmButtonColor: '#d33',

@@ -10,13 +10,13 @@ import { OrderDto } from '@/app/(defaults)/sales-order/service';
 
 const PAGE_SIZES = [10, 20, 30, 50, 100];
 
-function calculateTotalGlue(width: number, height: number, thickness: number, glass4mm: number, glass5mm: number, quantity: number) {
+function calculateTotalGlue(width: number, height: number, thickness: number, glass4mm: number, glass5mm: number, quantity: number, glueLayers: number) {
     // Diện tích keo (m2)
     const areaKeo = ((width - 20) * (height - 20)) / 1_000_000;
     // Độ dày keo
     const doDayKeo = thickness - (glass4mm * 4) - (glass5mm * 5);
     // Tổng keo
-    return areaKeo * doDayKeo * 1.2 * quantity;
+    return areaKeo * doDayKeo * 1.2 * quantity * glueLayers;
 }
 
 const CreateProductionPlanManager = () => {
@@ -93,8 +93,8 @@ const CreateProductionPlanManager = () => {
     }, [orderId, orderParam, selectedOrder?.id]);
 
     // Tính tổng keo nano/mềm dựa vào adhesiveType
-    const totalKeoNano = products.filter(p => p.adhesiveType?.toLowerCase() === 'nano').reduce((sum, p) => sum + calculateTotalGlue(p.width, p.height, p.thickness, p.glass4mm, p.glass5mm, p.quantity), 0);
-    const totalKeoMem = products.filter(p => p.adhesiveType?.toLowerCase() === 'mềm').reduce((sum, p) => sum + calculateTotalGlue(p.width, p.height, p.thickness, p.glass4mm, p.glass5mm, p.quantity), 0);
+    const totalKeoNano = products.filter(p => p.adhesiveType?.toLowerCase() === 'nano').reduce((sum, p) => sum + calculateTotalGlue(p.width, p.height, p.thickness, p.glass4mm, p.glass5mm, p.quantity, p.glueLayers), 0);
+    const totalKeoMem = products.filter(p => p.adhesiveType?.toLowerCase() === 'mềm').reduce((sum, p) => sum + calculateTotalGlue(p.width, p.height, p.thickness, p.glass4mm, p.glass5mm, p.quantity, p.glueLayers), 0);
 
     const MAX_QTY = 9999;
     const MAX_VAL = 999999;
@@ -117,6 +117,13 @@ const CreateProductionPlanManager = () => {
         setProducts((prev) => prev.map((p, i) => {
             if (i !== idx) return p;
             let value = rawValue;
+            
+            // Rule 1: Thickness không được thay đổi
+            if (field === 'thickness') {
+                warn('Độ dày không được phép thay đổi');
+                return p; // Giữ nguyên giá trị cũ
+            }
+            
             if (['quantity'].includes(field)) {
                 value = Math.floor(Number(rawValue) || 0);
                 if (value < 1) value = 1;
@@ -124,7 +131,15 @@ const CreateProductionPlanManager = () => {
                     value = MAX_QTY;
                     warn('Số lượng tối đa là 9999');
                 }
-            } else if (['thickness','glueLayers','glassLayers','glass4mm','glass5mm','butylType','width','height'].includes(field)) {
+                
+                // Rule 3: Kiểm tra lượng keo không bị âm khi thay đổi số lượng
+                const currentGlue = calculateTotalGlue(p.width, p.height, p.thickness, p.glass4mm, p.glass5mm, p.quantity, p.glueLayers);
+                const newGlue = calculateTotalGlue(p.width, p.height, p.thickness, p.glass4mm, p.glass5mm, value, p.glueLayers);
+                if (newGlue < 0) {
+                    warn('Số lượng này sẽ khiến lượng keo bị âm. Vui lòng kiểm tra lại các thông số khác.');
+                    return p; // Giữ nguyên giá trị cũ
+                }
+            } else if (['glueLayers','glassLayers','glass4mm','glass5mm','butylType','width','height'].includes(field)) {
                 value = Number(rawValue) || 0;
                 if (value < 0) value = 0;
                 if (value > MAX_VAL) {
@@ -132,7 +147,22 @@ const CreateProductionPlanManager = () => {
                     warn('Giá trị tối đa là 999999');
                 }
             }
-            return { ...p, [field]: value };
+            
+            const updatedProduct = { ...p, [field]: value };
+            
+            // Rule 2: glassLayers = glass4mm + glass5mm
+            if (['glass4mm', 'glass5mm'].includes(field)) {
+                updatedProduct.glassLayers = updatedProduct.glass4mm + updatedProduct.glass5mm;
+            }
+            
+            // Rule 3: Kiểm tra lượng keo không bị âm sau khi thay đổi
+            const newGlue = calculateTotalGlue(updatedProduct.width, updatedProduct.height, updatedProduct.thickness, updatedProduct.glass4mm, updatedProduct.glass5mm, updatedProduct.quantity, updatedProduct.glueLayers);
+            if (newGlue < 0) {
+                warn('Thay đổi này sẽ khiến lượng keo bị âm. Vui lòng kiểm tra lại các thông số.');
+                return p; // Giữ nguyên giá trị cũ
+            }
+            
+            return updatedProduct;
         }));
     };
 
@@ -203,14 +233,14 @@ const CreateProductionPlanManager = () => {
                     columns={[
                         { accessor: 'productCode', title: 'Tên sản phẩm', render: (r) => r.productName },
                         { accessor: 'quantity', title: 'Số lượng', render: (r, idx) => <input type="number" min={1} max={MAX_QTY} step={1} value={r.quantity} onChange={e => handleChange(idx, 'quantity', e.target.value)} className="input input-sm w-20" /> },
-                        { accessor: 'thickness', title: 'Dày', render: (r, idx) => <input type="number" min={0} max={MAX_VAL} step={1} value={r.thickness} onChange={e => handleChange(idx, 'thickness', e.target.value)} className="input input-sm w-20" /> },
+                        { accessor: 'thickness', title: 'Dày', render: (r, idx) => <input type="number" min={0} max={MAX_VAL} step={1} value={r.thickness} onChange={e => handleChange(idx, 'thickness', e.target.value)} className="input input-sm w-20 bg-gray-100" disabled /> },
                         { accessor: 'glueLayers', title: 'Lớp keo', render: (r, idx) => <input type="number" min={0} max={MAX_VAL} step={1} value={r.glueLayers} onChange={e => handleChange(idx, 'glueLayers', e.target.value)} className="input input-sm w-20" /> },
                         { accessor: 'glassLayers', title: 'Số kính', render: (r, idx) => <input type="number" min={0} max={MAX_VAL} step={1} value={r.glassLayers} onChange={e => handleChange(idx, 'glassLayers', e.target.value)} className="input input-sm w-20" /> },
                         { accessor: 'glass4mm', title: 'Kính 4', render: (r, idx) => <input type="number" min={0} max={MAX_VAL} step={1} value={r.glass4mm} onChange={e => handleChange(idx, 'glass4mm', e.target.value)} className="input input-sm w-20" /> },
                         { accessor: 'glass5mm', title: 'Kính 5', render: (r, idx) => <input type="number" min={0} max={MAX_VAL} step={1} value={r.glass5mm} onChange={e => handleChange(idx, 'glass5mm', e.target.value)} className="input input-sm w-20" /> },
                         { accessor: 'butylType', title: 'Loại butyl', render: (r, idx) => <input type="number" min={0} max={MAX_VAL} step={1} value={r.butylType} onChange={e => handleChange(idx, 'butylType', e.target.value)} className="input input-sm w-20" /> },
                         { accessor: 'isCuongLuc', title: 'CL', render: (r, idx) => <input type="checkbox" checked={r.isCuongLuc} onChange={e => handleChange(idx, 'isCuongLuc', e.target.checked)} /> },
-                        { accessor: 'totalGlue', title: 'Tổng keo(kg)', render: (r) => calculateTotalGlue(r.width, r.height, r.thickness, r.glass4mm, r.glass5mm, r.quantity).toFixed(2) },
+                        { accessor: 'totalGlue', title: 'Tổng keo(kg)', render: (r) => calculateTotalGlue(r.width, r.height, r.thickness, r.glass4mm, r.glass5mm, r.quantity, r.glueLayers).toFixed(2) },
                     ]}
                     totalRecords={products.length}
                     recordsPerPage={pageSize}

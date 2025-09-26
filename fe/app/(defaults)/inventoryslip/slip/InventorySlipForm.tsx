@@ -420,7 +420,7 @@ export default function InventorySlipForm({
 
             if (unmappedRawMaterials.length > 0) {
                 MySwal.fire({
-                    title: `Vui lòng tạo mapping cho tất cả nguyên vật liệu. Còn ${unmappedRawMaterials.length} nguyên vật liệu chưa được mapping.`,
+                    title: `Vui lòng tạo liên kết cho tất cả nguyên vật liệu. Còn ${unmappedRawMaterials.length} nguyên vật liệu chưa được liên kết.`,
                     toast: true,
                     position: 'bottom-start',
                     showConfirmButton: false,
@@ -759,7 +759,7 @@ export default function InventorySlipForm({
 
 
     const isUpdate = Boolean(isUpdateMode || initialSlip);
-    const headerTitle = isUpdate ? 'Cập nhật phiếu cắt kính' : 'Tạo phiếu cắt kính mới';
+    const headerTitle = isUpdate ? 'Cập nhật phiếu kho' : 'Phiếu kho';
     const submitLabel = isUpdate ? 'Cập nhật phiếu' : 'Tạo phiếu';
 
     return (
@@ -853,7 +853,7 @@ export default function InventorySlipForm({
                                 </div>
                                 <div className="text-sm text-blue-600">
                                     {formData.details.filter((_, index) => rawMaterialDetailIndices.has(index)).length} nguyên vật liệu
-                                    {tempMappings.length > 0 && ` • ${tempMappings.length} mapping đã tạo`}
+                                    {tempMappings.length > 0 && ` • ${tempMappings.length} liên kết đã tạo`}
                                 </div>
                             </h4>
                             <div className="space-y-3">
@@ -932,11 +932,11 @@ export default function InventorySlipForm({
                                                 <div className="flex items-center space-x-2">
                                                     {tempMappings.some(m => m.inputDetailId === index) ? (
                                                         <span className="text-sm text-green-600 bg-green-100 px-2 py-1 rounded-full">
-                                                            ✅ Đã mapping
+                                                            Đã có liên kết
                                                         </span>
                                                     ) : (
                                                         <span className="text-sm text-orange-600 bg-orange-100 px-2 py-1 rounded-full">
-                                                            ⏳ Chưa mapping
+                                                            Chưa liên kết với sản phẩm đầu ra
                                                         </span>
                                                     )}
                                                 </div>
@@ -952,7 +952,7 @@ export default function InventorySlipForm({
                                             {mappingDisplay[index] && mappingDisplay[index].length > 0 && (
                                                 <div className="mt-3 p-3 bg-green-50 rounded-md border border-green-200">
                                                     <h5 className="text-sm font-medium text-green-800 mb-2">
-                                                        ✅ Đã liên kết với {mappingDisplay[index].length} sản phẩm:
+                                                        Đã liên kết với {mappingDisplay[index].length} sản phẩm:
                                                     </h5>
                                                     <div className="space-y-2">
                                                         {mappingDisplay[index].map((outputIndex) => {
@@ -1172,7 +1172,7 @@ export default function InventorySlipForm({
                                                     return (
                                                         <option key={`${detail.productId}-${originalIndex}`} value={originalIndex}>
                                                             {product?.productName} ({product?.productCode}) - SL: {detail.quantity}
-                                                            {mappingCount > 0 && ` (đã map ${mappingCount} sản phẩm)`}
+                                                            {mappingCount > 0 && ` (đã liên kết ${mappingCount} sản phẩm)`}
                                                         </option>
                                                     );
                                                 })}
@@ -1358,7 +1358,7 @@ export default function InventorySlipForm({
                                                     return (
                                                         <option key={`${detail.productId}-${originalIndex}`} value={originalIndex}>
                                                             {product?.productName} ({product?.productCode}) - SL: {detail.quantity}
-                                                            {mappingCount > 0 && ` (đã map ${mappingCount} sản phẩm)`}
+                                                            {mappingCount > 0 && ` (đã liên kết ${mappingCount} sản phẩm)`}
                                                         </option>
                                                     );
                                                 })}

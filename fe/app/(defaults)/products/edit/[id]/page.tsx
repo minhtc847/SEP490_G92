@@ -51,16 +51,24 @@ const ProductEditPage = () => {
         fetchData();
     }, [id]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData((prev) =>
-            prev
-                ? {
-                      ...prev,
-                      [name]: ['thickness', 'weight', 'unitPrice'].includes(name) ? Number(value) : value
-                  }
-                : null,
-        );
+        setFormData((prev) => {
+            if (!prev) return null;
+            
+            const updatedData = {
+                ...prev,
+                [name]: ['thickness', 'weight', 'unitPrice'].includes(name) ? Number(value) : value
+            };
+            
+            // Nếu thay đổi productType thành NVL, xóa glassStructureId
+            if (name === 'productType' && value === 'NVL') {
+                updatedData.glassStructureId = undefined;
+                setSelectedGlassStructure(null);
+            }
+            
+            return updatedData;
+        });
     };
 
     const handleStructureChange = (selected: GlassStructureOption | null) => {
@@ -133,7 +141,13 @@ const ProductEditPage = () => {
 
                     <div>
                         <label className="block font-medium text-gray-700 mb-1">Đơn vị tính</label>
-                        <input type="text" name="uom" value={formData.uom ?? ''} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm" />
+                        <select name="uom" value={formData.uom ?? ''} onChange={handleChange} className="w-full border px-3 py-2 rounded-lg shadow-sm">
+                            <option value="">Chọn đơn vị tính</option>
+                            <option value="kg">kg</option>
+                            <option value="ml">ml</option>
+                            <option value="m">m</option>
+                            <option value="Tấm">Tấm</option>
+                        </select>
                     </div>
 
                     <div>
@@ -170,11 +184,13 @@ const ProductEditPage = () => {
                             defaultOptions
                             loadOptions={searchGlassStructures}
                             onChange={handleStructureChange}
-                            getOptionLabel={(e) => e.productName}
-                            getOptionValue={(e) => String(e.id)}
-                            placeholder="Tìm kiếm cấu trúc kính..."
+                            getOptionLabel={(option) => option.productName}
+                            getOptionValue={(option) => String(option.id)}
+                            placeholder={formData.productType === 'NVL' ? "Sản phẩm NVL không thể chọn cấu trúc kính" : "Tìm kiếm cấu trúc kính..."}
                             isClearable
+                            isDisabled={formData.productType === 'NVL'}
                             value={selectedGlassStructure}
+                            noOptionsMessage={() => "Không tìm thấy cấu trúc kính"}
                         />
                     </div>
                     <div>

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PriceQuoteDetail, createPriceQuote, checkProductCodeExists, checkProductNameExists, getAllCategories } from './service';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import Swal from 'sweetalert2';
 
 const PriceQuoteCreatePage = () => {
     const router = useRouter();
@@ -29,6 +30,46 @@ const PriceQuoteCreatePage = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
+
+        const limits: Record<string, number> = {
+            glassLayers: 99999,
+            adhesiveLayers: 99999,
+            adhesiveThickness: 99999,
+            unitPrice: 999999999,
+        };
+
+        if (['glassLayers', 'adhesiveLayers', 'adhesiveThickness', 'unitPrice'].includes(name)) {
+            const parsed = Number(value);
+            const max = limits[name];
+
+            if (!Number.isInteger(parsed) || parsed <= 0) {
+                Swal.fire({
+                    title: 'Cảnh báo',
+                    text: 'Giá trị phải là số nguyên dương và lớn hơn 0',
+                    icon: 'warning',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 2500,
+                    showCloseButton: true,
+                });
+                return;
+            }
+            if (parsed > max) {
+                Swal.fire({
+                    title: 'Cảnh báo',
+                    text: `Giá trị không được vượt quá ${max.toLocaleString('vi-VN')}`,
+                    icon: 'warning',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 2500,
+                    showCloseButton: true,
+                });
+                return;
+            }
+        }
+
         setFormData((prev) => ({
             ...prev,
             [name]: ['glassLayers', 'adhesiveLayers', 'adhesiveThickness', 'unitPrice'].includes(name) ? Number(value) : value,
@@ -100,21 +141,21 @@ const PriceQuoteCreatePage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="block font-medium text-gray-700 mb-1">Số lớp kính</label>
-                        <input type="number" name="glassLayers" value={formData.glassLayers} onChange={handleChange} className="input w-full" required />
+                        <input type="number" name="glassLayers" value={formData.glassLayers} onChange={handleChange} className="input w-full" required min={1} max={99999} step={1} />
                     </div>
                     <div>
                         <label className="block font-medium text-gray-700 mb-1">Số lớp keo</label>
-                        <input type="number" name="adhesiveLayers" value={formData.adhesiveLayers} onChange={handleChange} className="input w-full" required />
+                        <input type="number" name="adhesiveLayers" value={formData.adhesiveLayers} onChange={handleChange} className="input w-full" required min={1} max={99999} step={1} />
                     </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
                         <label className="block font-medium text-gray-700 mb-1">Độ dày keo (mm)</label>
-                        <input type="number" name="adhesiveThickness" value={formData.adhesiveThickness} onChange={handleChange} className="input w-full" required />
+                        <input type="number" name="adhesiveThickness" value={formData.adhesiveThickness} onChange={handleChange} className="input w-full" required min={1} max={99999} step={1} />
                     </div>
                     <div>
                         <label className="block font-medium text-gray-700 mb-1">Đơn giá (₫)</label>
-                        <input type="number" name="unitPrice" value={formData.unitPrice} onChange={handleChange} className="input w-full" required />
+                        <input type="number" name="unitPrice" value={formData.unitPrice} onChange={handleChange} className="input w-full" required min={1} max={999999999} step={1} />
                     </div>
                 </div>
 
