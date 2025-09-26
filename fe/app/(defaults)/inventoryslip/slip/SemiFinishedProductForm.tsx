@@ -192,7 +192,7 @@ export default function SemiFinishedProductForm({
                                 <option value={0}>Chọn bán thành phẩm...</option>
                                 {availableSemiFinishedProducts.map((product: ProductInfo) => (
                                     <option key={product.id} value={product.id}>
-                                        {product.productName} ({product.productCode})
+                                        {product.productName}
                                     </option>
                                 ))}
                             </select>

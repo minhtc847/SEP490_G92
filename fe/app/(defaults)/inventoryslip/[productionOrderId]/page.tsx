@@ -175,36 +175,7 @@ const ProductionOrderInventorySlipPage = () => {
             if (!createdSlip) {
                 throw new Error('Failed to create slip');
             }
-
-            if (mappingInfo && mappingInfo.tempMappings && mappingInfo.tempMappings.length > 0) {
-                if (createdSlip.details && Array.isArray(createdSlip.details)) {
-                    const actualMappings = mappingInfo.tempMappings
-                        .map((m: any) => {
-                            const inputDetail = createdSlip.details.find(d =>
-                                d.productId === formData.details[m.inputDetailId]?.productId
-                            );
-                            const outputDetail = createdSlip.details.find(d =>
-                                d.productId === formData.details[m.outputDetailId]?.productId
-                            );
-                            return {
-                                inputDetailId: inputDetail?.id || 0,
-                                outputDetailId: outputDetail?.id || 0,
-                                note: m.note,
-                            };
-                        })
-                        .filter((m: any) => m.inputDetailId > 0 && m.outputDetailId > 0);
-
-                    if (actualMappings.length > 0) {
-                        const ok = await addMappings(createdSlip.id, actualMappings);
-                        if (!ok) {
-                            console.warn('Failed to add mappings, but slip was created');
-                        }
-                    }
-                } else {
-                    console.warn('Created slip details is invalid or missing:', createdSlip);
-                }
-            }
-
+            
             const { default: Swal } = await import('sweetalert2');
             Swal.fire({
                 title: 'Tạo phiếu cắt kính thành công!',

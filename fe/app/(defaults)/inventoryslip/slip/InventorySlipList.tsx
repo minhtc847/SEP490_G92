@@ -566,9 +566,11 @@ const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
         if (material.outputMappings && material.outputMappings.length > 0) {
             // Use actual mappings if available
             const outputs = material.outputMappings.map(mapping => {
+                // Tìm output detail dựa trên outputDetailId từ mapping
                 const outputDetail = [...semiFinishedProducts, ...wasteGlass].find(d => d.id === mapping.outputDetailId);
                 return outputDetail;
             }).filter(Boolean) as InventorySlipDetail[];
+
 
             materialOutputMap.set(material.id, outputs);
         } else {
