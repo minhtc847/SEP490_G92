@@ -22,7 +22,7 @@ const EditEmployeePage = () => {
     useEffect(() => {
         const fetchEmployee = async () => {
             try {
-                const id = parseInt(params.id as string);
+                const id = parseInt(params?.id as string);
                 const employee = await getEmployeeById(id);
                 setFormData({
                     fullName: employee.fullName || '',
@@ -39,10 +39,10 @@ const EditEmployeePage = () => {
             }
         };
 
-        if (params.id) {
+        if (params?.id) {
             fetchEmployee();
         }
-    }, [params.id, router]);
+    }, [params?.id, router]);
 
     const validateForm = () => {
         const newErrors: Partial<UpdateEmployeeDto> = {};
@@ -74,7 +74,7 @@ const EditEmployeePage = () => {
 
         setLoading(true);
         try {
-            const id = parseInt(params.id as string);
+            const id = parseInt(params?.id as string);
             await updateEmployee(id, formData);
             alert('Cập nhật nhân viên thành công!');
             router.push(`/employees/${id}`);
@@ -109,7 +109,7 @@ const EditEmployeePage = () => {
             <div className="panel">
                 <div className="mb-5">
                     <div className="flex items-center gap-3 mb-4">
-                        <Link href={`/employees/${params.id}`}>
+                        <Link href={`/employees/${params?.id}`}>
                             <button className="btn btn-outline-secondary btn-sm">
                                 ← Quay lại
                             </button>
@@ -190,7 +190,7 @@ const EditEmployeePage = () => {
                         </div>
 
                         <div className="flex justify-end gap-4">
-                            <Link href={`/employees/${params.id}`}>
+                            <Link href={`/employees/${params?.id}`}>
                                 <button type="button" className="btn btn-outline-secondary">
                                     Hủy
                                 </button>

@@ -343,6 +343,20 @@ const SalesOrderEditPage = () => {
     const existingProductIds = new Set(form.orderItems.map((item) => item.productId));
 
     const handleDelete = async () => {
+        if (form.isUpdateMisa || form.status !== 'Pending') {
+            await Swal.fire({
+                title: 'Lỗi',
+                text: 'Không thể xóa đơn hàng đã cập nhật misa, hoặc có trạng thái khác "Chưa thực hiện"',
+                icon: 'error',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
+            return;
+        }
+
         const result = await Swal.fire({
             title: 'Xác nhận xóa',
             text: 'Bạn có chắc chắn muốn xoá đơn hàng này không?',

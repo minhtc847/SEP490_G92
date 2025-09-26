@@ -62,6 +62,7 @@ export interface PurchaseOrderWithDetailsDto {
   supplierName?: string;
   employeeName?: string;
   totalValue?: number;
+  isUpdateMisa?: boolean;
   purchaseOrderDetails: PurchaseOrderDetailDto[];
 }
 
