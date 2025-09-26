@@ -7,14 +7,20 @@ export interface CreateCustomerDto {
   customerType: "customer" | "supplier"
   address: string
   contactPerson: string
-  contactPhone: string
   notes: string
-  discount: number
 }
 
 export const createCustomer = async (data: CreateCustomerDto) => {
   try {
-    const response = await axios.post("/api/customers", data)
+    const payload = {
+      customerCode: data.customerCode,
+      customerName: data.customerName,
+      address: data.address,
+      contactPerson: data.contactPerson,
+      phone: data.phone,
+      isSupplier: data.customerType === "supplier",
+    }
+    const response = await axios.post("/api/customers", payload)
     return response.data
   } catch (error) {
     throw error

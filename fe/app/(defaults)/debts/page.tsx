@@ -144,10 +144,10 @@ const DebtManagementPage = () => {
                                 <FiRefreshCw className="w-4 h-4 mr-2" />
                                 Làm mới
                             </button>
-                            <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                            {/* <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                                 <FiDownload className="w-4 h-4 mr-2" />
                                 Xuất báo cáo
-                            </button>
+                            </button> */}
                         </div>
                     </div>
                 </div>

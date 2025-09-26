@@ -157,5 +157,24 @@ namespace SEP490.Modules.PurchaseOrderModule.Controller
             }
         }
 
+        [HttpGet("{id}/check-products-misa")]
+        public async Task<IActionResult> CheckPurchaseOrderProductsMisaStatus(int id)
+        {
+            try
+            {
+                var validation = await _purchaseOrderService.ValidateProductsForMisaUpdateAsync(id);
+                return Ok(new
+                {
+                    success = true,
+                    canUpdateMisa = validation.IsValid,
+                    message = validation.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = "Lỗi khi kiểm tra trạng thái MISA của sản phẩm", error = ex.Message });
+            }
+        }
+
     }
 }

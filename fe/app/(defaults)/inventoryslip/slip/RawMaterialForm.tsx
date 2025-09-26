@@ -144,7 +144,7 @@ export default function RawMaterialForm({
                                 <option value={0}>Chọn nguyên vật liệu...</option>
                                 {availableRawMaterials.map((product: ProductInfo) => (
                                     <option key={product.id} value={product.id}>
-                                        {product.productName} ({product.productCode})
+                                        {product.productName}
                                     </option>
                                 ))}
                             </select>

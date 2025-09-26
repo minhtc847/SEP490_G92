@@ -16,6 +16,7 @@ import {
     deleteOrderById,
 } from '@/app/(defaults)/sales-order/edit/[id]/service';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import Swal from 'sweetalert2';
 
 type GlassStructure = {
     id: number;
@@ -81,7 +82,6 @@ const SalesOrderEditPage = () => {
         phone: string;
         orderDate: string;
         orderCode: string;
-        discount: number;
         status: string;
         deliveryStatus: string;
         orderItems: OrderItem[];
@@ -92,7 +92,6 @@ const SalesOrderEditPage = () => {
         phone: '',
         orderDate: '',
         orderCode: '',
-        discount: 0,
         status: 'Pending',
         deliveryStatus: 'NotDelivered',
         orderItems: [],
@@ -109,7 +108,6 @@ const SalesOrderEditPage = () => {
                 phone: data.phone,
                 orderDate: new Date(data.orderDate).toLocaleDateString(),
                 orderCode: data.orderCode,
-                discount: data.discount * 100,
                 status: getStatusString(Number(data.status)),
                 deliveryStatus: data.deliveryStatus,
                 orderItems: data.products,
@@ -146,6 +144,37 @@ const SalesOrderEditPage = () => {
     ];
 
     const handleItemChange = (index: number, field: keyof OrderItem, value: string | number) => {
+        // Validate quantity limit
+        if (field === 'quantity') {
+            const numValue = +value;
+            if (numValue > 9999) {
+                Swal.fire({
+                    title: 'Cảnh báo',
+                    text: 'Số lượng không được vượt quá 9999',
+                    icon: 'warning',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
+                return;
+            }
+            if (numValue < 1) {
+                Swal.fire({
+                    title: 'Cảnh báo',
+                    text: 'Số lượng phải lớn hơn 0',
+                    icon: 'warning',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
+                return;
+            }
+        }
+
         const updatedItems = [...form.orderItems];
         updatedItems[index] = {
             ...updatedItems[index],
@@ -157,18 +186,45 @@ const SalesOrderEditPage = () => {
     const handleSaveProduct = async () => {
         try {
             if (isProductNameDuplicate) {
-                alert('Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.');
+                Swal.fire({
+                    title: 'Lỗi',
+                    text: 'Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác.',
+                    icon: 'error',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
                 return;
             }
 
             const isExisted = await checkProductNameExists(newProductForm.productName);
             if (isExisted) {
-                alert('Tên sản phẩm đã tồn tại, vui lòng chọn tên khác!');
+                Swal.fire({
+                    title: 'Lỗi',
+                    text: 'Tên sản phẩm đã tồn tại, vui lòng chọn tên khác!',
+                    icon: 'error',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
                 return;
             }
 
             if (!newProductForm.glassStructureId) {
-                alert('Vui lòng chọn cấu trúc kính!');
+                Swal.fire({
+                    title: 'Lỗi',
+                    text: 'Vui lòng chọn cấu trúc kính!',
+                    icon: 'error',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
                 return;
             }
 
@@ -185,6 +241,7 @@ const SalesOrderEditPage = () => {
 
             const newProduct = await createProduct(payload);
 
+            const gs = glassStructures.find((g) => g.id === newProductForm.glassStructureId);
             setForm((prev) => ({
                 ...prev,
                 orderItems: [
@@ -193,12 +250,12 @@ const SalesOrderEditPage = () => {
                         id: Date.now(),
                         productId: newProduct.id,
                         productName: newProduct.productName,
-                        productCode: '', // Ensure productCode is present
+                        productCode: '', 
                         width: Number(newProduct.width),
                         height: Number(newProduct.height),
                         thickness: Number(newProduct.thickness),
                         quantity: 1,
-                        unitPrice: Number(newProduct.unitPrice),
+                        unitPrice: Number(gs?.unitPrice ?? 0),
                         glassStructureId: newProduct.glassStructureId,
                         isFromDatabase: true,
                     },
@@ -217,7 +274,16 @@ const SalesOrderEditPage = () => {
             });
         } catch (err) {
             console.error('Lỗi thêm sản phẩm:', err);
-            alert('Thêm sản phẩm thất bại!');
+            Swal.fire({
+                title: 'Lỗi',
+                text: 'Thêm sản phẩm thất bại!',
+                icon: 'error',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
         }
     };
 
@@ -277,16 +343,44 @@ const SalesOrderEditPage = () => {
     const existingProductIds = new Set(form.orderItems.map((item) => item.productId));
 
     const handleDelete = async () => {
-        const confirmDelete = confirm('Bạn có chắc chắn muốn xoá đơn hàng này không?');
-        if (!confirmDelete) return;
+        const result = await Swal.fire({
+            title: 'Xác nhận xóa',
+            text: 'Bạn có chắc chắn muốn xoá đơn hàng này không?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy'
+        });
+
+        if (!result.isConfirmed) return;
 
         try {
             await deleteOrderById(Number(id));
-            alert('Đã xoá đơn hàng thành công!');
+            Swal.fire({
+                title: 'Thành công',
+                text: 'Đã xoá đơn hàng thành công!',
+                icon: 'success',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             router.push('/sales-order');
         } catch (err: any) {
             console.error('Lỗi khi xoá:', err.response?.data || err.message);
-            alert('Xoá thất bại! ' + (err.response?.data?.title || err.message));
+            Swal.fire({
+                title: 'Lỗi',
+                text: 'Xoá thất bại! ' + (err.response?.data?.title || err.message),
+                icon: 'error',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
         }
     };
 
@@ -296,7 +390,16 @@ const SalesOrderEditPage = () => {
                 if (item.productId === 0) {
                     const exists = await checkProductCodeExists(item.productCode);
                     if (exists) {
-                        alert(`Mã sản phẩm "${item.productCode}" đã tồn tại. Vui lòng sửa lại mã hoặc tạo mã tự động.`);
+                        Swal.fire({
+                            title: 'Lỗi',
+                            text: `Mã sản phẩm "${item.productCode}" đã tồn tại. Vui lòng sửa lại mã hoặc tạo mã tự động.`,
+                            icon: 'error',
+                            toast: true,
+                            position: 'bottom-start',
+                            showConfirmButton: false,
+                            timer: 3000,
+                            showCloseButton: true,
+                        });
                         return;
                     }
                 }
@@ -306,38 +409,63 @@ const SalesOrderEditPage = () => {
                 customerName: form.customer || '',
                 address: form.address || '',
                 phone: form.phone || '',
-                discount: Math.max(0, Math.min(1, (form.discount || 0) / 100)), // Ensure discount is between 0 and 1
+                discount: 0,
                 status: form.status || 'Pending',
                 deliveryStatus: form.deliveryStatus || 'NotDelivered',
                 isUpdateMisa: form.isUpdateMisa || false,
-                products: form.orderItems.map(item => ({
-                    productId: item.productId,
-                    quantity: item.quantity,
-                    unitPrice: item.unitPrice,
-                    productName: item.productName,
-                    productCode: item.productCode || '',
-                    height: item.height?.toString() || '',
-                    width: item.width?.toString() || '',
-                    thickness: item.thickness,
-                    glassStructureId: item.glassStructureId
-                }))
+                products: form.orderItems.map(item => {
+                    const gs = glassStructures.find(g => g.id === item.glassStructureId);
+                    const unitPricePerM2 = Number(gs?.unitPrice ?? item.unitPrice ?? 0);
+                    return {
+                        productId: item.productId,
+                        quantity: item.quantity,
+                        unitPrice: unitPricePerM2,
+                        productName: item.productName,
+                        productCode: item.productCode || '',
+                        height: item.height?.toString() || '',
+                        width: item.width?.toString() || '',
+                        thickness: item.thickness,
+                        glassStructureId: item.glassStructureId
+                    };
+                })
             };
 
             await updateOrderDetailById(Number(id), payload);
-            alert('Cập nhật thành công!');
+            Swal.fire({
+                title: 'Thành công',
+                text: 'Cập nhật thành công!',
+                icon: 'success',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             
             // Force reload the page to ensure updated data is shown
             window.location.href = `/sales-order/${id}`;
         } catch (err: any) {
             console.error('Lỗi cập nhật:', err.response?.data || err.message);
-            alert('Cập nhật thất bại! ' + (err.response?.data?.title || err.message));
+            Swal.fire({
+                title: 'Lỗi',
+                text: 'Cập nhật thất bại! ' + (err.response?.data?.title || err.message),
+                icon: 'error',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
         }
     };
 
     const totalQuantity = form.orderItems.reduce((sum, item) => sum + item.quantity, 0);
-    const totalAmount = form.orderItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-    const discountAmount = (form.discount / 100) * totalAmount;
-    const finalAmount = totalAmount - discountAmount;
+    const totalAmount = form.orderItems.reduce((sum, item) => {
+        const width = Number(item.width) || 0;
+        const height = Number(item.height) || 0;
+        const areaM2 = (width * height) / 1_000_000;
+        return sum + (item.quantity * (item.unitPrice || 0) * areaM2);
+    }, 0);
 
     return (
         <ProtectedRoute requiredRole={[1, 2]}>
@@ -366,18 +494,7 @@ const SalesOrderEditPage = () => {
                     <label className="block mb-1 font-medium">Mã đơn hàng</label>
                     <div className="p-2 bg-gray-100 rounded">{form.orderCode}</div>
                 </div>
-                <div>
-                    <label className="block mb-1 font-medium">Chiết khấu (%)</label>
-                    <input
-                        style={{ height: '35px' }}
-                        type="number"
-                        value={form.discount}
-                        onChange={(e) => setForm((prev) => ({ ...prev, discount: parseFloat(e.target.value) || 0 }))}
-                        className="input input-bordered w-full"
-                        min={0}
-                        max={100}
-                    />
-                </div>
+                {/* Discount field removed */}
                 <div>
                     <label className="block mb-1 font-medium">Trạng thái</label>
                     <select value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}>
@@ -426,7 +543,7 @@ const SalesOrderEditPage = () => {
                             <th>Cao</th>
                             <th>Dày</th>
                             <th>Số lượng</th>
-                            <th>Đơn giá</th>
+                            <th>Đơn giá / m²</th>
                             <th>Diện tích (m²)</th>
                             <th>Thành tiền</th>
                             <th></th>
@@ -437,7 +554,7 @@ const SalesOrderEditPage = () => {
                             const width = Number(item.width) || 0;
                             const height = Number(item.height) || 0;
                             const area = (width * height) / 1_000_000;
-                            const total = (item.quantity ?? 0) * (item.unitPrice ?? 0);
+                            const total = (item.quantity ?? 0) * (item.unitPrice ?? 0) * area;
 
                             return (
                                 <tr key={index}>
@@ -447,7 +564,14 @@ const SalesOrderEditPage = () => {
                                     <td className="text-right">{height.toLocaleString()}</td>
                                     <td className="text-right">{(item.thickness ?? 0).toLocaleString()}</td>
                                     <td>
-                                        <input type="number" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', +e.target.value)} className="input input-sm" />
+                                        <input 
+                                            type="number" 
+                                            value={item.quantity} 
+                                            onChange={(e) => handleItemChange(index, 'quantity', +e.target.value)} 
+                                            className="input input-sm" 
+                                            min="1"
+                                            max="9999"
+                                        />
                                     </td>
                                     <td className="text-right">{(item.unitPrice ?? 0).toLocaleString()}</td>
                                     <td className="text-right">{area.toFixed(2)}</td>
@@ -480,6 +604,7 @@ const SalesOrderEditPage = () => {
                         onChange={(option) => {
                             if (!option) return;
                             const p = option.product;
+                            const gs = glassStructures.find((g) => g.id === p.glassStructureId);
 
                             const newItem: OrderItem = {
                                 id: Date.now(),
@@ -490,7 +615,7 @@ const SalesOrderEditPage = () => {
                                 width: Number(p.width),
                                 thickness: Number(p.thickness),
                                 quantity: 1,
-                                unitPrice: Number(p.unitPrice),
+                                unitPrice: Number(gs?.unitPrice ?? 0),
                                 glassStructureId: p.glassStructureId,
                             };
 
@@ -595,12 +720,11 @@ const SalesOrderEditPage = () => {
                                     <div className="input input-bordered bg-gray-100">{((newProductForm.width * newProductForm.height) / 1_000_000).toFixed(2)}</div>
                                 </div>
                                 <div>
-                                    <label className="block mb-1 font-medium">Đơn giá (₫)</label>
+                                    <label className="block mb-1 font-medium">Đơn giá (₫/m²)</label>
                                     <div className="input input-bordered bg-gray-100">
                                         {(() => {
-                                            const area = (newProductForm.width * newProductForm.height) / 1_000_000;
                                             const s = glassStructures.find((g) => g.id === newProductForm.glassStructureId);
-                                            return ((s?.unitPrice || 0) * area).toFixed(0);
+                                            return ((s?.unitPrice || 0)).toFixed(0);
                                         })()}
                                     </div>
                                 </div>
@@ -625,12 +749,6 @@ const SalesOrderEditPage = () => {
                 </p>
                 <p>
                     <strong>Tổng tiền hàng:</strong> {totalAmount.toLocaleString()} ₫
-                </p>
-                <p>
-                    <strong>Chiết khấu:</strong> {discountAmount.toLocaleString()} ₫ ({form.discount}%)
-                </p>
-                <p className="text-base font-bold">
-                    Thành tiền sau chiết khấu: <span className="text-green-600">{finalAmount.toLocaleString()} ₫</span>
                 </p>
             </div>
 

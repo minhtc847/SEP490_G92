@@ -168,8 +168,8 @@ const InventorySlipPage = () => {
 
             setUpdateMessage(`Đang cập nhật ${validSlips.length} phiếu...`);
             
-            // Gọi API cập nhật nhiều phiếu
-            const slipIds = validSlips.map(slip => slip.id);
+            // Gọi API cập nhật nhiều phiếu theo thứ tự ngược lại (từ dưới lên)
+            const slipIds = [...validSlips].reverse().map(slip => slip.id);
             const success = await callManyImportExportInvoices(slipIds);
             //const success = await testProcessManySlips(slipIds);
             if (success) {
@@ -348,28 +348,33 @@ const InventorySlipPage = () => {
                 </div>
 
                 {/* Pagination */}
-                {filteredSlips.length > pageSize && (
-                    <div className="flex justify-between items-center mt-4">
-                        <div>
-                            Hiển thị {((page - 1) * pageSize) + 1} đến {Math.min(page * pageSize, filteredSlips.length)} trong tổng số {filteredSlips.length} phiếu
-                        </div>
-                        <div className="flex gap-2">
-                                                         <button
-                                 className="px-3 py-1 text-sm border border-blue-600 text-blue-600 bg-white hover:bg-blue-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                {filteredSlips.length > 0 && (
+                    <div className="flex justify-center items-center mt-4">
+                        <div className="flex items-center gap-2">
+                            <button
+                                 className="w-8 h-8 rounded-full flex items-center justify-center bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                  onClick={() => setPage(Math.max(1, page - 1))}
                                  disabled={page === 1}
                              >
-                                 Trước
+                                 &lt;
                              </button>
-                            <span className="px-3 py-2">
-                                Trang {page} / {Math.ceil(filteredSlips.length / pageSize)}
-                            </span>
-                                                         <button
-                                 className="px-3 py-1 text-sm border border-blue-600 text-blue-600 bg-white hover:bg-blue-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                 onClick={() => setPage(Math.min(Math.ceil(filteredSlips.length / pageSize), page + 1))}
-                                 disabled={page >= Math.ceil(filteredSlips.length / pageSize)}
+                            <div className="flex items-center gap-1">
+                                {Array.from({ length: Math.ceil(filteredSlips.length / pageSize) || 1 }, (_, i) => i + 1).map((p) => (
+                                    <button
+                                        key={p}
+                                        onClick={() => setPage(p)}
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center transition ${page === p ? 'bg-blue-600 text-white' : 'bg-white border border-blue-600 text-blue-600 hover:bg-blue-50'}`}
+                                    >
+                                        {p}
+                                    </button>
+                                ))}
+                            </div>
+                            <button
+                                 className="w-8 h-8 rounded-full flex items-center justify-center bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                 onClick={() => setPage(Math.min(Math.ceil(filteredSlips.length / pageSize) || 1, page + 1))}
+                                 disabled={page >= (Math.ceil(filteredSlips.length / pageSize) || 1)}
                              >
-                                 Sau
+                                 &gt;
                              </button>
                         </div>
                     </div>
@@ -584,12 +589,20 @@ const CutGlassSlipDetails = ({ slip }: { slip: InventorySlip }) => {
 
     const materialOutputMap = new Map<number, any[]>();
 
+    // Use the actual mappings from the backend
     rawMaterials.forEach(material => {
         if (material.outputMappings && material.outputMappings.length > 0) {
-            const outputs = material.outputMappings.map(mapping => {
+            // Remove duplicate mappings by outputDetailId
+            const uniqueMappings = material.outputMappings.filter((mapping, index, self) => 
+                index === self.findIndex(m => m.outputDetailId === mapping.outputDetailId)
+            );
+            
+            // Use actual mappings if available
+            const outputs = uniqueMappings.map(mapping => {
                 const outputDetail = [...semiFinishedProducts, ...wasteGlass].find(d => d.id === mapping.outputDetailId);
                 return outputDetail;
             }).filter(Boolean);
+            
             materialOutputMap.set(material.id, outputs);
         } else {
             materialOutputMap.set(material.id, []);

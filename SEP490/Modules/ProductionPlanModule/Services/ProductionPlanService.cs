@@ -307,6 +307,16 @@ namespace SEP490.Modules.Production_plans.Services
 
                 productionPlan.Status = "Hoàn thành";
                 await _context.SaveChangesAsync();
+
+                if (productionPlan.SaleOrderId.HasValue)
+                {
+                    var saleOrder = await _context.SaleOrders.FindAsync(productionPlan.SaleOrderId.Value);
+                    if (saleOrder != null)
+                    {
+                        saleOrder.Status = DB.Models.Status.Delivered;
+                        await _context.SaveChangesAsync();
+                    }
+                }
                 return true;
             }
             catch

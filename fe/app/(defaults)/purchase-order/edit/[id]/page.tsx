@@ -19,6 +19,7 @@ import {
 } from './service';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { usePermissions } from '@/hooks/usePermissions';
+import Swal from 'sweetalert2';
 
 const toPositiveInt = (v: string | number | null): number | null => {
     if (v === null || v === '') return null;
@@ -150,6 +151,68 @@ const PurchaseOrderEditPage = () => {
     };
 
     const handleItemChange = (idx: number, field: keyof OrderItem, val: string | number | null) => {
+        // Validate quantity limit
+        if (field === 'quantity') {
+            const numValue = +val;
+            if (numValue > 9999) {
+                Swal.fire({
+                    title: 'Cảnh báo',
+                    text: 'Số lượng không được vượt quá 9999',
+                    icon: 'warning',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
+                return;
+            }
+            if (numValue < 1) {
+                Swal.fire({
+                    title: 'Cảnh báo',
+                    text: 'Số lượng phải lớn hơn 0',
+                    icon: 'warning',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
+                return;
+            }
+        }
+
+        // Validate unit price limit
+        if (field === 'unitPrice') {
+            const numValue = +val;
+            if (numValue > 99999999) {
+                Swal.fire({
+                    title: 'Cảnh báo',
+                    text: 'Đơn giá không được vượt quá 99,999,999',
+                    icon: 'warning',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
+                return;
+            }
+            if (numValue < 0) {
+                Swal.fire({
+                    title: 'Cảnh báo',
+                    text: 'Đơn giá không được âm',
+                    icon: 'warning',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
+                return;
+            }
+        }
+
         setForm((f) => {
             const items = [...f.items];
             items[idx] = { ...items[idx], [field]: field === 'productName' ? String(val) : val === '' ? null : Number(val) } as OrderItem;
@@ -200,9 +263,27 @@ const PurchaseOrderEditPage = () => {
             setShowAddProductForm(false);
             setNewMaterialProductForm({ productName: '', width: 0, height: 0, thickness: 0, uom: '' });
 
-            alert(`Đã tạo sản phẩm thành công: ${p.productName}`);
+            Swal.fire({
+                title: 'Thành công',
+                text: `Đã tạo sản phẩm thành công: ${p.productName}`,
+                icon: 'success',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
         } catch (err: any) {
-            alert(err.message || 'Lỗi tạo sản phẩm');
+            Swal.fire({
+                title: 'Lỗi',
+                text: err.message || 'Lỗi tạo sản phẩm',
+                icon: 'error',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
         }
     };
 
@@ -236,11 +317,29 @@ const PurchaseOrderEditPage = () => {
             };
 
             await updatePurchaseOrder(orderId, dto);
-            alert('Cập nhật thành công!');
+            Swal.fire({
+                title: 'Thành công',
+                text: 'Cập nhật thành công!',
+                icon: 'success',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             router.push(`/purchase-order/${orderId}`);
         } catch (err: any) {
             console.error('Update PO error:', err?.response?.data || err);
-            alert(err.message || 'Cập nhật thất bại');
+            Swal.fire({
+                title: 'Lỗi',
+                text: err.message || 'Cập nhật thất bại',
+                icon: 'error',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
         } finally {
             setSaving(false);
         }
@@ -305,7 +404,14 @@ const PurchaseOrderEditPage = () => {
                                     <td>{idx + 1}</td>
                                     <td>{it.productName}</td>
                                     <td>
-                                        <input type="number" className="input input-sm" value={it.quantity} min={1} onChange={(e) => handleItemChange(idx, 'quantity', +e.target.value)} />
+                                        <input 
+                                            type="number" 
+                                            className="input input-sm" 
+                                            value={it.quantity} 
+                                            min={1} 
+                                            max={9999}
+                                            onChange={(e) => handleItemChange(idx, 'quantity', +e.target.value)} 
+                                        />
                                     </td>
                                     <td>
                                         <input 
@@ -313,6 +419,8 @@ const PurchaseOrderEditPage = () => {
                                             className="input input-sm" 
                                             value={it.unitPrice || 0} 
                                             min={0} 
+                                            max={99999999}
+                                            step={1000}
                                             onChange={(e) => handleItemChange(idx, 'unitPrice', +e.target.value)} 
                                         />
                                     </td>
@@ -433,15 +541,43 @@ const PurchaseOrderEditPage = () => {
                 <button
                     className="btn btn-danger"
                     onClick={async () => {
-                        const confirmed = confirm(`Bạn có chắc muốn xoá đơn hàng "${form.description}" không?`);
-                        if (!confirmed) return;
+                        const result = await Swal.fire({
+                            title: 'Xác nhận xóa',
+                            text: `Bạn có chắc muốn xoá đơn hàng "${form.description}" không?`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#3085d6',
+                            confirmButtonText: 'Xóa',
+                            cancelButtonText: 'Hủy'
+                        });
+
+                        if (!result.isConfirmed) return;
 
                         try {
                             await deletePurchaseOrder(orderId);
-                            alert(`Xoá thành công: Đơn hàng ${form.orderCode} – ${form.description || '(Không có mô tả)'}`);
+                            Swal.fire({
+                                title: 'Thành công',
+                                text: `Xoá thành công: Đơn hàng ${form.orderCode} – ${form.description || '(Không có mô tả)'}`,
+                                icon: 'success',
+                                toast: true,
+                                position: 'bottom-start',
+                                showConfirmButton: false,
+                                timer: 3000,
+                                showCloseButton: true,
+                            });
                             router.push('/purchase-order');
                         } catch (err: any) {
-                            alert(err.message || 'Xoá thất bại. Vui lòng thử lại');
+                            Swal.fire({
+                                title: 'Lỗi',
+                                text: err.message || 'Xoá thất bại. Vui lòng thử lại',
+                                icon: 'error',
+                                toast: true,
+                                position: 'bottom-start',
+                                showConfirmButton: false,
+                                timer: 3000,
+                                showCloseButton: true,
+                            });
                         }
                     }}
                 >

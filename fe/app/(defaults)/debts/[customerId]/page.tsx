@@ -150,12 +150,12 @@ const CustomerDebtDetailPage = () => {
                                 <p className="text-gray-600 mt-1">Khách hàng: {debt.customerName}</p>
                             </div>
                         </div>
-                        <div className="flex space-x-3">
+                        {/* <div className="flex space-x-3">
                             <button className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
                                 <FiDownload className="w-4 h-4 mr-2" />
                                 Xuất báo cáo
                             </button>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
 

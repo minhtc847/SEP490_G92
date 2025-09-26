@@ -19,6 +19,8 @@ const CustomersListPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [customerTypeFilter, setCustomerTypeFilter] = useState<'all' | 'customer' | 'supplier'>('all');
     const [customers, setCustomers] = useState<CustomerListDto[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -57,6 +59,11 @@ const CustomersListPage = () => {
         return matchesSearch && matchesType;
     });
 
+    const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginated = filtered.slice(startIndex, startIndex + itemsPerPage);
+    const goToPage = (p: number) => setCurrentPage(Math.min(Math.max(1, p), totalPages));
+
     const handleExportToExcel = async () => {
         const data = filtered.map((c) => ({
             'STT': '',
@@ -64,7 +71,6 @@ const CustomersListPage = () => {
             'SĐT': c.phone || '-',
             'Địa chỉ': c.address || '-',
             'Loại': c.isSupplier ? 'Nhà cung cấp' : 'Khách hàng',
-            'Chiết khấu (%)': (c.discount ?? 0) * 100,
         }));
 
         // Thêm STT
@@ -72,7 +78,7 @@ const CustomersListPage = () => {
             item['STT'] = (index + 1).toString();
         });
 
-        const headers = ['STT', 'Tên', 'SĐT', 'Địa chỉ', 'Loại', 'Chiết khấu (%)'];
+        const headers = ['STT', 'Tên', 'SĐT', 'Địa chỉ', 'Loại'];
 
         // Tạo workbook mới
         const workbook = new ExcelJS.Workbook();
@@ -81,7 +87,7 @@ const CustomersListPage = () => {
         // Thêm tiêu đề
         const titleRow = worksheet.addRow(['DANH SÁCH KHÁCH HÀNG']);
         titleRow.height = 30;
-        worksheet.mergeCells('A1:F1');
+        worksheet.mergeCells('A1:E1');
         
         // Định dạng tiêu đề
         const titleCell = worksheet.getCell('A1');
@@ -194,6 +200,26 @@ const CustomersListPage = () => {
                     </div>
                     <br />
 
+                    {filtered.length > 0 && (
+                        <div className="mb-3 flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                            <span>
+                                Hiển thị {startIndex + 1} đến {Math.min(startIndex + itemsPerPage, filtered.length)} trong tổng {filtered.length} khách hàng.
+                            </span>
+                            <div className="ml-auto flex items-center gap-2">
+                                <select
+                                    className="form-select w-24"
+                                    value={itemsPerPage}
+                                    onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                >
+                                    <option value={5}>5</option>
+                                    <option value={10}>10</option>
+                                    <option value={20}>20</option>
+                                    <option value={50}>50</option>
+                                </select>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Bảng */}
                     <div className="table-responsive">
                         <table className="table-hover">
@@ -203,12 +229,11 @@ const CustomersListPage = () => {
                                     <th>SĐT</th>
                                     <th>Địa chỉ</th>
                                     <th>Loại</th>
-                                    <th>Chiết khấu</th>
                                     <th className="text-center">Hành động</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filtered.map((c) => (
+                                {paginated.map((c) => (
                                     <tr key={c.id}>
                                         <td>{c.customerName}</td>
                                         <td>{c.phone}</td>
@@ -216,7 +241,6 @@ const CustomersListPage = () => {
                                         <td>
                                             <span className={c.isSupplier ? 'text-orange-600' : 'text-blue-600'}>{c.isSupplier ? 'Nhà cung cấp' : 'Khách hàng'}</span>
                                         </td>
-                                        <td>{(c.discount ?? 0) * 100}%</td>
                                         <td className="text-center">
                                             <div className="flex justify-center gap-2">
                                                 <Tippy content="Xem">
@@ -247,6 +271,34 @@ const CustomersListPage = () => {
                     </div>
 
                     {filtered.length === 0 && <div className="text-center py-8 text-gray-500">Không tìm thấy khách hàng nào</div>}
+
+                    {filtered.length > 0 && (
+                        <div className="mt-4 flex justify-center">
+                            <div className="flex items-center gap-2">
+                                <button
+                                    className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 text-gray-800 disabled:opacity-50"
+                                    disabled={currentPage===1}
+                                    onClick={()=>goToPage(currentPage-1)}
+                                >&lt;</button>
+                                <div className="flex items-center gap-1">
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                        <button
+                                            key={page}
+                                            onClick={() => goToPage(page)}
+                                            className={`w-8 h-8 rounded-full flex items-center justify-center transition ${currentPage === page ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-300'}`}
+                                        >
+                                            {page}
+                                        </button>
+                                    ))}
+                                </div>
+                                <button
+                                    className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 text-gray-800 disabled:opacity-50"
+                                    disabled={currentPage===(totalPages||1)}
+                                    onClick={()=>goToPage(currentPage+1)}
+                                >&gt;</button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </ProtectedRoute>

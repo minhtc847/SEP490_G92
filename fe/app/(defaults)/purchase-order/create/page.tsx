@@ -19,6 +19,7 @@ import {
     createProductNVL,
 } from './service';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import Swal from 'sweetalert2';
 
 const toPositiveInt = (v: string | number): number | null => {
     const n = typeof v === 'string' ? Number(v) : v;
@@ -78,6 +79,68 @@ const PurchaseOrderCreatePage = () => {
     const handleCustomerChange = (val: string) => setForm((f) => ({ ...f, customer: val }));
 
     const handleItemChange = (idx: number, field: keyof OrderItem, val: string | number) => {
+        // Validate quantity limit
+        if (field === 'quantity') {
+            const numValue = +val;
+            if (numValue > 9999) {
+                Swal.fire({
+                    title: 'Cảnh báo',
+                    text: 'Số lượng không được vượt quá 9999',
+                    icon: 'warning',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
+                return;
+            }
+            if (numValue < 1) {
+                Swal.fire({
+                    title: 'Cảnh báo',
+                    text: 'Số lượng phải lớn hơn 0',
+                    icon: 'warning',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
+                return;
+            }
+        }
+
+        // Validate unit price limit
+        if (field === 'unitPrice') {
+            const numValue = +val;
+            if (numValue > 99999999) {
+                Swal.fire({
+                    title: 'Cảnh báo',
+                    text: 'Đơn giá không được vượt quá 99,999,999',
+                    icon: 'warning',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
+                return;
+            }
+            if (numValue < 0) {
+                Swal.fire({
+                    title: 'Cảnh báo',
+                    text: 'Đơn giá không được âm',
+                    icon: 'warning',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
+                return;
+            }
+        }
+
         setForm((f) => {
             const items = [...f.items];
             const updatedItem = {
@@ -165,9 +228,27 @@ const PurchaseOrderCreatePage = () => {
             setShowAddProductForm(false);
             setNewMaterialProductForm({ productName: '', width: 0, height: 0, thickness: 0, uom: '' });
 
-            alert(`Đã tạo sản phẩm thành công: ${p.productName}`);
+            Swal.fire({
+                title: 'Thành công',
+                text: `Đã tạo sản phẩm thành công: ${p.productName}`,
+                icon: 'success',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
         } catch (err: any) {
-            alert(err.message || 'Lỗi tạo sản phẩm');
+            Swal.fire({
+                title: 'Lỗi',
+                text: err.message || 'Lỗi tạo sản phẩm',
+                icon: 'error',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
         }
     };
 
@@ -204,11 +285,29 @@ const PurchaseOrderCreatePage = () => {
                 products,
             };
             const res = await createPurchaseOrder(dto);
-            alert('Tạo đơn hàng mua thành công!');
+            Swal.fire({
+                title: 'Thành công',
+                text: 'Tạo đơn hàng mua thành công!',
+                icon: 'success',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             router.push(`/purchase-order/${res.id}`);
         } catch (err: any) {
             console.error('Create PO error:', err?.response?.data || err);
-            alert(err.message || 'Tạo đơn hàng mua thất bại');
+            Swal.fire({
+                title: 'Lỗi',
+                text: err.message || 'Tạo đơn hàng mua thất bại',
+                icon: 'error',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
         }
     };
 
@@ -294,7 +393,14 @@ const PurchaseOrderCreatePage = () => {
                                     <td className="border p-2">{it.productName}</td>
 
                                     <td className="border p-2 text-right">
-                                        <input type="number" className="input input-xs w-20" value={it.quantity} min={1} onChange={(e) => handleItemChange(idx, 'quantity', +e.target.value)} />
+                                        <input 
+                                            type="number" 
+                                            className="input input-xs w-20" 
+                                            value={it.quantity} 
+                                            min={1} 
+                                            max={9999}
+                                            onChange={(e) => handleItemChange(idx, 'quantity', +e.target.value)} 
+                                        />
                                     </td>
 
                                     <td className="border p-2">{it.uom || 'Tấm'}</td>
@@ -305,6 +411,7 @@ const PurchaseOrderCreatePage = () => {
                                             className="input input-xs w-24" 
                                             value={it.unitPrice} 
                                             min={0} 
+                                            max={99999999}
                                             step={1000}
                                             onChange={(e) => handleItemChange(idx, 'unitPrice', +e.target.value)} 
                                         />

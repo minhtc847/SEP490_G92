@@ -3,6 +3,7 @@ import axios from '@/setup/axios';
 export interface ProductDetail {
     id: number;
     productCode?: string;
+    ProductCode?: string;
     productName?: string;
     productType?: string;
     uom?: string;

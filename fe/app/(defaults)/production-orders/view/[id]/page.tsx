@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Swal from 'sweetalert2'
+import withReactContent from 'sweetalert2-react-content'
 import type React from "react"
 import { useRouter } from "next/navigation"
 import ListOutputsPO from "@/components/VNG/manager/production-orders/list-outputs-of-po/list-outputs-po-components"
@@ -60,6 +62,8 @@ const convertStringToUOMInt = (uomString: string): number => {
 
 export default function ProductionOrderView({ params }: { params: { id: string } }) {
   const router = useRouter()
+  const MySwal = withReactContent(Swal)
+  const MAX_LIMIT = 999999
   const [finishedProducts, setFinishedProducts] = useState<ProductItem[]>([])
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null)
   const [currentMaterials, setCurrentMaterials] = useState<MaterialItem[]>([])
@@ -204,7 +208,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
   const handleMaterialSelect = (material: MaterialItem) => setSelectedMaterial(material)
 
-  const handleGoBack = () => router.push("/production-orders/")
+  const handleGoBack = () => router.back()
 
   // removed unused handleOperationChange
 
@@ -488,7 +492,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
 
   const calculateQuantityPer = (totalQuantity: number, productQuantity: number): number => {
     if (productQuantity === 0) return 0
-    return Number((totalQuantity / productQuantity).toFixed(4))
+    return totalQuantity / productQuantity
   }
 
   const getSelectedProductQuantity = (): number => {
@@ -606,7 +610,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                           <div className="truncate">{item.productName}</div>
                         </td>
                         <td className="border p-2 text-center">{item.uom}</td>
-                        <td className="border p-2 text-right">{Number(item.quantity).toFixed(2)}</td>
+                        <td className="border p-2 text-right">{item.quantity}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -818,11 +822,45 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                 <input
                   type="number"
                   value={addProductForm.quantity}
-                  onChange={(e) => setAddProductForm({ ...addProductForm, quantity: Number(e.target.value) })}
+                  onChange={(e) => {
+                    let val = Number(e.target.value)
+                    const isTam = (addProductForm.uom || '').toString().toLowerCase() === 'tấm'
+                    if (isTam) {
+                      if (val > 9999) {
+                        val = 9999
+                        MySwal.fire({
+                          title: 'Số lượng tối đa cho Tấm là 9999',
+                          icon: 'warning',
+                          toast: true,
+                          position: 'bottom-start',
+                          showConfirmButton: false,
+                          timer: 3000,
+                          showCloseButton: true,
+                        })
+                      }
+                      val = Math.floor(val)
+                      if (val < 1) val = 1
+                    } else {
+                      if (val > MAX_LIMIT) {
+                        val = MAX_LIMIT
+                        MySwal.fire({
+                          title: 'Số lượng tối đa là 999999',
+                          icon: 'warning',
+                          toast: true,
+                          position: 'bottom-start',
+                          showConfirmButton: false,
+                          timer: 3000,
+                          showCloseButton: true,
+                        })
+                      }
+                      if (val <= 0) val = 0.01
+                    }
+                    setAddProductForm({ ...addProductForm, quantity: val })
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
                   required
-                  min="0"
-                  step="0.01"
+                  min={(addProductForm.uom || '').toString().toLowerCase() === 'tấm' ? 1 : 0.01}
+                  step={(addProductForm.uom || '').toString().toLowerCase() === 'tấm' ? 1 : 0.01}
                   placeholder="Nhập số lượng"
                 />
               </div>
@@ -899,11 +937,45 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                 <input
                   type="number"
                   value={productForm.quantity as number}
-                  onChange={(e) => setProductForm({ ...productForm, quantity: Number(e.target.value) })}
+                  onChange={(e) => {
+                    let val = Number(e.target.value)
+                    const isTam = (productForm.uom || '').toString().toLowerCase() === 'tấm'
+                    if (isTam) {
+                      if (val > 9999) {
+                        val = 9999
+                        MySwal.fire({
+                          title: 'Số lượng tối đa cho Tấm là 9999',
+                          icon: 'warning',
+                          toast: true,
+                          position: 'bottom-start',
+                          showConfirmButton: false,
+                          timer: 3000,
+                          showCloseButton: true,
+                        })
+                      }
+                      val = Math.floor(val)
+                      if (val < 1) val = 1
+                    } else {
+                      if (val > MAX_LIMIT) {
+                        val = MAX_LIMIT
+                        MySwal.fire({
+                          title: 'Số lượng tối đa là 999999',
+                          icon: 'warning',
+                          toast: true,
+                          position: 'bottom-start',
+                          showConfirmButton: false,
+                          timer: 3000,
+                          showCloseButton: true,
+                        })
+                      }
+                      if (val <= 0) val = 0.01
+                    }
+                    setProductForm({ ...productForm, quantity: val })
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
                   required
-                  min="0"
-                  step="0.01"
+                  min={(productForm.uom || '').toString().toLowerCase() === 'tấm' ? 1 : 0.01}
+                  step={(productForm.uom || '').toString().toLowerCase() === 'tấm' ? 1 : 0.01}
                   placeholder="Nhập số lượng"
                 />
               </div>
@@ -986,7 +1058,38 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   type="number"
                   value={addMaterialForm.totalQuantity as number}
                   onChange={(e) => {
-                    const newTotalQuantity = Number(e.target.value)
+                    let newTotalQuantity = Number(e.target.value)
+                    const isTam = (addMaterialForm.uom || '').toString().toLowerCase() === 'tấm'
+                    if (isTam) {
+                      if (newTotalQuantity > 9999) {
+                        newTotalQuantity = 9999
+                        MySwal.fire({
+                          title: 'Tổng số lượng tối đa cho Tấm là 9999',
+                          icon: 'warning',
+                          toast: true,
+                          position: 'bottom-start',
+                          showConfirmButton: false,
+                          timer: 3000,
+                          showCloseButton: true,
+                        })
+                      }
+                      newTotalQuantity = Math.floor(newTotalQuantity)
+                      if (newTotalQuantity < 1) newTotalQuantity = 1
+                    } else {
+                      if (newTotalQuantity > MAX_LIMIT) {
+                        newTotalQuantity = MAX_LIMIT
+                        MySwal.fire({
+                          title: 'Tổng số lượng tối đa là 999999',
+                          icon: 'warning',
+                          toast: true,
+                          position: 'bottom-start',
+                          showConfirmButton: false,
+                          timer: 3000,
+                          showCloseButton: true,
+                        })
+                      }
+                      if (newTotalQuantity <= 0) newTotalQuantity = 0.01
+                    }
                     const selectedProductQuantity = getSelectedProductQuantity()
                     const newQuantityPer = calculateQuantityPer(newTotalQuantity, selectedProductQuantity)
                     setAddMaterialForm({
@@ -997,11 +1100,11 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
                   required
-                  min="0"
-                  step="0.01"
+                  min={(addMaterialForm.uom || '').toString().toLowerCase() === 'tấm' ? 1 : 0.01}
+                  step={(addMaterialForm.uom || '').toString().toLowerCase() === 'tấm' ? 1 : 0.01}
                   placeholder="Tổng số lượng cần thiết"
                 />
-                <div className="text-xs text-gray-500 mt-1">SL/1SP: {addMaterialForm.quantityPer?.toFixed(4)} (tự động tính)</div>
+                    <div className="text-xs text-gray-500 mt-1">SL/1SP: {addMaterialForm.quantityPer} (tự động tính)</div>
               </div>
               <div className="flex gap-2 pt-4">
                 <button type="submit" className="flex-1 px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white rounded-md transition-colors font-medium">Thêm mới</button>
@@ -1074,14 +1177,14 @@ export default function ProductionOrderView({ params }: { params: { id: string }
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng / 1 SP</label>
                 <input
-                  type="number"
-                  value={Number(materialForm.quantityPer).toFixed(4)}
+                  type="text"
+                  value={materialForm.quantityPer}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-blue-50 text-blue-800 cursor-not-allowed"
                   readOnly
                   placeholder="Tự động tính toán"
                 />
                 <div className="text-xs text-blue-600 mt-1">
-                  Công thức: {materialForm.totalQuantity} ÷ {getSelectedProductQuantity()} = {Number(materialForm.quantityPer).toFixed(4)}
+                  Công thức: {materialForm.totalQuantity} ÷ {getSelectedProductQuantity()} = {materialForm.quantityPer}
                 </div>
               </div>
               <div>
@@ -1090,7 +1193,38 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   type="number"
                   value={materialForm.totalQuantity as number}
                   onChange={(e) => {
-                    const newTotalQuantity = Number(e.target.value)
+                    let newTotalQuantity = Number(e.target.value)
+                    const isTam = (materialForm.uom || '').toString().toLowerCase() === 'tấm'
+                    if (isTam) {
+                      if (newTotalQuantity > 9999) {
+                        newTotalQuantity = 9999
+                        MySwal.fire({
+                          title: 'Tổng số lượng tối đa cho Tấm là 9999',
+                          icon: 'warning',
+                          toast: true,
+                          position: 'bottom-start',
+                          showConfirmButton: false,
+                          timer: 3000,
+                          showCloseButton: true,
+                        })
+                      }
+                      newTotalQuantity = Math.floor(newTotalQuantity)
+                      if (newTotalQuantity < 1) newTotalQuantity = 1
+                    } else {
+                      if (newTotalQuantity > MAX_LIMIT) {
+                        newTotalQuantity = MAX_LIMIT
+                        MySwal.fire({
+                          title: 'Tổng số lượng tối đa là 999999',
+                          icon: 'warning',
+                          toast: true,
+                          position: 'bottom-start',
+                          showConfirmButton: false,
+                          timer: 3000,
+                          showCloseButton: true,
+                        })
+                      }
+                      if (newTotalQuantity <= 0) newTotalQuantity = 0.01
+                    }
                     const selectedProductQuantity = getSelectedProductQuantity()
                     const newQuantityPer = calculateQuantityPer(newTotalQuantity, selectedProductQuantity)
                     setMaterialForm({
@@ -1101,11 +1235,11 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4361ee] focus:border-transparent"
                   required
-                  min="0"
-                  step="0.01"
+                  min={(materialForm.uom || '').toString().toLowerCase() === 'tấm' ? 1 : 0.01}
+                  step={(materialForm.uom || '').toString().toLowerCase() === 'tấm' ? 1 : 0.01}
                   placeholder="Tổng số lượng cần thiết"
                 />
-                <div className="text-xs text-gray-500 mt-1">SL/1SP sẽ được tính tự động: {Number(materialForm.quantityPer).toFixed(4)}</div>
+                <div className="text-xs text-gray-500 mt-1">SL/1SP sẽ được tính tự động: {materialForm.quantityPer}</div>
               </div>
               <div className="flex gap-2 pt-4">
                 <button type="submit" className="flex-1 px-4 py-2 bg-[#4361ee] hover:bg-[#364fc7] text-white rounded-md transition-colors font-medium">Cập nhật</button>

@@ -2,6 +2,7 @@
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment, useState, useEffect } from 'react';
 import { ProductionPlanProductDetail, ProductionPlanMaterialProduct } from '@/app/(defaults)/production-plans/service';
+import Swal from 'sweetalert2';
 
 interface GlueGlassModalProps {
     isOpen: boolean;
@@ -101,9 +102,26 @@ const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productio
 
     // Handler for changing quantity in product table
     const handleProductQuantityChange = (productId: number, value: string) => {
+        const numValue = Number(value) || 0;
+        
+        // Validate quantity limit for "Số lượng cần ghép"
+        if (numValue > 9999) {
+            Swal.fire({
+                title: 'Cảnh báo',
+                text: 'Số lượng cần ghép không được vượt quá 9999',
+                icon: 'warning',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
+            return;
+        }
+        
         const newQuantities = {
             ...productQuantities,
-            [productId]: Number(value),
+            [productId]: numValue,
         };
         setProductQuantities(newQuantities);
         updateFinishedProducts(newQuantities);
@@ -114,6 +132,24 @@ const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productio
 
     // Handler for changing finished product data
     const handleFinishedProductChange = (index: number, field: keyof FinishedProduct, value: string | number) => {
+        // Validate quantity limit for finished products
+        if (field === 'quantity') {
+            const numValue = Number(value) || 0;
+            if (numValue > 99999) {
+                Swal.fire({
+                    title: 'Cảnh báo',
+                    text: 'Số lượng thành phẩm không được vượt quá 99999',
+                    icon: 'warning',
+                    toast: true,
+                    position: 'bottom-start',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    showCloseButton: true,
+                });
+                return;
+            }
+        }
+        
         const newFinishedProducts = [...finishedProducts];
         newFinishedProducts[index] = {
             ...newFinishedProducts[index],
@@ -227,6 +263,7 @@ const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productio
                                                                     <input
                                                                         type="number"
                                                                         min={0}
+                                                                        max={9999}
                                                                         className="form-input w-24"
                                                                         value={productQuantities[product.id] ?? 0}
                                                                         onChange={e => handleProductQuantityChange(product.id, e.target.value)}
@@ -300,6 +337,7 @@ const GlueGlassModal = ({ isOpen, onClose, products, materialProducts, productio
                                                                             <input
                                                                                 type="number"
                                                                                 min={0}
+                                                                                max={99999}
                                                                                 className="form-input w-24"
                                                                                 value={product.quantity}
                                                                                 onChange={e => handleFinishedProductChange(idx, 'quantity', e.target.value)}

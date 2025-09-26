@@ -6,6 +6,7 @@ import { getOrders, OrderDto, getOrdersNotUpdated, updateManySaleOrders } from '
 import { FiSearch } from 'react-icons/fi';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import ExcelJS from 'exceljs';
+import { getOrderDetailById } from '@/app/(defaults)/sales-order/[id]/service';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
     const renderPageNumbers = () => {
@@ -80,8 +81,25 @@ const SalesOrderSummary = () => {
         const fetchData = async () => {
             try {
                 const data = await getOrders();
-                const sortedData = data.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
-                setOrders(data);
+                const enriched = await Promise.all(
+                    data.map(async (o) => {
+                        if ((o.totalAmount ?? 0) > 0) return o;
+                        try {
+                            const detail = await getOrderDetailById(o.id);
+                            const total = (detail.products || []).reduce((sum, p) => {
+                                const itemTotal = (p.totalAmount ?? 0) > 0
+                                    ? p.totalAmount
+                                    : (p.unitPrice || 0) * (p.quantity || 0) * ((p.areaM2 && p.areaM2 > 0) ? p.areaM2 : ((p.width || 0) * (p.height || 0) / 1_000_000));
+                                return sum + (itemTotal || 0);
+                            }, 0);
+                            return { ...o, totalAmount: Math.round(total) } as OrderDto;
+                        } catch {
+                            return o;
+                        }
+                    })
+                );
+                const sortedData = enriched.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+                setOrders(sortedData);
             } catch (error) {
                 console.error('Lỗi khi tải đơn hàng:', error);
             } finally {
@@ -169,9 +187,11 @@ const SalesOrderSummary = () => {
                 window.location.reload();
             }, 2000);
             
-        } catch (err) {
-            console.error('Lỗi khi đồng bộ đơn hàng:', err);
-            setUpdateMessage('Có lỗi xảy ra khi đồng bộ đơn hàng!');
+        } catch (err: any) {
+            const message = err?.response?.status === 400
+                ? (err?.response?.data?.message || 'Tồn tại đơn hàng có sản phẩm chưa được đồng bộ')
+                : 'Có lỗi xảy ra khi đồng bộ đơn hàng!';
+            setUpdateMessage(message);
         } finally {
             setIsUpdating(false);
         }

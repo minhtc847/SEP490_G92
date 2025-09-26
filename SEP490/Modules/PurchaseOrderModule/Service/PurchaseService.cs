@@ -383,7 +383,7 @@ namespace SEP490.Modules.PurchaseOrderModule.Service
             if (productsNotUpdated.Any())
             {
                 var productNames = string.Join(", ", productsNotUpdated);
-                return (false, $"The following products have not been updated to MISA yet: {productNames}. Please update these products to MISA first before updating the purchase order.");
+                return (false, $"Các sản phẩm sau vẫn chưa được đồng bộ lên MISA: {productNames}.");
             }
 
             return (true, "All products are ready for MISA update.");

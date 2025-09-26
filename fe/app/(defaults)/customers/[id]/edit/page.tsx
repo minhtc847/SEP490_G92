@@ -51,7 +51,7 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
                     customerName: data.customerName,
                     phone: data.phone,
                     address: data.address,
-                    customerType: data.customerType,
+                    customerType: data.isSupplier ? 'supplier' : 'customer',
                     notes: data.notes || '',
                     discount: data.discount || 0,
                     customerCode: data.customerCode,
@@ -68,19 +68,10 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-
-        if (name === 'discount') {
-            const percentage = parseFloat(value);
-            setFormData((prev) => ({
-                ...prev,
-                discount: isNaN(percentage) ? 0 : percentage / 100, // 50 => 0.5
-            }));
-        } else {
-            setFormData({
-                ...formData,
-                [name]: value,
-            });
-        }
+        setFormData({
+            ...formData,
+            [name]: value,
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -180,9 +171,6 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
 
                             {/* <label className="block font-medium">Người liên hệ</label> */}
                             {/* <input name="contactPerson" value={formData.contactPerson} onChange={handleChange} className="form-input" /> */}
-
-                            <label className="block font-medium">Chiết khấu (%)</label>
-                            <input name="discount" type="number" min="0" max="100" value={formData.discount * 100} onChange={handleChange} className="form-input" />
 
                             <label className="block font-medium">Ghi chú</label>
                             <textarea name="notes" value={formData.notes} onChange={handleChange} className="form-textarea" rows={3} />

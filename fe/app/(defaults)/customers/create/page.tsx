@@ -18,11 +18,24 @@ const CustomerCreatePage = () => {
         customerType: 'customer' as 'customer' | 'supplier',
         address: '',
         contactPerson: '',
-        contactPhone: '',
         notes: '',
-        discount: 0,
     });
     const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState<{ phone?: string; address?: string }>({});
+
+    const validateForm = () => {
+        const newErrors: { phone?: string; address?: string } = {};
+        if (!formData.phone?.trim()) {
+            newErrors.phone = 'Số điện thoại là bắt buộc';
+        } else if (!/^[0-9]{10,11}$/.test(formData.phone)) {
+            newErrors.phone = 'Số điện thoại không hợp lệ';
+        }
+        if (!formData.address?.trim()) {
+            newErrors.address = 'Địa chỉ là bắt buộc';
+        }
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const handleInputChange = (field: string, value: string | number) => {
         setFormData((prev) => ({
@@ -33,13 +46,13 @@ const CustomerCreatePage = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!validateForm()) return;
         setLoading(true);
 
         try {
             const payload = {
                 ...formData,
                 customerCode: '',
-                discount: formData.discount / 100,
             };
 
             await createCustomer(payload);
@@ -88,23 +101,15 @@ const CustomerCreatePage = () => {
                                 <option value="supplier">Nhà cung cấp</option>
                             </select>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium mb-1">Chiết khấu (%)</label>
-                            <input
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="0.1"
-                                className="form-input"
-                                value={formData.discount}
-                                onChange={(e) => handleInputChange('discount', parseFloat(e.target.value) || 0)}
-                            />
-                        </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium mb-1">Địa chỉ</label>
-                        <input type="text" className="form-input" value={formData.address} onChange={(e) => handleInputChange('address', e.target.value)} />
+                        <label className="block text-sm font-medium mb-1">Địa chỉ *</label>
+                        <input type="text" className={`form-input ${errors.address ? 'border-red-500' : ''}`} value={formData.address} onChange={(e) => {
+                            handleInputChange('address', e.target.value);
+                            if (errors.address) setErrors(prev => ({ ...prev, address: undefined }));
+                        }} required />
+                        {errors.address && (<p className="text-red-500 text-sm mt-1">{errors.address}</p>)}
                     </div>
 
                     <div className="pt-4 border-t">
@@ -117,8 +122,12 @@ const CustomerCreatePage = () => {
                             </div> */}
 
                             <div>
-                                <label className="block text-sm font-medium mb-1">SĐT liên hệ</label>
-                                <input type="tel" className="form-input" value={formData.phone} onChange={(e) => handleInputChange('phone', e.target.value)} />
+                                <label className="block text-sm font-medium mb-1">SĐT liên hệ *</label>
+                                <input type="tel" className={`form-input ${errors.phone ? 'border-red-500' : ''}`} value={formData.phone} onChange={(e) => {
+                                    handleInputChange('phone', e.target.value);
+                                    if (errors.phone) setErrors(prev => ({ ...prev, phone: undefined }));
+                                }} required />
+                                {errors.phone && (<p className="text-red-500 text-sm mt-1">{errors.phone}</p>)}
                             </div>
                         </div>
                     </div>

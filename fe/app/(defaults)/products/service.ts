@@ -2,10 +2,32 @@ import axios from '@/setup/axios';
 
 export interface Product {
     id: string;
+    // Support both backend `ProductCode` and frontend `productCode`
+    productCode?: string;
+    ProductCode?: string;
     productName: string;
     productType: string;
     uom: string;
     isupdatemisa: number; // 0 = chưa cập nhật, 1 = đã cập nhật
+}
+
+export interface CreateProductProductDto {
+    ProductCode?: string | null;
+    ProductName?: string | null;
+    ProductType?: string | null;
+    UOM?: string | null;
+    Height?: string | null;
+    Width?: string | null;
+    Thickness?: number | null;
+    Weight?: number | null;
+    UnitPrice?: number | null;
+    GlassStructureId?: number | null;
+    isupdatemisa?: number; // 0 = chưa cập nhật, 1 = đã cập nhật
+}
+
+export interface GlassStructureOption {
+    id: number;
+    productName: string;
 }
 
 export const getProducts = async (): Promise<Product[]> => {
@@ -20,6 +42,14 @@ export const getProducts = async (): Promise<Product[]> => {
 export const deleteProduct = async (id: string): Promise<void> => {
     try {
         await axios.delete(`/api/Product/${id}`);
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const deleteMisaProduct = async (id: string | number): Promise<void> => {
+    try {
+        await axios.delete(`/api/Selenium/product/${id}`);
     } catch (error) {
         throw error;
     }
@@ -58,6 +88,23 @@ export const updateManyProducts = async (products: Product[]): Promise<void> => 
         }));
         
         await axios.post('/api/selenium/products/add-many', productsToUpdate);
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const createProductApi = async (payload: CreateProductProductDto): Promise<void> => {
+    try {
+        await axios.post('/api/Product', payload);
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const getGlassStructureOptionsForProducts = async (): Promise<GlassStructureOption[]> => {
+    try {
+        const res = await axios.get<GlassStructureOption[]>('/api/Product/all');
+        return res.data;
     } catch (error) {
         throw error;
     }

@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { IRootState } from '@/store';
-import { checkOrderProductsMisaStatus, getOrderDetailById, OrderDetailDto, updateMisaOrder, updateOrderMisaStatus, checkHasProductionPlan } from '@/app/(defaults)/sales-order/[id]/service';
+import { checkOrderProductsMisaStatus, getOrderDetailById, OrderDetailDto, updateMisaOrder, checkHasProductionPlan } from '@/app/(defaults)/sales-order/[id]/service';
+import * as signalR from '@microsoft/signalr';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import ExcelJS from 'exceljs';
@@ -18,6 +19,7 @@ const SalesOrderDetailPage = () => {
     const [order, setOrder] = useState<OrderDetailDto | null>(null);
     const [loading, setLoading] = useState(true);
     const [isUpdatingMisa, setIsUpdatingMisa] = useState<boolean>(false);
+    const [isWaitingMisaConfirm, setIsWaitingMisaConfirm] = useState<boolean>(false);
     const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
     const [showErrorMessage, setShowErrorMessage] = useState<boolean>(false);
     const [errorMessage, setErrorMessage] = useState<string>('');
@@ -44,6 +46,36 @@ const SalesOrderDetailPage = () => {
         };
 
         fetchData();
+    }, [id]);
+
+    // Listen to SignalR hub for MISA update confirmation
+    useEffect(() => {
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl(`${process.env.NEXT_PUBLIC_BASE_URL}/saleOrderHub`)
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on('MisaUpdate', async (data: any) => {
+            try {
+                // For sales order updates, refresh the detail and show success
+                if (data?.type === 'Đơn Bán Hàng') {
+                    const updated = await getOrderDetailById(Number(id));
+                    setOrder(updated);
+                    setShowSuccessMessage(true);
+                    setTimeout(() => setShowSuccessMessage(false), 3000);
+                }
+            } finally {
+                setIsWaitingMisaConfirm(false);
+            }
+        });
+
+        connection
+            .start()
+            .catch(() => {});
+
+        return () => {
+            connection.stop();
+        };
     }, [id]);
 
     const handleUpdateMisa = async () => {
@@ -84,27 +116,10 @@ const SalesOrderDetailPage = () => {
                 return;
             }
             
-            // Nếu tất cả sản phẩm đã update MISA, tiến hành cập nhật đơn hàng
-            // Gọi API cập nhật MISA
+            // Nếu tất cả sản phẩm đã update MISA, tiến hành gửi yêu cầu đồng bộ (background)
+            // Không cập nhật trạng thái ngay lập tức; đợi SignalR xác nhận
             await updateMisaOrder(Number(id));
-            
-            // Sau khi cập nhật MISA thành công, cập nhật trạng thái isUpdateMisa thành true
-            await updateOrderMisaStatus(Number(id));
-            
-            // Cập nhật trạng thái ngay lập tức trong state để UI phản hồi ngay
-            setOrder(prev => prev ? { ...prev, isUpdateMisa: true } : null);
-            
-            // Refresh lại dữ liệu đơn hàng từ server để đảm bảo đồng bộ
-            const updatedOrder = await getOrderDetailById(Number(id));
-            setOrder(updatedOrder);
-            
-            // Hiển thị thông báo thành công
-            setShowSuccessMessage(true);
-            
-            // Ẩn thông báo sau 3 giây
-            setTimeout(() => {
-                setShowSuccessMessage(false);
-            }, 3000);
+            setIsWaitingMisaConfirm(true);
             
         } catch (error: any) {
             console.error('Lỗi khi đồng bộ MISA:', error);
@@ -163,7 +178,7 @@ const SalesOrderDetailPage = () => {
         });
 
         order.products.forEach((item, idx) => {
-            const row = worksheet.addRow([idx + 1, item.productCode, item.productName, 'Tấm', item.quantity, item.thickness, item.width, item.height, item.unitPrice, item.totalAmount]);
+            const row = worksheet.addRow([idx + 1, item.productCode, item.productName, 'Tấm', item.quantity, item.thickness, item.width, item.height, item.unitPrice, (item.totalAmount || (item.unitPrice * item.quantity * (item.width * item.height) / 1_000_000))]);
             row.eachCell((cell) => {
                 cell.border = {
                     top: { style: 'thin' },
@@ -176,12 +191,8 @@ const SalesOrderDetailPage = () => {
 
         worksheet.addRow([]);
         const total = order.products.reduce((sum, item) => sum + item.totalAmount, 0);
-        const discountAmount = total * order.discount;
-        const finalAmount = total - discountAmount;
 
         worksheet.addRow(['Tổng giá trị đơn hàng:', '', '', '', '', '', '', '', '', total]);
-        worksheet.addRow(['Chiết khấu:', `${(order.discount * 100).toFixed(0)}%`, '', '', '', '', '', '', '', -discountAmount]);
-        worksheet.addRow(['Thành tiền sau chiết khấu:', '', '', '', '', '', '', '', '', finalAmount]);
 
         worksheet.addRow([]);
         worksheet.addRow(['Ghi chú:']);
@@ -233,7 +244,7 @@ const SalesOrderDetailPage = () => {
     if (loading) return <div className="p-6">Đang tải dữ liệu...</div>;
     if (!order) return <div className="p-6 text-red-600">Không tìm thấy đơn hàng với ID: {id}</div>;
 
-    const { customerName, address, phone, orderDate, orderCode, discount, products, totalAmount, totalQuantity } = order;
+    const { customerName, address, phone, orderDate, orderCode, products, totalAmount, totalQuantity } = order;
 
     return (
         <ProtectedRoute requiredRole={[1, 2]}>
@@ -255,11 +266,11 @@ const SalesOrderDetailPage = () => {
                     </button>
                     <button 
                         onClick={handleUpdateMisa} 
-                        disabled={isUpdatingMisa || order.isUpdateMisa}
-                        title={order.isUpdateMisa ? 'Đơn hàng đã được đồng bộMISA' : ''}
+                        disabled={isUpdatingMisa || isWaitingMisaConfirm || order.isUpdateMisa}
+                        title={order.isUpdateMisa ? 'Đơn hàng đã được đồng bộ MISA' : ''}
                         aria-busy={isUpdatingMisa}
                         className={`px-4 py-1 rounded transition ${
-                            isUpdatingMisa || order.isUpdateMisa
+                            isUpdatingMisa || isWaitingMisaConfirm || order.isUpdateMisa
                                 ? 'bg-gray-400 text-white cursor-not-allowed' 
                                 : 'bg-orange-500 text-white hover:bg-orange-600'
                         }`}
@@ -269,6 +280,8 @@ const SalesOrderDetailPage = () => {
                                 <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
                                 Đang đồng bộ MISA...
                             </>
+                        ) : isWaitingMisaConfirm ? (
+                            '⏳ Đang chờ xác nhận MISA...'
                         ) : (
                             '🔄 Đồng bộ MISA'
                         )}
@@ -324,9 +337,7 @@ const SalesOrderDetailPage = () => {
                 <div>
                     <strong>Mã đơn hàng:</strong> {orderCode}
                 </div>
-                <div>
-                    <strong>Chiết khấu:</strong> {discount * 100}%
-                </div>
+                
                 <div>
                     <strong>Trạng thái:</strong> {getStatusText(order.status)}
                 </div>
@@ -355,7 +366,7 @@ const SalesOrderDetailPage = () => {
                         <th className="border p-2">Dày (mm)</th> */}
                         <th className="border p-2">Số lượng</th>
                         <th className="border p-2">Đơn vị tính</th>
-                        <th className="border p-2">Đơn giá (₫)</th>
+                        <th className="border p-2">Đơn giá / m² (₫)</th>
                         <th className="border p-2">Diện tích (m²)</th>
                         <th className="border p-2">Thành tiền (₫)</th>
                     </tr>
@@ -372,7 +383,7 @@ const SalesOrderDetailPage = () => {
                             <td className="border p-2">Tấm</td>
                             <td className="border p-2 text-right">{item.unitPrice.toLocaleString()}</td>
                             <td className="border p-2 text-right">{item.areaM2}</td>
-                            <td className="border p-2 text-right">{item.totalAmount.toLocaleString()}</td>
+                            <td className="border p-2 text-right">{(item.totalAmount || (item.unitPrice * item.quantity * (item.width * item.height) / 1_000_000)).toLocaleString()}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -380,23 +391,15 @@ const SalesOrderDetailPage = () => {
 
             <div className="text-end text-sm space-y-1">
                 {(() => {
-                    const totalAmountRaw = products.reduce((sum, p) => sum + p.unitPrice * p.quantity, 0);
-                    const discountAmount = totalAmountRaw * discount;
-                    const finalAmount = totalAmountRaw - discountAmount;
-
+                    const totalQuantityCalc = products.reduce((sum, p) => sum + (p.quantity || 0), 0);
+                    const totalAmountCalc = products.reduce((sum, p) => sum + ((p.totalAmount || (p.unitPrice * p.quantity * (p.width * p.height) / 1_000_000)) || 0), 0);
                     return (
                         <>
                             <p>
-                                <strong>Tổng số lượng:</strong> {totalQuantity}
+                                <strong>Tổng số lượng:</strong> {totalQuantityCalc}
                             </p>
                             <p>
-                                <strong>Tổng tiền hàng:</strong> {totalAmountRaw.toLocaleString()} ₫
-                            </p>
-                            <p>
-                                <strong>Chiết khấu:</strong> {discountAmount.toLocaleString()} ₫ ({(discount * 100).toFixed(2)}%)
-                            </p>
-                            <p className="text-base font-bold">
-                                Thành tiền sau chiết khấu: <span className="text-green-600">{finalAmount.toLocaleString()} ₫</span>
+                                <strong>Tổng tiền hàng:</strong> {totalAmountCalc.toLocaleString()} ₫
                             </p>
                         </>
                     );

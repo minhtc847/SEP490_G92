@@ -19,6 +19,7 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [defectQuantity, setDefectQuantity] = useState(0);
   const [defectType, setDefectType] = useState('');
+  // Stage removed per requirement
   const [defectStage, setDefectStage] = useState('');
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -41,14 +42,7 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
     'Lỗi khác'
   ];
 
-  const defectStages = [
-    'Chuẩn bị nguyên vật liệu',
-    'Gia công', 
-    'Lắp ráp',
-    'Kiểm tra chất lượng',
-    'Đóng gói',
-    'Khác'
-  ];
+  const defectStages: string[] = [];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -101,7 +95,7 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
   };
 
   const handleSubmitDefect = async () => {
-    if (!selectedProductId || defectQuantity <= 0 || !defectType || !defectStage) return;
+    if (!selectedProductId || defectQuantity <= 0 || !defectType) return;
     
     // Validate defect quantity against finished quantity
     const selectedOutput = outputs.find(output => output.productId === selectedProductId);
@@ -146,7 +140,7 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
         productId: selectedProductId,
         quantity: defectQuantity,
         defectType,
-        defectStage,
+        // stage omitted
         note
       });
       
@@ -186,7 +180,7 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
     setEditingDefect(defect);
     setEditDefectQuantity(defect.quantity ?? 0);
     setEditDefectType(defect.defectType ?? '');
-    setEditDefectStage(defect.defectStage ?? '');
+    setEditDefectStage('');
     setEditNote(defect.note ?? '');
     setShowEditModal(true);
   };
@@ -201,7 +195,7 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
   };
 
   const handleSubmitEditDefect = async () => {
-    if (!editingDefect || editDefectQuantity <= 0 || !editDefectType || !editDefectStage) return;
+    if (!editingDefect || editDefectQuantity <= 0 || !editDefectType) return;
     
     // Validate defect quantity against finished quantity
     const selectedOutput = outputs.find(output => output.productId === editingDefect.productId);
@@ -244,7 +238,7 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
       await updateDefectReport(editingDefect.id, {
         quantity: editDefectQuantity,
         defectType: editDefectType,
-        defectStage: editDefectStage,
+        // stage omitted
         note: editNote
       });
       
@@ -346,7 +340,6 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
               <th>Tên sản phẩm</th>
               <th>Số lượng lỗi</th>
               <th>Loại lỗi</th>
-              <th>Giai đoạn lỗi</th>
               <th>Ghi chú</th>
               <th>Thời gian báo cáo</th>
               <th>Action</th>
@@ -368,7 +361,6 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
                   <td>{defect.productName}</td>
                   <td>{defect.quantity ?? 0}</td>
                   <td>{defect.defectType}</td>
-                  <td>{defect.defectStage}</td>
                   <td>{defect.note || '-'}</td>
                   <td>{formatDateTime(defect.reportedAt)}</td>
                   <td>
@@ -492,19 +484,7 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
                         </select>
                       </div>
 
-                      <div className="form-group mt-4">
-                        <label className="block text-sm font-medium mb-2">Giai đoạn lỗi *</label>
-                        <select 
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-[#1a233a] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          value={defectStage}
-                          onChange={e => setDefectStage(e.target.value)}
-                        >
-                          <option value="">-- Chọn giai đoạn --</option>
-                          {defectStages.map(stage => (
-                            <option key={stage} value={stage}>{stage}</option>
-                          ))}
-                        </select>
-                      </div>
+                      
 
                       <div className="form-group mt-4">
                         <label className="block text-sm font-medium mb-2">Ghi chú</label>
@@ -530,7 +510,7 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
                           type="button" 
                           className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
                           onClick={handleSubmitDefect} 
-                          disabled={submitting || (defectQuantity <= 0) || !selectedProductId || !defectType || !defectStage || (selectedProductId ? (() => {
+                          disabled={submitting || (defectQuantity <= 0) || !selectedProductId || !defectType || (selectedProductId ? (() => {
                             const selectedOutput = outputs.find(output => output.productId === selectedProductId);
                             return Boolean(selectedOutput && defectQuantity > (selectedOutput.done || 0));
                           })() : false)}
@@ -647,19 +627,7 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
                          </select>
                        </div>
 
-                       <div className="form-group mt-4">
-                         <label className="block text-sm font-medium mb-2">Giai đoạn lỗi *</label>
-                         <select 
-                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-[#1a233a] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                           value={editDefectStage}
-                           onChange={e => setEditDefectStage(e.target.value)}
-                         >
-                           <option value="">-- Chọn giai đoạn --</option>
-                           {defectStages.map(stage => (
-                             <option key={stage} value={stage}>{stage}</option>
-                           ))}
-                         </select>
-                       </div>
+                       
 
                        <div className="form-group mt-4">
                          <label className="block text-sm font-medium mb-2">Ghi chú</label>
@@ -688,10 +656,10 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
                            Hủy
                          </button>
                          <button 
-                           type="button" 
-                           className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
-                           onClick={handleSubmitEditDefect} 
-                           disabled={editSubmitting || (editDefectQuantity <= 0) || !editDefectType || !editDefectStage || (editingDefect ? (() => {
+                          type="button" 
+                          className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+                          onClick={handleSubmitEditDefect} 
+                          disabled={editSubmitting || (editDefectQuantity <= 0) || !editDefectType || (editingDefect ? (() => {
                              const selectedOutput = outputs.find(output => output.productId === editingDefect.productId);
                              return Boolean(selectedOutput && editDefectQuantity > (selectedOutput.done || 0));
                            })() : false)}
