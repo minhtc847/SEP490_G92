@@ -2,6 +2,9 @@ import axios from '@/setup/axios';
 
 export interface Product {
     id: string;
+    // Support both backend `ProductCode` and frontend `productCode`
+    productCode?: string;
+    ProductCode?: string;
     productName: string;
     productType: string;
     uom: string;

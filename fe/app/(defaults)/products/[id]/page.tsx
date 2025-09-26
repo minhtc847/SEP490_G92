@@ -118,6 +118,10 @@ const ProductDetailPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
+                    <label className="block font-medium text-gray-700 mb-1">Mã sản phẩm</label>
+                    <input type="text" value={(product.productCode || (product as any).ProductCode || '')} disabled className="w-full border px-3 py-2 rounded-lg bg-gray-100" />
+                </div>
+                <div>
                     <label className="block font-medium text-gray-700 mb-1">Tên sản phẩm</label>
                     <input type="text" value={product.productName ?? ''} disabled className="w-full border px-3 py-2 rounded-lg bg-gray-100" />
                 </div>

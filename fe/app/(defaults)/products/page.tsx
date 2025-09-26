@@ -126,6 +126,7 @@ const ProductListPage = () => {
     const handleExportToExcel = async () => {
         const data = filteredProducts.map((p) => ({
             'STT': '',
+            'Mã SP': p.productCode || (p as any).ProductCode || '-',
             'Tên sản phẩm': p.productName || '-',
             'Loại SP': p.productType || '-',
             'Đơn vị tính': p.uom || '-',
@@ -137,7 +138,7 @@ const ProductListPage = () => {
             item['STT'] = (index + 1).toString();
         });
 
-        const headers = ['STT', 'Tên sản phẩm', 'Loại SP', 'Đơn vị tính', 'Cập nhật MISA'];
+        const headers = ['STT', 'Mã SP', 'Tên sản phẩm', 'Loại SP', 'Đơn vị tính', 'Cập nhật MISA'];
 
         // Tạo workbook mới
         const workbook = new ExcelJS.Workbook();
@@ -146,7 +147,7 @@ const ProductListPage = () => {
         // Thêm tiêu đề
         const titleRow = worksheet.addRow(['DANH SÁCH SẢN PHẨM']);
         titleRow.height = 30;
-        worksheet.mergeCells('A1:E1');
+        worksheet.mergeCells('A1:F1');
         
         // Định dạng tiêu đề
         const titleCell = worksheet.getCell('A1');
@@ -314,6 +315,7 @@ const ProductListPage = () => {
                     <table className="table w-full">
                         <thead>
                             <tr>
+                                <th>Mã SP</th>
                                 <th>Tên sản phẩm</th>
                                 <th>Loại SP</th>
                                 <th>Đơn vị tính</th>
@@ -324,6 +326,7 @@ const ProductListPage = () => {
                         <tbody>
                             {paginatedProducts.map((product) => (
                                 <tr key={product.id}>
+                                    <td>{product.productCode || (product as any).ProductCode || '-'}</td>
                                     <td>{product.productName}</td>
                                     <td>{product.productType}</td>
                                     <td>{product.uom}</td>
