@@ -65,6 +65,17 @@ const ProductCreatePage = () => {
         return value.replace(/[^0-9]/g, '');
     };
 
+    // Tính tổng độ dày từ chuỗi composition ("5+2+5", "5 + 2 + 5 mm", "(5+2+5)") => 12
+    const sumComposition = (composition: string | undefined): number => {
+        if (!composition) return 0;
+        const matches = composition.match(/[0-9]+(?:\.[0-9]+)?/g);
+        if (!matches) return 0;
+        return matches
+            .map((m) => parseFloat(m))
+            .filter((n) => Number.isFinite(n))
+            .reduce((acc, n) => acc + n, 0);
+    };
+
     // Auto tính giá & tên khi thay đổi cấu trúc kính hoặc kích thước
     useEffect(() => {
         const structure = glassStructures.find((g) => g.id === form.glassStructureId);
@@ -174,6 +185,21 @@ const ProductCreatePage = () => {
             if (!form.width || !form.height || !form.thickness) {
                 alert('Vui lòng nhập đầy đủ kích thước (rộng, cao, dày)!');
                 return;
+            }
+
+            // Validate độ dày khi có cấu trúc kính: thickness >= tổng composition
+            if (form.glassStructureId) {
+                const structure = glassStructures.find((g) => g.id === form.glassStructureId);
+                if (!structure) {
+                    alert('Không tìm thấy cấu trúc kính để kiểm tra composition. Vui lòng tải lại trang.');
+                    return;
+                }
+                const requiredThickness = sumComposition(structure.composition);
+                const currentThickness = parseFloat(form.thickness);
+                if (Number.isFinite(requiredThickness) && requiredThickness > 0 && currentThickness < requiredThickness) {
+                    alert(`Độ dày sản phẩm phải ≥ ${requiredThickness} (tổng composition: ${structure.composition || ''}).`);
+                    return;
+                }
             }
 
             // Create payload with automatic product type detection
