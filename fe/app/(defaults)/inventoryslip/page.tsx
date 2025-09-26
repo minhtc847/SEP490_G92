@@ -168,8 +168,8 @@ const InventorySlipPage = () => {
 
             setUpdateMessage(`Đang cập nhật ${validSlips.length} phiếu...`);
             
-            // Gọi API cập nhật nhiều phiếu
-            const slipIds = validSlips.map(slip => slip.id);
+            // Gọi API cập nhật nhiều phiếu theo thứ tự ngược lại (từ dưới lên)
+            const slipIds = [...validSlips].reverse().map(slip => slip.id);
             const success = await callManyImportExportInvoices(slipIds);
             //const success = await testProcessManySlips(slipIds);
             if (success) {

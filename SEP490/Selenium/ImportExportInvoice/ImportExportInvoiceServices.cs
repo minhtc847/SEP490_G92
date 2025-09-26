@@ -113,7 +113,7 @@ namespace SEP490.Selenium.ImportExportInvoice
         }
         private void AddField1(ExportDTO ExportInput)
         {
-            Thread.Sleep(1000);
+            Thread.Sleep(3000);
             //            var dropdownButton = wait.Until(drv => drv.FindElement(
             //    By.CssSelector("div[ms-value-field='itemTypeCode'] .btn-dropdown")
             //));
@@ -338,13 +338,13 @@ namespace SEP490.Selenium.ImportExportInvoice
 
             var saveButton = driver.FindElements(By.CssSelector("button[shortkey-target='Save']"));
             saveButton[0].Click();
-            Thread.Sleep(1000);
+            Thread.Sleep(2000);
 
             //var confirmDiv = driver.FindElement(By.CssSelector("div.ms-message-box--content"));
 
             //var buttonCo = driver.FindElement(By.XPath("//button[.//div[text()='Có']]"));
             //buttonCo.Click();
-            Thread.Sleep(5000);
+            //Thread.Sleep(5000);
         }
         
         public static bool ClickIfExists(By by, IWebDriver driver, WebDriverWait wait)

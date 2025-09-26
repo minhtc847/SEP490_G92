@@ -400,9 +400,18 @@ namespace SEP490.Selenium.Controller
                     using var scope = _serviceScopeFactory.CreateScope();
                     var inventoryService = scope.ServiceProvider.GetRequiredService<IInventorySlipService>();
                     var service = scope.ServiceProvider.GetRequiredService<IImportExportInvoiceServices>();
+                    var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<SaleOrderHub>>();
 
                     ExportDTO info = await inventoryService.GetExportInfoBySlipIdAsync(slipId);
                     service.OpenImportPage(info);
+
+                    await hubContext.Clients.All.SendAsync("MisaUpdate", new
+                    {
+                        message = "Đã đồng bộ với Misa thành công",
+                        type = "Phiếu Xuất Nhập Kho",
+                        codeText = slipId.ToString(),
+                        createAt = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy")
+                    }, token);
                 }
                 catch (Exception ex)
                 {
@@ -442,6 +451,7 @@ namespace SEP490.Selenium.Controller
                     using var scope = _serviceScopeFactory.CreateScope();
                     var inventoryService = scope.ServiceProvider.GetRequiredService<IInventorySlipService>();
                     var context = scope.ServiceProvider.GetRequiredService<SEP490DbContext>();
+                    var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<SaleOrderHub>>();
 
                     Console.WriteLine($"[INFO] Starting processing {slipIds.Count} slips");
                     
@@ -513,6 +523,15 @@ namespace SEP490.Selenium.Controller
                     }
                     
                     Console.WriteLine($"[INFO] Completed processing all {slipIds.Count} slips");
+
+                    // Broadcast SignalR notification for batch completion
+                    await hubContext.Clients.All.SendAsync("MisaUpdate", new
+                    {
+                        message = $"Đã đồng bộ với Misa thành công {slipIds.Count} phiếu",
+                        type = "Phiếu Xuất Nhập Kho",
+                        codeText = string.Join(", ", slipIds),
+                        createAt = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy")
+                    }, token);
                 }
                 catch (Exception ex)
                 {

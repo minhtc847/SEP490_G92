@@ -181,11 +181,9 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
     return (
         <div className="space-y-4">
             {isMisaUpdating && (
-                <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-                    <div className="bg-white rounded shadow p-4 text-center">
-                        <div className="animate-spin inline-block w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full mr-2"></div>
-                        <span>Đang đồng bộ MISA, vui lòng không thao tác...</span>
-                    </div>
+                <div className="p-2 text-sm bg-purple-50 text-purple-700 border border-purple-200 rounded">
+                    <span className="animate-spin inline-block w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full mr-2 align-middle"></span>
+                    Đang đồng bộ MISA...
                 </div>
             )}
             {slips.map((slip) => (
@@ -310,72 +308,85 @@ const InventorySlipList = ({ slips, onRefresh, productionOrderInfo }: InventoryS
                                                     cancelButtonText: 'Hủy',
                                                 });
                                                 
-                                                if (result.isConfirmed) {
-                                                    try {
+                                    if (result.isConfirmed) {
+                                        try {
                                                         setIsMisaUpdating(true);
-                                                        if (typeof document !== 'undefined') document.body.classList.add('pointer-events-none');
-                                                        // Kiểm tra trạng thái MISA của các sản phẩm trước
-                                                        const misaCheckResult = await checkSlipProductsMisaStatus(slip.id);
-                                                        
-                                                        if (!misaCheckResult.success) {
-                                                            throw new Error(misaCheckResult.message || 'Không thể kiểm tra trạng thái MISA của sản phẩm');
-                                                        }
-                                                        
-                                                        if (!misaCheckResult.canUpdateMisa) {
-                                                            // Hiển thị thông báo lỗi với danh sách sản phẩm chưa update MISA
-                                                            const notUpdatedProducts = misaCheckResult.notUpdatedProducts || [];
-                                                            const productList = notUpdatedProducts.map((p: any) => {
-                                                                const productName = p.ProductName || p.productName || 'Không có tên';
-                                                                const productCode = p.ProductCode || p.productCode || 'Không có mã';
-                                                                return `${productName} (${productCode})`;
-                                                            }).join(', ');
-                                                            
-                                                            Swal.fire({
-                                                                title: 'Không thể đồng bộ MISA',
-                                                                text: `Các sản phẩm sau chưa được đồng bộ MISA: ${productList}`,
-                                                                icon: 'error',
-                                                                confirmButtonText: 'Đã hiểu',
-                                                            });
-                                                            return;
-                                                        }
-                                                        
-                                                        // Nếu tất cả sản phẩm đã update MISA, tiến hành cập nhật phiếu
-                                                        // Gọi API import-export-invoice
-                                                        const importExportResult = await callImportExportInvoice(slip.id);
-                                                        if (!importExportResult) {
-                                                            throw new Error('Không thể gọi API import-export-invoice');
-                                                        }
-                                                        
-                                                        // Cập nhật trạng thái isUpdateMisa
-                                                        const updateStatusResult = await updateMisaStatus(slip.id);
-                                                        if (!updateStatusResult) {
-                                                            throw new Error('Không thể cập nhật trạng thái Misa');
-                                                        }
-                                                        
-                                                        Swal.fire({
-                                                            title: 'Đồng bộ lên Misa thành công!',
-                                                            toast: true,
-                                                            position: 'bottom-start',
-                                                            showConfirmButton: false,
-                                                            timer: 3000,
-                                                            showCloseButton: true,
-                                                        });
-                                                        
-                                                        // Refresh the list to update the status
-                                                        onRefresh();
-                                                    } catch (error) {
-                                                        console.error('Error updating Misa:', error);
-                                                        Swal.fire({
-                                                            title: 'Lỗi',
-                                                            text: 'Không thể đồng bộ lên Misa. Vui lòng thử lại.',
-                                                            icon: 'error',
-                                                            confirmButtonText: 'Đã hiểu',
-                                                        });
+
+                                            // Kiểm tra trạng thái MISA của các sản phẩm trước
+                                            const misaCheckResult = await checkSlipProductsMisaStatus(slip.id);
+                                            if (!misaCheckResult.success) {
+                                                throw new Error(misaCheckResult.message || 'Không thể kiểm tra trạng thái MISA của sản phẩm');
+                                            }
+                                            if (!misaCheckResult.canUpdateMisa) {
+                                                const notUpdatedProducts = misaCheckResult.notUpdatedProducts || [];
+                                                const productList = notUpdatedProducts.map((p: any) => {
+                                                    const productName = p.ProductName || p.productName || 'Không có tên';
+                                                    const productCode = p.ProductCode || p.productCode || 'Không có mã';
+                                                    return `${productName} (${productCode})`;
+                                                }).join(', ');
+                                                await Swal.fire({
+                                                    title: 'Không thể đồng bộ MISA',
+                                                    text: `Các sản phẩm sau chưa được đồng bộ MISA: ${productList}`,
+                                                    icon: 'error',
+                                                    confirmButtonText: 'Đã hiểu',
+                                                });
+                                                return;
+                                            }
+
+                                            // Lắng nghe SignalR thông báo hoàn tất
+                                            const { HubConnectionBuilder } = await import('@microsoft/signalr');
+                                            const connection = new HubConnectionBuilder()
+                                                .withUrl(`${process.env.NEXT_PUBLIC_BASE_URL}/saleOrderHub`)
+                                                .withAutomaticReconnect()
+                                                .build();
+
+                                            const donePromise = new Promise<void>((resolve) => {
+                                                connection.on('MisaUpdate', async (data: any) => {
+                                                    if (data?.type === 'Phiếu Xuất Nhập Kho') {
+                                                        resolve();
+                                                    }
+                                                });
+                                            });
+                                            connection.start().catch(() => {});
+
+                                            // Gọi API import-export-invoice
+                                            const importExportResult = await callImportExportInvoice(slip.id);
+                                            if (!importExportResult) {
+                                                throw new Error('Không thể gọi API import-export-invoice');
+                                            }
+
+                                            // Chờ tín hiệu hoàn tất từ backend
+                                            await donePromise;
+
+                                            // Cập nhật trạng thái isUpdateMisa
+                                            const updateStatusResult = await updateMisaStatus(slip.id);
+                                            if (!updateStatusResult) {
+                                                throw new Error('Không thể cập nhật trạng thái Misa');
+                                            }
+
+                                            await Swal.fire({
+                                                title: 'Đồng bộ lên Misa thành công!',
+                                                toast: true,
+                                                position: 'bottom-start',
+                                                showConfirmButton: false,
+                                                timer: 3000,
+                                                showCloseButton: true,
+                                            });
+
+                                            onRefresh();
+                                            connection.stop();
+                                        } catch (error) {
+                                            console.error('Error updating Misa:', error);
+                                            await Swal.fire({
+                                                title: 'Lỗi',
+                                                text: 'Không thể đồng bộ lên Misa. Vui lòng thử lại.',
+                                                icon: 'error',
+                                                confirmButtonText: 'Đã hiểu',
+                                            });
                                                     } finally {
                                                         setIsMisaUpdating(false);
-                                                        if (typeof document !== 'undefined') document.body.classList.remove('pointer-events-none');
                                                     }
-                                                }
+                                    }
                                             } catch (error) {
                                                 console.error('Error showing confirmation:', error);
                                             }
