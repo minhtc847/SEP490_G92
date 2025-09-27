@@ -159,13 +159,15 @@ const ZaloOrders = () => {
                                             >
                                                 <IconEye className="w-4 h-4" />
                                             </button>
-                                            <button
-                                                type="button"
-                                                className="btn btn-sm btn-outline-info"
-                                                onClick={() => router.push(`/zalo-orders/${order.id}/edit`)}
-                                            >
-                                                <IconPencil className="w-4 h-4" />
-                                            </button>
+                                            {order.status !== 'Confirmed' && (
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-sm btn-outline-info"
+                                                    onClick={() => router.push(`/zalo-orders/${order.id}/edit`)}
+                                                >
+                                                    <IconPencil className="w-4 h-4" />
+                                                </button>
+                                            )}
                                             <button
                                                 type="button"
                                                 className="btn btn-sm btn-outline-danger"
