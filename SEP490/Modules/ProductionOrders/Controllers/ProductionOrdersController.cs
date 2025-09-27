@@ -91,5 +91,15 @@ namespace SEP490.Modules.ProductionOrders.Controllers
             return Ok(new { message = "Báo hỏng thành công." });
         }
 
+        [HttpGet("{productionOrderId}/production-plan-status")]
+        [AuthorizeRoles(Roles.MANAGER, Roles.PRODUCTION, Roles.ACCOUNTANT)]
+        public async Task<ActionResult<object>> GetProductionPlanStatus(int productionOrderId)
+        {
+            var status = await _productionOrdersService.GetProductionPlanStatusAsync(productionOrderId);
+            if (status == null)
+                return NotFound($"Không tìm thấy production plan cho production order ID {productionOrderId}");
+            return Ok(new { status = status });
+        }
+
     }
 }

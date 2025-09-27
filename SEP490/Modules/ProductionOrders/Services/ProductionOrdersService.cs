@@ -231,5 +231,14 @@ namespace SEP490.Modules.ProductionOrders.Services
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<string?> GetProductionPlanStatusAsync(int productionOrderId)
+        {
+            var productionOrder = await _context.ProductionOrders
+                .Include(po => po.ProductionPlan)
+                .FirstOrDefaultAsync(po => po.Id == productionOrderId);
+
+            return productionOrder?.ProductionPlan?.Status;
+        }
     }
 }
