@@ -274,18 +274,18 @@ const ProductionPlanDetailPage = () => {
     const getStatusText = (status: string | number | undefined) => {
         if (typeof status === 'string') {
             switch (status) {
-                case 'Pending': return 'Pending';
-                case 'InProgress': return 'InProgress';
-                case 'Completed': return 'Completed';
-                case 'Cancelled': return 'Cancelled';
+                case 'Pending': return 'Chưa thực hiện';
+                case 'InProgress': return 'Đang thực hiện';
+                case 'Completed': return 'Đã hoàn thành';
+                case 'Cancelled': return 'Đã hủy';
                 default: return status || '-';
             }
         } else if (typeof status === 'number') {
             switch (status) {
-                case 0: return 'Pending';
-                case 1: return 'InProgress';
-                case 2: return 'Completed';
-                case 3: return 'Cancelled';
+                case 0: return 'Chưa thực hiện';
+                case 1: return 'Đang thực hiện';
+                case 2: return 'Đã hoàn thành';
+                case 3: return 'Đã hủy';
                 default: return status || '-';
             }
         }

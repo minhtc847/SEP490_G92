@@ -20,6 +20,16 @@ const statusColor = (status: string) => {
   }
 };
 
+const getStatusText = (status: string) => {
+  switch (status) {
+    case 'Pending': return 'Chưa thực hiện';
+    case 'InProgress': return 'Đang thực hiện';
+    case 'Completed': return 'Đã hoàn thành';
+    case 'Cancelled': return 'Đã hủy';
+    default: return status;
+  }
+};
+
 const ListProductionOrders = () => {
   const router = useRouter();
   const [page, setPage] = useState(1);
@@ -127,7 +137,7 @@ const ListProductionOrders = () => {
                   <span
                     className={`px-2 py-1 rounded text-sm font-semibold ${statusColor(record.ProductionStatus)}`}
                   >
-                    {record.status}
+                    {getStatusText(record.status)}
                   </span>
                 ),
               },

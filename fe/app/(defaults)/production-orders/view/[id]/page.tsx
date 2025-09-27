@@ -73,6 +73,17 @@ export default function ProductionOrderView({ params }: { params: { id: string }
   const [orderType, setOrderType] = useState<string>("")
   const [orderStatus, setOrderStatus] = useState<string>("")
 
+  // Function to translate status to Vietnamese
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'Pending': return 'Chưa thực hiện';
+      case 'InProgress': return 'Đang thực hiện';
+      case 'Completed': return 'Đã hoàn thành';
+      case 'Cancelled': return 'Đã hủy';
+      default: return status;
+    }
+  };
+
   // Modal states
   const [showProductModal, setShowProductModal] = useState(false)
   const [showMaterialModal, setShowMaterialModal] = useState(false)
@@ -552,7 +563,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                   <span className="px-2 py-1 text-xs rounded bg-[#edf0ff] text-[#4361ee] border">Loại: {orderType}</span>
                 )}
                 {orderStatus && (
-                  <span className="px-2 py-1 text-xs rounded bg-green-50 text-green-700 border">Trạng thái: {orderStatus}</span>
+                  <span className="px-2 py-1 text-xs rounded bg-green-50 text-green-700 border">Trạng thái: {getStatusText(orderStatus)}</span>
                 )}
               </div>
             </div>
