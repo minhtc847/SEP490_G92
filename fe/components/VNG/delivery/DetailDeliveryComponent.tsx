@@ -8,11 +8,12 @@ import IconSave from '@/components/icon/icon-save';
 import IconEdit from '@/components/icon/icon-edit';
 import IconX from '@/components/icon/icon-x';
 import { getDeliveryDetail, updateDelivery, DeliveryDetailDto, DeliveryDetailItemDto, UpdateDeliveryDto, UpdateDeliveryDetailDto } from '@/app/(defaults)/delivery/service';
+import Swal from 'sweetalert2';
 
 const DetailDeliveryComponent = () => {
     const router = useRouter();
     const params = useParams();
-    const deliveryId = params.id as string;
+    const deliveryId = params?.id as string;
     
     const statusList = ['NotDelivered', 'Delivering', 'FullyDelivered', 'Cancelled'];
     
@@ -88,6 +89,21 @@ const DetailDeliveryComponent = () => {
 
     const handleSubmit = async () => {
         if (!delivery) return;
+
+
+        if (deliveryDate && exportDate && new Date(deliveryDate) <= new Date(exportDate)) {
+            Swal.fire({
+                title: 'Cảnh báo',
+                text: 'Ngày giao hàng phải lớn hơn ngày xuất kho!',
+                icon: 'warning',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
+            return;
+        }
 
         setIsSubmitting(true);
         try {
@@ -173,13 +189,20 @@ const DetailDeliveryComponent = () => {
                                 Ngày giao hàng
                             </label>
                             {isEditing ? (
-                                <input 
-                                    id="deliveryDate" 
-                                    type="date" 
-                                    value={deliveryDate}
-                                    onChange={(e) => setDeliveryDate(e.target.value)}
-                                    className="form-input w-2/3 lg:w-[250px]" 
-                                />
+                                <div className="w-2/3 lg:w-[250px]">
+                                    <input 
+                                        id="deliveryDate" 
+                                        type="date" 
+                                        value={deliveryDate}
+                                        onChange={(e) => setDeliveryDate(e.target.value)}
+                                        className={`form-input w-full ${deliveryDate && exportDate && new Date(deliveryDate) <= new Date(exportDate) ? 'border-red-500' : ''}`}
+                                    />
+                                    {deliveryDate && exportDate && new Date(deliveryDate) <= new Date(exportDate) && (
+                                        <div className="text-xs text-red-600 mt-1">
+                                            ⚠️ Ngày giao hàng phải lớn hơn ngày xuất kho
+                                        </div>
+                                    )}
+                                </div>
                             ) : (
                                 <div className="form-input w-2/3 lg:w-[250px] bg-gray-100">
                                     {deliveryDate ? new Date(deliveryDate).toLocaleDateString('vi-VN') : 'Chưa giao'}

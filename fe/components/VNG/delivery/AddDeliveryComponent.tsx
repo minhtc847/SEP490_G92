@@ -8,6 +8,7 @@ import IconSave from '@/components/icon/icon-save';
 import IconSend from '@/components/icon/icon-send';
 import IconX from '@/components/icon/icon-x';
 import { getSalesOrdersForDelivery, getSalesOrderDetail, getProductionPlanValidation, createDelivery, SalesOrderOption, SalesOrderDetail, CreateDeliveryDto, DeliveryValidationItem } from '@/app/(defaults)/delivery/service';
+import Swal from 'sweetalert2';
 
 const AddDeliveryComponent = () => {
     const router = useRouter();
@@ -206,37 +207,105 @@ const AddDeliveryComponent = () => {
     const handleSubmit = async () => {
         // Kiểm tra đã chọn đơn hàng chưa
         if (!selectedOrderId) {
-            alert('Vui lòng chọn đơn hàng!');
+            Swal.fire({
+                title: 'Cảnh báo',
+                text: 'Vui lòng chọn đơn hàng!',
+                icon: 'warning',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             return;
         }
 
         // Kiểm tra ngày xuất kho
         if (!exportDate) {
-            alert('Vui lòng chọn ngày xuất kho!');
+            Swal.fire({
+                title: 'Cảnh báo',
+                text: 'Vui lòng chọn ngày xuất kho!',
+                icon: 'warning',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
+            return;
+        }
+
+        if (deliveryDate && new Date(deliveryDate) <= new Date(exportDate)) {
+            Swal.fire({
+                title: 'Cảnh báo',
+                text: 'Ngày giao hàng phải lớn hơn ngày xuất kho!',
+                icon: 'warning',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             return;
         }
 
         // Kiểm tra có sản phẩm nào chưa được chọn không
         if (hasUnselectedProducts()) {
-            alert('Vui lòng chọn đầy đủ sản phẩm!');
+            Swal.fire({
+                title: 'Cảnh báo',
+                text: 'Vui lòng chọn đầy đủ sản phẩm!',
+                icon: 'warning',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             return;
         }
 
         // Kiểm tra có sản phẩm nào có số lượng 0 không
         if (hasZeroQuantity()) {
-            alert('Không được để sản phẩm có số lượng là 0!');
+            Swal.fire({
+                title: 'Cảnh báo',
+                text: 'Không được để sản phẩm có số lượng là 0!',
+                icon: 'warning',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             return;
         }
 
         // Kiểm tra có sản phẩm nào vượt quá số lượng có sẵn không
         if (hasExceededQuantity()) {
-            alert('Có sản phẩm vượt quá số lượng có sẵn! Vui lòng kiểm tra lại.');
+            Swal.fire({
+                title: 'Cảnh báo',
+                text: 'Có sản phẩm vượt quá số lượng có sẵn! Vui lòng kiểm tra lại.',
+                icon: 'warning',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             return;
         }
 
         // Kiểm tra có ít nhất một sản phẩm không
         if (items.length === 0) {
-            alert('Vui lòng thêm ít nhất một sản phẩm!');
+            Swal.fire({
+                title: 'Cảnh báo',
+                text: 'Vui lòng thêm ít nhất một sản phẩm!',
+                icon: 'warning',
+                toast: true,
+                position: 'bottom-start',
+                showConfirmButton: false,
+                timer: 3000,
+                showCloseButton: true,
+            });
             return;
         }
 
@@ -319,13 +388,20 @@ const AddDeliveryComponent = () => {
                             <label htmlFor="deliveryDate" className="mb-0 flex-1 ltr:mr-2 rtl:ml-2">
                                 Ngày giao hàng
                             </label>
-                            <input 
-                                id="deliveryDate" 
-                                type="date" 
-                                value={deliveryDate}
-                                onChange={(e) => setDeliveryDate(e.target.value)}
-                                className="form-input w-2/3 lg:w-[250px]" 
-                            />
+                            <div className="w-2/3 lg:w-[250px]">
+                                <input 
+                                    id="deliveryDate" 
+                                    type="date" 
+                                    value={deliveryDate}
+                                    onChange={(e) => setDeliveryDate(e.target.value)}
+                                    className={`form-input w-full ${deliveryDate && exportDate && new Date(deliveryDate) <= new Date(exportDate) ? 'border-red-500' : ''}`}
+                                />
+                                {deliveryDate && exportDate && new Date(deliveryDate) <= new Date(exportDate) && (
+                                    <div className="text-xs text-red-600 mt-1">
+                                        ⚠️ Ngày giao hàng phải lớn hơn ngày xuất kho
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <div className="mt-4 flex items-center">
                             <label htmlFor="status" className="mb-0 flex-1 ltr:mr-2 rtl:ml-2">
