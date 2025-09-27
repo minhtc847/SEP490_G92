@@ -66,7 +66,7 @@ const OrderSelectionModal: React.FC<OrderSelectionModalProps> = ({ isOpen, onClo
     };
 
     const handleViewOrderDetail = (order: PurchaseOrderDto) => {
-        const orderId = order.code?.replace(/^MH/, '') || order.id.toString();
+        const orderId = order.id || order.id.toString();
         window.open(`/purchase-order/${orderId}`, '_blank');
     };
 
