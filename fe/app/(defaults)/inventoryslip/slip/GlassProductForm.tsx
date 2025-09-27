@@ -350,7 +350,7 @@ export default function GlassProductForm({
                                             </div>                                            
                                             {product.height && product.width && (
                                                 <div className="text-xs text-gray-500">
-                                                    Kích thước: {product.height} x {product.width} x {product.thickness} mm
+                                                    Kích thước:  {product.width} x {product.height} x {product.thickness} mm
                                                 </div>
                                             )}
                                         </div>
@@ -593,7 +593,7 @@ export default function GlassProductForm({
                         onClick={handleReset}
                         className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                     >
-                        Reset
+                        Đặt lại
                     </button>
                     
                     {selectedProduct && (
