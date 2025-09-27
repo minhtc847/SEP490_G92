@@ -5,6 +5,7 @@ import { fetchAllInventorySlips, InventorySlipListItem,testProcessManySlips, fin
 import IconEye from '@/components/icon/icon-eye';
 import IconPlus from '@/components/icon/icon-plus';
 import { createPortal } from 'react-dom';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const PAGE_SIZES = [10, 20, 50, 100];
 
@@ -31,6 +32,12 @@ const InventorySlipPage = () => {
     const [isUpdatingMany, setIsUpdatingMany] = useState(false);
     const [updateMessage, setUpdateMessage] = useState<string>('');
     const [isMounted, setIsMounted] = useState(false);
+
+    // Permissions
+    const { isFactoryManager, isAccountant } = usePermissions();
+    
+    // Check if user can sync all slips (only factory manager and accountant)
+    const canSyncAllSlips = isFactoryManager() || isAccountant();
 
     useEffect(() => {
         setIsMounted(true);
@@ -221,19 +228,21 @@ const InventorySlipPage = () => {
                             <option value="chemical">Phiếu xuất hóa chất</option>
                         </select>
                     </div>
-                    <div>
-                        <button
-                            onClick={handleUpdateManySlips}
-                            disabled={isUpdatingMany}
-                            className={`px-4 py-2 rounded-md font-medium ${
-                                isUpdatingMany 
-                                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
-                                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                            }`}
-                        >
-                            {isUpdatingMany ? 'Đang cập nhật...' : 'Đồng bộ tất cả phiếu'}
-                        </button>
-                    </div>
+                    {canSyncAllSlips && (
+                        <div>
+                            <button
+                                onClick={handleUpdateManySlips}
+                                disabled={isUpdatingMany}
+                                className={`px-4 py-2 rounded-md font-medium ${
+                                    isUpdatingMany 
+                                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                                }`}
+                            >
+                                {isUpdatingMany ? 'Đang cập nhật...' : 'Đồng bộ tất cả phiếu'}
+                            </button>
+                        </div>
+                    )}
                 </div>
                 
                 {/* Update Message */}
