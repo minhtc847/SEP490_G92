@@ -69,3 +69,13 @@ export async function reportBrokenOutput(outputId: number, broken: number, reaso
     reasonBroken,
   });
 }
+
+export async function fetchProductionPlanStatus(productionOrderId: number): Promise<string | null> {
+  try {
+    const response = await axios.get(`/api/ProductionOrders/${productionOrderId}/production-plan-status`);
+    return response.data.status;
+  } catch (error) {
+    console.error('Error fetching production plan status:', error);
+    return null;
+  }
+}

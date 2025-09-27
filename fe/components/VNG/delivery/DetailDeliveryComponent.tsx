@@ -28,6 +28,9 @@ const DetailDeliveryComponent = () => {
     const [status, setStatus] = useState<string>('NotDelivered');
     const [note, setNote] = useState<string>('');
     const [items, setItems] = useState<DeliveryDetailItemDto[]>([]);
+    
+    // Error state
+    const [dateError, setDateError] = useState<string>('');
 
     // Load delivery details on component mount
     useEffect(() => {
@@ -39,9 +42,9 @@ const DetailDeliveryComponent = () => {
                 const data = await getDeliveryDetail(parseInt(deliveryId));
                 setDelivery(data);
                 
-                // Initialize form state
-                setDeliveryDate(data.deliveryDate || '');
-                setExportDate(data.exportDate || '');
+                // Initialize form state with proper date formatting
+                setDeliveryDate(data.deliveryDate ? new Date(data.deliveryDate).toISOString().split('T')[0] : '');
+                setExportDate(data.exportDate ? new Date(data.exportDate).toISOString().split('T')[0] : '');
                 setStatus(statusList[data.status]);
                 setNote(data.note || '');
                 setItems(data.deliveryDetails);
@@ -70,16 +73,37 @@ const DetailDeliveryComponent = () => {
 
     const totalAmount = items.reduce((sum: number, item: DeliveryDetailItemDto) => sum + item.amount, 0);
 
+    // Validation function for date
+    const validateDates = (exportDateValue: string, deliveryDateValue: string) => {
+        // Allow empty delivery date
+        if (!exportDateValue || !deliveryDateValue) {
+            setDateError('');
+            return true;
+        }
+        
+        const exportDateObj = new Date(exportDateValue);
+        const deliveryDateObj = new Date(deliveryDateValue);
+        
+        if (deliveryDateObj < exportDateObj) {
+            setDateError('Ngày giao hàng phải lớn hơn hoặc bằng ngày xuất kho');
+            return false;
+        }
+        
+        setDateError('');
+        return true;
+    };
+
     const handleEdit = () => {
         setIsEditing(true);
     };
 
     const handleCancel = () => {
         setIsEditing(false);
+        setDateError('');
         // Reset form to original values
         if (delivery) {
-            setDeliveryDate(delivery.deliveryDate || '');
-            setExportDate(delivery.exportDate || '');
+            setDeliveryDate(delivery.deliveryDate ? new Date(delivery.deliveryDate).toISOString().split('T')[0] : '');
+            setExportDate(delivery.exportDate ? new Date(delivery.exportDate).toISOString().split('T')[0] : '');
             setStatus(statusList[delivery.status]);
             setNote(delivery.note || '');
             setItems(delivery.deliveryDetails);
@@ -88,6 +112,11 @@ const DetailDeliveryComponent = () => {
 
     const handleSubmit = async () => {
         if (!delivery) return;
+
+        // Validate dates before submitting
+        if (!validateDates(exportDate, deliveryDate)) {
+            return;
+        }
 
         setIsSubmitting(true);
         try {
@@ -159,7 +188,10 @@ const DetailDeliveryComponent = () => {
                                     id="exportDate" 
                                     type="date" 
                                     value={exportDate}
-                                    onChange={(e) => setExportDate(e.target.value)}
+                                    onChange={(e) => {
+                                        setExportDate(e.target.value);
+                                        validateDates(e.target.value, deliveryDate);
+                                    }}
                                     className="form-input w-2/3 lg:w-[250px]" 
                                 />
                             ) : (
@@ -173,19 +205,42 @@ const DetailDeliveryComponent = () => {
                                 Ngày giao hàng
                             </label>
                             {isEditing ? (
-                                <input 
-                                    id="deliveryDate" 
-                                    type="date" 
-                                    value={deliveryDate}
-                                    onChange={(e) => setDeliveryDate(e.target.value)}
-                                    className="form-input w-2/3 lg:w-[250px]" 
-                                />
+                                <div className="flex items-center w-2/3 lg:w-[250px]">
+                                    <input 
+                                        id="deliveryDate" 
+                                        type="date" 
+                                        value={deliveryDate}
+                                        onChange={(e) => {
+                                            setDeliveryDate(e.target.value);
+                                            validateDates(exportDate, e.target.value);
+                                        }}
+                                        className="form-input flex-1" 
+                                    />
+                                    {deliveryDate && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setDeliveryDate('');
+                                                validateDates(exportDate, '');
+                                            }}
+                                            className="ml-2 px-2 py-1 text-sm bg-red-100 text-red-600 rounded hover:bg-red-200"
+                                            title="Xóa ngày giao hàng"
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
+                                </div>
                             ) : (
                                 <div className="form-input w-2/3 lg:w-[250px] bg-gray-100">
                                     {deliveryDate ? new Date(deliveryDate).toLocaleDateString('vi-VN') : 'Chưa giao'}
                                 </div>
                             )}
                         </div>
+                        {dateError && (
+                            <div className="mt-2 text-sm text-red-500">
+                                {dateError}
+                            </div>
+                        )}
                         <div className="mt-4 flex items-center">
                             <label htmlFor="status" className="mb-0 flex-1 ltr:mr-2 rtl:ml-2">
                                 Trạng thái
@@ -278,7 +333,7 @@ const DetailDeliveryComponent = () => {
                                         type="button" 
                                         className="btn btn-primary" 
                                         onClick={handleSubmit}
-                                        disabled={isSubmitting}
+                                        disabled={isSubmitting || !!dateError}
                                     >
                                         {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
                                     </button>

@@ -211,7 +211,7 @@ namespace SEP490.Modules.ProductionOrders.Services
 
             return new Product
             {
-                ProductCode = GenerateProductCode(productName),
+                //ProductCode = GenerateProductCode(productName),
                 ProductName = productName,
                 ProductType = productType,
                 UOM = "Tấm",

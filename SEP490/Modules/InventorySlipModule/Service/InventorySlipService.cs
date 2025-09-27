@@ -519,7 +519,8 @@ namespace SEP490.Modules.InventorySlipModule.Service
             {
                 var nvlProducts = await _context.Products
                     .Where(p => (p.ProductType == "NVL" || p.ProductType == "Nguyên vật liệu")
-                                 && p.UOM != null && p.UOM.ToLower() == "tấm")
+                                 && p.UOM != null && p.UOM.ToLower() == "tấm"
+                                 && p.ProductName != null && !p.ProductName.ToLower().Contains("chưa đổ keo"))
                     .ToListAsync();
                 
                  // Filter NVL not semi finished product
@@ -558,7 +559,8 @@ namespace SEP490.Modules.InventorySlipModule.Service
 
 
                 var allNvlProducts = await _context.Products
-                    .Where(p => p.ProductType == "NVL" && p.UOM != null && p.UOM.ToLower() == "tấm")
+                    .Where(p => p.ProductType == "NVL" && p.UOM != null && p.UOM.ToLower() == "tấm"
+                               && p.ProductName != null && !p.ProductName.ToLower().Contains("chưa đổ keo"))
                     .ToListAsync();
                 
                 var glassProductIds = allNvlProducts

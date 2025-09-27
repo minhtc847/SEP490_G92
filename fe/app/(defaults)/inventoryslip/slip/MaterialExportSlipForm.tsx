@@ -686,10 +686,6 @@ export default function MaterialExportSlipForm({
                                         </h4>
 
                                         <div className="space-y-4">
-                                            <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
-                                                <strong> Hướng dẫn:</strong> Nhập số lượng {'>'} 0 cho nguyên liệu cần sử dụng. Để trống hoặc nhập 0 cho nguyên liệu không sử dụng.
-                                            </div>
-
                                             {/* semi product */}
                                             <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                                                 <h5 className="text-sm font-medium text-yellow-800 mb-2">
@@ -707,7 +703,7 @@ export default function MaterialExportSlipForm({
                                                     Nguyên liệu cần xuất:
                                                 </h5>
                                                 {targetMaterials.map((material, index) => (
-                                                    <div key={`${target.id}-${material.productId}`} className="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 bg-white rounded border border-green-200">
+                                                    <div key={`${target.id}-${material.productId}`} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-3 bg-white rounded border border-green-200">
                                                         <div>
                                                             <label className="block text-sm font-medium text-green-700 mb-2">
                                                                 Nguyên liệu
@@ -756,6 +752,17 @@ export default function MaterialExportSlipForm({
                                                             <p className="text-gray-500 text-xs mt-1">
                                                                 {material.quantity > 0 ? 'Sẽ được thêm vào phiếu' : 'Bắt buộc nhập số lượng'}
                                                             </p>
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-green-700 mb-2">
+                                                                Đơn vị tính
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={material.uom || ''}
+                                                                disabled
+                                                                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
+                                                            />
                                                         </div>
                                                         <div>
                                                             <label className="block text-sm font-medium text-green-700 mb-2">

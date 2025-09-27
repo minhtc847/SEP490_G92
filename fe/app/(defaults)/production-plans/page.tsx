@@ -36,7 +36,7 @@ const ProductionPlansPage = () => {
     const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
     // Permissions
-    const { isAccountant } = usePermissions();
+    const { isFactoryManager } = usePermissions();
 
     useEffect(() => {
         async function loadData() {
@@ -119,7 +119,7 @@ const ProductionPlansPage = () => {
 
                     <div className="production-plans-table">
                         <div className="mb-4.5 flex flex-col gap-5 px-5 md:flex-row md:items-center">
-                            {!isAccountant() && (
+                            {isFactoryManager() && (
                                 <div className="flex items-center gap-2">
                                     <button 
                                         onClick={() => setIsOrderModalOpen(true)}

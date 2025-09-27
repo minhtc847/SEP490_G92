@@ -72,7 +72,7 @@ namespace SEP490.Modules.Delivery.Services
                     ProductId = planDetail.ProductId,
                     ProductName = planDetail.Product?.ProductName ?? $"Sản phẩm {planDetail.ProductId}",
                     RequestedQuantity = 0, // Will be set by frontend
-                    AvailableQuantity = planDetail.Done
+                    AvailableQuantity = planDetail.Done - (planDetail.DaGiao ?? 0)
                 };
 
                 validationItems.Add(validationItem);

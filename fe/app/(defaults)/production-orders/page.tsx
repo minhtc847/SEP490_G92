@@ -13,14 +13,26 @@ const statusBadgeMap: Record<string, string> = {
     '1': 'badge-outline-info',    // InProgress
     '2': 'badge-outline-success', // Completed
     '3': 'badge-outline-danger',  // Cancelled
+    'Pending': 'badge-outline-warning',
+    'InProgress': 'badge-outline-info',
+    'Completed': 'badge-outline-success',
+    'Cancelled': 'badge-outline-danger',
 };
 
 const getStatusText = (status: string | undefined) => {
     switch (status) {
-        case '0': return 'Pending';
-        case '1': return 'InProgress';
-        case '2': return 'Completed';
-        case '3': return 'Cancelled';
+        case '0':
+        case 'Pending': 
+            return 'Chưa thực hiện';
+        case '1':
+        case 'InProgress': 
+            return 'Đang thực hiện';
+        case '2':
+        case 'Completed': 
+            return 'Đã hoàn thành';
+        case '3':
+        case 'Cancelled': 
+            return 'Đã hủy';
         default: return status || '-';
     }
 };
