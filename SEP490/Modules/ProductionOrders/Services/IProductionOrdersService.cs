@@ -14,5 +14,6 @@ namespace SEP490.Modules.ProductionOrders.Services
         Task<List<ProductionDefectDto>> GetProductionDefectsByOrderIdAsync(int productionOrderId);
         Task<bool> CreateDefectReportAsync(CreateDefectReportDto dto);
         Task<bool> UpdateDefectReportAsync(int defectId, UpdateDefectReportDto dto);
+        Task<string?> GetProductionPlanStatusAsync(int productionOrderId);
     }
 }

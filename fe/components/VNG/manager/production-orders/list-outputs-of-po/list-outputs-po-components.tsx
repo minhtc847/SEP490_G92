@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchProductionOutputsByOrderId, fetchProductionDefectsByOrderId, createDefectReport, updateDefectReport, ProductionOutput, ProductionDefect, UpdateDefectReport } from './service';
+import { fetchProductionOutputsByOrderId, fetchProductionDefectsByOrderId, createDefectReport, updateDefectReport, fetchProductionPlanStatus, ProductionOutput, ProductionDefect, UpdateDefectReport } from './service';
 import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react';
 import { Fragment } from 'react';
 import Swal from 'sweetalert2';
@@ -13,6 +13,7 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
   const [defects, setDefects] = useState<ProductionDefect[]>([]);
   const [loading, setLoading] = useState(true);
   const [defectsLoading, setDefectsLoading] = useState(true);
+  const [productionPlanStatus, setProductionPlanStatus] = useState<string | null>(null);
   
   // Create defect modal states
   const [showModal, setShowModal] = useState(false);
@@ -50,9 +51,13 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
       setDefectsLoading(true);
       
       try {
-        // Fetch outputs first (priority)
-        const outputsData = await fetchProductionOutputsByOrderId(productionOrderId);
+
+        const [outputsData, planStatus] = await Promise.all([
+          fetchProductionOutputsByOrderId(productionOrderId),
+          fetchProductionPlanStatus(productionOrderId)
+        ]);
         setOutputs(outputsData);
+        setProductionPlanStatus(planStatus);
         setLoading(false);
         
         // Then fetch defects separately
@@ -284,14 +289,16 @@ const ListOutputsPO: React.FC<ListOutputsPOProps> = ({ productionOrderId }) => {
       {/* Bảng sản phẩm đã hoàn thành */}
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Danh sách sản phẩm đã hoàn thành</h3>
-        <button 
-          className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-300" 
-          onClick={handleOpenModal}
-          disabled={outputs.length === 0}
-          title={outputs.length === 0 ? "Không có sản phẩm nào để báo lỗi" : "Tạo báo cáo lỗi mới"}
-        >
-          Báo lỗi
-        </button>
+        {productionPlanStatus !== "Hoàn thành" && (
+          <button 
+            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-300" 
+            onClick={handleOpenModal}
+            disabled={outputs.length === 0}
+            title={outputs.length === 0 ? "Không có sản phẩm nào để báo lỗi" : "Tạo báo cáo lỗi mới"}
+          >
+            Báo lỗi
+          </button>
+        )}
       </div>
       <div className="table-responsive mb-8">
         <table className="table-striped">
