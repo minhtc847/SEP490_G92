@@ -269,6 +269,101 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     fetchAllProducts()
   }
 
+  const handleDeleteProduct = async () => {
+    if (!selectedProduct) {
+      alert("Vui lòng chọn sản phẩm để xóa!")
+      return
+    }
+
+    const productToDelete = finishedProducts.find((p) => (p.outputId || p.id) === selectedProduct)
+    if (!productToDelete) {
+      alert("Không tìm thấy sản phẩm để xóa")
+      return
+    }
+
+    const result = await Swal.fire({
+      title: 'Xác nhận xóa',
+      html: `
+        <div class="text-left">
+          <p><strong>Bạn có chắc chắn muốn xóa sản phẩm này không?</strong></p>
+          <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded">
+            <p><strong>Tên sản phẩm:</strong> ${productToDelete.productName}</p>
+            <p><strong>Đơn vị tính:</strong> ${productToDelete.uom}</p>
+            <p><strong>Số lượng:</strong> ${formatDecimal(productToDelete.quantity)}</p>
+          </div>
+          <div class="mt-3 p-3 bg-orange-50 border border-orange-200 rounded">
+            <p class="text-orange-800"><strong>⚠️ Lưu ý:</strong> Việc xóa sản phẩm này sẽ xóa tất cả nguyên vật liệu liên quan!</p>
+          </div>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Xóa',
+      cancelButtonText: 'Hủy',
+      focusCancel: true,
+      customClass: {
+        popup: 'swal-wide'
+      }
+    })
+
+    if (result.isConfirmed) {
+      try {
+        const updatedProducts = finishedProducts.filter((p) => (p.outputId || p.id) !== selectedProduct)
+        setFinishedProducts(updatedProducts)
+        
+        setSelectedProduct(null)
+        setSelectedMaterial(null)
+        setCurrentMaterials([])
+        
+        await deleteProductionOutput(selectedProduct)
+        
+        await Swal.fire({
+          title: 'Xóa thành công!',
+          text: `Đã xóa sản phẩm "${productToDelete.productName}" và tất cả nguyên vật liệu liên quan.`,
+          icon: 'success',
+          timer: 3000,
+          showConfirmButton: false
+        })
+
+        fetchPOProducts(params.id)
+          .then((data: ProductItem[]) => {
+            const processedData = (data || []).map((item) => ({
+              ...item,
+              uom: convertUOMToString(item.uom),
+            }))
+            setFinishedProducts(processedData)
+          })
+          .catch((error) => {
+            console.error('Error refreshing products after deletion:', error)
+          })
+        
+      } catch (error) {
+        console.error('Error deleting product:', error)
+        
+        fetchPOProducts(params.id)
+          .then((data: ProductItem[]) => {
+            const processedData = (data || []).map((item) => ({
+              ...item,
+              uom: convertUOMToString(item.uom),
+            }))
+            setFinishedProducts(processedData)
+          })
+          .catch((refreshError) => {
+            console.error('Error refreshing products after deletion error:', refreshError)
+          })
+        
+        await Swal.fire({
+          title: 'Lỗi!',
+          text: 'Có lỗi xảy ra khi xóa sản phẩm. Vui lòng thử lại.',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        })
+      }
+    }
+  }
+
   const handleAddMaterial = () => {
     if (!selectedProduct) {
       alert("Vui lòng chọn sản phẩm trước khi thêm nguyên vật liệu!")
@@ -290,6 +385,74 @@ export default function ProductionOrderView({ params }: { params: { id: string }
     // Open modal first, then load products
     setShowMaterialModal(true)
     fetchAllProducts()
+  }
+
+  const handleDeleteMaterial = async () => {
+    if (!selectedMaterial) {
+      alert("Vui lòng chọn nguyên vật liệu để xóa!")
+      return
+    }
+    const result = await Swal.fire({
+      title: 'Xác nhận xóa',
+      html: `
+        <div class="text-left">
+          <p><strong>Bạn có chắc chắn muốn xóa nguyên vật liệu này không?</strong></p>
+          <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded">
+            <p><strong>Tên nguyên vật liệu:</strong> ${selectedMaterial.productName}</p>
+            <p><strong>Đơn vị tính:</strong> ${selectedMaterial.uom}</p>
+            <p><strong>Tổng số lượng:</strong> ${formatDecimal(selectedMaterial.totalQuantity)}</p>
+            <p><strong>Số lượng / 1 SP:</strong> ${formatDecimal(selectedMaterial.quantityPer)}</p>
+          </div>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Xóa',
+      cancelButtonText: 'Hủy',
+      focusCancel: true,
+      customClass: {
+        popup: 'swal-wide'
+      }
+    })
+
+    if (result.isConfirmed) {
+      try {
+        const updatedMaterials = currentMaterials.filter((m) => m.id !== selectedMaterial.id)
+        setCurrentMaterials(updatedMaterials)
+        
+        setSelectedMaterial(null)
+        
+        await deleteProductionMaterial(selectedMaterial.id!)
+        
+        await Swal.fire({
+          title: 'Xóa thành công!',
+          text: `Đã xóa nguyên vật liệu "${selectedMaterial.productName}".`,
+          icon: 'success',
+          timer: 3000,
+          showConfirmButton: false
+        })
+
+        if (selectedProduct) {
+          await refreshMaterials()
+        }
+        
+      } catch (error) {
+        console.error('Error deleting material:', error)
+        
+        if (selectedProduct) {
+          await refreshMaterials()
+        }
+        
+        await Swal.fire({
+          title: 'Lỗi!',
+          text: 'Có lỗi xảy ra khi xóa nguyên vật liệu. Vui lòng thử lại.',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        })
+      }
+    }
   }
 
   const handleAddProductFormSubmit = (e: React.FormEvent) => {
@@ -644,9 +807,19 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                     </button>
                     <button
                       onClick={handleUpdateProduct}
-                      className="px-4 py-2 bg-[#28a745] hover:bg-[#218838] text-white text-sm rounded shadow transition-colors"
+                      className={`px-4 py-2 text-white text-sm rounded shadow transition-colors ${selectedProduct ? "bg-[#28a745] hover:bg-[#218838]" : "bg-gray-400 cursor-not-allowed"}`}
+                      disabled={!selectedProduct}
+                      title={selectedProduct ? "Cập nhật sản phẩm được chọn" : "Chọn sản phẩm để cập nhật"}
                     >
                       Sửa
+                    </button>
+                    <button
+                      onClick={handleDeleteProduct}
+                      className={`px-4 py-2 text-white text-sm rounded shadow transition-colors ${selectedProduct ? "bg-[#dc3545] hover:bg-[#c82333]" : "bg-gray-400 cursor-not-allowed"}`}
+                      disabled={!selectedProduct}
+                      title={selectedProduct ? "Xóa sản phẩm được chọn và tất cả nguyên vật liệu liên quan" : "Chọn sản phẩm để xóa"}
+                    >
+                      Xóa
                     </button>
                   </>
                 )}
@@ -753,6 +926,14 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                       title={selectedMaterial ? `Cập nhật ${selectedMaterial.productName}` : "Chọn nguyên vật liệu để cập nhật"}
                     >
                       Sửa {selectedMaterial ? `(${selectedMaterial.productName.length > 20 ? selectedMaterial.productName.substring(0, 20) + '...' : selectedMaterial.productName})` : ""}
+                    </button>
+                    <button
+                      onClick={handleDeleteMaterial}
+                      className={`px-4 py-2 text-white text-sm rounded shadow transition-colors ${selectedMaterial ? "bg-[#dc3545] hover:bg-[#c82333]" : "bg-gray-400 cursor-not-allowed"}`}
+                      disabled={!selectedMaterial}
+                      title={selectedMaterial ? `Xóa ${selectedMaterial.productName}` : "Chọn nguyên vật liệu để xóa"}
+                    >
+                      Xóa {selectedMaterial ? `(${selectedMaterial.productName.length > 15 ? selectedMaterial.productName.substring(0, 15) + '...' : selectedMaterial.productName})` : ""}
                     </button>
                   </>
                 )}
