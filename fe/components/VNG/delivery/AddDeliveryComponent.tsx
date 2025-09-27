@@ -25,6 +25,9 @@ const AddDeliveryComponent = () => {
     const [exportDate, setExportDate] = useState<string>('');
     const [status, setStatus] = useState<string>('NotDelivered');
     const [note, setNote] = useState<string>('');
+    
+    // Error state for date validation
+    const [dateError, setDateError] = useState<string>('');
 
     interface DeliveryItem {
         id: number;
@@ -172,6 +175,25 @@ const AddDeliveryComponent = () => {
 
     const totalAmount = items.reduce((sum: number, item: DeliveryItem) => sum + item.amount, 0);
 
+    // Validation function for date
+    const validateDates = (exportDateValue: string, deliveryDateValue: string) => {
+        if (!exportDateValue || !deliveryDateValue) {
+            setDateError('');
+            return true;
+        }
+        
+        const exportDateObj = new Date(exportDateValue);
+        const deliveryDateObj = new Date(deliveryDateValue);
+        
+        if (deliveryDateObj < exportDateObj) {
+            setDateError('Ngày giao hàng phải lớn hơn hoặc bằng ngày xuất kho');
+            return false;
+        }
+        
+        setDateError('');
+        return true;
+    };
+
     // Helper function to get available quantity for a product
     const getAvailableQuantity = (productId: number): number => {
         const validationItem = productionPlanValidation.find(item => item.productId === productId);
@@ -213,6 +235,11 @@ const AddDeliveryComponent = () => {
         // Kiểm tra ngày xuất kho
         if (!exportDate) {
             alert('Vui lòng chọn ngày xuất kho!');
+            return;
+        }
+
+        // Validate dates before submitting
+        if (!validateDates(exportDate, deliveryDate)) {
             return;
         }
 
@@ -309,7 +336,10 @@ const AddDeliveryComponent = () => {
                                 id="exportDate" 
                                 type="date" 
                                 value={exportDate}
-                                onChange={(e) => setExportDate(e.target.value)}
+                                onChange={(e) => {
+                                    setExportDate(e.target.value);
+                                    validateDates(e.target.value, deliveryDate);
+                                }}
                                 className="form-input w-2/3 lg:w-[250px]" 
                                 required
                             />
@@ -323,10 +353,18 @@ const AddDeliveryComponent = () => {
                                 id="deliveryDate" 
                                 type="date" 
                                 value={deliveryDate}
-                                onChange={(e) => setDeliveryDate(e.target.value)}
+                                onChange={(e) => {
+                                    setDeliveryDate(e.target.value);
+                                    validateDates(exportDate, e.target.value);
+                                }}
                                 className="form-input w-2/3 lg:w-[250px]" 
                             />
                         </div>
+                        {dateError && (
+                            <div className="mt-2 text-sm text-red-500">
+                                {dateError}
+                            </div>
+                        )}
                         <div className="mt-4 flex items-center">
                             <label htmlFor="status" className="mb-0 flex-1 ltr:mr-2 rtl:ml-2">
                                 Trạng thái
@@ -469,7 +507,7 @@ const AddDeliveryComponent = () => {
                         <button 
                             type="button" 
                             onClick={handleSubmit}
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || !!dateError}
                             className="btn btn-success w-full gap-2"
                         >
                             <IconSave className="shrink-0 ltr:mr-2 rtl:ml-2" />

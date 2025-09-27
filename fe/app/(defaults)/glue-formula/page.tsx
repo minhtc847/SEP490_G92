@@ -35,7 +35,7 @@ function GlueTable({ title, data, inputValue, onInputChange, onCalc, onEdit, can
           ))}
         </tbody>
       </table>
-      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+      {/* <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
         <input
           type="number"
           placeholder="Nhập khối lượng keo muốn trộn"
@@ -46,7 +46,7 @@ function GlueTable({ title, data, inputValue, onInputChange, onCalc, onEdit, can
         <button onClick={onCalc} style={{ padding: "8px 16px", border: "none", background: "#f1f3f5", borderRadius: 4, fontWeight: 500 }}>
           Tính
         </button>
-      </div>
+      </div> */}
     </div>
   );
 }
