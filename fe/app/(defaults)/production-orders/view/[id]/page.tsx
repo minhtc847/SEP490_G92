@@ -42,6 +42,23 @@ const convertUOMToString = (uom: number | string): string => {
   return uomMap[uom] || "N/A"
 }
 
+const formatDecimal = (value: number | string | undefined): string => {
+  if (value === undefined || value === null || value === '') return '0.00';
+  
+  let num: number;
+  if (typeof value === 'string') {
+    if (value.trim() === '') return '0.00';
+    num = Number(value);
+  } else {
+    num = value;
+  }
+  
+  if (isNaN(num) || !isFinite(num)) return '0.00';
+  
+  const result = num.toFixed(2);
+  return result;
+};
+
 const convertStringToUOMInt = (uomString: string): number => {
   const stringToIntMap: { [key: string]: number } = {
     Tấm: 0,
@@ -610,7 +627,7 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                           <div className="truncate">{item.productName}</div>
                         </td>
                         <td className="border p-2 text-center">{item.uom}</td>
-                        <td className="border p-2 text-right">{item.quantity}</td>
+                        <td className="border p-2 text-right">{formatDecimal(item.quantity)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -705,8 +722,8 @@ export default function ProductionOrderView({ params }: { params: { id: string }
                               </div>
                             </td>
                             <td className="border p-2 text-center">{material.uom}</td>
-                            <td className="border p-2 text-right">{material.totalQuantity}</td>
-                            <td className="border p-2 text-right">{material.quantityPer}</td>
+                            <td className="border p-2 text-right">{formatDecimal(material.totalQuantity)}</td>
+                            <td className="border p-2 text-right">{formatDecimal(material.quantityPer)}</td>
                           </tr>
                         ))
                       ) : (

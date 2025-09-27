@@ -317,7 +317,7 @@ const ProductionOrderInventorySlipPage = () => {
                 </div>
             </div>
 
-            {productionOrderInfo.type === 'Cắt kính' && (
+            {/* {productionOrderInfo.type === 'Cắt kính' && (
                 <div className="bg-white border rounded-lg shadow-sm p-6 mb-6">
                     <h3 className="text-lg font-semibold mb-4">Sản phẩm có sẵn cho phiếu cắt kính</h3>
                     <div className="mb-6 space-y-4">
@@ -379,7 +379,7 @@ const ProductionOrderInventorySlipPage = () => {
                         </div>
                     </div>
 
-                    {/* Products Display */}
+                    
                     {paginatedProducts ? (
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -472,7 +472,7 @@ const ProductionOrderInventorySlipPage = () => {
                         </div>
                     )}
                 </div>
-            )}
+            )} */}
 
             {showCreateForm && (
                 <div className="bg-white border rounded-lg shadow-sm p-6 mb-6">
