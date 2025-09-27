@@ -94,16 +94,16 @@ const ProductListPage = () => {
             await deleteProduct(id);
             
             // Nếu xóa backend thành công và đã đồng bộ MISA, gọi API xoá trên MISA
-            if (isUpdatedMisa === 1) {
-                try {
-                    await deleteMisaProduct(id);
-                } catch (e) {
-                    console.warn('Xoá trên MISA thất bại:', e);
-                    alert(`Xoá sản phẩm ${name ?? ''} thành công trên hệ thống nhưng thất bại trên MISA. Vui lòng kiểm tra lại.`);
-                    router.refresh();
-                    return;
-                }
-            }
+            // if (isUpdatedMisa === 1) {
+            //     try {
+            //         await deleteMisaProduct(id);
+            //     } catch (e) {
+            //         console.warn('Xoá trên MISA thất bại:', e);
+            //         alert(`Xoá sản phẩm ${name ?? ''} thành công trên hệ thống nhưng thất bại trên MISA. Vui lòng kiểm tra lại.`);
+            //         router.refresh();
+            //         return;
+            //     }
+            // }
             
             alert(`Xoá sản phẩm ${name ?? ''} thành công!`);
             router.refresh();
