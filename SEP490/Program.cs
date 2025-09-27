@@ -193,7 +193,10 @@ builder.Services.AddCors(options =>
 });
 
 builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
+builder.Logging.AddConsole(options =>
+{
+    options.LogToStandardErrorThreshold = LogLevel.Trace;
+});
 builder.Logging.AddDebug();
 var app = builder.Build();
 
