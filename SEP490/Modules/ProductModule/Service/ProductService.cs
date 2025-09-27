@@ -65,9 +65,50 @@ namespace SEP490.Modules.ProductModule.Service
             var product = _context.Products.FirstOrDefault(p => p.Id == id);
             if (product == null) return false;
 
+            // Check if product is used in sales orders
             var isUsedInOrders = _context.OrderDetailProducts.Any(odp => odp.ProductId == id);
             if (isUsedInOrders)
                 throw new InvalidOperationException("Sản phẩm đang được sử dụng trong đơn hàng, không thể xoá!");
+
+            // Check if product is used in production plans
+            var isUsedInProductionPlans = _context.ProductionPlanDetails.Any(ppd => ppd.ProductId == id);
+            if (isUsedInProductionPlans)
+                throw new InvalidOperationException("Sản phẩm đang được sử dụng trong kế hoạch sản xuất, không thể xoá!");
+
+            // Check if product is used in deliveries
+            var isUsedInDeliveries = _context.DeliveryDetails.Any(dd => dd.ProductId == id);
+            if (isUsedInDeliveries)
+                throw new InvalidOperationException("Sản phẩm đang được sử dụng trong phiếu giao hàng, không thể xoá!");
+
+            // Check if product is used in inventory slips
+            var isUsedInInventorySlips = _context.InventorySlipDetails.Any(isd => isd.ProductId == id);
+            if (isUsedInInventorySlips)
+                throw new InvalidOperationException("Sản phẩm đang được sử dụng trong phiếu nhập/xuất kho, không thể xoá!");
+
+            // Check if product is used in production outputs
+            var isUsedInProductionOutputs = _context.ProductionOutputs.Any(po => po.ProductId == id);
+            if (isUsedInProductionOutputs)
+                throw new InvalidOperationException("Sản phẩm đang được sử dụng trong sản lượng sản xuất, không thể xoá!");
+
+            // Check if product is used in chemical exports
+            var isUsedInChemicalExports = _context.ChemicalExports.Any(ce => ce.ProductId == id);
+            if (isUsedInChemicalExports)
+                throw new InvalidOperationException("Sản phẩm đang được sử dụng trong xuất hóa chất, không thể xoá!");
+
+            // Check if product is used in chemical export details
+            var isUsedInChemicalExportDetails = _context.ChemicalExportDetails.Any(ced => ced.ProductId == id);
+            if (isUsedInChemicalExportDetails)
+                throw new InvalidOperationException("Sản phẩm đang được sử dụng trong chi tiết xuất hóa chất, không thể xoá!");
+
+            // Check if product is used in invoice details
+            var isUsedInInvoiceDetails = _context.InvoiceDetails.Any(inv => inv.ProductId == id);
+            if (isUsedInInvoiceDetails)
+                throw new InvalidOperationException("Sản phẩm đang được sử dụng trong chi tiết hóa đơn, không thể xoá!");
+
+            // Check if product is used in purchase order details
+            var isUsedInPurchaseOrderDetails = _context.PurchaseOrderDetails.Any(pod => pod.ProductId == id);
+            if (isUsedInPurchaseOrderDetails)
+                throw new InvalidOperationException("Sản phẩm đang được sử dụng trong chi tiết đơn mua hàng, không thể xoá!");
 
             _context.Products.Remove(product);
             _context.SaveChanges();

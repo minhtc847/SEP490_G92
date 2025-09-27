@@ -90,20 +90,45 @@ const ProductListPage = () => {
         if (!confirmed) return;
 
         try {
-            // Nếu đã đồng bộ MISA, gọi API xoá trên MISA (SeleniumController: DELETE /api/Selenium/product/{productId})
+            // Xóa sản phẩm trên backend trước
+            await deleteProduct(id);
+            
+            // Nếu xóa backend thành công và đã đồng bộ MISA, gọi API xoá trên MISA
             if (isUpdatedMisa === 1) {
                 try {
                     await deleteMisaProduct(id);
                 } catch (e) {
-                    console.warn('Xoá trên MISA thất bại (tiếp tục xoá nội bộ):', e);
+                    console.warn('Xoá trên MISA thất bại:', e);
+                    alert(`Xoá sản phẩm ${name ?? ''} thành công trên hệ thống nhưng thất bại trên MISA. Vui lòng kiểm tra lại.`);
+                    router.refresh();
+                    return;
                 }
             }
-            await deleteProduct(id);
+            
             alert(`Xoá sản phẩm ${name ?? ''} thành công!`);
             router.refresh();
-        } catch (err) {
+        } catch (err: any) {
             console.error('Lỗi khi xoá sản phẩm:', err);
-            alert('Xoá sản phẩm thất bại!');
+            
+            // Hiển thị thông báo lỗi chi tiết từ backend
+            let errorMessage = 'Xoá sản phẩm thất bại!';
+            
+            // Kiểm tra các định dạng lỗi khác nhau từ backend
+            if (err?.response?.data?.message) {
+                errorMessage = err.response.data.message;
+            } else if (err?.response?.data?.detail) {
+                errorMessage = err.response.data.detail;
+            } else if (err?.response?.data?.error) {
+                errorMessage = err.response.data.error;
+            } else if (err?.response?.data) {
+                errorMessage = err.response.data;
+            } else if (err?.message) {
+                errorMessage = err.message;
+            } else if (typeof err === 'string') {
+                errorMessage = err;
+            }
+            
+            alert(errorMessage);
         }
     };
 
