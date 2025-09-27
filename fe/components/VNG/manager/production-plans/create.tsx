@@ -219,7 +219,7 @@ const CreateProductionPlanManager = () => {
                         </div>
                         <div className="mb-2 flex w-full items-center justify-between">
                             <div className="text-white-dark">Ngày đặt hàng :</div>
-                            <div>{order.orderDate}</div>
+                            <div>{new Date(order.orderDate).toLocaleDateString('vi-VN')}</div>
                         </div>
                         
                     </div>
