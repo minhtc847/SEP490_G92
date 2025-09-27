@@ -173,14 +173,16 @@ const ZaloOrderDetail = () => {
                                 {converting ? 'Đang xử lý...' : 'Lên Đơn Hàng'}
                             </button>
                         )}
-                        <button
-                            type="button"
-                            className="btn btn-primary"
-                            onClick={() => router.push(`/zalo-orders/${zaloOrder.id}/edit`)}
-                        >
-                            <IconPencil className="w-4 h-4 ltr:mr-2 rtl:ml-2" />
-                            Chỉnh Sửa
-                        </button>
+                        {zaloOrder.status !== 'Confirmed' && (
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={() => router.push(`/zalo-orders/${zaloOrder.id}/edit`)}
+                            >
+                                <IconPencil className="w-4 h-4 ltr:mr-2 rtl:ml-2" />
+                                Chỉnh Sửa
+                            </button>
+                        )}
                     </div>
                 </div>
 
