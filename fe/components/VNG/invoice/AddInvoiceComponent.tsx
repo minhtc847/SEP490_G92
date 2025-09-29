@@ -7,7 +7,7 @@ import IconEye from '@/components/icon/icon-eye';
 import IconSave from '@/components/icon/icon-save';
 import IconX from '@/components/icon/icon-x';
 import { PurchaseOrderDto } from '@/app/(defaults)/purchase-order/service';
-import { DeliveryDto, getDeliveryDetail, DeliveryDetailDto } from '@/app/(defaults)/delivery/service';
+import { DeliveryDto, getDeliveryDetail, getSalesOrderDetail, DeliveryDetailDto } from '@/app/(defaults)/delivery/service';
 import { createInvoice } from '@/app/(defaults)/invoices/service';
 import axios from '@/setup/axios';
 
@@ -72,11 +72,13 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
     // State for invoice items
     const [items, setItems] = useState<InvoiceItem[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [productAreaMap, setProductAreaMap] = useState<Record<number, number>>({});
+    const [productPriceMap, setProductPriceMap] = useState<Record<number, number>>({});
 
     // Load purchase order or delivery data if provided in URL
     useEffect(() => {
-        const orderParam = searchParams.get('order');
-        const deliveryParam = searchParams.get('delivery');
+        const orderParam = searchParams?.get('order');
+        const deliveryParam = searchParams?.get('delivery');
         
         if (orderParam) {
             try {
@@ -134,25 +136,65 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
 
     const loadDeliveryDetails = async (deliveryId: number) => {
         try {
-            // Load delivery details from API
-            const deliveryData = await getDeliveryDetail(deliveryId);
-            
-            console.log('Delivery data received:', deliveryData);
-            console.log('CustomerId from delivery:', deliveryData.customerId);
+            const deliveryData = await getDeliveryDetail(deliveryId);           
             
             setSourceInfo({ type: 'delivery', data: deliveryData });
             setCustomerId(deliveryData.customerId); // Use actual customerId
-            
-            // Load products from delivery details
-            setItems(deliveryData.deliveryDetails.map((detail, index) => ({
-                id: index + 1,
-                productId: detail.productId,
-                productName: detail.productName,
-                quantity: detail.quantity,
-                unitPrice: detail.unitPrice,
-                amount: detail.amount,
-                description: detail.note || ''
-            })));
+
+            if (deliveryData.salesOrderId) {
+                try {
+                    const orderDetail = await getSalesOrderDetail(deliveryData.salesOrderId);
+                    const areaMap: Record<number, number> = {};
+                    const priceMap: Record<number, number> = {};
+                    orderDetail.products.forEach(p => {
+                        const width = Number(p.width) || 0;
+                        const height = Number(p.height) || 0;
+                        const areaM2 = (width * height) / 1_000_000;
+                        areaMap[p.id] = areaM2;
+                        priceMap[p.id] = Number(p.unitPrice) || 0; // price per m²
+                    });
+                    setProductAreaMap(areaMap);
+                    setProductPriceMap(priceMap);
+
+                    // Map delivery details using correct price and computed amount
+                    setItems(deliveryData.deliveryDetails.map((detail, index) => {
+                        const perM2Price = priceMap[detail.productId] ?? detail.unitPrice ?? 0;
+                        const areaM2 = areaMap[detail.productId] ?? 0;
+                        return {
+                            id: index + 1,
+                            productId: detail.productId,
+                            productName: detail.productName,
+                            quantity: detail.quantity,
+                            unitPrice: perM2Price,
+                            amount: (detail.quantity || 0) * perM2Price * areaM2,
+                            description: detail.note || ''
+                        } as InvoiceItem;
+                    }));
+                } catch (e) {
+                    console.error('Không thể tải đơn hàng liên quan để tính đơn giá/diện tích:', e);
+                    // Fallback to delivery-provided values
+                    setItems(deliveryData.deliveryDetails.map((detail, index) => ({
+                        id: index + 1,
+                        productId: detail.productId,
+                        productName: detail.productName,
+                        quantity: detail.quantity,
+                        unitPrice: detail.unitPrice,
+                        amount: detail.amount,
+                        description: detail.note || ''
+                    })));
+                }
+            } else {
+                // No sales order, fallback
+                setItems(deliveryData.deliveryDetails.map((detail, index) => ({
+                    id: index + 1,
+                    productId: detail.productId,
+                    productName: detail.productName,
+                    quantity: detail.quantity,
+                    unitPrice: detail.unitPrice,
+                    amount: detail.amount,
+                    description: detail.note || ''
+                })));
+            }
         } catch (error) {
             console.error('Error loading delivery details:', error);
         }
@@ -162,7 +204,12 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
 
     // handleItemChange removed as all fields are now read-only
 
-    const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
+    const subtotal = items.reduce((sum, item) => {
+        const areaM2 = productAreaMap[item.productId] ?? 0;
+        const perM2Price = productPriceMap[item.productId] ?? item.unitPrice ?? 0;
+        const lineTotal = (item.quantity || 0) * perM2Price * areaM2;
+        return sum + lineTotal;
+    }, 0);
     const taxAmount = (subtotal * tax) / 100;
     const totalAmount = subtotal + taxAmount;
 
@@ -354,9 +401,9 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                                 <tr>
                                     <th>Sản phẩm</th>
                                     <th className="w-1">Số lượng</th>
-                                    <th className="w-1">Đơn giá</th>
+                                    <th className="w-1">Đơn giá / m² (₫)</th>
+                                    <th className="w-1">Diện tích (m²)</th>
                                     <th className="w-1">Thành tiền</th>
-                                   
                                     <th className="w-1"></th>
                                 </tr>
                             </thead>
@@ -368,7 +415,11 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                                         </td>
                                     </tr>
                                 )}
-                                {items.map((item) => (
+                                {items.map((item) => {
+                                    const areaM2 = productAreaMap[item.productId] ?? 0;
+                                    const perM2Price = productPriceMap[item.productId] ?? item.unitPrice ?? 0;
+                                    const computedAmount = (item.quantity || 0) * perM2Price * areaM2;
+                                    return (
                                     <tr className="align-top" key={item.id}>
                                         <td>
                                             <div className="form-input min-w-[200px] bg-gray-100">
@@ -382,12 +433,17 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                                         </td>
                                         <td>
                                             <div className="form-input w-32 bg-gray-100">
-                                                {item.unitPrice.toLocaleString()}₫
+                                                {perM2Price.toLocaleString()}₫
                                             </div>
                                         </td>
                                         <td>
                                             <div className="form-input w-32 bg-gray-100">
-                                                {item.amount.toLocaleString()}₫
+                                                {areaM2.toFixed(2)}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="form-input w-32 bg-gray-100">
+                                                {computedAmount.toLocaleString()}₫
                                             </div>
                                         </td>
                                        
@@ -397,7 +453,8 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                                             </button>
                                         </td> */}
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -412,7 +469,7 @@ const AddInvoiceComponent: React.FC<AddInvoiceComponentProps> = ({ onSuccess, on
                                 Tổng tiền hàng: {subtotal.toLocaleString()}₫
                             </div>
                             <div className="flex items-center gap-2">
-                                <span>Thuế (%):</span>
+                                {/* <span>Thuế (%):</span> */}
                                 <input
                                     type="number"
                                     value={tax}

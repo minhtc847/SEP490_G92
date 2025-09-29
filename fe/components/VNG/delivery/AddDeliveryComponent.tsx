@@ -153,22 +153,38 @@ const AddDeliveryComponent = () => {
                     productId: product.id,
                     productName: product.productName,
                     unitPrice: product.unitPrice,
-                    amount: item.quantity * product.unitPrice,
+                   
+                    amount: (() => {
+                        const width = Number(product.width) || 0;
+                        const height = Number(product.height) || 0;
+                        const areaM2 = (width * height) / 1_000_000;
+                        return (item.quantity || 0) * (product.unitPrice || 0) * areaM2;
+                    })(),
                 }
                 : item
         ));
     };
 
     const handleQuantityChange = (itemId: number, quantity: number) => {
-        setItems(items.map(item => 
-            item.id === itemId 
-                ? {
-                    ...item,
-                    quantity: quantity,
-                    amount: quantity * item.unitPrice,
+        setItems(items.map(item => {
+            if (item.id !== itemId) return item;
+            let areaM2 = 0;
+            if (selectedOrderDetail) {
+                const pid = typeof item.productId === 'string' ? parseInt(item.productId) : item.productId;
+                const p = selectedOrderDetail.products.find(pp => pp.id === pid);
+                if (p) {
+                    const width = Number(p.width) || 0;
+                    const height = Number(p.height) || 0;
+                    areaM2 = (width * height) / 1_000_000;
                 }
-                : item
-        ));
+            }
+            return {
+                ...item,
+                quantity: quantity,
+                // amount = quantity * unitPrice(per m2) * area(m2)
+                amount: (quantity || 0) * (item.unitPrice || 0) * areaM2,
+            };
+        }));
     };
 
     const totalAmount = items.reduce((sum: number, item: DeliveryItem) => sum + item.amount, 0);
@@ -433,7 +449,8 @@ const AddDeliveryComponent = () => {
                                 <tr>
                                     <th>Sản phẩm</th>
                                     <th className="w-1">Số lượng</th>
-                                    <th className="w-1">Đơn giá</th>
+                                    <th className="w-1">Đơn giá / m² (₫)</th>
+                                    <th className="w-1">Diện tích (m²)</th>
                                     <th className="w-1">Thành tiền</th>
                                     <th className="w-1"></th>
                                 </tr>
@@ -454,6 +471,17 @@ const AddDeliveryComponent = () => {
                                     </tr>
                                 )}
                                 {!loadingOrder && items.map((item: DeliveryItem) => {
+                                   
+                                    let areaM2 = 0;
+                                    if (selectedOrderDetail && item.productId) {
+                                        const pid = typeof item.productId === 'string' ? parseInt(item.productId) : item.productId;
+                                        const p = selectedOrderDetail.products.find(pp => pp.id === pid);
+                                        if (p) {
+                                            const width = Number(p.width) || 0;
+                                            const height = Number(p.height) || 0;
+                                            areaM2 = (width * height) / 1_000_000;
+                                        }
+                                    }
                                     return (
                                         <tr className="align-top" key={item.id}>
                                             <td>
@@ -490,6 +518,11 @@ const AddDeliveryComponent = () => {
                                             <td>
                                                 <div className="form-input w-32 bg-gray-100">
                                                     {item.unitPrice.toLocaleString()}₫
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="form-input w-32 bg-gray-100">
+                                                    {areaM2.toFixed(2)}
                                                 </div>
                                             </td>
                                             <td>

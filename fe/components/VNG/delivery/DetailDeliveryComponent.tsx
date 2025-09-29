@@ -7,7 +7,7 @@ import IconEye from '@/components/icon/icon-eye';
 import IconSave from '@/components/icon/icon-save';
 import IconEdit from '@/components/icon/icon-edit';
 import IconX from '@/components/icon/icon-x';
-import { getDeliveryDetail, updateDelivery, DeliveryDetailDto, DeliveryDetailItemDto, UpdateDeliveryDto, UpdateDeliveryDetailDto } from '@/app/(defaults)/delivery/service';
+import { getDeliveryDetail, updateDelivery, getSalesOrderDetail, DeliveryDetailDto, DeliveryDetailItemDto, UpdateDeliveryDto, UpdateDeliveryDetailDto } from '@/app/(defaults)/delivery/service';
 import Swal from 'sweetalert2';
 
 const DetailDeliveryComponent = () => {
@@ -22,6 +22,8 @@ const DetailDeliveryComponent = () => {
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [productAreaMap, setProductAreaMap] = useState<Record<number, number>>({});
+    const [productPriceMap, setProductPriceMap] = useState<Record<number, number>>({});
     
     // Form state
     const [deliveryDate, setDeliveryDate] = useState<string>('');
@@ -46,6 +48,25 @@ const DetailDeliveryComponent = () => {
                 setStatus(statusList[data.status]);
                 setNote(data.note || '');
                 setItems(data.deliveryDetails);
+
+                if (data.salesOrderId) {
+                    try {
+                        const orderDetail = await getSalesOrderDetail(data.salesOrderId);
+                        const areaMap: Record<number, number> = {};
+                        const priceMap: Record<number, number> = {};
+                        orderDetail.products.forEach(p => {
+                            const width = Number(p.width) || 0;
+                            const height = Number(p.height) || 0;
+                            const areaM2 = (width * height) / 1_000_000;
+                            areaMap[p.id] = areaM2;
+                            priceMap[p.id] = Number(p.unitPrice) || 0; // đơn giá / m²
+                        });
+                        setProductAreaMap(areaMap);
+                        setProductPriceMap(priceMap);
+                    } catch (e) {
+                        console.error('Không thể tải thông tin đơn hàng để tính diện tích:', e);
+                    }
+                }
             } catch (error) {
                 console.error('Lỗi khi tải chi tiết phiếu giao hàng:', error);
                 alert('Không thể tải chi tiết phiếu giao hàng');
@@ -58,18 +79,24 @@ const DetailDeliveryComponent = () => {
     }, [deliveryId]);
 
     const handleQuantityChange = (itemId: number, quantity: number) => {
-        setItems(items.map(item => 
-            item.id === itemId 
-                ? {
-                    ...item,
-                    quantity: quantity,
-                    amount: quantity * item.unitPrice,
-                }
-                : item
-        ));
+        setItems(items.map(item => {
+            if (item.id !== itemId) return item;
+            const areaM2 = productAreaMap[item.productId] || 0;
+            const perM2Price = productPriceMap[item.productId] ?? item.unitPrice ?? 0;
+            return {
+                ...item,
+                quantity: quantity,
+                amount: (quantity || 0) * perM2Price * areaM2,
+            };
+        }));
     };
 
-    const totalAmount = items.reduce((sum: number, item: DeliveryDetailItemDto) => sum + item.amount, 0);
+    const totalAmount = items.reduce((sum: number, item: DeliveryDetailItemDto) => {
+        const areaM2 = productAreaMap[item.productId] || 0;
+        const perM2Price = productPriceMap[item.productId] ?? item.unitPrice ?? 0;
+        const lineTotal = (item.quantity || 0) * perM2Price * areaM2;
+        return sum + lineTotal;
+    }, 0);
 
     const handleEdit = () => {
         setIsEditing(true);
@@ -242,19 +269,24 @@ const DetailDeliveryComponent = () => {
                                 <tr>
                                     <th>Sản phẩm</th>
                                     <th className="w-1">Số lượng</th>
-                                    <th className="w-1">Đơn giá</th>
+                                    <th className="w-1">Đơn giá / m² (₫)</th>
+                                    <th className="w-1">Diện tích (m²)</th>
                                     <th className="w-1">Thành tiền</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {items.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className="!text-center font-semibold">
+                                        <td colSpan={5} className="!text-center font-semibold">
                                             Không có sản phẩm nào
                                         </td>
                                     </tr>
                                 ) : (
-                                    items.map((item: DeliveryDetailItemDto) => (
+                                    items.map((item: DeliveryDetailItemDto) => {
+                                        const areaM2 = productAreaMap[item.productId] || 0;
+                                        const perM2Price = productPriceMap[item.productId] ?? item.unitPrice ?? 0;
+                                        const computedAmount = (item.quantity || 0) * perM2Price * areaM2;
+                                        return (
                                         <tr className="align-top" key={item.id}>
                                             <td>
                                                 <div className="form-input min-w-[200px] bg-gray-100">
@@ -279,16 +311,22 @@ const DetailDeliveryComponent = () => {
                                             </td>
                                             <td>
                                                 <div className="form-input w-32 bg-gray-100">
-                                                    {item.unitPrice.toLocaleString()}₫
+                                                    {perM2Price.toLocaleString()}₫
                                                 </div>
                                             </td>
                                             <td>
                                                 <div className="form-input w-32 bg-gray-100">
-                                                    {item.amount.toLocaleString()}₫
+                                                    {areaM2.toFixed(2)}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="form-input w-32 bg-gray-100">
+                                                    {computedAmount.toLocaleString()}₫
                                                 </div>
                                             </td>
                                         </tr>
-                                    ))
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>
