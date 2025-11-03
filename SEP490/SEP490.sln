@@ -5,6 +5,8 @@ VisualStudioVersion = 17.11.35222.181
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SEP490", "SEP490.csproj", "{151EC8E6-2802-4DF6-8217-62F5FD721753}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestVNG", "..\TestVNG\TestVNG.csproj", "{A6A7C1B2-A4EE-4754-94BC-D9B981147619}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{151EC8E6-2802-4DF6-8217-62F5FD721753}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{151EC8E6-2802-4DF6-8217-62F5FD721753}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{151EC8E6-2802-4DF6-8217-62F5FD721753}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6A7C1B2-A4EE-4754-94BC-D9B981147619}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6A7C1B2-A4EE-4754-94BC-D9B981147619}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6A7C1B2-A4EE-4754-94BC-D9B981147619}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6A7C1B2-A4EE-4754-94BC-D9B981147619}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

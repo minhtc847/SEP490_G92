@@ -7,7 +7,6 @@ import AnimateHeight from 'react-animate-height';
 import { IRootState } from '@/store';
 import { useState, useEffect } from 'react';
 import IconCaretsDown from '@/components/icon/icon-carets-down';
-import IconMenuDashboard from '@/components/icon/menu/icon-menu-dashboard';
 import IconCaretDown from '@/components/icon/icon-caret-down';
 import IconMinus from '@/components/icon/icon-minus';
 import IconMenuChat from '@/components/icon/menu/icon-menu-chat';
@@ -33,6 +32,8 @@ import IconMenuAuthentication from '@/components/icon/menu/icon-menu-authenticat
 import IconMenuDocumentation from '@/components/icon/menu/icon-menu-documentation';
 import { usePathname } from 'next/navigation';
 import { getTranslation } from '@/i18n';
+import { usePermissions } from '@/hooks/usePermissions';
+import IconMenuDashboard from '../icon/menu/icon-menu-dashboard';
 
 const Sidebar = () => {
     const dispatch = useDispatch();
@@ -42,6 +43,8 @@ const Sidebar = () => {
     const [errorSubMenu, setErrorSubMenu] = useState(false);
     const themeConfig = useSelector((state: IRootState) => state.themeConfig);
     const semidark = useSelector((state: IRootState) => state.themeConfig.semidark);
+    const { roleId, canView, canCreate, canEdit, canDelete, isFactoryManager, isAccountant, isProductionStaff } = usePermissions();
+
     const toggleMenu = (value: string) => {
         setCurrentMenu((oldValue) => {
             return oldValue === value ? '' : value;
@@ -82,6 +85,348 @@ const Sidebar = () => {
         selector?.classList.add('active');
     };
 
+    // Render menu items based on role
+    const renderMenuItems = () => {
+        const items = [];
+
+        // Dashboard menu removed
+        // Dashboard - Factory Manager and Accountant
+        if (isFactoryManager() || isAccountant()) {
+            items.push(
+                <li key="dashboard" className="menu nav-item">
+                    <Link href="/dashboard" className="nav-link group">
+                        <div className="flex items-center">
+                            <IconMenuDashboard className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">Dashboard</span>
+                        </div>
+                    </Link>
+                </li>
+            );
+        }
+        // Orders - Factory Manager and Accountant
+        if (isFactoryManager() || isAccountant()) {
+            items.push(
+                <li key="order" className="menu nav-item">
+                    <button type="button" className={`${currentMenu === 'order' ? 'active' : ''} nav-link group w-full`} onClick={() => toggleMenu('order')}>
+                        <div className="flex items-center">
+                            <IconMenuInvoice className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">Đơn Hàng</span>
+                        </div>
+                        <div className={currentMenu !== 'order' ? '-rotate-90 rtl:rotate-90' : ''}>
+                            <IconCaretDown />
+                        </div>
+                    </button>
+                    <AnimateHeight duration={300} height={currentMenu === 'order' ? 'auto' : 0}>
+                        <ul className="sub-menu text-gray-500">
+                            <li>
+                                <Link href="/sales-order">Đơn Bán</Link>
+                            </li>
+                            <li>
+                                <Link href="/purchase-order">Đơn Mua</Link>
+                            </li>
+
+                        </ul>
+                    </AnimateHeight>
+                </li>
+            );
+        }
+
+        // Invoices - Factory Manager and Accountant
+        if (isFactoryManager() || isAccountant()) {
+            items.push(
+                <li key="invoices" className="menu nav-item">
+                    <Link href="/invoices" className="nav-link group w-full">
+                        <div className="flex items-center">
+                            <IconMenuInvoice className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Hóa Đơn
+                            </span>
+                        </div>
+                    </Link>
+                </li>
+            );
+        }
+
+        // Debts - Factory Manager and Accountant
+        if (isFactoryManager() || isAccountant()) {
+            items.push(
+                <li key="debts" className="menu nav-item">
+                    <Link href="/debts" className="nav-link group w-full">
+                        <div className="flex items-center">
+                            <IconMenuInvoice className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Công Nợ
+                            </span>
+                        </div>
+                    </Link>
+                </li>
+            );
+        }
+
+        // Production - All roles can view
+        items.push(
+            <li key="production" className="menu nav-item">
+                <button type="button" className={`${currentMenu === 'production' ? 'active' : ''} nav-link group w-full`} onClick={() => toggleMenu('production')}>
+                    <div className="flex items-center">
+                        <IconMenuInvoice className="shrink-0 group-hover:!text-primary" />
+                        <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">Sản Xuất</span>
+                    </div>
+                    <div className={currentMenu !== 'production' ? '-rotate-90 rtl:rotate-90' : ''}>
+                        <IconCaretDown />
+                    </div>
+                </button>
+                <AnimateHeight duration={300} height={currentMenu === 'production' ? 'auto' : 0}>
+                    <ul className="sub-menu text-gray-500">
+                        <li>
+                            <Link href="/production-plans">Kế hoạch sản xuất</Link>
+                        </li>
+                        <li>
+                            <Link href="/production-orders">Các lệnh sản xuất</Link>
+                        </li>
+                    </ul>
+                </AnimateHeight>
+            </li>
+        );
+
+
+        // Employees - Factory Manager and Accountant
+        if (isFactoryManager() || isAccountant()) {
+            items.push(
+                <li key="employees" className="menu nav-item">
+                    <button type="button" className={`${currentMenu === "employees" ? "active" : ""} nav-link group w-full`} onClick={() => toggleMenu("employees")}>
+                        <div className="flex items-center">
+                            <IconMenuUsers className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Nhân Viên
+                            </span>
+                        </div>
+                        <div className={currentMenu !== "employees" ? "-rotate-90 rtl:rotate-90" : ""}>
+                            <IconCaretDown />
+                        </div>
+                    </button>
+                    <AnimateHeight duration={300} height={currentMenu === "employees" ? "auto" : 0}>
+                        <ul className="sub-menu text-gray-500">
+                            <li>
+                                <Link href="/employees">Danh Sách Nhân Viên</Link>
+                            </li>
+
+                            <li>
+                                <Link href="/employees/create">Thêm Nhân Viên</Link>
+                            </li>
+
+                        </ul>
+                    </AnimateHeight>
+                </li>
+            );
+        }
+
+        // Customers - Factory Manager and Accountant
+        if (isFactoryManager() || isAccountant()) {
+            items.push(
+                <li key="customers" className="menu nav-item">
+                    <button type="button" className={`${currentMenu === "customers" ? "active" : ""} nav-link group w-full`} onClick={() => toggleMenu("customers")}>
+                        <div className="flex items-center">
+                            <IconMenuUsers className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Khách Hàng
+                            </span>
+                        </div>
+                        <div className={currentMenu !== "customers" ? "-rotate-90 rtl:rotate-90" : ""}>
+                            <IconCaretDown />
+                        </div>
+                    </button>
+                    <AnimateHeight duration={300} height={currentMenu === "customers" ? "auto" : 0}>
+                        <ul className="sub-menu text-gray-500">
+                            <li>
+                                <Link href="/customers">Danh Sách Khách Hàng</Link>
+                            </li>
+
+                            <li>
+                                <Link href="/customers/create">Thêm Khách Hàng</Link>
+                            </li>
+
+                        </ul>
+                    </AnimateHeight>
+                </li>
+            );
+        }
+
+        // Account Management - Factory Manager only
+        if (isFactoryManager()) {
+            items.push(
+                <li key="account-management" className="menu nav-item">
+                    <button type="button" className={`${currentMenu === "account-management" ? "active" : ""} nav-link group w-full`} onClick={() => toggleMenu("account-management")}>
+                        <div className="flex items-center">
+                            <IconMenuUsers className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Quản Lý Tài Khoản
+                            </span>
+                        </div>
+                        <div className={currentMenu !== "account-management" ? "-rotate-90 rtl:rotate-90" : ""}>
+                            <IconCaretDown />
+                        </div>
+                    </button>
+                    <AnimateHeight duration={300} height={currentMenu === "account-management" ? "auto" : 0}>
+                        <ul className="sub-menu text-gray-500">
+                            <li>
+                                <Link href="/account-management">Danh Sách Tài Khoản</Link>
+                            </li>
+                            <li>
+                                <Link href="/account-management/create">Tạo Tài Khoản</Link>
+                            </li>
+                        </ul>
+                    </AnimateHeight>
+                </li>
+            );
+        }
+
+        // Products - Factory Manager and Accountant
+        if (isFactoryManager() || isAccountant()) {
+            items.push(
+                <li key="products" className="menu nav-item">
+                    <button type="button" className={`${currentMenu === "products" ? "active" : ""} nav-link group w-full`} onClick={() => toggleMenu("products")}>
+                        <div className="flex items-center">
+                            <IconMenuComponents className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Sản Phẩm
+                            </span>
+                        </div>
+                        <div className={currentMenu !== "products" ? "-rotate-90 rtl:rotate-90" : ""}>
+                            <IconCaretDown />
+                        </div>
+                    </button>
+                    <AnimateHeight duration={300} height={currentMenu === "products" ? "auto" : 0}>
+                        <ul className="sub-menu text-gray-500">
+                            <li>
+                                <Link href="/products">Danh Sách Sản Phẩm</Link>
+                            </li>
+
+                            <li>
+                                <Link href="/products/create">Thêm Sản Phẩm</Link>
+                            </li>
+
+                        </ul>
+                    </AnimateHeight>
+                </li>
+            );
+        }
+
+        // Price Quotes and delivery - Factory Manager and Accountant
+        if (isFactoryManager() || isAccountant()) {
+            items.push(
+                <li key="quotes" className="menu nav-item">
+                    <Link href="/price-quotes" className="nav-link group w-full">
+                        <div className="flex items-center">
+                            <IconMenuInvoice className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Báo Giá
+                            </span>
+                        </div>
+                    </Link>
+                </li>
+            );
+            items.push(
+                <li key="delivery" className="menu nav-item">
+                    <Link href="/delivery" className="nav-link group w-full">
+                        <div className="flex items-center">
+                            <IconMenuInvoice className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Giao hàng
+                            </span>
+                        </div>
+                    </Link>
+                </li>
+            );
+            items.push(
+                <li key="zalo-orders" className="menu nav-item">
+                    <Link href="/zalo-orders" className="nav-link group w-full">
+                        <div className="flex items-center">
+                            <IconMenuInvoice className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Đơn Hàng Zalo
+                            </span>
+                        </div>
+                    </Link>
+                </li>
+            );
+            items.push(
+                <li key="conversations" className="menu nav-item">
+                    <Link href="/conversations" className="nav-link group w-full">
+                        <div className="flex items-center">
+                            <IconMenuChat className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Cuộc Hội Thoại Zalo
+                            </span>
+                        </div>
+                    </Link>
+                </li>
+            );
+        }
+
+        // Glue Management - All roles can view
+
+        items.push(
+            <li key="glue" className="menu nav-item">
+                <Link href="/glue-formula" className="nav-link group w-full">
+                        <div className="flex items-center">
+                            <IconMenuInvoice className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Quản Lý Keo
+                            </span>
+                        </div>
+                    </Link>
+            </li>
+        );
+
+        // Inventory Slip Management - Production Staff, Factory Manager, and Accountant
+        if (isProductionStaff() || isFactoryManager() || isAccountant()) {
+            items.push(
+                <li key="inventoryslip" className="menu nav-item">
+                    <Link href="/inventoryslip" className="nav-link group w-full">
+                        <div className="flex items-center">
+                            <IconMenuInvoice className="shrink-0 group-hover:!text-primary" />
+                            <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+                                Phiếu Kho
+                            </span>
+                        </div>
+                    </Link>
+                </li>
+            );
+        }
+
+        // Document Management - Factory Manager 
+        // if (isFactoryManager() ) {
+        //     items.push(
+        //         <li key="materials" className="menu nav-item">
+        //             <Link href="/materials-chat" className="nav-link group w-full">
+        //                 <div className="flex items-center">
+        //                     <IconMenuChat className="shrink-0 group-hover:!text-primary" />
+        //                     <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+        //                         Tài Liệu Chatbot
+        //                     </span>
+        //                 </div>
+        //             </Link>
+        //         </li>
+        //     );
+        // }
+
+        // // Chat - All roles can view
+        // items.push(
+        //     <li key="chat" className="menu nav-item">
+        //         <Link href="/chat" className="nav-link group w-full">
+        //             <div className="flex items-center">
+        //                 <IconMenuChat className="shrink-0 group-hover:!text-primary" />
+        //                 <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">
+        //                     Chat
+        //                 </span>
+        //             </div>
+        //         </Link>
+        //     </li>
+        // );
+
+         return items;
+    };
+
     return (
         <div className={semidark ? 'dark' : ''}>
             <nav
@@ -91,7 +436,7 @@ const Sidebar = () => {
                     <div className="flex items-center justify-between px-4 py-3">
                         <Link href="/" className="main-logo flex shrink-0 items-center">
                             <img className="ml-[5px] w-8 flex-none" src="/assets/images/logo.svg" alt="logo" />
-                            <span className="align-middle text-2xl font-semibold ltr:ml-1.5 rtl:mr-1.5 dark:text-white-light lg:inline">VRISTO</span>
+                            <span className="align-middle text-2xl font-semibold ltr:ml-1.5 rtl:mr-1.5 dark:text-white-light lg:inline">VNG</span>
                         </Link>
 
                         <button
@@ -104,59 +449,7 @@ const Sidebar = () => {
                     </div>
                     <PerfectScrollbar className="relative h-[calc(100vh-80px)]">
                         <ul className="relative space-y-0.5 p-4 py-0 font-semibold">
-                            <li className="menu nav-item">
-                                <button type="button" className={`${currentMenu === 'dashboard' ? 'active' : ''} nav-link group w-full`} onClick={() => toggleMenu('dashboard')}>
-                                    <div className="flex items-center">
-                                        <IconMenuDashboard className="shrink-0 group-hover:!text-primary" />
-                                        <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">{t('dashboard')}</span>
-                                    </div>
-
-                                    <div className={currentMenu !== 'dashboard' ? '-rotate-90 rtl:rotate-90' : ''}>
-                                        <IconCaretDown />
-                                    </div>
-                                </button>
-
-                                <AnimateHeight duration={300} height={currentMenu === 'dashboard' ? 'auto' : 0}>
-                                    <ul className="sub-menu text-gray-500">
-                                        <li>
-                                            <Link href="/">{t('sales')}</Link>
-                                        </li>
-                                    </ul>
-                                </AnimateHeight>
-                            </li>
-
-                            <li className="menu nav-item">
-                                <button type="button" className={`${currentMenu === 'order' ? 'active' : ''} nav-link group w-full`} onClick={() => toggleMenu('order')}>
-                                    <div className="flex items-center">
-                                        <IconMenuInvoice className="shrink-0 group-hover:!text-primary" />
-                                        <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">Đơn Hàng</span>
-                                    </div>
-
-                                    <div className={currentMenu !== 'order' ? '-rotate-90 rtl:rotate-90' : ''}>
-                                        <IconCaretDown />
-                                    </div>
-                                </button>
-
-                                <AnimateHeight duration={300} height={currentMenu === 'order' ? 'auto' : 0}>
-                                    <ul className="sub-menu text-gray-500">
-                                        <li>
-                                            <Link href="/sale-orders">Đơn Bán</Link>
-                                        </li>
-                                        <li>
-                                            <Link href="/apps/purchasing-units">Đơn Mua</Link>
-                                        </li>
-                                    </ul>
-                                </AnimateHeight>
-                            </li>
-
-                            <li className="nav-item">
-                                <Link href="/production-orders" className="group">
-                                    <div className="flex items-center">
-                                        <IconMenuTodo className="shrink-0 group-hover:!text-primary" />
-                                        <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark uppercase font-extrabold">Lệnh Sản Xuất</span>
-                                    </div>
-                                </Link>
-                            </li>
+                            {renderMenuItems()}
                         </ul>
                     </PerfectScrollbar>
                 </div>

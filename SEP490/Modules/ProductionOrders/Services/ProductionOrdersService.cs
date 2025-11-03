@@ -1,0 +1,244 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SEP490.Common.Services;
+using SEP490.DB;
+using SEP490.DB.Models;
+using SEP490.Modules.ProductionOrders.DTO;
+using SEP490.Modules.ProductionOrders.Services;
+using System.Text.RegularExpressions;
+
+namespace SEP490.Modules.ProductionOrders.Services
+{
+    public class ProductionOrdersService : BaseScopedService, IProductionOrdersService
+    {
+        private readonly SEP490DbContext _context;
+        public ProductionOrdersService(SEP490DbContext context)
+        {
+            _context = context;
+        }
+        public async Task<List<ProductionOrdersByPlanDto>> GetProductionOrdersByPlanIdAsync(int productionPlanId)
+        {
+            var productionOrders = await _context.ProductionOrders
+                .Where(po => po.ProductionPlanId == productionPlanId)
+                .OrderByDescending(po => po.OrderDate)
+                .Select(po => new ProductionOrdersByPlanDto
+                {
+                    ProductionOrderId = po.Id,
+                    OrderDate = po.OrderDate,
+                    Type = po.Type,
+                    Description = po.Description,
+                    ProductionStatus = po.Status.HasValue ? po.Status.Value.ToString() : null
+                })
+                .ToListAsync();
+
+            return productionOrders;
+        }
+
+        public async Task<List<ProductionOrdersByPlanDto>> GetAllProductionOrdersAsync()
+        {
+            var productionOrders = await _context.ProductionOrders
+                .OrderByDescending(po => po.OrderDate)
+                .Select(po => new ProductionOrdersByPlanDto
+                {
+                    ProductionOrderId = po.Id,
+                    OrderDate = po.OrderDate,
+                    Type = po.Type,
+                    Description = po.Description,
+                    ProductionStatus = po.Status.HasValue ? po.Status.Value.ToString() : null
+                })
+                .ToListAsync();
+            return productionOrders;
+        }
+
+        public async Task<List<ProductionOutputDto>> GetProductionOutputsByOrderIdAsync(int productionOrderId)
+        {
+            var outputs = await _context.ProductionOutputs
+                .Where(po => po.ProductionOrderId == productionOrderId)
+                .Select(po => new ProductionOutputDto
+                {
+                    Id = po.Id,
+                    ProductId = po.ProductId,
+                    ProductName = po.ProductName,
+                    Amount = po.Amount,
+                    Done = po.Finished,
+                    Broken = po.Defected,
+                    ProductionOrderId = po.ProductionOrderId
+                })
+                .ToListAsync();
+            return outputs;
+        }
+
+        public async Task<List<ProductionDefectDto>> GetProductionDefectsByOrderIdAsync(int productionOrderId)
+        {
+            var defects = await _context.ProductionDefects
+                .Include(pd => pd.Product)
+                .Where(pd => pd.ProductionOrderId == productionOrderId)
+                .OrderByDescending(pd => pd.ReportedAt)
+                .Select(pd => new ProductionDefectDto
+                {
+                    Id = pd.Id,
+                    ProductionOrderId = pd.ProductionOrderId,
+                    ProductId = pd.ProductId,
+                    ProductName = pd.Product != null ? pd.Product.ProductName : null,
+                    Quantity = pd.Quantity,
+                    DefectType = pd.DefectType,
+                    DefectStage = pd.DefectStage,
+                    Note = pd.Note,
+                    ReportedAt = pd.ReportedAt
+                })
+                .ToListAsync();
+            return defects;
+        }
+
+        public async Task<bool> CreateDefectReportAsync(CreateDefectReportDto dto)
+        {
+            try
+            {                
+                var productionOrder = await _context.ProductionOrders
+                    .Include(po => po.ProductionPlan)
+                    .FirstOrDefaultAsync(po => po.Id == dto.ProductionOrderId);
+                if (productionOrder == null) return false;
+
+                var product = await _context.Products.FindAsync(dto.ProductId);
+                if (product == null) return false;
+               
+                var productionOutput = await _context.ProductionOutputs
+                    .FirstOrDefaultAsync(po => po.ProductionOrderId == dto.ProductionOrderId && po.ProductId == dto.ProductId);
+                
+                if (productionOutput == null) return false;
+                
+                var defect = new ProductionDefects
+                {
+                    ProductionOrderId = dto.ProductionOrderId,
+                    ProductId = dto.ProductId,
+                    Quantity = dto.Quantity,
+                    DefectType = dto.DefectType,
+                    DefectStage = dto.DefectStage,
+                    Note = dto.Note,
+                    ReportedAt = DateTime.UtcNow
+                };
+
+                _context.ProductionDefects.Add(defect);
+
+               
+                productionOutput.Defected = (productionOutput.Defected ?? 0m) + dto.Quantity;
+
+                productionOutput.Finished = Math.Max((productionOutput.Finished ?? 0m) - dto.Quantity, 0m);
+
+                // Nếu là lệnh sản xuất "Đổ keo", giảm số lượng hoàn thành trong production plan detail
+                if (productionOrder.Type == "Đổ keo")
+                {
+                    var productionPlanDetail = await _context.ProductionPlanDetails
+                        .FirstOrDefaultAsync(ppd => ppd.ProductionPlanId == productionOrder.ProductionPlanId && ppd.ProductId == dto.ProductId);
+
+                    if (productionPlanDetail != null)
+                    {
+                        productionPlanDetail.Done = Math.Max(0, productionPlanDetail.Done - (int)dto.Quantity);
+                        _context.ProductionPlanDetails.Update(productionPlanDetail);
+                    }
+                }
+
+                // Chỉ thay đổi trạng thái nếu lệnh sản xuất chưa hoàn thành
+                if (productionOrder != null && productionOrder.Status != ProductionStatus.Completed)
+                {
+                    productionOrder.Status = ProductionStatus.InProgress;
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateDefectReportAsync(int defectId, UpdateDefectReportDto dto)
+        {
+            try
+            {
+                // Find the existing defect record
+                var existingDefect = await _context.ProductionDefects.FindAsync(defectId);
+                if (existingDefect == null) return false;
+
+                // Get the old quantity to calculate the difference
+                var oldQuantity = existingDefect.Quantity ?? 0;
+                var newQuantity = dto.Quantity;
+                var quantityDifference = newQuantity - oldQuantity;
+              
+                var productionOutput = await _context.ProductionOutputs
+                    .FirstOrDefaultAsync(po => po.ProductionOrderId == existingDefect.ProductionOrderId && po.ProductId == existingDefect.ProductId);
+                
+                if (productionOutput == null) return false;
+
+                var productionOrder = await _context.ProductionOrders
+                    .Include(po => po.ProductionPlan)
+                    .FirstOrDefaultAsync(po => po.Id == existingDefect.ProductionOrderId);
+           
+                existingDefect.Quantity = dto.Quantity;
+                existingDefect.DefectType = dto.DefectType;
+                existingDefect.DefectStage = dto.DefectStage;
+                existingDefect.Note = dto.Note;
+                existingDefect.ReportedAt = DateTime.UtcNow; 
+
+                productionOutput.Defected = (productionOutput.Defected ?? 0m) + quantityDifference;
+
+                productionOutput.Finished = Math.Max((productionOutput.Finished ?? 0m) - quantityDifference, 0m);
+
+                // Nếu là lệnh sản xuất "Đổ keo", cập nhật số lượng hoàn thành trong production plan detail
+                if (productionOrder != null && productionOrder.Type == "Đổ keo")
+                {
+                    var productionPlanDetail = await _context.ProductionPlanDetails
+                        .FirstOrDefaultAsync(ppd => ppd.ProductionPlanId == productionOrder.ProductionPlanId && ppd.ProductId == existingDefect.ProductId);
+
+                    if (productionPlanDetail != null)
+                    {
+                        productionPlanDetail.Done = Math.Max(0, productionPlanDetail.Done - (int)quantityDifference);
+                        _context.ProductionPlanDetails.Update(productionPlanDetail);
+                    }
+                }
+
+                // Chỉ thay đổi trạng thái nếu lệnh sản xuất chưa hoàn thành
+                if (productionOrder != null && productionOrder.Status != ProductionStatus.Completed)
+                {
+                    productionOrder.Status = ProductionStatus.InProgress;
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> ReportBrokenOutputAsync(int outputId, ReportBrokenOutputDto dto)
+        {
+            var output = await _context.ProductionOutputs.Include(o => o.ProductionOrder).FirstOrDefaultAsync(o => o.Id == outputId);
+            if (output == null || dto.Broken <= 0) return false;
+
+            output.Defected = (output.Defected ?? 0m) + dto.Broken;
+
+            output.Finished = Math.Max((output.Finished ?? 0m) - dto.Broken, 0m);
+
+            // Chỉ thay đổi trạng thái nếu lệnh sản xuất chưa hoàn thành
+            if (output.ProductionOrder != null && output.ProductionOrder.Status != ProductionStatus.Completed)
+            {
+                output.ProductionOrder.Status = ProductionStatus.InProgress;
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<string?> GetProductionPlanStatusAsync(int productionOrderId)
+        {
+            var productionOrder = await _context.ProductionOrders
+                .Include(po => po.ProductionPlan)
+                .FirstOrDefaultAsync(po => po.Id == productionOrderId);
+
+            return productionOrder?.ProductionPlan?.Status;
+        }
+    }
+}

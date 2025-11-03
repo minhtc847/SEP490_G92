@@ -1,0 +1,72 @@
+// app/(defaults)/products/service.ts
+
+import axios from '@/setup/axios';
+
+export interface ProductDetail {
+    id: number;
+    productCode?: string;
+    productName?: string;
+    productType?: string;
+    uom?: string;
+    height?: string;
+    width?: string;
+    thickness?: number;
+    weight?: number;
+    unitPrice?: number;
+    glassStructureId?: number;
+    isupdatemisa?: number; // 0 = chưa cập nhật, 1 = đã cập nhật
+}
+
+export interface GlassStructureOption {
+    id: number;
+    productName: string;
+}
+
+export const searchGlassStructures = async (inputValue: string): Promise<GlassStructureOption[]> => {
+    const res = await axios.get<GlassStructureOption[]>('/api/GlassStructure', {
+        params: { search: inputValue },
+    });
+    return res.data;
+};
+
+export interface GlassStructureOption {
+    id: number;
+    productName: string;
+}
+
+export const getGlassStructureById = async (id: number): Promise<GlassStructureOption> => {
+    const res = await axios.get<GlassStructureOption>(`/api/GlassStructure/${id}`);
+    return res.data;
+};
+
+export const getGlassStructures = async (): Promise<GlassStructureOption[]> => {
+    const res = await axios.get<GlassStructureOption[]>('/api/Product/all');
+    return res.data;
+};
+
+export const getProductById = async (id: string): Promise<ProductDetail> => {
+    const res = await axios.get<ProductDetail>(`/api/Product/${id}`);
+    return res.data;
+};
+
+export const updateProduct = async (id: number, data: ProductDetail): Promise<void> => {
+    const payload = {
+        ...data,
+        glassStructureId: data.glassStructureId ?? null ,
+    };
+    await axios.put(`/api/Product/${id}`, payload);
+};
+
+export const deleteProduct = async (id: string): Promise<void> => {
+    await axios.delete(`/api/Product/${id}`);
+};
+
+export interface InputUpdateProduct {
+    productCode: string;
+    name: string;
+    unit: string;
+}
+
+export const updateProductMisa = async (input: InputUpdateProduct): Promise<void> => {
+    await axios.put('/api/Selenium/product', input);
+};

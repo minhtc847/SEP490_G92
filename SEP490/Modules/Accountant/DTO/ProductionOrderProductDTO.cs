@@ -1,0 +1,13 @@
+﻿using SEP490.DB.Models;
+
+namespace SEP490.Modules.Accountant.DTO
+{
+    public class ProductionOrderProductDTO
+    {
+        public int OutputId { get; set; }
+        public string ProductName { get; set; }
+        public int Uom { get; set; }
+        public decimal Quantity { get; set; }
+        public int Done { get; set; }
+    }
+}

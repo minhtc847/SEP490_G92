@@ -1,0 +1,123 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSelector } from 'react-redux';
+import { IRootState } from '@/store';
+
+interface ProtectedRouteProps {
+    children: React.ReactNode;
+    requiredRole?: number | number[];
+    fallbackPath?: string;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+    children,
+    requiredRole,
+    fallbackPath = '/auth/cover-login'
+}) => {
+    const router = useRouter();
+    const isAuthenticated = useSelector((state: IRootState) => state.auth.isAuthenticated);
+    const token = useSelector((state: IRootState) => state.auth.token);
+    const roleId = useSelector((state: IRootState) => state.auth.user?.roleId);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isRedirecting, setIsRedirecting] = useState(false);
+
+    // Helper function to check if user has required role
+    const hasRequiredRole = (): boolean => {
+        if (!requiredRole || !roleId) return true;
+        
+        if (Array.isArray(requiredRole)) {
+            return requiredRole.includes(roleId);
+        } else {
+            return roleId === requiredRole;
+        }
+    };
+
+    useEffect(() => {
+        // Check if we have a token but user data is not loaded yet
+        if (token && !isAuthenticated) {
+            // Wait a bit for the auth restoration to complete
+            const timer = setTimeout(() => {
+                setIsLoading(false);
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+        
+        setIsLoading(false);
+    }, [token, isAuthenticated]);
+
+    useEffect(() => {
+        if (isLoading) return;
+
+        // Nếu chưa đăng nhập, redirect đến login
+        if (!isAuthenticated && !token) {
+            if (!isRedirecting) {
+                setIsRedirecting(true);
+                router.push(fallbackPath);
+            }
+            return;
+        }
+
+        // Check role requirement
+        if (requiredRole && !hasRequiredRole()) {
+            if (!isRedirecting) {
+                setIsRedirecting(true);
+                router.push('/unauthorized');
+            }
+            return;
+        }
+    }, [isAuthenticated, requiredRole, roleId, router, fallbackPath, token, isLoading, isRedirecting]);
+
+    // Show loading while checking authentication
+    if (isLoading || (token && !isAuthenticated)) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-gray-600">Đang kiểm tra xác thực...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Show loading when redirecting
+    if (isRedirecting) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-gray-600">Đang chuyển hướng...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Show loading or redirect if not authenticated
+    if (!isAuthenticated) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-gray-600">Đang chuyển hướng đến trang đăng nhập...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Check role requirement
+    if (requiredRole && !hasRequiredRole()) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold text-red-600 mb-4">Không có quyền truy cập</h1>
+                    <p className="text-gray-600">Bạn không có quyền truy cập trang này.</p>
+                    <p className="text-gray-600 mt-2">Đang chuyển hướng...</p>
+                </div>
+            </div>
+        );
+    }
+
+    return <>{children}</>;
+};
+
+export default ProtectedRoute; 

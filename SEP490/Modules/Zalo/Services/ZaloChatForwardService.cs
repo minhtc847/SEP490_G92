@@ -1,0 +1,66 @@
+﻿using Microsoft.EntityFrameworkCore;
+using SEP490.Common.Services;
+using SEP490.DB;
+using SEP490.DB.Models;
+using SEP490.Modules.Zalo.DTO;
+using System.Text;
+using System.Text.Json;
+
+namespace SEP490.Modules.Zalo.Services
+{
+    public class ZaloChatForwardService : BaseScopedService, IZaloChatForwardService
+    {
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly SEP490DbContext _context;
+        private readonly IConfiguration _configuration;
+
+        public ZaloChatForwardService(IHttpClientFactory httpClientFactory, SEP490DbContext context, IConfiguration configuration)
+        {
+            _httpClientFactory = httpClientFactory;
+            _context = context;
+            _configuration = configuration;
+        }
+
+        public async Task<LLMResponse> ForwardMessagesAsync(List<MessageResponse> messages)
+        {
+
+            await _context.SaveChangesAsync();
+
+            // 2. Prepare payload
+            var conversationId = messages.FirstOrDefault()?.SenderId ?? "unknown";
+            var payload = new
+            {
+                conversation_id = conversationId,
+                messages = messages.Select(m => new
+                {
+                    sender_id = m.SenderId,
+                    sender_type = m.SenderType,
+                    message_type = m.MessageType,
+                    content = m.MessageContent,
+                    send_time = m.SendTime.ToString("yyyy-MM-ddTHH:mm:ss")
+                }).ToList()
+            };
+
+            var client = _httpClientFactory.CreateClient();
+            var json = JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            //var response = await client.PostAsync("http://localhost:8000/process_zalo_chat", content);
+            //var response = await client.PostAsync("https://7de9373d79b2.ngrok-free.app/process_zalo_chat", content);
+            var configuredUrl = _configuration["LLM:ApiUrl"];
+            var llmApiUrl = string.IsNullOrWhiteSpace(configuredUrl)
+                ? "http://localhost:8000/process_zalo_chat"
+                : configuredUrl;
+            var response = await client.PostAsync(llmApiUrl, content);
+            response.EnsureSuccessStatusCode();
+
+            var responseString = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<LLMResponse>(responseString, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            return result!;
+        }
+    }
+}

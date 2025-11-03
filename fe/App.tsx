@@ -3,6 +3,7 @@ import { PropsWithChildren, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { IRootState } from '@/store';
 import { toggleRTL, toggleTheme, toggleMenu, toggleLayout, toggleAnimation, toggleNavbar, toggleSemidark } from '@/store/themeConfigSlice';
+import { restoreAuth } from '@/store/authSlice';
 import Loading from '@/components/layouts/loading';
 import { getTranslation } from '@/i18n';
 
@@ -13,6 +14,10 @@ function App({ children }: PropsWithChildren) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        // Restore authentication state from localStorage
+        dispatch(restoreAuth());
+        
+        // Restore theme configuration
         dispatch(toggleTheme(localStorage.getItem('theme') || themeConfig.theme));
         dispatch(toggleMenu(localStorage.getItem('menu') || themeConfig.menu));
         dispatch(toggleLayout(localStorage.getItem('layout') || themeConfig.layout));
